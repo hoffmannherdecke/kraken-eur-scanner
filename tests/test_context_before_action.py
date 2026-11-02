@@ -1145,6 +1145,35 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
                          "STALE_OWNER_VIEW_HOLD_NO_REWORK")
         self.assertIsNone(gate["next_open_gate"])
         self.assertFalse(gate["ready_to_execute"])
+        self.assertEqual(gate["previously_done_candidate_in_stale_view"],
+                         "PR608_NOTEBOOK_STAGE")
+        self.assertTrue(gate["no_repeat_without_new_original_defect"])
+        self.assertEqual(gate["next_work_class"],
+                         "LATEST_ORIGINAL_OWNER_ACK_RECONCILIATION_ONLY")
+        self.assertEqual(gate["recent_original_owner_handoff"][-1]["url"],
+                         "https://github.com/current-comment")
+        self.assertTrue(gate["do_not_use_old_next_open_gate"])
+
+    def test_stale_view_never_selects_or_runs_future_gate(self):
+        from tools.context_before_action import live_owner_readback
+        base = LiveOwnerReadbackTests()
+        owner_body = self.encode(self.body())
+        def changed_comment(url):
+            item, link = base.fake_fetch(url)
+            if url.endswith("/issues/99"):
+                item = dict(item, body=owner_body)
+            if url.endswith("/issues/99/comments?per_page=10&page=8"):
+                item = [dict(x, id=6468388695) for x in item]
+            return item, link
+        gate = live_owner_readback(
+            "strategy_release", "V3", fetcher=changed_comment,
+            candidate_id="WRITER_REAL_COMMIT")["named_release_gate"]
+        self.assertIsNone(gate["previously_done_candidate_in_stale_view"])
+        self.assertIsNone(gate["next_open_gate"])
+        self.assertFalse(gate["ready_to_execute"])
+        self.assertFalse(gate.get("runtime_verified_independently", False))
+        self.assertEqual(gate["candidate_verdict"],
+                         "STALE_OWNER_VIEW_HOLD_NO_REWORK")
 
     def test_new_issue_header_without_new_comment_invalidates_old_gate(self):
         from tools.context_before_action import live_owner_readback
@@ -1171,6 +1200,9 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
         self.assertIsNone(gate["next_open_gate"])
         self.assertEqual(gate["candidate_verdict"], "STALE_OWNER_VIEW_HOLD_NO_REWORK")
         self.assertFalse(gate["ready_to_execute"])
+        self.assertIsNone(gate["previously_done_candidate_in_stale_view"])
+        self.assertEqual(gate["next_work_class"],
+                         "LATEST_ORIGINAL_OWNER_ACK_RECONCILIATION_ONLY")
 
     def test_all_runtime_proofs_done_does_not_auto_release(self):
         from tools.context_before_action import existing_owner_gate_decision
