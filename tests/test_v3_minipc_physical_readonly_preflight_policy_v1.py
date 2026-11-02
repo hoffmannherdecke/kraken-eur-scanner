@@ -892,6 +892,31 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assert_locked_pr515_native_stop_only(s)
 
 
+    def test_pr515_original_supervisor_periodic_ready_is_not_release_authority(self):
+        source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        stop=source.split("function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(",1)[1].split(
+            "# The exact future PR515 ARMED -> QUIESCED phase transition",1)[0]
+        for required in (
+            "Get-ScheduledTask -TaskName 'CryptoMiniPC-RuntimeSupervisor'",
+            "$supervisorTask.State -notin @('Ready','Running')",
+            "$supervisorTask.TaskPath -cne '\\\\'",
+            "$supervisorTask.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\\\\SYSTEM','S-1-5-18')",
+            "@($supervisorTask.Actions).Count -ne 1",
+            "V3_PRECAS_SUPERVISOR_SCHEDULE_OR_OWNER_DRIFT",
+            "V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",
+            "V3_INTAKE_SUPERVISOR_REARM_BLOCKED",
+            "$supervisorAt -gt $at",
+            "$cloudAt -gt $at",
+            "V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED",
+        ):
+            self.assertIn(required,stop,required)
+        self.assertNotIn("V3_PRECAS_SUPERVISOR_NOT_RUNNING",stop)
+        self.assertLess(stop.index("V3_PRECAS_SUPERVISOR_SCHEDULE_OR_OWNER_DRIFT"),
+                        stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"))
+        self.assertLess(stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
+                        stop.index("Disable-ScheduledTask"))
+        self.assert_locked_pr515_native_stop_only(source)
+
     def test_pr515_armed_failure_manual_rescue_review_not_executable(self):
         source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         helper=source.split("function Test-V3Pr515ArmedRecoveryIdentity(",1)[1].split(
