@@ -61,6 +61,13 @@ class AttemptHistoryBoundaryRegression(unittest.TestCase):
         data["dispatch_unknown_count"] = 1
         result = review_attempt_coverage_boundary(data, original_fence_sha256="a"*64)
         self.assertEqual(result["disposition"], "HOLD_DISPATCH_UNKNOWN_NOT_RESOLVED")
+        self.assertFalse(result["cas_authorized"])
+        self.assertFalse(result["v3_paper_authorized"])
+        data["dispatch_unknown_count"] = 0
+        data["fence_sha256"] = "b"*64
+        result = review_attempt_coverage_boundary(data, original_fence_sha256="a"*64)
+        self.assertFalse(result["counts_structurally_consistent"])
+        self.assertFalse(result["rollback_authorized"])
 
 
 class V3CasAuditInactiveTests(unittest.TestCase):
