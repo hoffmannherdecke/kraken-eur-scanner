@@ -25,12 +25,12 @@ Add-Type -AssemblyName System.Security -ErrorAction Stop
 # Assembly-qualified Type.GetType is unreliable in Windows PowerShell 5.1:
 # resolving the native PowerShell type and roundtripping test bytes is decisive.
 try {
- $dpapiType=[Security.Cryptography.ProtectedData]
  $probe=[byte[]](17,39,81,121)
- $probeCipher=$dpapiType::Protect(
+ $probeBack=$null
+ $probeCipher=[Security.Cryptography.ProtectedData]::Protect(
    $probe,$entropy,[Security.Cryptography.DataProtectionScope]::CurrentUser)
  try {
-  $probeBack=$dpapiType::Unprotect(
+  $probeBack=[Security.Cryptography.ProtectedData]::Unprotect(
     $probeCipher,$entropy,[Security.Cryptography.DataProtectionScope]::CurrentUser)
   if ($probeBack.Length -ne $probe.Length) {
    throw 'V3_ISSUER_DPAPI_PROBE_LENGTH_HOLD'
