@@ -9,6 +9,9 @@ name: V2R4 technical cloud rotation - disposable SQL gate
       - 'tests/sql/v3_experimental_paper_atomic_cas_smoke.sql'
       - 'tests/test_v3_experimental_atomic_cas_inactive_contract_v1.py'
       - 'supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql'
+      - 'supabase/v3-cas-t0-private-reader-witness-INACTIVE.sql'
+      - 'tests/sql/v3_t0_private_reader_witness_smoke.sql'
+      - 'tests/test_v3_t0_private_reader_witness_inactive.py'
       - 'tests/sql/v3_inhibit_issuer_two_phase_smoke.sql'
       - 'supabase/functions/v2r4-technical-cutover/index.ts'
       - 'supabase/config.toml'
@@ -129,6 +132,41 @@ jobs:
           PY
           psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/v3_disposable_issuer_test.sql"
           echo V3_INHIBIT_ISSUER_POSTGRES_DISPOSABLE_PASS
+      - name: V3 private forward-only T0 current reader PostgreSQL 17 disposable gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Exercise the source first-statement lock on an isolated database.
+          psql -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE v3_t0_reader_disposable'
+          if psql -X -v ON_ERROR_STOP=1 -d v3_t0_reader_disposable \
+            -f supabase/v3-cas-t0-private-reader-witness-INACTIVE.sql \
+            >"$RUNNER_TEMP/v3_t0_witness_lock.log" 2>&1; then
+            echo V3_T0_WITNESS_SOURCE_UNEXPECTEDLY_EXECUTABLE >&2; exit 1
+          fi
+          grep -Fq 'V3_T0_READER_WITNESS_SOURCE_INACTIVE_APPROVAL_REQUIRED' \
+            "$RUNNER_TEMP/v3_t0_witness_lock.log"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          src=Path("supabase/v3-cas-t0-private-reader-witness-INACTIVE.sql").read_text("utf-8")
+          lock="  RAISE EXCEPTION 'V3_T0_READER_WITNESS_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+          assert src.count(lock)==1
+          prefix=src.split("DO $v3_t0_witness_install_locked$\nBEGIN\n",1)[1].split(lock,1)[0]
+          assert all(not line.strip() or line.lstrip().startswith("--") for line in prefix.splitlines())
+          work=Path(os.environ["RUNNER_TEMP"])
+          unlocked=work/"v3_t0_reader_disposable_unlocked.sql"
+          unlocked.write_text(src.replace(lock,"  NULL; -- disposable CI-only approval simulation",1),"utf-8")
+          fixture=Path("tests/sql/v3_t0_private_reader_witness_smoke.sql").read_text("utf-8")
+          include=r"\i __T0_SOURCE_CI_ONLY__"
+          assert fixture.count(include)==1
+          (work/"v3_t0_reader_disposable_smoke.sql").write_text(
+              fixture.replace(include,r"\i "+str(unlocked)),"utf-8")
+          PY
+          psql -X -v ON_ERROR_STOP=1 -d v3_t0_reader_disposable \
+            -f "$RUNNER_TEMP/v3_t0_reader_disposable_smoke.sql"
+          python3 -m unittest discover -s tests \
+            -p 'test_v3_t0_private_reader_witness_inactive.py'
+          echo V3_T0_PRIVATE_READER_PG17_NEGATIVE_GATE_PASS
       - name: Scope unrelated Deno network check to actual V2R4/Edge changes
         id: deno_scope
         shell: bash
