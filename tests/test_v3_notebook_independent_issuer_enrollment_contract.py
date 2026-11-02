@@ -26,7 +26,11 @@ class NotebookIssuerEnrollmentContract(unittest.TestCase):
     def test_windows_dpapi_framework_loaded_before_local_mutation(self):
         s=self.active
         self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop",s)
-        self.assertIn("V3_ISSUER_DPAPI_FRAMEWORK_UNAVAILABLE",s)
+        self.assertIn("V3_ISSUER_DPAPI_REAL_ROUNDTRIP_UNAVAILABLE",s)
+        self.assertIn("[Security.Cryptography.ProtectedData]::Protect(",s)
+        self.assertIn("[Security.Cryptography.ProtectedData]::Unprotect(",s)
+        self.assertIn("V3_ISSUER_DPAPI_PROBE_MISMATCH_HOLD",s)
+        self.assertNotIn("[type]::GetType(",s)
         self.assertLess(s.index("Add-Type -AssemblyName System.Security"),
                         s.index("[IO.Directory]::CreateDirectory($root"))
         self.assertLess(s.index("Add-Type -AssemblyName System.Security"),
