@@ -26,7 +26,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotRegex(dormant,r"(?m)^\s*(?:Start|Enable|Register)-ScheduledTask\b")
         self.assertIn("V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED",dormant)
         self.assertRegex(dormant,r"(?s)\) \{\s*# Native STOP is still source-locked\..*?if\(-not \$OnlyOriginalArmed\)\{throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'\}")
-        self.assertIn("if($ExecuteOriginalhostArmedOnly){",outside)
+        self.assertIn("if($ExecuteOriginalhostArmedOnly -or $PreviewPreparedOriginalhostFence){",outside)
         self.assertIn("V3_PR515_ARMED_ONLY_OPERATOR_BLOB_PIN_MISMATCH",outside)
         self.assertIn("V3_PR515_ARMED_ONLY_ORIGINAL_INTAKE_PREFLIGHT_HOLD",outside)
         self.assertIn("-OnlyOriginalArmed",outside)
@@ -40,8 +40,8 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertEqual(len(re.findall(r"(?m)^\s*\$receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY\b",outside)),1)
         self.assertIn("$receipt.native_intake_tasks_changed_here -ne $false",outside)
         self.assertIn("V3_PR515_ARMED_ONLY_HANDOFF_NOT_ATTESTED_LEAVE_FENCE",outside)
-        self.assertLess(outside.index("$completeWaitSnapshot=($waitSnapshotReadable"),outside.index("if($ExecuteOriginalhostArmedOnly){"))
-        self.assertIn("(-not $ExecuteOriginalhostArmedOnly) -and",outside)
+        self.assertLess(outside.index("$completeWaitSnapshot=($waitSnapshotReadable"),outside.index("if($ExecuteOriginalhostArmedOnly -or $PreviewPreparedOriginalhostFence){"))
+        self.assertIn("(-not $ExecuteOriginalhostArmedOnly) -and (-not $PreviewPreparedOriginalhostFence) -and",outside)
         self.assertLess(dormant.index("V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1"),dormant.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"))
         self.assertEqual(len(re.findall(r"(?m)^\s*Enable-ScheduledTask\b",restore)),1)
         self.assertEqual(len(re.findall(r"(?m)^\s*Start-ScheduledTask\b",restore)),1)
@@ -64,6 +64,27 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotRegex(restore,r"(?m)^\s*(?:Stop-Process|Register-ScheduledTask|Unregister-ScheduledTask)\b")
         self.assertNotRegex(outside,r"(?m)^\s*Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY\b")
 
+
+    def test_prepared_fence_preview_is_canonical_and_never_grants_release(self):
+        source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text("utf-8")
+        self.assertEqual(source.count("function New-V3Pr515PreparedArmedMarker("),1)
+        self.assertEqual(source.count("function Get-V3Pr515PreparedFenceSha256("),1)
+        self.assertEqual(source.count("V3_PREPARED_FENCE_PIN_MISMATCH_BEFORE_WRITE"),1)
+        self.assertEqual(source.count("V3_PREPARED_SHA_NOT_APPROVED_FOR_ARMING"),1)
+        self.assertIn("if($PreviewPreparedOriginalhostFence){",source)
+        self.assertIn("if($ExpectedPreparedFenceSha256){throw 'V3_PREVIEW_CANNOT_SELF_APPROVE'}",source)
+        self.assertIn("status='UNAUTHENTICATED_READONLY_NO_MARKER_NO_RELEASE'",source)
+        self.assertIn("independently_authorized=$false",source)
+        self.assertIn("cloud_epoch_committed=$false",source)
+        self.assertIn("issuer_inhibit_committed=$false",source)
+        self.assertIn("marker_cancel_authorized=$false",source)
+        self.assertIn("task_mutations=$false",source)
+        self.assertIn("v3_paper_authorized=$false",source)
+        self.assertIn("if($ExpectedPreparedFenceSha -cnotmatch '^[a-f0-9]{64}$'",source)
+        self.assertLess(source.index("V3_PREPARED_FENCE_PIN_MISMATCH_BEFORE_WRITE"),
+                        source.index("$temp=$fence+'.'+[guid]::NewGuid()"))
+        self.assertIn("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED",source)
+        self.assertIn("V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED",source)
 
     def test_no_side_effect_commands_or_runtime_invocation(self):
         s=SCRIPT.read_text(encoding="utf-8")
