@@ -41,6 +41,18 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
             self.assertIn(v, self.code)
         self.assertEqual(len(re.findall(r"(?i)\bCREATE TRIGGER\b", self.code)), 2)
 
+    def test_existing_force_rls_owner_read_is_exact_and_nologin(self):
+        for value in (
+            "v3_cas_epoch_owner_abort_read_v1",
+            "v3_cas_epoch_owner_abort_update_v1",
+            "v3_cas_intent_owner_abort_read_v1",
+            "FOR SELECT TO v3_cas_audit_table_owner USING(true)",
+            "FOR UPDATE TO v3_cas_audit_table_owner USING(true)",
+        ):
+            self.assertIn(value, self.code)
+        self.assertEqual(self.code.count("FOR SELECT TO v3_cas_audit_table_owner"), 2)
+        self.assertNotRegex(self.code, r"(?i)GRANT SELECT ON v3_cas_audit\\.(?:epoch_v1|intent_v1) TO (?:PUBLIC|service_role)")
+
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
