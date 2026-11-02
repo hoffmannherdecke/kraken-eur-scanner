@@ -131,6 +131,46 @@ def review_untrusted_audit_readback(intent: AuditIntent, row: Mapping[str, Any] 
     }
 
 
+def review_attempt_coverage_boundary(
+    observed: Mapping[str, Any], *, original_fence_sha256: str,
+) -> dict[str, Any]:
+    """Offline audit-shape check; no provenance or historical NEVER authority."""
+    hold = {
+        "kind": "V3_ATTEMPT_COVERAGE_BOUNDARY_REVIEW_V1",
+        "disposition": "HOLD_UNVERIFIED_ATTEMPT_COVERAGE",
+        "counts_structurally_consistent": False,
+        "complete_historical_cas_attempts_proven": False,
+        "pre_audit_executions_excluded": False,
+        "unknown_outcomes_resolved": False,
+        "rollback_authorized": False,
+        "cas_authorized": False,
+        "v3_paper_authorized": False,
+    }
+    keys = {"fence_sha256", "epoch_count", "intent_count",
+            "attempt_count", "dispatch_unknown_count",
+            "unmatched_intent_count", "unmatched_attempt_count"}
+    if (not isinstance(observed, Mapping) or set(observed) != keys
+            or not isinstance(original_fence_sha256, str)
+            or not HEX64.fullmatch(original_fence_sha256)
+            or observed["fence_sha256"] != original_fence_sha256):
+        return hold
+    counters = keys - {"fence_sha256"}
+    if any(type(observed[key]) is not int or observed[key] < 0 for key in counters):
+        return hold
+    if observed["dispatch_unknown_count"] > 0:
+        hold["disposition"] = "HOLD_DISPATCH_UNKNOWN_NOT_RESOLVED"
+        return hold
+    if (observed["unmatched_intent_count"]
+            or observed["unmatched_attempt_count"]):
+        hold["disposition"] = "HOLD_UNMATCHED_AUDIT_ROWS"
+        return hold
+    if observed["attempt_count"] > observed["intent_count"]:
+        return hold
+    hold["counts_structurally_consistent"] = True
+    hold["disposition"] = "HOLD_PREAUDIT_HISTORY_AND_ORIGIN_UNPROVEN"
+    return hold
+
+
 def invoke_v3_paper_cas(*_args: Any, **_kwargs: Any) -> None:
     """ONE existing CAS entrypoint: isolated pre-dispatch file-contract test.
 
