@@ -945,10 +945,12 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
                         stop.index("V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1"))
         self.assertLess(stop.index("return [pscustomobject]@{\n  kind='V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'"),
                         stop.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"))
+        # Match the actual command statements, not the earlier explanatory comments.
+        native_disable=stop.index("\n  Disable-ScheduledTask -TaskName")
+        native_stop=stop.index("\n  Stop-ScheduledTask -TaskName")
         self.assertLess(stop.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"),
-                        stop.index("Disable-ScheduledTask"))
-        self.assertLess(stop.index("Disable-ScheduledTask"),
-                        stop.index("Stop-ScheduledTask"))
+                        native_disable)
+        self.assertLess(native_disable,native_stop)
         self.assert_locked_pr515_native_stop_only(source)
 
     def test_pr515_armed_failure_manual_rescue_review_not_executable(self):
