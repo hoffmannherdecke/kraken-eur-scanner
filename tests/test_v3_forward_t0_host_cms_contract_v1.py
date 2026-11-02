@@ -43,8 +43,8 @@ class ForwardT0CmsContract(unittest.TestCase):
             "V3_FORWARD_T0_STALE_OR_ACTOR_DRIFT",
             "V3_FORWARD_T0_NONZERO_OR_WRONG_TYPE",
             "V3_FORWARD_T0_UNSAFE_AUTHORITY_FLAG",
-            r"\\s*:\\s*0(?=\\s*[,}])",
-            r"\\s*:\\s*false(?=\\s*[,}])",
+            r"\s*:\s*0(?=\s*[,}])",
+            r"\s*:\s*false(?=\s*[,}])",
         ):
             self.assertIn(marker, block)
         self.assertIn("$age -gt 120", block)
@@ -66,8 +66,8 @@ class ForwardT0CmsContract(unittest.TestCase):
             self.assertIn(flag+"=$false", block)
             self.assertNotIn(flag+"=$true", block)
         self.assertIn("SIGNED_CURRENT_FORWARD_T0_CATALOG_NOT_RELEASE",block)
-        self.assertNotRegex(block, r"(?m)^\\s*(?:Stop|Start|Enable|Disable|Register)-ScheduledTask\\b")
-        self.assertNotRegex(block, r"(?m)^\\s*(?:Remove-Item|Invoke-RestMethod|Invoke-Command)\\b")
+        self.assertNotRegex(block, r"(?m)^\s*(?:Stop|Start|Enable|Disable|Register)-ScheduledTask\b")
+        self.assertNotRegex(block, r"(?m)^\s*(?:Remove-Item|Invoke-RestMethod|Invoke-Command)\b")
 
 if __name__ == "__main__":
     unittest.main()
