@@ -40,6 +40,8 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertEqual(len(re.findall(r"(?m)^\s*\$receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY\b",outside)),1)
         self.assertIn("$receipt.native_intake_tasks_changed_here -ne $false",outside)
         self.assertIn("V3_PR515_ARMED_ONLY_HANDOFF_NOT_ATTESTED_LEAVE_FENCE",outside)
+        self.assertLess(outside.index("$completeWaitSnapshot=($waitSnapshotReadable"),outside.index("if($ExecuteOriginalhostArmedOnly){"))
+        self.assertIn("(-not $ExecuteOriginalhostArmedOnly) -and",outside)
         self.assertLess(dormant.index("V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1"),dormant.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"))
         self.assertEqual(len(re.findall(r"(?m)^\s*Enable-ScheduledTask\b",restore)),1)
         self.assertEqual(len(re.findall(r"(?m)^\s*Start-ScheduledTask\b",restore)),1)
