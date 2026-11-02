@@ -1020,4 +1020,107 @@ REVOKE SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 FROM postgres;
 SQL
 echo 'V3_PG17_STAGE5_REAL_SYNTHETIC_SEAL_RESTORE_PASS'
 
+# PR661: reuse THIS EXISTING networkless PG17 container for the new source.
+# Run the exact existing inhibit schema first, unlocked ONLY in the disposable
+# in-memory stream; the committed source files remain hardlocked.
+inhibit_sql="supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql"
+abort_sql="supabase/v3-cas-prepared-fence-abort-INACTIVE.sql"
+if pg -f - < "$abort_sql" >/dev/null 2>&1; then
+ echo 'FAIL_PREPARED_ABORT_SOURCE_HARDLOCK_BYPASSED' >&2; exit 1
+fi
+if [[ "$(pg -Atc "select to_regclass('v3_cas_audit.prepared_fence_abort_v1') is null")" != t ]]; then
+ echo 'FAIL_PREPARED_ABORT_HARDLOCK_CREATED_TABLE' >&2; exit 1
+fi
+python - "$inhibit_sql" <<'PY' | pg -f - >/dev/null
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text('utf-8')
+lock="  RAISE EXCEPTION 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE_OWNER_AND_ISSUER_NOT_ABSOLVED';"
+assert s.count(lock)==1
+print(s.replace(lock,"  NULL; -- ISOLATED disposable PG17 only",1))
+PY
+# Production issuer enrollment is already proven; synthetic CI enables only
+# the disposable role, never credentials or network access.
+pg_root_db -c "ALTER ROLE v3_cas_inhibit_issuer_actor LOGIN CONNECTION LIMIT 1;" >/dev/null
+python - "$abort_sql" <<'PY' | pg -f - >/dev/null
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text('utf-8')
+lock=" RAISE EXCEPTION 'V3_PREPARED_ABORT_SOURCE_INACTIVE_NO_PRODUCTION_INSTALL';"
+assert s.count(lock)==1
+print(s.replace(lock," NULL; -- ISOLATED disposable PG17 only",1))
+PY
+pg -f - <<'SQL' >/dev/null
+INSERT INTO v3_cas_audit.epoch_v1
+ (epoch_id, predecessor_series_id, expected_rpc, source_sha256,
+ original_fence_sha256, approved_caller_acl_sha256)
+VALUES ('V3CAS-AUDIT-99999999999999999999999999999999',
+ 'PAPER-V2R4-20261009T110135Z',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ repeat('a',64),repeat('b',64),repeat('c',64));
+DO $reject_owner$
+BEGIN
+ BEGIN
+  PERFORM v3_cas_audit.record_prepared_fence_abort_v1(
+   'V3CAS-AUDIT-99999999999999999999999999999999',
+   repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64));
+  RAISE EXCEPTION 'FAIL_NON_ISSUER_ABORT_ACCEPTED';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM NOT LIKE '%V3_PREPARED_ABORT_CAS_OR_ACTOR_HOLD%' THEN RAISE; END IF;
+ END;
+END $reject_owner$;
+SET SESSION AUTHORIZATION v3_cas_inhibit_issuer_actor;
+DO $no_inhibit$
+BEGIN
+ BEGIN
+  PERFORM v3_cas_audit.record_prepared_fence_abort_v1(
+   'V3CAS-AUDIT-99999999999999999999999999999999',
+   repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64));
+  RAISE EXCEPTION 'FAIL_ABORT_WITHOUT_INHIBIT_ACCEPTED';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM NOT LIKE '%V3_PREPARED_ABORT_INTENT_OR_ISSUER_HOLD%' THEN RAISE; END IF;
+ END;
+END $no_inhibit$;
+SELECT v3_cas_audit.begin_executor_inhibit_v1(
+ 'V3CAS-AUDIT-99999999999999999999999999999999',
+ repeat('a',64),repeat('b',64),repeat('c',64));
+SELECT v3_cas_audit.record_prepared_fence_abort_v1(
+ 'V3CAS-AUDIT-99999999999999999999999999999999',
+ repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64));
+DO $no_replay$
+BEGIN
+ BEGIN
+  PERFORM v3_cas_audit.record_prepared_fence_abort_v1(
+   'V3CAS-AUDIT-99999999999999999999999999999999',
+   repeat('a',64),repeat('b',64),repeat('c',64),repeat('e',64));
+  RAISE EXCEPTION 'FAIL_ABORT_REPLAY_ACCEPTED';
+ EXCEPTION WHEN unique_violation THEN NULL;
+ END;
+END $no_replay$;
+RESET SESSION AUTHORIZATION;
+DO $assert_terminal$
+BEGIN
+ IF (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1
+     WHERE state='ABORT_RECORDED_NOT_RELEASED' AND
+       receipt_sha256=repeat('d',64))<>1 THEN
+  RAISE EXCEPTION 'FAIL_NOT_DURABLE_TERMINAL_ABORT';
+ END IF;
+ BEGIN
+   INSERT INTO v3_cas_audit.intent_v1(epoch_id)
+    VALUES ('V3CAS-AUDIT-99999999999999999999999999999999');
+   RAISE EXCEPTION 'FAIL_ABORTED_EPOCH_INTENT_ACCEPTED';
+ EXCEPTION WHEN OTHERS THEN
+   IF SQLERRM NOT LIKE '%V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT%'
+   THEN RAISE; END IF;
+ END;
+ BEGIN
+   INSERT INTO v3_cas_audit.attempt_v1(epoch_id)
+    VALUES ('V3CAS-AUDIT-99999999999999999999999999999999');
+   RAISE EXCEPTION 'FAIL_ABORTED_EPOCH_UNKNOWN_ACCEPTED';
+ EXCEPTION WHEN OTHERS THEN
+   IF SQLERRM NOT LIKE '%V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT%'
+   THEN RAISE; END IF;
+ END;
+END $assert_terminal$;
+SQL
+echo 'V3_PG17_PREPARED_ABORT_ISSUER_ZERO_INTENT_REPLAY_UNKNOWN_NEGATIVE_PASS'
+
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
