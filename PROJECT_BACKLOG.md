@@ -1,3 +1,11 @@
+<!-- V3_RELEASE_CONTINUATION_INDEX_20261103 -->
+## V3-Release-Arbeitsauswahl – aktueller Owner statt historische Checkboxen (03.11.2026)
+Die **verbindliche Ausführungsregel** liegt in [#353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353), der **dynamische Fach-/Release-Status** ausschließlich im neuesten Originalnachweis von [#99](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99). In neuen Chats und Work-Läufen müssen vor Arbeitsauswahl `main`-HEAD, aktueller #661-HEAD/CI und jüngste #99-Original-ACKs geprüft werden. Historische `[ ]`-Einträge in dieser Datei sind **keine** neuen Arbeitsaufträge und dürfen keinen älteren Releasepfad wieder eröffnen. #661 nicht parallel duplizieren.
+ 
+Ziel ist der **vollständig ausführbare, reviewte, freigegebene und physisch bewiesene V3-Paper-Übergang** über den einzigen bestehenden Operator: vollständiger Originalhost-/Cloud-/CAS-Sicherungsweg → nötige Freigaben/Integration → kontrollierte Bereitstellung → realer sicherer Rückfall → bestätigter V3-Paper-Betrieb. Bereits abgeschlossene Belege wiederverwenden; Source-, Staging-, Runtime- und Freigabezustände getrennt führen. Fehlende Fähigkeiten implementieren statt neue generische Prüfungen/Manager zu schaffen. STOP/CAS/Single-Writer/Paper/Echtgeld-Hardlocks bleiben wirksam. Nach jeder Sitzung nur ein belegtes NEXT im vorhandenen #99; kein neues Statussystem. Dieser Eintrag begründet selbst **keine Releasefreigabe**.
+
+---
+
 ## Dauerhafter Projekteinstieg – aktuelle Aufgaben beim Fach-Owner statt statischer PR-Überschrift
 
 ## Geprüfte Fachowner-Quittungen – kein Live-Status
