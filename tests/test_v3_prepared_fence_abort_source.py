@@ -213,6 +213,28 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertLess(body.index("throw 'V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED'"), body.index("[IO.File]::Move($fence,$archive)"))
         self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", body)
 
+    def test_one_shot_native_observation_not_a_release_operator(self):
+        path = ROOT / "tools" / "minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1"
+        reader = path.read_text(encoding="utf-8")
+        for necessary in (
+            "[Parameter(Mandatory=$true)][string]$ExpectedCandidateRepoSha",
+            "Get-ScheduledTask", "Get-CimInstance Win32_Process",
+            "Get-FileHash", "V3_MARKER_NOT_PRESTOP_ARMED",
+            "exclusive_task_pid_antirace_proven=$false",
+            "independently_authenticated_cloud_issuer_custody=$false",
+            "complete_prospective_unknown_custody=$false",
+            "marker_cancel_authorized=$false",
+            "cas_or_paper_authorized=$false",
+            "process_task_marker_cloud_writes=0",
+        ):
+            self.assertIn(necessary, reader)
+        for forbidden in (
+            "Stop-ScheduledTask", "Start-ScheduledTask", "Disable-ScheduledTask",
+            "Enable-ScheduledTask", "Remove-Item", "[IO.File]::Move(",
+            "Invoke-Sqlcmd", "Start-Process", "Set-Content", "New-Item",
+        ):
+            self.assertNotIn(forbidden, reader)
+
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
