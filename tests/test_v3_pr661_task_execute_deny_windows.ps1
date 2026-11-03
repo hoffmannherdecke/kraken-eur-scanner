@@ -97,7 +97,15 @@ try{
  $systemBefore=Invoke-SystemProbe 'before'
  if($systemBefore -cnotin @('ALLOWED','DENIED')){throw 'V3_TASK_DENY_SYSTEM_BASELINE_NOT_MEASURED'}
  $denied=New-V3Pr661TaskExecuteDenyDescriptor $original
+ try{
  $apply=Set-V3Pr661OwnedTaskExecuteGuardSOURCE_ONLY -Operation Apply -TaskName $targetName -OriginalSddl $original
+ }catch{
+  # Only synthetic descriptors from disposable hosted CI tasks, never user SIDs.
+  Write-Host ('V3_TASK_DENY_DIAGNOSTIC_ORIGINAL='+$original)
+  Write-Host ('V3_TASK_DENY_DIAGNOSTIC_EXPECTED='+$denied)
+  Write-Host ('V3_TASK_DENY_DIAGNOSTIC_ACTUAL='+[string]$folder.GetTask($targetName).GetSecurityDescriptor(7))
+  throw
+ }
  if($apply.exact_descriptor_readback -ne $true){throw 'V3_TASK_DENY_OWNER_APPLY_FAILED'}
  if((Try-AdminRun) -cne 'DENIED'){throw 'V3_TASK_DENY_ADMIN_RUN_NOT_BLOCKED'}
  if((Invoke-SystemProbe 'denied') -cne 'DENIED'){throw 'V3_TASK_DENY_SYSTEM_RUN_NOT_BLOCKED'}
