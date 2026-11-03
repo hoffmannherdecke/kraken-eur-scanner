@@ -302,12 +302,11 @@ function Invoke-V3Pr661ScopedNativeStopSOURCE_ONLY(
   # existing Global mutex does not block independent SYSTEM Scheduler starts.
   # A separately reviewed privileged Scheduler/PID gate is required first.
   throw 'V3_PR661_SCHEDULER_PID_EXCLUSIVE_GATE_NOT_YET_PROVEN'
-  foreach($name in $names){
-   Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
-  }
-  foreach($name in $names){
-   Stop-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
-  }
+  # Keep exactly ONE native Task mutation owner in the existing PR515
+  # Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY function. This prospective
+  # issuer verifier MUST NOT grow a parallel effectful scheduler path.
+  # A separately reviewed release must bind issuer proof to that owner,
+  # rather than adding another Disable/Stop command site here.
   # Check ONLY the two exact original intake Task action arguments. Do not
   # confuse protected Lifecycle/CloudSync PIDs with stopped intake PIDs.
   # This is a post-stop OBSERVATION, not an exclusive scheduler lease.
