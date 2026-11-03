@@ -91,6 +91,10 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertLess(body.index("return [pscustomobject]@{\n  kind='V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'"),
                         body.index("Test-V3Pr661SignedIssuerPrestopReceipt"))
         self.assertLess(body.index("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED"),
+                        body.index("return Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY"))
+        self.assertLess(body.index("V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD"),
+                        body.index("Disable-ScheduledTask -TaskName $name"))
+        self.assertLess(body.index("V3_ISSUER_BOUND_NATIVE_STOP_SIGNATURE_OR_PIN_HOLD"),
                         body.index("Disable-ScheduledTask -TaskName $name"))
         self.assertEqual(operator.count("Disable-ScheduledTask -TaskName $name"), 1)
         self.assertEqual(operator.count("Stop-ScheduledTask -TaskName $name"), 1)

@@ -22,6 +22,44 @@ $pairDefs=@($ast.FindAll({param($n)
 },$true))
 if($pairDefs.Count -ne 1){throw 'V3_FILE_LEASE_PAIR_HELPER_MISSING'}
 . ([scriptblock]::Create($pairDefs[0].Extent.Text))
+foreach($functionName in @('Test-V3IndependentOriginalHostCmsSignature',
+ 'Test-V3Pr661SignedIssuerPrestopReceipt','Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY')){
+ $f=@($ast.FindAll({param($n)
+  $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $functionName
+ },$true))
+ if($f.Count -ne 1){throw 'V3_NATIVE_INTEGRATION_ORIGINAL_FUNCTION_MISSING'}
+ . ([scriptblock]::Create($f[0].Extent.Text))
+}
+Add-Type -AssemblyName System.Security.Cryptography.Pkcs
+$rsa=[Security.Cryptography.RSA]::Create(2048)
+$request=[Security.Cryptography.X509Certificates.CertificateRequest]::new(
+ 'CN=PR661-CI-NOT-A-RELEASE-OWNER',$rsa,[Security.Cryptography.HashAlgorithmName]::SHA256,
+ [Security.Cryptography.RSASignaturePadding]::Pkcs1)
+$cert=$request.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddMinutes(10))
+$hash=[Security.Cryptography.SHA256]::Create()
+try{$testPin=([BitConverter]::ToString($hash.ComputeHash($cert.RawData))).Replace('-','').ToLowerInvariant()}
+finally{$hash.Dispose()}
+function New-IssuerTestInput {
+ $wire=([ordered]@{
+  kind='V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1'
+  observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+  actor='v3_cas_audit_reader_actor';requested_role='v3_cas_audit_reader'
+  epoch_id='V3CAS-AUDIT-99999999999999999999999999999999'
+  source_sha256=('a'*64);original_fence_sha256=('b'*64);caller_acl_sha256=('c'*64)
+  issuer_actor='v3_cas_inhibit_issuer_actor'
+  inhibit_started_at_utc=[datetimeoffset]::UtcNow.AddSeconds(-5).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+  state='INHIBITED';native_stop_done=$false;unknown_count=0;cas_or_paper_authorized=$false
+ }|ConvertTo-Json -Compress)
+ $bytes=[Text.Encoding]::UTF8.GetBytes($wire)
+ $cms=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$bytes),$true)
+ $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+ $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+ $cms.ComputeSignature($signer)
+ return @{IndependentIssuerReaderJson=$bytes;IndependentIssuerReaderCms=[byte[]]$cms.Encode()
+  ReviewedIssuerReaderCertificateSha256=$testPin
+  ReviewedIssuerEpochId='V3CAS-AUDIT-99999999999999999999999999999999'
+  ReviewedIssuerSourceSha256=('a'*64);armedFenceSha=('b'*64);ReviewedIssuerCallerAclSha256=('c'*64)}
+}
 $suffix=[guid]::NewGuid().ToString('N')
 $name='PR661-CI-FileLease-'+$suffix
 $secondName='PR661-CI-FileLease-'+[guid]::NewGuid().ToString('N')
@@ -67,6 +105,15 @@ try{
  try{$null=Open-V3Pr661DisabledTaskDefinitionLeaseSOURCE_ONLY $name}
  catch{if($_.Exception.Message -notlike '*REQUIRES_ALREADY_DISABLED*'){throw};$enabledRejected=$true}
  if(-not $enabledRejected){throw 'FAIL_LEASE_CAPTURED_ENABLED_TASK'}
+ $issuerInput=New-IssuerTestInput
+ $badInput=$issuerInput.Clone();$badInput.ReviewedIssuerReaderCertificateSha256=('0'*64)
+ $signatureRejected=$false
+ try{$null=Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY -tasks @($name,$secondName) @badInput}
+ catch{if($_.Exception.Message -notlike '*SIGNATURE_OR_PIN_HOLD*'){throw};$signatureRejected=$true}
+ if(-not $signatureRejected -or -not $folder.GetTask($name).Enabled -or
+    -not $folder.GetTask($secondName).Enabled -or $runningProcess.HasExited){
+  throw 'FAIL_INVALID_ISSUER_MUTATED_NATIVE_STATE'
+ }
  $task.Enabled=$false
  # Deliberately fail the second capture while it is still enabled. The first
  # kernel handle must be released and both original enable states preserved.
@@ -78,10 +125,15 @@ try{
  }
  $testWrite=[IO.File]::Open((Join-Path (Join-Path $env:SystemRoot 'System32\Tasks') $name),'Open','Write','ReadWrite')
  $testWrite.Dispose()
- $secondTask.Enabled=$false
- $pair=Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY @($name,$secondName)
+ $task.Enabled=$true
+ $issuerInput=New-IssuerTestInput
+ $actualStop=Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY -tasks @($name,$secondName) `
+  -protected @() -native @([pscustomobject]@{arguments=('-NoProfile -File "'+$workerScript+'"')}) `
+  -descendants @($runningProcess.Id) @issuerInput
+ $pair=$actualStop.held_intake_definition_pair
+ if($null -eq $pair -or $pair.leases.Count -ne 2 -or
+    $actualStop.paper_release_authorized -ne $false){throw 'FAIL_REAL_SOURCE_STOP_OR_LEASE_HANDOFF'}
  $lease=$pair.leases[0]
- $task.Stop(0)
  if(-not $runningProcess.WaitForExit(10000)){throw 'FAIL_REAL_WORKER_SURVIVED_STOP_WITH_HELD_PAIR'}
  foreach($entry in $pair.leases){
   if($entry.readonly_definition_handle.SafeFileHandle.IsClosed){throw 'FAIL_PAIR_NOT_HELD_DURING_STOP'}
@@ -142,6 +194,8 @@ try{$null=$f.GetTask('__TASK__').RunEx($null,2,0,$null)}catch{$runEx='DENIED'}
   admin_reenable_and_replace_denied=$true;system_run_and_reenable_denied=$true
   original_task_api_recovered=$true;originalhost_mutated=$false
   two_task_pair_held_during_real_process_stop=$true
+  original_source_issuer_signature_to_native_stop_integration=$true
+  invalid_signed_issuer_did_not_mutate_tasks=$true
   partial_pair_failure_released_first_handle=$true
   admin_and_system_runex_ignore_constraints_denied=$true
   privileged_handle_closure_excluded=$false;cas_or_paper_authorized=$false
@@ -149,6 +203,7 @@ try{$null=$f.GetTask('__TASK__').RunEx($null,2,0,$null)}catch{$runEx='DENIED'}
 }finally{
  if($null -ne $pair){foreach($entry in $pair.leases){$entry.readonly_definition_handle.Dispose()}}
  if($null -ne $runningProcess){$runningProcess.Dispose()}
+ $cert.Dispose();$rsa.Dispose()
  foreach($n in @($probeName,$name,$secondName)){
   try{$folder.GetTask($n).Stop(0);$folder.DeleteTask($n,0)}catch{
    $cause=$_.Exception;while($cause.InnerException){$cause=$cause.InnerException}

@@ -2447,7 +2447,30 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
    throw
   }
  }
- throw 'V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED'
+ # One native implementation, exercised below by the disposable Windows test.
+ # Nested within the original PR515 mutation owner, not a second STOP entrypoint.
+ function Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY(
+  [string[]]$tasks,[string[]]$protected,[object[]]$native,[int[]]$descendants,
+  [byte[]]$IndependentIssuerReaderJson,[byte[]]$IndependentIssuerReaderCms,
+  [string]$ReviewedIssuerReaderCertificateSha256,[string]$ReviewedIssuerEpochId,
+  [string]$ReviewedIssuerSourceSha256,[string]$armedFenceSha,
+  [string]$ReviewedIssuerCallerAclSha256) {
+  # Direct extraction cannot create a new production route around the parent
+  # owner hardlock. Only randomly named hosted disposable fixtures may call
+  # this implementation before the separately reviewed production release.
+  if($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or
+     $tasks.Count -ne 2 -or @($tasks|Select-Object -Unique).Count -ne 2 -or
+     @($tasks|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count){
+   throw 'V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD'
+  }
+  $before=Test-V3Pr661SignedIssuerPrestopReceipt `
+   -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
+   -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
+   -ExpectedEpochId $ReviewedIssuerEpochId -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
+   -ExpectedFenceSha256 $armedFenceSha -ExpectedAclSha256 $ReviewedIssuerCallerAclSha256
+  if($before.signed_cloud_row_matches_pre_stop_inhibit -ne $true){
+   throw 'V3_ISSUER_BOUND_NATIVE_STOP_SIGNATURE_OR_PIN_HOLD'
+  }
  # Exactly these two native task mutations, never Lifecycle or CloudSync.
  foreach($name in $tasks){
   Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
@@ -2475,6 +2498,10 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   $disabled=@($tasks | Where-Object {
    [string](Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop).State -ceq 'Disabled'
   })
+  $service=New-Object -ComObject 'Schedule.Service';$service.Connect()
+  $remainingInstances=@(foreach($taskName in $tasks){
+   foreach($instance in $service.GetFolder('\').GetTask($taskName).GetInstances(0)){$instance}
+  })
   $after=@(Get-CimInstance Win32_Process -ErrorAction Stop)
   $oldLive=@($after|Where-Object {[int]$_.ProcessId -in $descendants})
   $newLive=@(foreach($proc in $after){
@@ -2486,7 +2513,7 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
        [StringComparison]::OrdinalIgnoreCase) -ge 0
    }).Count -gt 0){$proc}
   })
-  if($disabled.Count -eq 2 -and $oldLive.Count -eq 0 -and $newLive.Count -eq 0){
+  if($disabled.Count -eq 2 -and $remainingInstances.Count -eq 0 -and $oldLive.Count -eq 0 -and $newLive.Count -eq 0){
    $quiet=$true;break
   }
  }
@@ -2519,6 +2546,16 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   # The persisted Disabled definitions and ARMED fence survive exceptions or
   # process death. No finally block may reenable, restart or remove the fence.
  }
+ }
+ throw 'V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED'
+ return Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY -tasks $tasks -protected $protected `
+  -native $native -descendants $descendants `
+  -IndependentIssuerReaderJson $IndependentIssuerReaderJson `
+  -IndependentIssuerReaderCms $IndependentIssuerReaderCms `
+  -ReviewedIssuerReaderCertificateSha256 $ReviewedIssuerReaderCertificateSha256 `
+  -ReviewedIssuerEpochId $ReviewedIssuerEpochId -ReviewedIssuerSourceSha256 $ReviewedIssuerSourceSha256 `
+  -armedFenceSha $armedFenceSha -ReviewedIssuerCallerAclSha256 $ReviewedIssuerCallerAclSha256
+
 }
 
 # Same PR515 originalhost owner: classify ARMED-only physical rollback
