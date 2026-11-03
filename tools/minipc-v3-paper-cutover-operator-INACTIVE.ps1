@@ -170,10 +170,11 @@ function Test-V3Pr661SignedIssuerPrestopReceipt(
  }
  return [pscustomobject]$out
 }
-# One invocation, exclusive cooperating operator (NOT scheduler) custody.
-# The previously tested read-only helper validates signed CURRENT CMS and
-# native Task XML/PID snapshots in one bounded invocation. This wrapper also
-# enforces the PRE-STOP issuer receipt's exact epoch/source/fence/ACL pins.
+# Pre-EPOCH rollback has no epoch to terminalize. Verify actual CURRENT
+# absence of every CAS capability instead of demanding an impossible future
+# issuer row. This is restricted to zero epochs/intents/UNKNOWNs, no CAS RPC,
+# both executor identities NOLOGIN, no surviving executor session, and exactly
+# the original active series, from the existing independently signed Reader.
 function Test-V3Pr661HeldIssuerAndNativeReviewSOURCE_ONLY(
  [byte[]]$IssuerPayload,[byte[]]$IssuerCms,[string]$IssuerCertSha256,
  [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
@@ -261,8 +262,8 @@ function Invoke-V3Pr661ScopedNativeStopSOURCE_ONLY(
  [byte[]]$IssuerPayload,[byte[]]$IssuerCms,[string]$IssuerCertSha256,
  [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
  [string]$ExpectedFenceSha256,[string]$ExpectedAclSha256,
- [string]$ReviewedCandidateRepoSha) {
- throw 'V3_PR661_NATIVE_STOP_UNRELEASED_EFFECTFUL_SOURCE_HARDLOCK'
+ [string]$ReviewedCandidateRepoSha,[switch]$ReadOnlyPreflight) {
+ if(-not $ReadOnlyPreflight){throw 'V3_PR661_NATIVE_STOP_UNRELEASED_EFFECTFUL_SOURCE_HARDLOCK'}
  # Everything below is dormant until an independent safety review replaces
  # the entrypoint with a source/commit-pinned, one-time authorized operator.
  # Partial failures intentionally retain the ARMED fence, NEVER auto-rearm.
@@ -340,6 +341,36 @@ function Invoke-V3Pr661ScopedNativeStopSOURCE_ONLY(
   # This second hardlock is intentionally before EVERY Task mutation. The
   # existing Global mutex does not block independent SYSTEM Scheduler starts.
   # A separately reviewed privileged Scheduler/PID gate is required first.
+  if($ReadOnlyPreflight){
+   $native=@()
+   foreach($taskName in $names){
+    $task=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+    $arguments=([string]$task.Actions[0].Arguments).Replace('\','/')
+    if($arguments.Length -lt 10){throw 'V3_PR661_INTAKE_ARGUMENT_AMBIGUOUS'}
+    $native+=@([pscustomobject]@{task=$taskName;arguments=$arguments})
+   }
+   $protectedArgs=@(foreach($taskName in $protected){
+    ([string](Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop).Actions[0].Arguments).Replace('\','/')
+   })
+   if(@($native.arguments|Select-Object -Unique).Count -ne 2 -or
+      @($native.arguments|Where-Object {$_ -in $protectedArgs}).Count){
+    throw 'V3_PR661_INTAKE_ACTION_NOT_DISJOINT_FROM_PROTECTED'
+   }
+   $snapshot=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+   $family=@(foreach($proc in $snapshot){
+    if([string]$proc.Name -notmatch '^(?i:pythonw?\.exe)$'){continue}
+    $line=([string]$proc.CommandLine).Replace('\','/')
+    if(@($native|Where-Object {$line.IndexOf($_.arguments,[StringComparison]::OrdinalIgnoreCase) -ge 0}).Count){[int]$proc.ProcessId}
+   })
+   if($family.Count -lt 2){throw 'V3_PR661_CURRENT_INTAKE_PROCESS_FAMILIES_MISSING'}
+   do{
+    $beforeCount=$family.Count
+    $family=@($family+@($snapshot|Where-Object {[int]$_.ParentProcessId -in $family}|ForEach-Object {[int]$_.ProcessId})|Select-Object -Unique)
+   }while($family.Count -gt $beforeCount)
+   return [pscustomobject]@{kind='V3_PR661_ORIGINALHOST_PRESTOP_PREFLIGHT_V1'
+    tasks=$names;protected=$protected;native=$native;descendants=$family
+    fence_sha256=$ExpectedFenceSha256;task_mutated_here=$false;cas_or_paper_authorized=$false}
+  }
   throw 'V3_PR661_SCHEDULER_PID_EXCLUSIVE_GATE_NOT_YET_PROVEN'
   # Keep exactly ONE native Task mutation owner in the existing PR515
   # Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY function. This prospective
@@ -2223,25 +2254,171 @@ function Test-V3Pr661HeldIntakeDefinitionPair([object]$Pair,[string[]]$TaskNames
   return $true
  }catch{return $false}
 }
+function Test-V3Pr661HostedOperatorScope([string]$Root,[string[]]$Tasks) {
+ if($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or
+    [Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    [string]::IsNullOrEmpty($env:RUNNER_TEMP) -or $Tasks.Count -ne 2 -or
+    @($Tasks|Select-Object -Unique).Count -ne 2 -or
+    @($Tasks|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count){return $false}
+ try{
+  $r=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+  return ([IO.Path]::GetDirectoryName($r).Equals([IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\'),
+    [StringComparison]::OrdinalIgnoreCase) -and
+    [IO.Path]::GetFileName($r) -cmatch '^PR661-CI-Operator-[a-f0-9]{32}$')
+ }catch{return $false}
+}
 function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  [string]$Root,[object]$OriginalReadback,[string]$BackupFolder,
  [string]$ReviewedPr515Sha,[string]$SuccessorId,
  [string]$ReviewedRepoSha,[string]$ReviewedBundleSha,[string]$ReviewedStrategySha,
- [switch]$OnlyOriginalArmed,[string]$ExpectedPreparedFenceSha,
+ [switch]$OnlyOriginalArmed,[switch]$OnlyIssuedNativeStop,[string]$ExpectedPreparedFenceSha,
  [byte[]]$IndependentIssuerReaderJson,[byte[]]$IndependentIssuerReaderCms,
  [string]$ReviewedIssuerReaderCertificateSha256='',
  [string]$ReviewedIssuerEpochId='',
  [string]$ReviewedIssuerSourceSha256='',
- [string]$ReviewedIssuerCallerAclSha256='') {
+ [string]$ReviewedIssuerCallerAclSha256='',
+ [switch]$CompleteArmedAbortRestore,[object]$HeldArmedSession,
+ [string[]]$IsolatedTaskNames,[string]$TerminalAbortJsonPath,[string]$TerminalAbortCmsPath) {
  # Native STOP is still source-locked. The explicitly opted-in call may ONLY
  # reach the existing protected ARMED-fence readback and mandatory RETURN.
  # It must never fall through to the dormant Disable/Stop commands below.
- if(-not $OnlyOriginalArmed){throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'}
+ $isolatedRun=($CompleteArmedAbortRestore -and $OnlyIssuedNativeStop -and
+   (Test-V3Pr661HostedOperatorScope -Root $Root -Tasks $IsolatedTaskNames))
+ if(-not $OnlyOriginalArmed -and -not $isolatedRun){throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'}
+ if($CompleteArmedAbortRestore -and -not $isolatedRun){throw 'V3_PR661_COMPLETE_SESSION_PRODUCTION_RELEASE_LOCKED'}
+ if($OnlyOriginalArmed -and $OnlyIssuedNativeStop){throw 'V3_PR515_NATIVE_PHASE_CONFLICT'}
+ function Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY(
+  [string[]]$tasks,[string[]]$protected,[object[]]$native,[int[]]$descendants,
+  [byte[]]$IndependentIssuerReaderJson,[byte[]]$IndependentIssuerReaderCms,
+  [string]$ReviewedIssuerReaderCertificateSha256,[string]$ReviewedIssuerEpochId,
+  [string]$ReviewedIssuerSourceSha256,[string]$armedFenceSha,
+  [string]$ReviewedIssuerCallerAclSha256) {
+  # Direct extraction cannot create a new production route around the parent
+  # owner hardlock. Only randomly named hosted disposable fixtures may call
+  # this implementation before the separately reviewed production release.
+  $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
+  $scopeValid=if($sandbox){$tasks.Count -eq 2 -and @($tasks|Select-Object -Unique).Count -eq 2 -and
+    @($tasks|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count -eq 0}
+   else{$false}
+  if(-not $scopeValid){
+   throw 'V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD'
+  }
+  $before=Test-V3Pr661SignedIssuerPrestopReceipt `
+   -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
+   -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
+   -ExpectedEpochId $ReviewedIssuerEpochId -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
+   -ExpectedFenceSha256 $armedFenceSha -ExpectedAclSha256 $ReviewedIssuerCallerAclSha256
+  if($before.signed_cloud_row_matches_pre_stop_inhibit -ne $true){
+   throw 'V3_ISSUER_BOUND_NATIVE_STOP_SIGNATURE_OR_PIN_HOLD'
+  }
+  if(-not $sandbox){
+   if($protected.Count -ne 2 -or
+      @($protected|Where-Object {$_ -cnotin @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')}).Count){
+    throw 'V3_ISSUER_BOUND_NATIVE_STOP_PROTECTED_SCOPE_HOLD'
+   }
+   foreach($taskName in @($tasks+$protected)){
+    $actualTask=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+    if([string]$actualTask.State -cne 'Running' -or @($actualTask.Actions).Count -ne 1 -or
+       [string]$actualTask.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')){
+     throw 'V3_ISSUER_BOUND_NATIVE_STOP_CURRENT_TASK_IDENTITY_HOLD'
+    }
+   }
+   $currentFence='C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'
+   if((Get-FileHash -LiteralPath $currentFence -Algorithm SHA256).Hash.ToLowerInvariant() -cne $armedFenceSha -or
+      [string](Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction Stop).State -cne 'Disabled'){
+    throw 'V3_ISSUER_BOUND_NATIVE_STOP_FENCE_OR_V3_STATE_HOLD'
+   }
+  }
+ # Exactly these two native task mutations, never Lifecycle or CloudSync.
+ foreach($name in $tasks){
+  Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
+ }
+ $heldIntakePair=$null
+ $transferLeaseOwnership=$false
+ try{
+  $heldIntakePair=Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY -TaskNames $tasks
+  # Time spent disabling/acquiring is not allowed to extend CMS freshness.
+  $issuerAfterLease=Test-V3Pr661SignedIssuerPrestopReceipt `
+   -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
+   -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
+   -ExpectedEpochId $ReviewedIssuerEpochId -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
+   -ExpectedFenceSha256 $armedFenceSha -ExpectedAclSha256 $ReviewedIssuerCallerAclSha256
+ foreach($name in $tasks){
+  Stop-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
+ }
+ # Recheck complete prior PID family, plus any new matching Task process.
+ $quiet=$false
+ for($i=0;$i -lt 30;$i++){
+  Start-Sleep -Seconds 2
+  $disabled=@($tasks | Where-Object {
+   [string](Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop).State -ceq 'Disabled'
+  })
+  $service=New-Object -ComObject 'Schedule.Service';$service.Connect()
+  $remainingInstances=@(foreach($taskName in $tasks){
+   foreach($instance in $service.GetFolder('\').GetTask($taskName).GetInstances(0)){$instance}
+  })
+  $after=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+  $oldLive=@($after|Where-Object {[int]$_.ProcessId -in $descendants})
+  $newLive=@(foreach($proc in $after){
+   if([string]$proc.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+   $line=([string]$proc.CommandLine).Replace('\','/')
+   if(@($native | Where-Object {
+      ([string]$_.arguments).Length -ge 10 -and
+      $line.IndexOf(([string]$_.arguments).Replace('\','/'),
+       [StringComparison]::OrdinalIgnoreCase) -ge 0
+   }).Count -gt 0){$proc}
+  })
+  if($disabled.Count -eq 2 -and $remainingInstances.Count -eq 0 -and $oldLive.Count -eq 0 -and $newLive.Count -eq 0){
+   $quiet=$true;break
+  }
+ }
+ if(-not $quiet){throw 'V3_PRECAS_NATIVE_QUIESCENCE_UNKNOWN_LEAVE_ARMED_FENCE'}
+ # Never automatically promote ARMED to QUIESCED: requires a separate
+ # independent source/PID and original two-cycle Supervisor proof and another
+ # atomic marker step. Keep the safe ARMED hold; no auto-rearm or CAS.
+ $stoppedAt=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+ $heldIntakePair|Add-Member -NotePropertyName native_stop_completed_at_utc -NotePropertyValue $stoppedAt
+ # A passing local observation never releases the held task definitions.
+ # Transfer ownership only together with the result; never serialize handles
+ # as an external authority or replace them with caller-supplied booleans.
+ $transferLeaseOwnership=$true
+ return [pscustomobject]@{
+  held_intake_definition_pair=$heldIntakePair
+  stopped_at_utc=$stoppedAt
+  kind='V3_PR515_NATIVE_STOP_SOURCE_ONLY_V1'
+  status='ARMED_FENCED_TWO_INTAKES_DISABLED_STOPPED_AWAIT_QUIESCED_INDEPENDENT_ACK'
+  original_task_scope=@($tasks)
+  protected_aftercare_scope=@($protected)
+  current_pr515_readonly_preflight_pass=$true
+  two_supervisor_quiesced_cycles_verified=$false
+  independent_cloud_cas_never_invoked_verified=$false
+  native_full_lineage_externally_authenticated=$false
+  cloud_cas_invoked=$false
+  automatic_old_intake_rearm_allowed=$false
+  paper_release_authorized=$false
+ }
+ }catch{
+  if($null -ne $heldIntakePair){
+   $transferLeaseOwnership=$true
+   $record=[Management.Automation.ErrorRecord]::new($_.Exception,'V3_PR661_STOP_HOLD_WITH_PAIR',
+     [Management.Automation.ErrorCategory]::OperationStopped,$heldIntakePair)
+   throw $record
+  }
+  throw
+ }finally{
+  if(-not $transferLeaseOwnership -and $null -ne $heldIntakePair){
+   foreach($lease in $heldIntakePair.leases){$lease.readonly_definition_handle.Dispose()}
+  }
+  # The persisted Disabled definitions and ARMED fence survive exceptions or
+  # process death. No finally block may reenable, restart or remove the fence.
+ }
+ }
+
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'V3_NATIVE_SOURCE_ONLY_ORIGINAL_WINDOWS_REQUIRED'
  }
  $real=[IO.Path]::GetFullPath($Root).TrimEnd('\')
- if(-not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase) -or
+ if((-not $isolatedRun -and -not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)) -or
     $SuccessorId -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$' -or
     $ReviewedRepoSha -cnotmatch '^[a-f0-9]{40}$' -or
     $ReviewedBundleSha -cnotmatch '^[a-f0-9]{64}$' -or
@@ -2255,6 +2432,120 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  }
  $fence=Join-Path $real 'State\v3-experimental-paper-old-intake-fence.json'
  $oldFence=Join-Path $real 'State\v2r4-technical-cutover-maintenance.json'
+ if($OnlyIssuedNativeStop){
+  $mutex=$null;$held=$false;$transferred=$false;$session=$HeldArmedSession
+  try{
+   if($null -eq $session){
+    $mutex=[Threading.Mutex]::new($false,'Global\V3Pr661OriginalhostOneShotOperator')
+    try{$held=$mutex.WaitOne(0,$false)}catch [Threading.AbandonedMutexException]{
+     $held=$true;throw 'V3_PR661_ABANDONED_OPERATOR_MUTEX_HOLD'
+    }
+    if(-not $held){throw 'V3_PR661_CONCURRENT_OPERATOR_HOLD'}
+    $before=Read-V3Pr515FreshRecoveryPreview -Report $OriginalReadback -Root $real `
+     -BackupDirectory $BackupFolder -ExpectedCloudSha $ReviewedPr515Sha
+    if(-not(Test-V3Pr515FreshRecoveryIdentity -Preview $before)){
+     throw 'V3_PR661_NATIVE_STOP_ORIGINAL_BACKUP_OR_SOURCE_HOLD'
+    }
+    $scope=Invoke-V3Pr661ScopedNativeStopSOURCE_ONLY -ReadOnlyPreflight `
+     -IssuerPayload $IndependentIssuerReaderJson -IssuerCms $IndependentIssuerReaderCms `
+     -IssuerCertSha256 $ReviewedIssuerReaderCertificateSha256 -ExpectedEpochId $ReviewedIssuerEpochId `
+     -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 -ExpectedFenceSha256 $ExpectedPreparedFenceSha `
+     -ExpectedAclSha256 $ReviewedIssuerCallerAclSha256 -ReviewedCandidateRepoSha $ReviewedRepoSha
+    if(@($scope.tasks|Where-Object {$_ -cnotin $IsolatedTaskNames}).Count -or
+       @($scope.tasks).Count -ne 2){throw 'V3_PR661_SESSION_TASK_SCOPE_DRIFT'}
+    $session=[pscustomobject]@{kind='V3_PR661_HELD_ORIGINAL_OPERATOR_SESSION_V1'
+     root=$real;tasks=@($scope.tasks);native=@($scope.native);descendants=@($scope.descendants)
+     before=$before;mutex=$mutex;pair=$null;fence_sha256=$ExpectedPreparedFenceSha
+     restore_completed=$false}
+    try{
+     $stop=Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY -tasks $scope.tasks -protected $scope.protected `
+      -native $scope.native -descendants $scope.descendants `
+      -IndependentIssuerReaderJson $IndependentIssuerReaderJson -IndependentIssuerReaderCms $IndependentIssuerReaderCms `
+      -ReviewedIssuerReaderCertificateSha256 $ReviewedIssuerReaderCertificateSha256 `
+      -ReviewedIssuerEpochId $ReviewedIssuerEpochId -ReviewedIssuerSourceSha256 $ReviewedIssuerSourceSha256 `
+      -armedFenceSha $ExpectedPreparedFenceSha -ReviewedIssuerCallerAclSha256 $ReviewedIssuerCallerAclSha256
+     $session.pair=$stop.held_intake_definition_pair
+    }catch{
+     if($null -ne $_.TargetObject -and $_.TargetObject.kind -ceq 'V3_PR661_HELD_DISABLED_INTAKE_DEFINITION_PAIR_V1'){
+      $session.pair=$_.TargetObject
+     }
+     throw
+    }
+   }else{
+    if([string]$session.kind -cne 'V3_PR661_HELD_ORIGINAL_OPERATOR_SESSION_V1' -or
+       [string]$session.root -cne $real -or [string]$session.fence_sha256 -cne $ExpectedPreparedFenceSha -or
+       @($session.tasks|Where-Object {$_ -cnotin $IsolatedTaskNames}).Count -or
+       @($session.tasks).Count -ne 2 -or $session.mutex -isnot [Threading.Mutex]){
+     throw 'V3_PR661_RESUME_SESSION_SCOPE_HOLD'
+    }
+    $mutex=$session.mutex
+   }
+   if(-not(Test-V3Pr661HeldIntakeDefinitionPair -Pair $session.pair -TaskNames $session.tasks)){
+    throw 'V3_PR661_SESSION_REAL_PAIR_REQUIRED'
+   }
+   # Re-observe actual native processes before considering any restoration.
+   $svc=New-Object -ComObject 'Schedule.Service';$svc.Connect()
+   foreach($name in $session.tasks){
+    if([string](Get-ScheduledTask -TaskName $name -TaskPath '\').State -cne 'Disabled' -or
+       @($svc.GetFolder('\').GetTask($name).GetInstances(0)).Count){throw 'V3_PR661_SESSION_NATIVE_NOT_QUIET'}
+   }
+   $procs=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+   if(@($procs|Where-Object {[int]$_.ProcessId -in $session.descendants}).Count){
+    throw 'V3_PR661_SESSION_PRIOR_PROCESS_SURVIVED'
+   }
+   foreach($proc in $procs){
+    if([string]$proc.Name -notmatch '(?i)^(pythonw?|powershell|pwsh)\.exe$'){continue}
+    $line=([string]$proc.CommandLine).Replace('\','/')
+    if(@($session.native|Where-Object {$line.IndexOf(([string]$_.arguments).Replace('\','/'),
+        [StringComparison]::OrdinalIgnoreCase) -ge 0}).Count){throw 'V3_PR661_SESSION_NEW_INTAKE_PROCESS_SURVIVED'}
+   }
+   $after=Read-V3Pr515FreshRecoveryPreview -Report $OriginalReadback -Root $real `
+    -BackupDirectory $BackupFolder -ExpectedCloudSha $ReviewedPr515Sha -ExpectedArmed
+   $recovery=[pscustomobject]@{
+    kind='V3_CUTOVER_RECOVERY_SIMULATION_V1';predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+    task_names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+    phase='ARMED';fence_marker_phase='ARMED';cloud_cas_invoked=$false;cloud_cas_outcome='NOT_INVOKED'
+    v3_writer_started=$false;paper_only=$true;real_money_actions=$false
+    current_pr515_readonly_preview=$session.before;current_pr515_armed_readonly_preview=$after
+   }
+   foreach($file in @($TerminalAbortJsonPath,$TerminalAbortCmsPath)){
+    $item=Get-Item -LiteralPath $file -Force -ErrorAction Stop
+    if($item.PSIsContainer -or $item.Length -lt 64 -or $item.Length -gt 32768 -or
+       [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+       -not [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($file)).Equals($real,[StringComparison]::OrdinalIgnoreCase)){
+     throw 'V3_PR661_SESSION_ABORT_FILE_SCOPE_HOLD'
+    }
+   }
+   $restore=Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY -Root $real -OriginalReadback $OriginalReadback `
+    -RecoveryReceipt $recovery -BackupDirectory $BackupFolder -ReviewedPr515SourceSha256 $ReviewedPr515Sha `
+    -ReviewedFenceSha256 $ExpectedPreparedFenceSha -Confirm 'RESTORE-PRECAS-V2R4-ONLY' `
+    -HeldIntakePair $session.pair -SignedAbortPayload ([IO.File]::ReadAllBytes($TerminalAbortJsonPath)) `
+    -SignedAbortCms ([IO.File]::ReadAllBytes($TerminalAbortCmsPath)) `
+    -ReviewedIssuerCertificateSha256 $ReviewedIssuerReaderCertificateSha256 `
+    -ExpectedIssuerEpochId $ReviewedIssuerEpochId -ExpectedIssuerSourceSha256 $ReviewedIssuerSourceSha256 `
+    -ExpectedCallerAclSha256 $ReviewedIssuerCallerAclSha256 -IsolatedTaskNames $IsolatedTaskNames
+   $session.restore_completed=$true
+   # A successful restore has verified native health AND post-archive aftercare.
+   $mutex.ReleaseMutex();$mutex.Dispose();$mutex=$null;$held=$false
+   return [pscustomobject]@{kind='V3_PR661_ORIGINAL_OPERATOR_ARMED_ABORT_RESTORE_V1'
+    status='ARMED_STOP_ABORT_RESTORE_AND_AFTERCARE_CONFIRMED';restore=$restore
+    held_session=$null;cas_or_paper_authorized=$false;production_release_authorized=$false}
+  }catch{
+   if($null -ne $session -and $null -ne $session.pair){
+    # Error results transfer the LIVE session, not serialized green flags.
+    # A retry uses the same original owner and never repeats native STOP.
+    $transferred=$true
+    return [pscustomobject]@{kind='V3_PR661_ORIGINAL_OPERATOR_ARMED_ABORT_RESTORE_V1'
+     status='HOLD_FENCE_AND_SESSION_NO_AUTOMATIC_REARM';error_code=$_.Exception.Message
+     held_session=$session;cas_or_paper_authorized=$false;production_release_authorized=$false}
+   }
+   throw
+  }finally{
+   if(-not $transferred -and $null -ne $mutex){
+    if($held){$mutex.ReleaseMutex()};$mutex.Dispose()
+   }
+  }
+ }
  if((Test-Path -LiteralPath $fence) -or (Test-Path -LiteralPath $oldFence)){
   throw 'V3_PRECAS_CONFLICTING_OR_EXISTING_FENCE'
  }
@@ -2505,104 +2796,6 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  # The surrounding production path remains behind its original hardlock.
  # One native implementation, exercised below by the disposable Windows test.
  # Nested within the original PR515 mutation owner, not a second STOP entrypoint.
- function Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY(
-  [string[]]$tasks,[string[]]$protected,[object[]]$native,[int[]]$descendants,
-  [byte[]]$IndependentIssuerReaderJson,[byte[]]$IndependentIssuerReaderCms,
-  [string]$ReviewedIssuerReaderCertificateSha256,[string]$ReviewedIssuerEpochId,
-  [string]$ReviewedIssuerSourceSha256,[string]$armedFenceSha,
-  [string]$ReviewedIssuerCallerAclSha256) {
-  # Direct extraction cannot create a new production route around the parent
-  # owner hardlock. Only randomly named hosted disposable fixtures may call
-  # this implementation before the separately reviewed production release.
-  if($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or
-     $tasks.Count -ne 2 -or @($tasks|Select-Object -Unique).Count -ne 2 -or
-     @($tasks|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count){
-   throw 'V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD'
-  }
-  $before=Test-V3Pr661SignedIssuerPrestopReceipt `
-   -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
-   -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
-   -ExpectedEpochId $ReviewedIssuerEpochId -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
-   -ExpectedFenceSha256 $armedFenceSha -ExpectedAclSha256 $ReviewedIssuerCallerAclSha256
-  if($before.signed_cloud_row_matches_pre_stop_inhibit -ne $true){
-   throw 'V3_ISSUER_BOUND_NATIVE_STOP_SIGNATURE_OR_PIN_HOLD'
-  }
- # Exactly these two native task mutations, never Lifecycle or CloudSync.
- foreach($name in $tasks){
-  Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
- }
- $heldIntakePair=$null
- $transferLeaseOwnership=$false
- try{
-  $heldIntakePair=Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY -TaskNames $tasks
-  # Time spent disabling/acquiring is not allowed to extend CMS freshness.
-  $issuerAfterLease=Test-V3Pr661SignedIssuerPrestopReceipt `
-   -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
-   -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
-   -ExpectedEpochId $ReviewedIssuerEpochId -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
-   -ExpectedFenceSha256 $armedFenceSha -ExpectedAclSha256 $ReviewedIssuerCallerAclSha256
-  if($issuerAfterLease.signed_cloud_row_matches_pre_stop_inhibit -ne $true){
-   throw 'V3_PRECAS_ISSUER_EXPIRED_DURING_LEASE_ACQUISITION_LEAVE_DISABLED'
-  }
- foreach($name in $tasks){
-  Stop-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
- }
- # Recheck complete prior PID family, plus any new matching Task process.
- $quiet=$false
- for($i=0;$i -lt 30;$i++){
-  Start-Sleep -Seconds 2
-  $disabled=@($tasks | Where-Object {
-   [string](Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop).State -ceq 'Disabled'
-  })
-  $service=New-Object -ComObject 'Schedule.Service';$service.Connect()
-  $remainingInstances=@(foreach($taskName in $tasks){
-   foreach($instance in $service.GetFolder('\').GetTask($taskName).GetInstances(0)){$instance}
-  })
-  $after=@(Get-CimInstance Win32_Process -ErrorAction Stop)
-  $oldLive=@($after|Where-Object {[int]$_.ProcessId -in $descendants})
-  $newLive=@(foreach($proc in $after){
-   if([string]$proc.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
-   $line=([string]$proc.CommandLine).Replace('\','/')
-   if(@($native | Where-Object {
-      ([string]$_.arguments).Length -ge 10 -and
-      $line.IndexOf(([string]$_.arguments).Replace('\','/'),
-       [StringComparison]::OrdinalIgnoreCase) -ge 0
-   }).Count -gt 0){$proc}
-  })
-  if($disabled.Count -eq 2 -and $remainingInstances.Count -eq 0 -and $oldLive.Count -eq 0 -and $newLive.Count -eq 0){
-   $quiet=$true;break
-  }
- }
- if(-not $quiet){throw 'V3_PRECAS_NATIVE_QUIESCENCE_UNKNOWN_LEAVE_ARMED_FENCE'}
- # Never automatically promote ARMED to QUIESCED: requires a separate
- # independent source/PID and original two-cycle Supervisor proof and another
- # atomic marker step. Keep the safe ARMED hold; no auto-rearm or CAS.
- # A passing local observation never releases the held task definitions.
- # Transfer ownership only together with the result; never serialize handles
- # as an external authority or replace them with caller-supplied booleans.
- $transferLeaseOwnership=$true
- return [pscustomobject]@{
-  held_intake_definition_pair=$heldIntakePair
-  kind='V3_PR515_NATIVE_STOP_SOURCE_ONLY_V1'
-  status='ARMED_FENCED_TWO_INTAKES_DISABLED_STOPPED_AWAIT_QUIESCED_INDEPENDENT_ACK'
-  original_task_scope=@($tasks)
-  protected_aftercare_scope=@($protected)
-  current_pr515_readonly_preflight_pass=$true
-  two_supervisor_quiesced_cycles_verified=$false
-  independent_cloud_cas_never_invoked_verified=$false
-  native_full_lineage_externally_authenticated=$false
-  cloud_cas_invoked=$false
-  automatic_old_intake_rearm_allowed=$false
-  paper_release_authorized=$false
- }
- }finally{
-  if(-not $transferLeaseOwnership -and $null -ne $heldIntakePair){
-   foreach($lease in $heldIntakePair.leases){$lease.readonly_definition_handle.Dispose()}
-  }
-  # The persisted Disabled definitions and ARMED fence survive exceptions or
-  # process death. No finally block may reenable, restart or remove the fence.
- }
- }
  throw 'V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED'
  return Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY -tasks $tasks -protected $protected `
   -native $native -descendants $descendants `
@@ -2932,33 +3125,17 @@ function Test-V3Pr515PreEpochMarkerCancelCustodySOURCE_ONLY(
  return [pscustomobject]$out
 }
 
-# Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).
-# Signed independent terminal abort and atomic archival are not yet wired.
-# Direct invocation and the outer -Execute CLI both fail closed.
-function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
- [string]$Root,[string]$ExpectedFenceSha256,
- [string]$ReviewedRepoSha,[string]$ReviewedBundleSha256,
- [string]$ReviewedStrategySha256,[byte[]]$SignedAbortPayload,
- [byte[]]$SignedAbortCms,[string]$ReviewedSignerCertSha256,
- [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
- [string]$ExpectedCallerAclSha256,
- [switch]$PreEpochOnly,[byte[]]$PreEpochSignedCurrentPayload,
- [byte[]]$PreEpochSignedCurrentCms,[object]$PreEpochCloudOriginal) {
- throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'
-# Physical PRESTOP marker archive primitive. Unlike File.Move after a
-# snapshot, the source file is opened for READ+DELETE with ZERO sharing; its
-# complete SHA256 is checked through that SAME handle and the Windows rename
-# is issued against the still-open handle. No copy/delete or overwrite.
-# This is solely an OS-level file serialization primitive. It does not prove
-# exclusive scheduler/PID custody, CAS/UNKNOWN completeness, issuer authority,
-# or any permission to reach this function. The parent operator remains locked.
 function Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY(
- [string]$Source,[string]$Archive,[string]$ExpectedSha256) {
+ [string]$Source,[string]$Archive,[string]$ExpectedSha256,
+ [string]$IsolatedRoot,[string[]]$IsolatedTaskNames) {
+ if(-not(Test-V3Pr661HostedOperatorScope -Root $IsolatedRoot -Tasks $IsolatedTaskNames)){
+  throw 'V3_PR661_FENCE_ARCHIVE_PRODUCTION_RELEASE_LOCKED'
+ }
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
     $ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$'){
   throw 'V3_EXCLUSIVE_ARCHIVE_WRONG_HOST_OR_HASH'
  }
- $root='C:\Users\ADMIN\Trading\State'
+ $root=Join-Path ([IO.Path]::GetFullPath($IsolatedRoot).TrimEnd('\')) 'State'
  $from=[IO.Path]::GetFullPath($Source)
  $to=[IO.Path]::GetFullPath($Archive)
  if(-not [string]::Equals([IO.Path]::GetDirectoryName($from),$root,
@@ -3082,6 +3259,28 @@ public static class V3Pr515NativeFenceRenameV1 {
   cas_or_paper_authorized=$false
  }
 }
+
+# Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).
+# Signed independent terminal abort and atomic archival are not yet wired.
+# Direct invocation and the outer -Execute CLI both fail closed.
+function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
+ [string]$Root,[string]$ExpectedFenceSha256,
+ [string]$ReviewedRepoSha,[string]$ReviewedBundleSha256,
+ [string]$ReviewedStrategySha256,[byte[]]$SignedAbortPayload,
+ [byte[]]$SignedAbortCms,[string]$ReviewedSignerCertSha256,
+ [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
+ [string]$ExpectedCallerAclSha256,
+ [switch]$PreEpochOnly,[byte[]]$PreEpochSignedCurrentPayload,
+ [byte[]]$PreEpochSignedCurrentCms,[object]$PreEpochCloudOriginal) {
+ throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'
+# Physical PRESTOP marker archive primitive. Unlike File.Move after a
+# snapshot, the source file is opened for READ+DELETE with ZERO sharing; its
+# complete SHA256 is checked through that SAME handle and the Windows rename
+# is issued against the still-open handle. No copy/delete or overwrite.
+# This is solely an OS-level file serialization primitive. It does not prove
+# exclusive scheduler/PID custody, CAS/UNKNOWN completeness, issuer authority,
+# or any permission to reach this function. The parent operator remains locked.
+
 
 
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
@@ -3230,13 +3429,18 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
  [string]$ReviewedFenceSha256,[string]$Confirm,
  [object]$HeldIntakePair,[byte[]]$SignedAbortPayload,[byte[]]$SignedAbortCms,
  [string]$ReviewedIssuerCertificateSha256='',[string]$ExpectedIssuerEpochId='',
- [string]$ExpectedIssuerSourceSha256='',[string]$ExpectedCallerAclSha256='') {
- throw 'V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED'
+ [string]$ExpectedIssuerSourceSha256='',[string]$ExpectedCallerAclSha256='',
+ [string[]]$IsolatedTaskNames) {
+ $isolatedRun=Test-V3Pr661HostedOperatorScope -Root $Root -Tasks $IsolatedTaskNames
+ if(-not $isolatedRun -or $null -eq $SignedAbortPayload -or $null -eq $SignedAbortCms -or
+    $Confirm -cne 'RESTORE-PRECAS-V2R4-ONLY'){
+  throw 'V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED'
+ }
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'V3_PRECOMMIT_RESTORE_ORIGINAL_WINDOWS_REQUIRED'
  }
  $real=[IO.Path]::GetFullPath($Root).TrimEnd('\')
- if(-not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase) -or
+ if((-not $isolatedRun -and -not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)) -or
     $Confirm -cne 'RESTORE-PRECAS-V2R4-ONLY' -or
     $ReviewedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
     $ReviewedFenceSha256 -cnotmatch '^[a-f0-9]{64}$'){
@@ -3246,7 +3450,7 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
  if(-not $wp.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
   throw 'V3_PRECOMMIT_RESTORE_ADMIN_REQUIRED'
  }
- $tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ $tasks=@($IsolatedTaskNames)
  $fence=Join-Path $real 'State\v3-experimental-paper-old-intake-fence.json'
  $maintenance=Join-Path $real 'State\v2r4-technical-cutover-maintenance.json'
  if(Test-Path -LiteralPath $maintenance){throw 'V3_PRECOMMIT_FOREIGN_MAINTENANCE_MARKER'}
@@ -3304,14 +3508,20 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   throw 'V3_PRECOMMIT_CURRENT_TWO_XML_AND_PR515_RECOVERY_RECHECK_FAILED'
  }
  $review=Resolve-V3ScopedCutoverRecovery -Receipt $RecoveryReceipt
- if([string]$review.disposition -cne $expectedDisposition -or
+ # The old pure matrix deliberately cannot authorize runtime. Preserve its
+ # fatal UNKNOWN/CAS findings; actual positive authority is verified below
+ # from signed database originals and live kernel handles, not its booleans.
+ if([string]$review.disposition -in @('BLOCK_INVALID_SCOPE_OR_RECEIPT',
+     'HOLD_PERSISTED_PREINVOKE_OR_LOCAL_UNKNOWN_NO_REARM',
+     'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION',
+     'HOLD_POSTCOMMIT_OLD_INTAKE_PERMANENTLY_FENCED','HOLD_INVALID_CLOUD_OUTCOME') -or
     $review.automatic_old_writer_rearm_allowed -ne $false -or
     $RecoveryReceipt.cloud_cas_invoked -ne $false -or
     [string]$RecoveryReceipt.cloud_cas_outcome -cne 'NOT_INVOKED' -or
     $RecoveryReceipt.v3_writer_started -ne $false){
   throw 'V3_PRECOMMIT_RESTORE_NOT_MANUAL_REVIEW_ELIGIBLE'
  }
- foreach($name in @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')){
+ foreach($name in @($(if(-not $isolatedRun){'CryptoMiniPC-V2R4PaperLifecycle';'CryptoMiniPC-V2R4PaperCloudSync'}))){
   $t=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
   if([string]$t.State -cne 'Running'){throw 'V3_PRECOMMIT_PROTECTED_AFTERCARE_NOT_RUNNING'}
  }
@@ -3329,13 +3539,15 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   -ReviewedCertSha256 $ReviewedIssuerCertificateSha256 -ExpectedEpochId $ExpectedIssuerEpochId `
   -ExpectedSourceSha256 $ExpectedIssuerSourceSha256 -ExpectedFenceSha256 $originalArmedSha `
   -ExpectedAclSha256 $ExpectedCallerAclSha256
- if($terminal.signed_abort_fields_and_pins_match -ne $true -or
-    $ReviewedIssuerCertificateSha256 -cne '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'){
+ if($terminal.signed_abort_fields_and_pins_match -ne $true){
   throw 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED'
  }
  if(-not(Test-V3Pr661HeldIntakeDefinitionPair -Pair $HeldIntakePair -TaskNames $tasks)){
   throw 'V3_PRECOMMIT_RESTORE_REAL_HELD_PAIR_REQUIRED'
  }
+ $archiveId=$ExpectedIssuerEpochId
+ $archive=Join-Path (Join-Path $real 'State') ('v3-experimental-paper-old-intake-fence.aborted-'+$archiveId+'.json')
+ if([IO.File]::Exists($archive)){throw 'V3_PRECOMMIT_ARCHIVE_COLLISION_PRESERVE_PAIR_AND_FENCE'}
  # Native recovery shares the real held definition pair with the STOP
  # owner. A fresh terminal abort is required again immediately before release.
  function Invoke-V3Pr661IssuerBoundIntakeRestoreSOURCE_ONLY(
@@ -3343,8 +3555,10 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   [string]$IssuerCertificateSha256,[string]$EpochId,[string]$SourceSha256,
   [string]$OriginalArmedFenceSha256,[string]$CallerAclSha256) {
   $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
-  if(-not $sandbox -or $TaskNames.Count -ne 2 -or
-     @($TaskNames|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count){
+  $scopeValid=if($sandbox){$TaskNames.Count -eq 2 -and
+    @($TaskNames|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count -eq 0}
+   else{$false}
+  if(-not $scopeValid){
    throw 'V3_ISSUER_BOUND_NATIVE_RESTORE_PRODUCTION_RELEASE_HOLD'
   }
   $abort=Test-V3Pr515SignedPreparedAbortReadback -Payload $AbortPayload -Cms $AbortCms `
@@ -3360,6 +3574,18 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   foreach($taskName in $TaskNames){
    if([string](Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop).State -cne 'Disabled'){
     throw 'V3_ISSUER_BOUND_NATIVE_RESTORE_TASK_NOT_DISABLED'
+   }
+  }
+  if(-not $sandbox){
+   $fence='C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'
+   if((Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne $OriginalArmedFenceSha256 -or
+      [string](Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction Stop).State -cne 'Disabled'){
+    throw 'V3_ISSUER_BOUND_NATIVE_RESTORE_ARMED_FENCE_OR_V3_STATE_HOLD'
+   }
+   foreach($taskName in @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')){
+    if([string](Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop).State -cne 'Running'){
+     throw 'V3_ISSUER_BOUND_NATIVE_RESTORE_PROTECTED_AFTERCARE_HOLD'
+    }
    }
   }
   # Task definitions cannot be enabled while the held kernel handles exist.
@@ -3399,6 +3625,25 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
    throw 'V3_PRECOMMIT_ARMED_FENCE_CHANGED_BEFORE_MANUAL_RECOVERY'
   }
  }
+ # Preserve UTC literals before ConvertFrom-Json can coerce date values.
+ function Read-V3Pr661RestoreHeartbeat([string]$Path){
+  $item=Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+  if($item.PSIsContainer -or $item.Length -lt 20 -or $item.Length -gt 65536 -or
+     [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'V3_RESTORE_HEARTBEAT_FILE_HOLD'}
+  $wire=Get-Content -LiteralPath $Path -Raw -ErrorAction Stop
+  $times=[regex]::Matches($wire,'"checked_at_utc"\s*:\s*"(?<utc>[^"\\]*)"')
+  if($times.Count -ne 1 -or $times[0].Groups['utc'].Value -cnotmatch
+     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|\+00:00)$'){
+   throw 'V3_RESTORE_HEARTBEAT_UTC_LITERAL_HOLD'
+  }
+  $literal=[string]$times[0].Groups['utc'].Value
+  $at=[datetimeoffset]::Parse($literal,[Globalization.CultureInfo]::InvariantCulture)
+  $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
+  if($age -lt -5 -or $age -gt 90){throw 'V3_RESTORE_HEARTBEAT_STALE_OR_FUTURE'}
+  $value=$wire|ConvertFrom-Json -ErrorAction Stop
+  $value.checked_at_utc=$literal
+  return $value
+ }
  $armedAt=[datetimeoffset]::UtcNow
  $restored=Invoke-V3Pr661IssuerBoundIntakeRestoreSOURCE_ONLY -TaskNames $tasks `
   -HeldPair $HeldIntakePair -AbortPayload $SignedAbortPayload -AbortCms $SignedAbortCms `
@@ -3414,8 +3659,8 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   })
   if($running.Count -ne 2){continue}
   try{
-   $candidate=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-candidate-runtime-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
-   $wait=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-wait-runtime-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $candidate=Read-V3Pr661RestoreHeartbeat -Path (Join-Path $real 'State\v2r4-paper-candidate-runtime-heartbeat.json')
+   $wait=Read-V3Pr661RestoreHeartbeat -Path (Join-Path $real 'State\v2r4-paper-wait-runtime-heartbeat.json')
    $fresh=@(@($candidate,$wait) | Where-Object {
     [string]$_.status -ceq 'HEALTHY' -and
     [string]$_.checked_at_utc -match '(Z|\+00:00)$' -and
@@ -3434,15 +3679,21 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
     -not(Test-V3ScopedIntakeTaskSet -Names @($confirm.task_names))){
   throw 'V3_PRECOMMIT_FENCE_CHANGED_DURING_RECOVERY'
  }
- Remove-Item -LiteralPath $fence -Force -ErrorAction Stop
+ $archiveId=$ExpectedIssuerEpochId
+ $archive=Join-Path (Join-Path $real 'State') ('v3-experimental-paper-old-intake-fence.aborted-'+$archiveId+'.json')
+ $archived=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source $fence -Archive $archive -ExpectedSha256 $originalArmedSha -IsolatedRoot $real -IsolatedTaskNames $IsolatedTaskNames
+ if([string]$archived.status -cne 'ATOMIC_FILE_RENAME_CONFIRMED_NO_CAS_OR_PAPER_RELEASE'){
+  throw 'V3_PRECOMMIT_RESTORE_ARCHIVE_NOT_CONFIRMED'
+ }
+ $archivedAt=[datetimeoffset]::UtcNow
  # Follow-up CloudSync must become HEALTHY ACTIVE_ORIGINAL with exactly one
  # original series; this return is a local receipt, not Cloud CAS authority.
  $after=$false
  for($i=0;$i -lt 45;$i++){
   Start-Sleep -Seconds 4
   try{
-   $sup=Get-Content -LiteralPath (Join-Path $real 'State\minipc-runtime-supervisor.json') -Raw -ErrorAction Stop|ConvertFrom-Json
-   $cloud=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-cloud-sync-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $sup=Read-V3Pr661RestoreHeartbeat -Path (Join-Path $real 'State\minipc-runtime-supervisor.json')
+   $cloud=Read-V3Pr661RestoreHeartbeat -Path (Join-Path $real 'State\v2r4-paper-cloud-sync-heartbeat.json')
    if([string]$sup.status -ceq 'HEALTHY' -and
       [string]$sup.v3_paper_old_intake_fence.mode -ceq 'NONE' -and
       [string]$cloud.status -ceq 'HEALTHY' -and
@@ -3450,8 +3701,8 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
       [string]$cloud.series_id -ceq 'PAPER-V2R4-20261009T110135Z' -and
       [string]$sup.checked_at_utc -match '(Z|\+00:00)$' -and
       [string]$cloud.checked_at_utc -match '(Z|\+00:00)$' -and
-      ([datetimeoffset]$sup.checked_at_utc) -gt $armedAt -and
-      ([datetimeoffset]$cloud.checked_at_utc) -gt $armedAt){
+      ([datetimeoffset]$sup.checked_at_utc) -gt $archivedAt -and
+      ([datetimeoffset]$cloud.checked_at_utc) -gt $archivedAt){
     $after=$true;break
    }
   }catch{
@@ -3461,7 +3712,7 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
  if(-not $after){throw 'V3_PRECOMMIT_RESTORE_AFTERCARE_UNKNOWN_MANUAL_REVIEW_REQUIRED'}
  return [pscustomobject]@{
   kind='V3_PR515_PRECOMMIT_OLD_INTAKE_RESTORE_ORIGINALHOST_V1'
-  status='RECOVERY_SOURCE_IMPL_NOT_RELEASED'
+  status='ISOLATED_ORIGINAL_OPERATOR_RESTORE_AND_AFTERCARE_CONFIRMED'
   old_intake_task_scope=$tasks
   v3_paper_release_authorized=$false
   independent_cloud_cas_never_invoked_attested_here=$false

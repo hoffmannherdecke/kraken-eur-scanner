@@ -59,7 +59,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         start = operator.index("function Invoke-V3Pr661ScopedNativeStopSOURCE_ONLY(")
         end = operator.index("# Pure readiness policy, executable by existing offline CI", start)
         body = operator[start:end]
-        self.assertRegex(body, r"(?s)\) \{\s*throw 'V3_PR661_NATIVE_STOP_UNRELEASED_EFFECTFUL_SOURCE_HARDLOCK'")
+        self.assertRegex(body, r"(?s)\) \{\s*if\(-not \$ReadOnlyPreflight\)\{throw 'V3_PR661_NATIVE_STOP_UNRELEASED_EFFECTFUL_SOURCE_HARDLOCK'")
         self.assertNotRegex(body, r"(?m)^\s*(?:Disable-ScheduledTask|Stop-ScheduledTask)\b")
         self.assertIn("Test-V3Pr661SignedIssuerPrestopReceipt", body)
         self.assertIn("V3_PR661_INDEPENDENT_ISSUER_ACK_REQUIRED", body)
@@ -88,8 +88,17 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertIn("-ExpectedFenceSha256 $armedFenceSha", body)
         self.assertIn("V3_PR515_PHASE_B_EXACT_SIGNED_ISSUER_COMMIT_HOLD", body)
         self.assertIn("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED", body)
-        self.assertLess(body.index("return [pscustomobject]@{\n  kind='V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'"),
-                        body.index("Test-V3Pr661SignedIssuerPrestopReceipt"))
+        self.assertIn("if(-not $OnlyOriginalArmed -and -not $isolatedRun){throw", body)
+        self.assertIn("Test-V3Pr661HostedOperatorScope -Root $Root -Tasks $IsolatedTaskNames", body)
+        self.assertIn("V3_PR661_COMPLETE_SESSION_PRODUCTION_RELEASE_LOCKED", body)
+        session = body.split(" if($OnlyIssuedNativeStop){", 1)[1].split(" if((Test-Path -LiteralPath $fence)", 1)[0]
+        self.assertLess(session.index("$stop=Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY"),
+                        session.index("$restore=Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY"))
+        self.assertLess(session.index("$restore=Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY"),
+                        session.index("$mutex.ReleaseMutex();$mutex.Dispose()"))
+        self.assertIn("held_session=$session", session)
+        self.assertIn("$transferred=$true", session)
+        self.assertNotIn("readonly_definition_handle.Dispose()", session)
         self.assertLess(body.index("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED"),
                         body.index("return Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY"))
         self.assertLess(body.index("V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD"),
@@ -299,10 +308,11 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertNotIn("Stop-ScheduledTask", native)
         self.assertNotIn("Disable-ScheduledTask", native)
         self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", operator)
-        self.assertLess(
-            operator.index("throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'"),
-            operator.index("function Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY("),
-        )
+        cancel = operator.split("function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(", 1)[1]
+        self.assertLess(cancel.index("throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'"),
+                        cancel.index("Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source"))
+        self.assertIn("V3_PR661_FENCE_ARCHIVE_PRODUCTION_RELEASE_LOCKED", native)
+        self.assertIn("Test-V3Pr661HostedOperatorScope", native)
         self.assertIn("V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED", operator)
 
     def test_pre_epoch_archive_identity_never_requires_nonexistent_epoch(self):
