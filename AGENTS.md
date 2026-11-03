@@ -1,14 +1,5 @@
 <!-- V3_RELEASE_CONTINUATION_20261103 -->
-## Verbindliche V3-Release-Fortsetzung (03.11.2026; Ausführungsregel, KEIN neues Freigabegate)
-Bei V3-Paper-Releases gilt vor allen datierten Einzelanweisungen der [projektweite Fortsetzungsvertrag #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353) zusammen mit dem **aktuellen** [V3-Release-Owner #99](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99). Vor einer Aktion: tatsächlichen geschützten main-HEAD, laufenden PR #661 einschließlich *seines aktuellen* HEAD und der dazugehörigen CI, jüngste #99-Original-ACKs abgleichen. PR-Checks eines älteren HEAD dürfen nicht als aktuelle Freigabe ausgegeben werden. Laufende Arbeit an #661 nicht durch parallele Quelländerungen/PRs konkurrieren lassen.
-
-**Nur eine nächste fehlende Releasefähigkeit ausführen:** (1) vorhandenen einzigen PR515-Originalhost-Operator im bestehenden #661 einschließlich zweier Intake-Leases, Prozess-Quieszenz, kontinuierlicher unabhängiger Issuer-/CAS-/UNKNOWN-Custody und sicherem Abort/Restore vollständig implementieren, reviewen und CI-validieren; (2) nach spezifischen Freigaben übernehmen und notwendige Cloud-/Host-/Notebook-Komponenten kontrolliert bereitstellen; (3) wirklichen Rückfall samt Original-ACK nachweisen; (4) freigegebenen V3-Paper-Cutover und echte End-to-End-Betriebsbelege abschließen. Keine automatische Freigabe durch diese Sequenz. Andere Arbeiten nur bei konkret belegtem Sicherheitsdefekt/Blocker; Optimierungen nach Go-live zurückstellen.
-
-**Kein Wiederaufrollen:** Bereits abgenommene Notebook-/Reader-/Issuer-/PG17-/Task-/Job-/Mistral-/inaktive Staging-Belege bleiben erledigt, außer bei tatsächlicher Änderung, Drift, abgelaufener Gegenwartsbindung oder erstmals betroffener Sicherheitsgrenze. SOURCE/CI, physisches STAGING, echte produktive RUNTIME und ausdrückliche Freigabe nicht verwechseln. Neue technische Voraussetzungen nur mit Bezug auf ein vorhandenes Sicherheits-/Release-Gate oder belegten Defekt. Sicherheitsregeln einschließlich STOP/CAS/Single-Writer/Paper/Echtgeld bleiben unverändert.
-
-**Chat- und Work-Handoff:** Am Ende jeder materiellen V3-Sitzung nur im bestehenden #99 einen datierten knappen belegten Stand mit `main_sha / pr_head / last_done_with_evidence / exactly_one_next / blocker / approval_needed` aktualisieren, ohne ältere Originalnachweise zu löschen. Keine neuen Statusmanager/Jobs/PRs ohne zwingenden Grund; bei Schreibfehler Persistierung nicht behaupten. Für unvermeidbare physische Schritte pro Gerät möglichst ein zusammengefasster kopierbarer PowerShell-Block, mit fail-closed Vorbedingungen und eindeutiger Quittung. Kein CI-Erfolg oder Managertext zählt als Betriebsnachweis.
-
----
+V3-Paper-Fortsetzung: verbindlich #353 (Arbeitsmodus) und #99 (Live-Owner); historische Listen sind keine Aufträge.
 
 # Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
 
