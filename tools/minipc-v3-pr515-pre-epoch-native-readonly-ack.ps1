@@ -2,7 +2,7 @@
 # READ ONLY. Never a second CAS/operator/release authority.
 [CmdletBinding()]
 param([string]$TradingRoot='C:\Users\ADMIN\Trading',
-      [string]$ExpectedCandidateRepoSha='d582582a0fe76e9debde0880fd0b2346cc7c6c76')
+      [Parameter(Mandatory=$true)][string]$ExpectedCandidateRepoSha)
 $ErrorActionPreference='Stop'
 if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
  throw 'V3_ORIGINALHOST_WINDOWS_ONLY'
