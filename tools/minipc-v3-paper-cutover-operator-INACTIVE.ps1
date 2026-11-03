@@ -3666,11 +3666,11 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   }
  }
  if(-not $healthy){throw 'V3_PRECOMMIT_RESTORE_NOT_HEALTHY_PRESERVE_ARMED_FENCE'}
- $confirm=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
- if([string]$confirm.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
-    [string]$confirm.phase -cne 'ARMED' -or
-    [string]$confirm.proposed_successor_series_id -cne [string]$marker.proposed_successor_series_id -or
-    -not(Test-V3ScopedIntakeTaskSet -Names @($confirm.task_names))){
+ $fenceReadback=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+ if([string]$fenceReadback.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$fenceReadback.phase -cne 'ARMED' -or
+    [string]$fenceReadback.proposed_successor_series_id -cne [string]$marker.proposed_successor_series_id -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($fenceReadback.task_names))){
   throw 'V3_PRECOMMIT_FENCE_CHANGED_DURING_RECOVERY'
  }
  $archiveId=$ExpectedIssuerEpochId
