@@ -203,7 +203,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
     def test_native_rename_uses_same_exclusive_open_handle_and_never_self_releases(self):
         operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         start = operator.index("function Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY(")
-        end = operator.index("# Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).", start)
+        end = operator.index(" if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){", start)
         native = operator[start:end]
         for required in (
             "CreateFileW", "GENERIC_READ|DELETE_ACCESS,0",
@@ -221,6 +221,10 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertNotIn("Stop-ScheduledTask", native)
         self.assertNotIn("Disable-ScheduledTask", native)
         self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", operator)
+        self.assertLess(
+            operator.index("throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'"),
+            operator.index("function Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY("),
+        )
         self.assertIn("V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED", operator)
 
     def test_pre_epoch_archive_identity_never_requires_nonexistent_epoch(self):
