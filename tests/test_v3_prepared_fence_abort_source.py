@@ -60,9 +60,9 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         # terminally aborted, even if another path could surface an intent.
         self.assertIn("V3_STAGE5_EPOCH_SEAL_SOURCE_INACTIVE_APPROVAL_REQUIRED", stage5)
         self.assertIn("to_regclass('v3_cas_audit.prepared_fence_abort_v1') IS NULL", stage5)
-        self.assertRegex(
-            stage5,
-            r"(?s)OR EXISTS \\(SELECT 1 FROM v3_cas_audit\\.prepared_fence_abort_v1\\s+WHERE epoch_id=v_id\\)",
+        self.assertTrue(
+            "OR EXISTS (SELECT 1 FROM v3_cas_audit.prepared_fence_abort_v1" in stage5
+            and "WHERE epoch_id=v_id)" in stage5
         )
         self.assertLess(stage5.index("prepared_fence_abort_v1"), stage5.index("UPDATE v3_cas_audit.epoch_v1 SET sealed=true"))
 
