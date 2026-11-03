@@ -344,6 +344,31 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
                           "Set-Content", "Invoke-Sqlcmd", "Remove-Item"):
             self.assertNotIn(forbidden, script)
 
+    def test_native_registered_task_xml_drift_is_detected_without_mutation(self):
+        script = (ROOT / "tools" / "minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1").read_text(encoding="utf-8")
+        for required in (
+            "function Get-V3Pr515NativeTaskXmlSha256",
+            "Export-ScheduledTask -TaskName $TaskName -TaskPath",
+            "registered_task_xml_sha256=(Get-V3Pr515NativeTaskXmlSha256 -TaskName $name)",
+            "$firstV3XmlSha256=Get-V3Pr515NativeTaskXmlSha256",
+            "$secondV3XmlSha256=Get-V3Pr515NativeTaskXmlSha256",
+            "$firstV3XmlSha256 -ceq $secondV3XmlSha256",
+            "v3_registered_task_xml_sha256=$firstV3XmlSha256",
+            "$firstNative -ceq $secondNative",
+            "$firstV3XmlSha256,",
+            "local_snapshot_not_an_exclusive_native_lock=$true",
+            "exclusive_task_pid_antirace_proven=$false",
+        ):
+            self.assertIn(required, script)
+        self.assertEqual(
+            script.count("registered_task_xml_sha256=(Get-V3Pr515NativeTaskXmlSha256 -TaskName $name)"), 2
+        )
+        for forbidden in (
+            "Register-ScheduledTask", "Set-ScheduledTask", "Disable-ScheduledTask",
+            "Stop-ScheduledTask", "Start-ScheduledTask", "Unregister-ScheduledTask"
+        ):
+            self.assertNotIn(forbidden, script)
+
     def test_isolated_native_windows_smoke_cannot_touch_originalhost(self):
         path = ROOT / "tests" / "test_v3_pr515_native_exclusive_rename_smoke.ps1"
         smoke = path.read_text(encoding="utf-8")
