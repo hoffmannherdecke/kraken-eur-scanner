@@ -2370,9 +2370,56 @@ function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
     $signed.marker_only_cancel_authorized -ne $true){
   throw 'V3_MARKER_CANCEL_INDEPENDENT_CLOUD_OR_UNKNOWN_CUSTODY_HOLD'
  }
- # Even a future signed/independent verification requires the separate
- # atomic no-clobber archive and physical aftercare implementation.
- throw 'V3_MARKER_CANCEL_SIGNED_CLOUD_ABORT_AND_ATOMIC_ARCHIVE_NOT_IMPLEMENTED'
+ # Source-only atomically scoped archive design, still unreachable under
+ # both the direct-function hardlock and independent custody HOLD above.
+ # Do not attempt this after native STOP/QUIESCED: only pre-STOP ARMED.
+ $wp=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $wp.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_MARKER_CANCEL_ORIGINALHOST_ADMIN_REQUIRED'
+ }
+ $roles=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait',
+  'CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+ foreach($name in $roles){
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($task.Actions).Count -ne 1){
+   throw 'V3_MARKER_CANCEL_V2R4_ORIGINAL_TASK_STATE_CHANGED'
+  }
+ }
+ $v3=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction Stop
+ if([string]$v3.State -cne 'Disabled'){
+  throw 'V3_MARKER_CANCEL_V3_TASK_NOT_DISABLED'
+ }
+ # Original file must be a local, non-reparse, ACL-protected NTFS fence.
+ # Rename within the SAME State directory; never overwrite another archive,
+ # write a parallel release marker, or restart/enable a Scheduler task.
+ $state=Join-Path $real 'State'
+ $archive=Join-Path $state ('v3-experimental-paper-old-intake-fence.aborted-'+$ExpectedEpochId+'.json')
+ if([IO.File]::Exists($archive) -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ExpectedFenceSha256){
+  throw 'V3_MARKER_CANCEL_ARCHIVE_EXISTS_OR_FENCE_DRIFT'
+ }
+ # Never fall back to copy/delete: this is same-volume rename-only.
+ # The physically authorized path still requires independent anti-race,
+ # original task/PID readbacks and an external issuer custody ACK.
+ throw 'V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED'
+ [IO.File]::Move($fence,$archive)
+ if([IO.File]::Exists($fence) -or -not [IO.File]::Exists($archive) -or
+    (Get-FileHash -LiteralPath $archive -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ExpectedFenceSha256){
+  throw 'V3_MARKER_CANCEL_POST_RENAME_READBACK_HOLD_PRESERVE_ARCHIVE'
+ }
+ # Archival does not unlock CAS, Stage4/5, native STOP or Paper.
+ return [pscustomobject][ordered]@{
+  kind='V3_PR515_PRESTOP_MARKER_ONLY_ARCHIVE_ORIGINALHOST_V1'
+  status='ARCHIVED_ORIGINAL_ARMED_FENCE_NOT_RELEASED'
+  original_fence_sha256=$ExpectedFenceSha256
+  epoch_id=$ExpectedEpochId
+  archive_present=$true
+  old_tasks_changed_here=$false
+  cas_or_v3_paper_authorized=$false
+ }
+
 }
 
 # Current PR515 PRE-COMMIT manual recovery SOURCE ONLY. This is the sole
