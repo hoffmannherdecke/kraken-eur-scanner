@@ -934,12 +934,12 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
     def test_existing_stage3_dpapi_reader_writer_readonly_source(self):
         src = (ROOT / "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text("utf-8")
         self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop", src)
-        # Original two-actor default + five mutually exclusive opt-in
+        # Original two-actor default + six mutually exclusive opt-in
         # Reader-only snapshots (current empty, future intent, CAS custody,
-        # signed forward T0, signed PREPARED abort);
-        # still the SAME two actors, no third credentials or CAS authority.
-        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 7)
-        self.assertEqual(src.count("COMMIT;"), 7)
+        # signed forward T0, signed PREPARED abort, signed issuer pre-STOP).
+        # Still the SAME two actors, no third credentials or CAS authority.
+        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 8)
+        self.assertEqual(src.count("COMMIT;"), 8)
         self.assertIn("[switch]$PrecommitCloudInventory", src)
         self.assertIn("[switch]$PostcommitDurableIntent", src)
         self.assertIn("+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent) -gt 1", src)
