@@ -934,15 +934,15 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
     def test_existing_stage3_dpapi_reader_writer_readonly_source(self):
         src = (ROOT / "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text("utf-8")
         self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop", src)
-        # Original two-actor default + four mutually exclusive opt-in
+        # Original two-actor default + five mutually exclusive opt-in
         # Reader-only snapshots (current empty, future intent, CAS custody,
-        # signed forward T0);
+        # signed forward T0, signed PREPARED abort);
         # still the SAME two actors, no third credentials or CAS authority.
-        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 6)
-        self.assertEqual(src.count("COMMIT;"), 6)
+        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 7)
+        self.assertEqual(src.count("COMMIT;"), 7)
         self.assertIn("[switch]$PrecommitCloudInventory", src)
         self.assertIn("[switch]$PostcommitDurableIntent", src)
-        self.assertIn("+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent) -gt 1", src)
+        self.assertIn("+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent) -gt 1", src)
         self.assertIn("V3_PRECOMMIT_CUSTODY_EXPLICIT_SIGNER_AND_FENCE_PINS_REQUIRED", src)
         self.assertIn("V3_NOTEBOOK_CURRENT_NO_CAS_CAPABILITY_CUSTODY_V1", src)
         self.assertIn("Save-V3SignedNotebookReaderSnapshot -RawJson $signed", src)
@@ -964,7 +964,7 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         # PRE- and POST-COMMIT Reader modes enforce CA + hostname.
         self.assertIn("sslmode=require", src)
         self.assertIn("$tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}", src)
-        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent)", src)
+        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent)", src)
         self.assertIn("$postcommitTlsRoot='system'", src)
         self.assertIn("[string]$CaFile=''", src)
         self.assertIn("V3_READER_CA_FILE_DECISION_MODE_ONLY", src)
