@@ -964,7 +964,7 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         # PRE- and POST-COMMIT Reader modes enforce CA + hostname.
         self.assertIn("sslmode=require", src)
         self.assertIn("$tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}", src)
-        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent)", src)
+        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent)", src)
         self.assertIn("$postcommitTlsRoot='system'", src)
         self.assertIn("[string]$CaFile=''", src)
         self.assertIn("V3_READER_CA_FILE_DECISION_MODE_ONLY", src)
