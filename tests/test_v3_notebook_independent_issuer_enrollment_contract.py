@@ -97,7 +97,7 @@ class ForwardT0NotebookReaderSourceContract(unittest.TestCase):
         self.assertEqual(s.count("SELECT v3_cas_audit.read_forward_t0_current_v1()::text;"),1)
         self.assertIn("BEGIN TRANSACTION READ ONLY;\nSELECT v3_cas_audit.read_forward_t0_current_v1()::text;\nCOMMIT;",s)
         self.assertIn("if($decisionReaderMode){'verify-full'}else{'require'}",s)
-        self.assertEqual(s.count("Save-V3SignedNotebookReaderSnapshot -RawJson $wire -CertSha256 $ReviewedNotebookCertificateSha256"),2)
+        self.assertEqual(s.count("Save-V3SignedNotebookReaderSnapshot -RawJson $wire -CertSha256 $ReviewedNotebookCertificateSha256"),3)
         self.assertLess(s.index("$row=$wire|ConvertFrom-Json"),s.index("Save-V3SignedNotebookReaderSnapshot -RawJson $wire"))
 
     def test_exact_cloud_schema_and_fail_closed_fields(self):
