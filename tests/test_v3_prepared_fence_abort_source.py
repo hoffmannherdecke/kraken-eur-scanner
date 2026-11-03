@@ -77,6 +77,24 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         )
         self.assertLess(stage5.index("prepared_fence_abort_v1"), stage5.index("UPDATE v3_cas_audit.epoch_v1 SET sealed=true"))
 
+    def test_existing_notebook_reader_signs_only_real_private_abort_row(self):
+        reader = (ROOT / "tools" / "v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text(encoding="utf-8")
+        self.assertIn("[switch]$PreparedAbortSignedCurrent", reader)
+        self.assertIn("SET ROLE v3_cas_audit_reader;", reader)
+        self.assertIn("BEGIN TRANSACTION READ ONLY;", reader)
+        self.assertIn("FROM v3_cas_audit.prepared_fence_abort_v1 a", reader)
+        self.assertIn("session_user='v3_cas_audit_reader_actor'", reader)
+        self.assertIn("current_user='v3_cas_audit_reader'", reader)
+        self.assertIn("count(*) FROM v3_cas_audit.intent_v1)=0", reader)
+        self.assertIn("count(*) FROM v3_cas_audit.attempt_v1)=0", reader)
+        self.assertIn("V3_PREPARED_ABORT_WIRE_DUPLICATE", reader)
+        self.assertIn("V3_PREPARED_ABORT_INVALID_OR_STALE_ROW", reader)
+        self.assertIn("Save-V3SignedNotebookReaderSnapshot -RawJson $wire", reader)
+        self.assertIn("SIGNED_CURRENT_ABORT_ROW_NOT_RUNTIME_RELEASE", reader)
+        self.assertIn("cloud_reader_provenance_independently_accepted_here=$false", reader)
+        self.assertIn("marker_only_cancel_authorized=$false", reader)
+        self.assertIn("native_task_change_authorized=$false", reader)
+
     def test_originalhost_signed_abort_review_cannot_claim_release(self):
         operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         start = operator.index("function Test-V3Pr515SignedPreparedAbortReadback(")
