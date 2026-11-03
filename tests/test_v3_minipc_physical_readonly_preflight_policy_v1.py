@@ -430,7 +430,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required,wait)
         self.assertLess(stop.index("$armed=$false"),
-                        stop.index("Disable-ScheduledTask"))
+                        stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"))
         armed=stop.split(" if((Test-Path -LiteralPath $fence)",1)[1]
         self.assertNotRegex(armed,r"(?m)^\s*(?:Disable|Stop)-ScheduledTask\b")
         self.assertIn("Never automatically promote ARMED to QUIESCED",stop)

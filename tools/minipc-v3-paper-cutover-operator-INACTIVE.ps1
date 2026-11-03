@@ -170,11 +170,6 @@ function Test-V3Pr661SignedIssuerPrestopReceipt(
  }
  return [pscustomobject]$out
 }
-# Pre-EPOCH rollback has no epoch to terminalize. Verify actual CURRENT
-# absence of every CAS capability instead of demanding an impossible future
-# issuer row. This is restricted to zero epochs/intents/UNKNOWNs, no CAS RPC,
-# both executor identities NOLOGIN, no surviving executor session, and exactly
-# the original active series, from the existing independently signed Reader.
 function Test-V3Pr661HeldIssuerAndNativeReviewSOURCE_ONLY(
  [byte[]]$IssuerPayload,[byte[]]$IssuerCms,[string]$IssuerCertSha256,
  [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
@@ -2279,9 +2274,9 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  [string]$ReviewedIssuerCallerAclSha256='',
  [switch]$CompleteArmedAbortRestore,[object]$HeldArmedSession,
  [string[]]$IsolatedTaskNames,[string]$TerminalAbortJsonPath,[string]$TerminalAbortCmsPath) {
- # Native STOP is still source-locked. The explicitly opted-in call may ONLY
- # reach the existing protected ARMED-fence readback and mandatory RETURN.
- # It must never fall through to the dormant Disable/Stop commands below.
+ # Production STOP remains locked. OnlyOriginalArmed retains its mandatory
+ # marker-only return. A separate, strictly hosted-fixture invocation exercises
+ # this SAME owner from existing ARMED through confirmed abort and restore.
  $isolatedRun=($CompleteArmedAbortRestore -and $OnlyIssuedNativeStop -and
    (Test-V3Pr661HostedOperatorScope -Root $Root -Tasks $IsolatedTaskNames))
  if(-not $OnlyOriginalArmed -and -not $isolatedRun){throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'}
@@ -3605,9 +3600,8 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
    marker_removed_here=$false;cas_or_paper_authorized=$false
   }
  }
- # This remains UNREACHABLE under both current source locks. The future
- # authorized QUIESCED case transitions to ARMED atomically. If already ARMED,
- # preserve the exact protected marker rather than overwriting it.
+ # Production remains locked. In the isolated complete invocation, QUIESCED
+ # returns to ARMED atomically; an existing ARMED fence is preserved exactly.
  if($currentPhase -ceq 'QUIESCED'){
   $marker.phase='ARMED'
   $temp=$fence+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
