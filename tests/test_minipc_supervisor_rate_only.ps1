@@ -457,7 +457,7 @@ $sourceOnlyFns=@($oa.FindAll({
 if($sourceOnlyFns.Count -ne 1){throw 'Missing unique locked PR515 native source owner'}
 $bounded=$sourceOnlyFns[0]
 # The existing original PRE-COMMIT recovery is a SECOND, independent dormant
-# function: exactly one Enable, Start and fenced Remove. Never via the CLI.
+# function: exactly one Enable, Start and pinned archive. Never via production CLI.
 $restoreFns=@($oa.FindAll({
  param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
  $a.Name -eq 'Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY'
@@ -467,11 +467,11 @@ $restoreBounded=$restoreFns[0]
 $restoreSites=@($allCommands | Where-Object {
  $_.GetCommandName() -in @('Enable-ScheduledTask','Start-ScheduledTask','Remove-Item')
 })
-if($restoreSites.Count -ne 3 -or
+if($restoreSites.Count -ne 2 -or
    @($restoreSites | Where-Object {$_.GetCommandName() -eq 'Enable-ScheduledTask'}).Count -ne 1 -or
    @($restoreSites | Where-Object {$_.GetCommandName() -eq 'Start-ScheduledTask'}).Count -ne 1 -or
-   @($restoreSites | Where-Object {$_.GetCommandName() -eq 'Remove-Item'}).Count -ne 1){
- throw 'V3_PR515_RESTORE_SOURCE_EXACT_THREE_DORMANT_NATIVE_MUTATIONS_REQUIRED'
+   @($restoreSites | Where-Object {$_.GetCommandName() -eq 'Remove-Item'}).Count -ne 0){
+ throw 'V3_PR515_RESTORE_SOURCE_EXACT_TWO_NATIVE_SITES_NO_DELETE_REQUIRED'
 }
 foreach($node in $restoreSites){
  if($node.Extent.StartOffset -le $restoreBounded.Body.Extent.StartOffset -or
@@ -503,32 +503,65 @@ $allText=Get-Content -LiteralPath $operator -Raw -ErrorAction Stop
 $outside=$allText.Remove($bounded.Extent.StartOffset,$bounded.Extent.EndOffset-$bounded.Extent.StartOffset)
 if($outside -notmatch 'if\(\$Execute\)\{\s*throw ''V3_CUTOVER_EXECUTION_LOCKED' -or
    $outside -match '(?m)^\s*(?:Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY)(?:\s|$)' -or
-   $bounded.Extent.Text -notmatch '(?s)\) \{\s*# Native STOP is still source-locked\..*?if\(-not \$OnlyOriginalArmed\)\{throw ''V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED''\}' -or
+   $bounded.Extent.Text -notmatch 'if\(-not \$OnlyOriginalArmed -and -not \$isolatedRun\)\{throw ''V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED''\}' -or
+   $bounded.Extent.Text -notmatch 'V3_PR661_COMPLETE_SESSION_PRODUCTION_RELEASE_LOCKED' -or
+   $bounded.Extent.Text -notmatch 'Test-V3Pr661HostedOperatorScope -Root \$Root -Tasks \$IsolatedTaskNames' -or
    $outside -notmatch 'if\(\$ExecuteOriginalhostArmedOnly -or \$PreviewPreparedOriginalhostFence\)\{' -or
    $outside -notmatch 'V3_PREPARED_SHA_NOT_APPROVED_FOR_ARMING' -or
    $bounded.Extent.Text -notmatch 'V3_PREPARED_FENCE_PIN_MISMATCH_BEFORE_WRITE' -or
    $outside -notmatch '\$receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root \$TradingRoot' -or
    $outside -notmatch '-ReviewedStrategySha \$ReviewedV3StrategySha256 -OnlyOriginalArmed' -or
    $bounded.Extent.Text -match 'Invoke-RestMethod|Invoke-WebRequest|Enable-ScheduledTask|Start-ScheduledTask|Stop-Process' -or
-   $bounded.Extent.Text -notmatch 'V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE' -or
-   $bounded.Extent.Text.IndexOf("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE") -ge
-    $bounded.Extent.Text.IndexOf('Disable-ScheduledTask')){
+   $bounded.Extent.Text -notmatch 'V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE'){
  throw 'V3_PR515_NATIVE_SOURCE_LOCK_OR_FENCE_ORDER_INVALID'
 }
 if($restoreBounded.Extent.Text -notmatch
-   '(?s)\) \{\s*throw ''V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED''' -or
+   'if\(-not \$isolatedRun -or \$null -eq \$SignedAbortPayload' -or
+   $restoreBounded.Extent.Text -notmatch 'Test-V3Pr661HostedOperatorScope -Root \$Root -Tasks \$IsolatedTaskNames' -or
    $restoreBounded.Extent.Text -notmatch 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED' -or
    $restoreBounded.Extent.Text.IndexOf('V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED') -ge
     $restoreBounded.Extent.Text.IndexOf('Enable-ScheduledTask') -or
    $restoreBounded.Extent.Text.IndexOf('Enable-ScheduledTask') -ge
     $restoreBounded.Extent.Text.IndexOf('Start-ScheduledTask') -or
    $restoreBounded.Extent.Text.IndexOf('Start-ScheduledTask') -ge
-    $restoreBounded.Extent.Text.IndexOf('Remove-Item') -or
+    $restoreBounded.Extent.Text.IndexOf('$archived=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY') -or
    $restoreBounded.Extent.Text -match 'Invoke-RestMethod|Invoke-WebRequest|Stop-Process|Stop-ScheduledTask|Disable-ScheduledTask' -or
    $outside -match '(?m)^\s*(?:Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY)(?:\s|$)'){
  throw 'V3_PR515_RESTORE_LOCK_CLOUD_BARRIER_OR_SEQUENCE_INVALID'
 }
-Write-Output 'V3_PR515_ONLY_TWO_DORMANT_STOP_AND_THREE_DORMANT_RESTORE_AST_GUARD_PASS'
+$archiveCalls=@($allCommands|Where-Object {
+ $_.GetCommandName() -eq 'Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY' -and
+ $_.Extent.StartOffset -gt $restoreBounded.Body.Extent.StartOffset -and
+ $_.Extent.EndOffset -lt $restoreBounded.Body.Extent.EndOffset
+})
+if($archiveCalls.Count -ne 1 -or $cmd -contains 'Remove-Item'){
+ throw 'V3_PR515_RESTORE_REQUIRES_SINGLE_PINNED_ARCHIVE_AND_NO_RAW_DELETE'
+}
+$armedBranch=$bounded.Extent.Text.Split([string[]]@(' if((Test-Path -LiteralPath $fence)'),[StringSplitOptions]::None)[1]
+if($armedBranch -match '(?m)^\s*(?:Disable|Stop)-ScheduledTask\b' -or
+   $armedBranch -notmatch 'return \[pscustomobject\]@\{\s*kind=''V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'''){
+ throw 'V3_PR515_PRODUCTION_ARMED_BRANCH_MUST_RETURN_WITHOUT_TASK_MUTATION'
+}
+# Execute the original early production-denial gates before any host I/O.
+foreach($name in @('Test-V3Pr661HostedOperatorScope','Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY',
+ 'Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY','Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY')){
+ $node=@($oa.FindAll({param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -ceq $name},$true))
+ if($node.Count -ne 1){throw 'V3_PR661_SCOPE_GATE_FUNCTION_NOT_UNIQUE'}
+ . ([scriptblock]::Create($node[0].Extent.Text))
+}
+$denied=$false
+try{$null=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root 'C:\Users\ADMIN\Trading' -OnlyIssuedNativeStop -CompleteArmedAbortRestore}
+catch{if($_.Exception.Message -cne 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'){throw};$denied=$true}
+if(-not $denied){throw 'V3_PR661_PRODUCTION_STOP_GATE_OPEN'}
+$denied=$false
+try{$null=Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY -Root 'C:\Users\ADMIN\Trading'}
+catch{if($_.Exception.Message -cne 'V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED'){throw};$denied=$true}
+if(-not $denied){throw 'V3_PR661_PRODUCTION_RESTORE_GATE_OPEN'}
+$denied=$false
+try{$null=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY}
+catch{if($_.Exception.Message -cne 'V3_PR661_FENCE_ARCHIVE_PRODUCTION_RELEASE_LOCKED'){throw};$denied=$true}
+if(-not $denied){throw 'V3_PR661_PRODUCTION_ARCHIVE_GATE_OPEN'}
+Write-Output 'V3_PR515_TWO_STOP_TWO_RESTORE_PINNED_ARCHIVE_AND_PRODUCTION_DENIAL_PASS'
 $f=@($oa.FindAll({
  param($a)
  $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
