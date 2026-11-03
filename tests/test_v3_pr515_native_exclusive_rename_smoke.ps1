@@ -73,9 +73,17 @@ try{
  $conflict=Join-Path $root 'source-existing-target.bin'
  $existing=Join-Path $root 'target-existing.bin'
  [IO.File]::WriteAllBytes($conflict,$data)
- [IO.File]::WriteAllBytes($existing,([byte[]](201..255)))
+ $originalTargetBytes=[byte[]](201..255)
+ [IO.File]::WriteAllBytes($existing,$originalTargetBytes)
  try{[V3Pr515NativeFenceRenameV1]::RenamePinned($conflict,$existing,$expected)}
- catch{$existingTargetRejected=[IO.File]::Exists($conflict)}
+ catch{
+  $targetBytes=[IO.File]::ReadAllBytes($existing)
+  $existingTargetRejected=(
+   [IO.File]::Exists($conflict) -and
+   $targetBytes.Length -eq $originalTargetBytes.Length -and
+   [Convert]::ToBase64String($targetBytes) -ceq
+     [Convert]::ToBase64String($originalTargetBytes))
+ }
  $shared=Join-Path $root 'source-locked.bin'
  $sharedTarget=Join-Path $root 'target-locked.bin'
  [IO.File]::WriteAllBytes($shared,$data)
