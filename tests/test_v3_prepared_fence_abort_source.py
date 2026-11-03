@@ -53,6 +53,19 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertEqual(self.code.count("FOR SELECT TO v3_cas_audit_table_owner"), 2)
         self.assertNotRegex(self.code, r"(?i)GRANT SELECT ON v3_cas_audit\\.(?:epoch_v1|intent_v1) TO (?:PUBLIC|service_role)")
 
+    def test_stage5_rejects_missing_or_terminal_abort_ledger(self):
+        stage5 = (ROOT / "supabase" / "v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql").read_text(encoding="utf-8")
+        # The Stage5 template remains independently hardlocked. It must not
+        # proceed when the abort ledger is absent or the current epoch was
+        # terminally aborted, even if another path could surface an intent.
+        self.assertIn("V3_STAGE5_EPOCH_SEAL_SOURCE_INACTIVE_APPROVAL_REQUIRED", stage5)
+        self.assertIn("to_regclass('v3_cas_audit.prepared_fence_abort_v1') IS NULL", stage5)
+        self.assertRegex(
+            stage5,
+            r"(?s)OR EXISTS \\(SELECT 1 FROM v3_cas_audit\\.prepared_fence_abort_v1\\s+WHERE epoch_id=v_id\\)",
+        )
+        self.assertLess(stage5.index("prepared_fence_abort_v1"), stage5.index("UPDATE v3_cas_audit.epoch_v1 SET sealed=true"))
+
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
