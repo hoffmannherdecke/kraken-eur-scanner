@@ -176,6 +176,53 @@ if($NotebookReaderJson -or $NotebookReaderCms -or $ReviewedNotebookCertificateSh
   throw 'V3_T0_SIGNED_CROSS_SOURCE_HOLD'
  }
 }
+# Two independent native observations catch obvious churn before an operator
+# could ever request separate authorization. This is a snapshot stability
+# signal, NOT an exclusive OS lock or TOCTOU-free task/PID custody.
+$firstNative=($tasks|Sort-Object name|ConvertTo-Json -Depth 4 -Compress)
+$firstPids=(@($old|Sort-Object pid,ppid|ForEach-Object {
+ "$($_.pid):$($_.ppid):$($_.created_utc)"
+}) -join '|')
+$firstFenceHash=$fenceHash
+$firstFencePhase=$marker
+Start-Sleep -Milliseconds 750
+$secondTasks=@()
+foreach($name in $names){
+ $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+ $secondTasks+=@([pscustomobject][ordered]@{
+  name=$name
+  state=[string]$task.State
+  action_count=@($task.Actions).Count
+  principal_is_system=([string]$task.Principal.UserId -in @(
+   'SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18'))
+ })
+}
+$secondNative=($secondTasks|Sort-Object name|ConvertTo-Json -Depth 4 -Compress)
+$secondPids=(@(Get-CimInstance Win32_Process -ErrorAction Stop |
+ Where-Object {
+  [string]$_.Name -match '^(?i:pythonw?\.exe)$' -and
+  [string]$_.CommandLine -match '(?i)v2r4|wait_launcher'
+ } | ForEach-Object {
+  "$([int]$_.ProcessId):$([int]$_.ParentProcessId):$(if($_.CreationDate){([datetimeoffset]$_.CreationDate).ToUniversalTime().ToString('o')}else{''})"
+ } | Sort-Object) -join '|')
+$secondV3=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction Stop
+$secondFenceExists=Test-Path -LiteralPath $fence
+$secondFenceHash=''
+if($secondFenceExists){
+ $secondItem=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($secondItem.PSIsContainer -or
+    [bool]($secondItem.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+  throw 'V3_NATIVE_SECOND_FENCE_UNSAFE'
+ }
+ $secondFenceHash=(Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+$shortNativeStable=(
+ $firstNative -ceq $secondNative -and
+ $firstPids -ceq $secondPids -and
+ $firstFenceHash -ceq $secondFenceHash -and
+ ($firstFencePhase -ceq 'ARMED') -eq $secondFenceExists -and
+ [string]$secondV3.State -ceq [string]$v3.State -and
+ -not(Test-Path -LiteralPath $maintenance))
 $pass=(@($tasks|Where-Object {
  $_.action_count -ne 1 -or $_.principal_is_system -ne $true
 }).Count -eq 0 -and [string]$v3.State -ceq 'Disabled' -and
@@ -196,6 +243,8 @@ $pass=(@($tasks|Where-Object {
  signed_current_cloud_and_originalhost_within_30_seconds=$notebookCloudTimeMatched
  independent_notebook_issuer_authority_verified_here=$false
  status='PHYSICAL_READONLY_OBSERVATION_NOT_AN_INDEPENDENT_RELEASE_ACK'
+ two_native_observations_750ms_apart_stable=$shortNativeStable
+ local_snapshot_not_an_exclusive_native_lock=$true
  exclusive_task_pid_antirace_proven=$false
  independently_authenticated_cloud_issuer_custody=$false
  complete_prospective_unknown_custody=$false
