@@ -2110,6 +2110,119 @@ function Get-V3Pr515PreparedFenceSha256([object]$Marker) {
  $sha=[Security.Cryptography.SHA256]::Create()
  try{return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()} finally{$sha.Dispose()}
 }
+function Open-V3Pr661DisabledTaskDefinitionLeaseSOURCE_ONLY([string]$TaskName) {
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+  throw 'V3_TASK_DEFINITION_LEASE_WINDOWS_ONLY'
+ }
+ $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
+ if($sandbox){
+  if($TaskName -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'){
+   throw 'V3_TASK_DEFINITION_LEASE_SANDBOX_NAME_HOLD'
+  }
+ }elseif($TaskName -cnotin @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
+  throw 'V3_TASK_DEFINITION_LEASE_ORIGINAL_SCOPE_HOLD'
+ }
+ $service=New-Object -ComObject 'Schedule.Service';$service.Connect()
+ if($service.GetFolder('\').GetTask($TaskName).Enabled){
+  throw 'V3_TASK_DEFINITION_LEASE_REQUIRES_ALREADY_DISABLED'
+ }
+ $path=Join-Path (Join-Path $env:SystemRoot 'System32\Tasks') $TaskName
+ $file=Get-Item -LiteralPath $path -Force -ErrorAction Stop
+ if($file.PSIsContainer -or $file.Length -lt 64 -or $file.Length -gt 1048576 -or
+    [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+  throw 'V3_TASK_DEFINITION_LEASE_UNSAFE_FILE'
+ }
+ $stream=$null
+ try{
+  # Share READ only: existing read access remains available; new standard
+  # writes/deletes/replacements, including privileged Task API writes, must
+  # fail at the kernel. This is not immunity to forced handle closure or
+  # arbitrary administrator action outside the controlled operator window.
+  $stream=[IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+  if($service.GetFolder('\').GetTask($TaskName).Enabled){
+   throw 'V3_TASK_DEFINITION_LEASE_DISABLED_STATE_DRIFT'
+  }
+  $sha=[Security.Cryptography.SHA256]::Create()
+  try{$digest=([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()}
+  finally{$sha.Dispose()}
+  $stream.Position=0
+  return [pscustomobject]@{
+   task_name=$TaskName;definition_path=$path;definition_sha256=$digest
+   readonly_definition_handle=$stream
+   privileged_handle_closure_excluded=$false
+   process_family_quiescence_proven=$false;cas_or_paper_authorized=$false
+  }
+ }catch{if($null -ne $stream){$stream.Dispose()};throw}
+}
+# Acquire BOTH existing disabled definitions as a single owned resource.
+# A partial acquisition never leaks a handle and never enables a task.
+# On success ownership transfers to the caller through the returned handles;
+# the caller must retain both throughout the complete native/Cloud transition.
+function Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY([string[]]$TaskNames) {
+ $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
+ if($TaskNames.Count -ne 2 -or @($TaskNames|Select-Object -Unique).Count -ne 2){
+  throw 'V3_INTAKE_LEASE_PAIR_EXACT_TWO_DISTINCT_REQUIRED'
+ }
+ if($sandbox){
+  if(@($TaskNames|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count){
+   throw 'V3_INTAKE_LEASE_PAIR_SANDBOX_SCOPE_HOLD'
+  }
+ }elseif(-not(Test-V3ScopedIntakeTaskSet -Names $TaskNames)){
+  throw 'V3_INTAKE_LEASE_PAIR_ORIGINAL_SCOPE_HOLD'
+ }
+ $leases=@()
+ try{
+  foreach($taskName in $TaskNames){
+   $leases+=@(Open-V3Pr661DisabledTaskDefinitionLeaseSOURCE_ONLY -TaskName $taskName)
+  }
+  foreach($lease in $leases){
+   if($lease.readonly_definition_handle.SafeFileHandle.IsClosed){
+    throw 'V3_INTAKE_LEASE_PAIR_HANDLE_CLOSED'
+   }
+  }
+  return [pscustomobject]@{
+   kind='V3_PR661_HELD_DISABLED_INTAKE_DEFINITION_PAIR_V1'
+   leases=$leases
+   process_family_quiescence_proven=$false
+   privileged_handle_closure_excluded=$false
+   cas_or_paper_authorized=$false
+  }
+ }catch{
+  foreach($lease in $leases){$lease.readonly_definition_handle.Dispose()}
+  throw
+ }
+}
+# Shared read-only validation of the actual in-process kernel handles. This
+# accepts no serialized "held=true" claim; the original stop and recovery
+# owners retain the same FileStream objects across the complete transaction.
+function Test-V3Pr661HeldIntakeDefinitionPair([object]$Pair,[string[]]$TaskNames) {
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    $null -eq $Pair -or [string]$Pair.kind -cne 'V3_PR661_HELD_DISABLED_INTAKE_DEFINITION_PAIR_V1' -or
+    $TaskNames.Count -ne 2 -or @($TaskNames|Select-Object -Unique).Count -ne 2 -or
+    @($Pair.leases).Count -ne 2){return $false}
+ try{
+  $names=@($Pair.leases|ForEach-Object {[string]$_.task_name})
+  if(@($names|Select-Object -Unique).Count -ne 2 -or
+     @($names|Where-Object {$_ -cnotin $TaskNames}).Count){return $false}
+  foreach($lease in $Pair.leases){
+   $stream=$lease.readonly_definition_handle
+   $path=Join-Path (Join-Path $env:SystemRoot 'System32\Tasks') ([string]$lease.task_name)
+   if($stream -isnot [IO.FileStream] -or -not $stream.CanRead -or $stream.CanWrite -or
+      $stream.SafeFileHandle.IsClosed -or $stream.SafeFileHandle.IsInvalid -or
+      -not [string]::Equals($stream.Name,$path,[StringComparison]::OrdinalIgnoreCase)){
+    return $false
+   }
+   $sha=[Security.Cryptography.SHA256]::Create()
+   try{
+    $stream.Position=0
+    $actual=([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()
+   }finally{$sha.Dispose();$stream.Position=0}
+   if($actual -cne [string]$lease.definition_sha256 -or
+      (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $actual){return $false}
+  }
+  return $true
+ }catch{return $false}
+}
 function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  [string]$Root,[object]$OriginalReadback,[string]$BackupFolder,
  [string]$ReviewedPr515Sha,[string]$SuccessorId,
@@ -2390,88 +2503,6 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  # A readonly OS handle on an ALREADY DISABLED task definition is staged
  # under this sole owner. No ACL changes, job reassignment or task mutation.
  # The surrounding production path remains behind its original hardlock.
- function Open-V3Pr661DisabledTaskDefinitionLeaseSOURCE_ONLY([string]$TaskName) {
-  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
-   throw 'V3_TASK_DEFINITION_LEASE_WINDOWS_ONLY'
-  }
-  $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
-  if($sandbox){
-   if($TaskName -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'){
-    throw 'V3_TASK_DEFINITION_LEASE_SANDBOX_NAME_HOLD'
-   }
-  }elseif($TaskName -cnotin @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
-   throw 'V3_TASK_DEFINITION_LEASE_ORIGINAL_SCOPE_HOLD'
-  }
-  $service=New-Object -ComObject 'Schedule.Service';$service.Connect()
-  if($service.GetFolder('\').GetTask($TaskName).Enabled){
-   throw 'V3_TASK_DEFINITION_LEASE_REQUIRES_ALREADY_DISABLED'
-  }
-  $path=Join-Path (Join-Path $env:SystemRoot 'System32\Tasks') $TaskName
-  $file=Get-Item -LiteralPath $path -Force -ErrorAction Stop
-  if($file.PSIsContainer -or $file.Length -lt 64 -or $file.Length -gt 1048576 -or
-     [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){
-   throw 'V3_TASK_DEFINITION_LEASE_UNSAFE_FILE'
-  }
-  $stream=$null
-  try{
-   # Share READ only: existing read access remains available; new standard
-   # writes/deletes/replacements, including privileged Task API writes, must
-   # fail at the kernel. This is not immunity to forced handle closure or
-   # arbitrary administrator action outside the controlled operator window.
-   $stream=[IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
-   if($service.GetFolder('\').GetTask($TaskName).Enabled){
-    throw 'V3_TASK_DEFINITION_LEASE_DISABLED_STATE_DRIFT'
-   }
-   $sha=[Security.Cryptography.SHA256]::Create()
-   try{$digest=([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()}
-   finally{$sha.Dispose()}
-   $stream.Position=0
-   return [pscustomobject]@{
-    task_name=$TaskName;definition_path=$path;definition_sha256=$digest
-    readonly_definition_handle=$stream
-    privileged_handle_closure_excluded=$false
-    process_family_quiescence_proven=$false;cas_or_paper_authorized=$false
-   }
-  }catch{if($null -ne $stream){$stream.Dispose()};throw}
- }
- # Acquire BOTH existing disabled definitions as a single owned resource.
- # A partial acquisition never leaks a handle and never enables a task.
- # On success ownership transfers to the caller through the returned handles;
- # the caller must retain both throughout the complete native/Cloud transition.
- function Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY([string[]]$TaskNames) {
-  $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
-  if($TaskNames.Count -ne 2 -or @($TaskNames|Select-Object -Unique).Count -ne 2){
-   throw 'V3_INTAKE_LEASE_PAIR_EXACT_TWO_DISTINCT_REQUIRED'
-  }
-  if($sandbox){
-   if(@($TaskNames|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count){
-    throw 'V3_INTAKE_LEASE_PAIR_SANDBOX_SCOPE_HOLD'
-   }
-  }elseif(-not(Test-V3ScopedIntakeTaskSet -Names $TaskNames)){
-   throw 'V3_INTAKE_LEASE_PAIR_ORIGINAL_SCOPE_HOLD'
-  }
-  $leases=@()
-  try{
-   foreach($taskName in $TaskNames){
-    $leases+=@(Open-V3Pr661DisabledTaskDefinitionLeaseSOURCE_ONLY -TaskName $taskName)
-   }
-   foreach($lease in $leases){
-    if($lease.readonly_definition_handle.SafeFileHandle.IsClosed){
-     throw 'V3_INTAKE_LEASE_PAIR_HANDLE_CLOSED'
-    }
-   }
-   return [pscustomobject]@{
-    kind='V3_PR661_HELD_DISABLED_INTAKE_DEFINITION_PAIR_V1'
-    leases=$leases
-    process_family_quiescence_proven=$false
-    privileged_handle_closure_excluded=$false
-    cas_or_paper_authorized=$false
-   }
-  }catch{
-   foreach($lease in $leases){$lease.readonly_definition_handle.Dispose()}
-   throw
-  }
- }
  # One native implementation, exercised below by the disposable Windows test.
  # Nested within the original PR515 mutation owner, not a second STOP entrypoint.
  function Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY(
@@ -3196,7 +3227,10 @@ public static class V3Pr515NativeFenceRenameV1 {
 function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
  [string]$Root,[object]$OriginalReadback,[object]$RecoveryReceipt,
  [string]$BackupDirectory,[string]$ReviewedPr515SourceSha256,
- [string]$ReviewedFenceSha256,[string]$Confirm) {
+ [string]$ReviewedFenceSha256,[string]$Confirm,
+ [object]$HeldIntakePair,[byte[]]$SignedAbortPayload,[byte[]]$SignedAbortCms,
+ [string]$ReviewedIssuerCertificateSha256='',[string]$ExpectedIssuerEpochId='',
+ [string]$ExpectedIssuerSourceSha256='',[string]$ExpectedCallerAclSha256='') {
  throw 'V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED'
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'V3_PRECOMMIT_RESTORE_ORIGINAL_WINDOWS_REQUIRED'
@@ -3285,7 +3319,66 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
  # independent Cloud CAS NEVER/old-only attestation must be implemented via
  # its actual authorized read-only owner BEFORE any marker/Task mutation.
  # The synthetic RecoveryReceipt booleans can NEVER lift this barrier.
- throw 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED'
+ $originalArmed=New-V3Pr515PreparedArmedMarker `
+  -SuccessorId ([string]$marker.proposed_successor_series_id) `
+  -ReviewedRepoSha ([string]$marker.proposed_v3_repo_sha) `
+  -ReviewedBundleSha ([string]$marker.proposed_v3_bundle_sha256) `
+  -ReviewedStrategySha ([string]$marker.proposed_v3_strategy_sha256)
+ $originalArmedSha=Get-V3Pr515PreparedFenceSha256 -Marker $originalArmed
+ $terminal=Test-V3Pr515SignedPreparedAbortReadback -Payload $SignedAbortPayload -Cms $SignedAbortCms `
+  -ReviewedCertSha256 $ReviewedIssuerCertificateSha256 -ExpectedEpochId $ExpectedIssuerEpochId `
+  -ExpectedSourceSha256 $ExpectedIssuerSourceSha256 -ExpectedFenceSha256 $originalArmedSha `
+  -ExpectedAclSha256 $ExpectedCallerAclSha256
+ if($terminal.signed_abort_fields_and_pins_match -ne $true -or
+    $ReviewedIssuerCertificateSha256 -cne '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'){
+  throw 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED'
+ }
+ if(-not(Test-V3Pr661HeldIntakeDefinitionPair -Pair $HeldIntakePair -TaskNames $tasks)){
+  throw 'V3_PRECOMMIT_RESTORE_REAL_HELD_PAIR_REQUIRED'
+ }
+ # Native recovery shares the real held definition pair with the STOP
+ # owner. A fresh terminal abort is required again immediately before release.
+ function Invoke-V3Pr661IssuerBoundIntakeRestoreSOURCE_ONLY(
+  [string[]]$TaskNames,[object]$HeldPair,[byte[]]$AbortPayload,[byte[]]$AbortCms,
+  [string]$IssuerCertificateSha256,[string]$EpochId,[string]$SourceSha256,
+  [string]$OriginalArmedFenceSha256,[string]$CallerAclSha256) {
+  $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
+  if(-not $sandbox -or $TaskNames.Count -ne 2 -or
+     @($TaskNames|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count){
+   throw 'V3_ISSUER_BOUND_NATIVE_RESTORE_PRODUCTION_RELEASE_HOLD'
+  }
+  $abort=Test-V3Pr515SignedPreparedAbortReadback -Payload $AbortPayload -Cms $AbortCms `
+   -ReviewedCertSha256 $IssuerCertificateSha256 -ExpectedEpochId $EpochId `
+   -ExpectedSourceSha256 $SourceSha256 -ExpectedFenceSha256 $OriginalArmedFenceSha256 `
+   -ExpectedAclSha256 $CallerAclSha256
+  if($abort.signed_abort_fields_and_pins_match -ne $true){
+   throw 'V3_ISSUER_BOUND_NATIVE_RESTORE_TERMINAL_ABORT_HOLD'
+  }
+  if(-not(Test-V3Pr661HeldIntakeDefinitionPair -Pair $HeldPair -TaskNames $TaskNames)){
+   throw 'V3_ISSUER_BOUND_NATIVE_RESTORE_HELD_PAIR_HOLD'
+  }
+  foreach($taskName in $TaskNames){
+   if([string](Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop).State -cne 'Disabled'){
+    throw 'V3_ISSUER_BOUND_NATIVE_RESTORE_TASK_NOT_DISABLED'
+   }
+  }
+  # Task definitions cannot be enabled while the held kernel handles exist.
+  # Release only after all proof checks; failure never removes a host fence.
+  foreach($lease in $HeldPair.leases){$lease.readonly_definition_handle.Dispose()}
+  $tasks=$TaskNames
+ foreach($name in $tasks){
+  Enable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
+ }
+ foreach($name in $tasks){
+  Start-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
+ }
+  return [pscustomobject]@{
+   kind='V3_PR661_ISSUER_BOUND_NATIVE_TASK_RESTORE_V1'
+   native_task_api_restore_requested=$true
+   independent_runtime_aftercare_ack_pending=$true
+   marker_removed_here=$false;cas_or_paper_authorized=$false
+  }
+ }
  # This remains UNREACHABLE under both current source locks. The future
  # authorized QUIESCED case transitions to ARMED atomically. If already ARMED,
  # preserve the exact protected marker rather than overwriting it.
@@ -3307,12 +3400,12 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   }
  }
  $armedAt=[datetimeoffset]::UtcNow
- foreach($name in $tasks){
-  Enable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
- }
- foreach($name in $tasks){
-  Start-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
- }
+ $restored=Invoke-V3Pr661IssuerBoundIntakeRestoreSOURCE_ONLY -TaskNames $tasks `
+  -HeldPair $HeldIntakePair -AbortPayload $SignedAbortPayload -AbortCms $SignedAbortCms `
+  -IssuerCertificateSha256 $ReviewedIssuerCertificateSha256 `
+  -EpochId $ExpectedIssuerEpochId -SourceSha256 $ExpectedIssuerSourceSha256 `
+  -OriginalArmedFenceSha256 $originalArmedSha -CallerAclSha256 $ExpectedCallerAclSha256
+ if($restored.native_task_api_restore_requested -ne $true){throw 'V3_PRECOMMIT_NATIVE_RESTORE_NOT_REQUESTED_PRESERVE_FENCE'}
  $healthy=$false
  for($i=0;$i -lt 45;$i++){
   Start-Sleep -Seconds 4

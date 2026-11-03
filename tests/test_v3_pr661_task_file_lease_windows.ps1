@@ -23,7 +23,9 @@ $pairDefs=@($ast.FindAll({param($n)
 if($pairDefs.Count -ne 1){throw 'V3_FILE_LEASE_PAIR_HELPER_MISSING'}
 . ([scriptblock]::Create($pairDefs[0].Extent.Text))
 foreach($functionName in @('Test-V3IndependentOriginalHostCmsSignature','Test-V3Pr661SignedCloudBoundaryFields',
- 'Test-V3Pr661SignedIssuerPrestopReceipt','Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY')){
+ 'Test-V3Pr661SignedIssuerPrestopReceipt','Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY',
+ 'Test-V3Pr515SignedPreparedAbortReadback','Test-V3Pr661HeldIntakeDefinitionPair',
+ 'Invoke-V3Pr661IssuerBoundIntakeRestoreSOURCE_ONLY')){
  $f=@($ast.FindAll({param($n)
   $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $functionName
  },$true))
@@ -186,11 +188,61 @@ try{$null=$f.GetTask('__TASK__').RunEx($null,2,0,$null)}catch{$runEx='DENIED'}
  if((Get-FileHash -LiteralPath $lease.definition_path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $lease.definition_sha256){
   throw 'FAIL_HELD_TASK_DEFINITION_BYTES_CHANGED'
  }
- foreach($entry in $pair.leases){$entry.readonly_definition_handle.Dispose()}
- # The lease must actually release: normal original Task API control must
- # work again afterwards. No ACL is changed, so no descriptor repair is needed.
- $folder.GetTask($name).Enabled=$true
- $null=$folder.GetTask($name).Run($null)
+ # Retain the SAME live pair through independent terminal CMS validation.
+ # The original recovery owner's real enable/start implementation must run;
+ # merely disposing handles and calling Task.Run in this test is insufficient.
+ $abortWire=([ordered]@{
+  kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1'
+  epoch_id='V3CAS-AUDIT-99999999999999999999999999999999'
+  source_sha256=('a'*64);prepared_fence_sha256=('b'*64);caller_acl_sha256=('c'*64)
+  issuer_actor='v3_cas_inhibit_issuer_actor';receipt_sha256=('d'*64)
+  state='ABORT_RECORDED_NOT_RELEASED'
+  created_at_utc=[datetimeoffset]::UtcNow.AddSeconds(-2).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+  observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+  cloud_active_series_count=1;cloud_original_active_series_count=1
+  cloud_cas_rpc_count=0;cloud_executor_can_login=$false
+  cloud_observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+ }|ConvertTo-Json -Compress)
+ $abortBytes=[Text.Encoding]::UTF8.GetBytes($abortWire)
+ $abortCms=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$abortBytes),$true)
+ $abortSigner=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+ $abortSigner.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+ $abortCms.ComputeSignature($abortSigner)
+ $restoreInput=@{TaskNames=@($name,$secondName);HeldPair=$pair;AbortPayload=$abortBytes
+  AbortCms=[byte[]]$abortCms.Encode();IssuerCertificateSha256=$testPin
+  EpochId='V3CAS-AUDIT-99999999999999999999999999999999';SourceSha256=('a'*64)
+  OriginalArmedFenceSha256=('b'*64);CallerAclSha256=('c'*64)}
+ $invalidRestore=$restoreInput.Clone();$invalidRestore.IssuerCertificateSha256=('0'*64)
+ $restoreRejected=$false
+ try{$null=Invoke-V3Pr661IssuerBoundIntakeRestoreSOURCE_ONLY @invalidRestore}
+ catch{if($_.Exception.Message -notlike '*TERMINAL_ABORT_HOLD*'){throw};$restoreRejected=$true}
+ if(-not $restoreRejected -or $folder.GetTask($name).Enabled -or $folder.GetTask($secondName).Enabled -or
+    -not(Test-V3Pr661HeldIntakeDefinitionPair -Pair $pair -TaskNames @($name,$secondName))){
+  throw 'FAIL_INVALID_TERMINAL_ABORT_RELEASED_LEASE_OR_REENABLED_TASK'
+ }
+ # A serialized/faked or already-closed lease must never enable a task.
+ $pair.leases[0].readonly_definition_handle.Dispose()
+ $closedRejected=$false
+ try{$null=Invoke-V3Pr661IssuerBoundIntakeRestoreSOURCE_ONLY @restoreInput}
+ catch{if($_.Exception.Message -notlike '*HELD_PAIR_HOLD*'){throw};$closedRejected=$true}
+ if(-not $closedRejected -or $folder.GetTask($name).Enabled -or $folder.GetTask($secondName).Enabled){
+  throw 'FAIL_CLOSED_PAIR_RESTORED_TASKS'
+ }
+ $pair.leases[0]=Open-V3Pr661DisabledTaskDefinitionLeaseSOURCE_ONLY $name
+ [IO.File]::Delete($workerPid)
+ $restored=Invoke-V3Pr661IssuerBoundIntakeRestoreSOURCE_ONLY @restoreInput
+ if($restored.native_task_api_restore_requested -ne $true -or $restored.marker_removed_here -ne $false -or
+    $restored.cas_or_paper_authorized -ne $false -or
+    -not $folder.GetTask($name).Enabled -or -not $folder.GetTask($secondName).Enabled){
+  throw 'FAIL_ORIGINAL_SOURCE_RESTORE_NOT_EXECUTED_OR_FALSE_RELEASE'
+ }
+ for($i=0;$i -lt 40 -and -not [IO.File]::Exists($workerPid);$i++){Start-Sleep -Milliseconds 250}
+ if(-not [IO.File]::Exists($workerPid)){throw 'FAIL_RESTORED_REAL_WORKER_NOT_STARTED'}
+ $recoveredProcess=[Diagnostics.Process]::GetProcessById([int][IO.File]::ReadAllText($workerPid))
+ try{if($recoveredProcess.HasExited){throw 'FAIL_RESTORED_REAL_WORKER_EXITED'}}finally{$recoveredProcess.Dispose()}
+ foreach($entry in $pair.leases){
+  if(-not $entry.readonly_definition_handle.SafeFileHandle.IsClosed){throw 'FAIL_RESTORE_DID_NOT_RELEASE_PAIR'}
+ }
  [pscustomobject]@{
   kind='V3_PR661_HOSTED_DISABLED_TASK_FILE_LEASE_V1'
   enabled_capture_rejected=$true;kernel_write_denied=$true
@@ -198,6 +250,9 @@ try{$null=$f.GetTask('__TASK__').RunEx($null,2,0,$null)}catch{$runEx='DENIED'}
   original_task_api_recovered=$true;originalhost_mutated=$false
   two_task_pair_held_during_real_process_stop=$true
   original_source_issuer_signature_to_native_stop_integration=$true
+  original_source_terminal_abort_to_native_restore_integration=$true
+  invalid_abort_preserved_both_leases_and_disabled_tasks=$true
+  closed_or_fake_lease_cannot_restore=$true
   invalid_signed_issuer_did_not_mutate_tasks=$true
   partial_pair_failure_released_first_handle=$true
   admin_and_system_runex_ignore_constraints_denied=$true
