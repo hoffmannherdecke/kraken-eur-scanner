@@ -36,7 +36,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertIn("'v3_cas_audit_reader'", self.code)
         self.assertNotRegex(
             self.code,
-            r"(?i)GRANT (?:ALL|INSERT|UPDATE|DELETE) ON v3_cas_audit\\.prepared_fence_abort_v1 TO v3_cas_audit_reader",
+            r"(?i)GRANT (?:ALL|INSERT|UPDATE|DELETE) ON v3_cas_audit\.prepared_fence_abort_v1 TO v3_cas_audit_reader",
         )
 
     def test_aborted_epoch_blocks_future_intent_and_unknown(self):
