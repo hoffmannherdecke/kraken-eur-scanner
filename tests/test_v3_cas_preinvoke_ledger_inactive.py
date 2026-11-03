@@ -942,7 +942,7 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         self.assertEqual(src.count("COMMIT;"), 8)
         self.assertIn("[switch]$PrecommitCloudInventory", src)
         self.assertIn("[switch]$PostcommitDurableIntent", src)
-        self.assertIn("+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent) -gt 1", src)
+        self.assertIn("+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent) -gt 1", src)
         self.assertIn("V3_PRECOMMIT_CUSTODY_EXPLICIT_SIGNER_AND_FENCE_PINS_REQUIRED", src)
         self.assertIn("V3_NOTEBOOK_CURRENT_NO_CAS_CAPABILITY_CUSTODY_V1", src)
         self.assertIn("Save-V3SignedNotebookReaderSnapshot -RawJson $signed", src)
