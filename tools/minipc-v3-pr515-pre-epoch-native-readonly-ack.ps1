@@ -251,10 +251,15 @@ $shortNativeStable=(
  [string]$secondV3.State -ceq [string]$v3.State -and
  $firstV3XmlSha256 -ceq $secondV3XmlSha256 -and
  -not(Test-Path -LiteralPath $maintenance))
+# Fail closed for invalid original Task identity, not merely stable drift.
+$pass=(@($tasks|Where-Object {
+ $_.state -cne 'Running' -or $_.action_count -ne 1 -or $_.principal_is_system -ne $true
+}).Count -eq 0 -and [string]$v3.State -ceq 'Disabled' -and
+ -not(Test-Path -LiteralPath $maintenance))
 # Bind CURRENT signed Notebook bytes to both observed native Host snapshots.
 # A digest cannot supply continuous issuer custody, OS exclusion or permission.
 $crossSourceEvidenceSha256=''
-if($signedCurrentMatch -and $notebookCloudTimeMatched -and $shortNativeStable){
+if($signedCurrentMatch -and $notebookCloudTimeMatched -and $shortNativeStable -and $pass){
  $evidenceLines=@(
   'V3_PR515_READONLY_CROSS_SOURCE_EVIDENCE_V1',
   $ExpectedCandidateRepoSha,
@@ -277,10 +282,6 @@ if($signedCurrentMatch -and $notebookCloudTimeMatched -and $shortNativeStable){
   )).Replace('-','').ToLowerInvariant()
  }finally{$sha.Dispose()}
 }
-$pass=(@($tasks|Where-Object {
- $_.action_count -ne 1 -or $_.principal_is_system -ne $true
-}).Count -eq 0 -and [string]$v3.State -ceq 'Disabled' -and
- -not(Test-Path -LiteralPath $maintenance))
 [pscustomobject][ordered]@{
  kind='V3_PR515_PRE_EPOCH_ORIGINALHOST_NATIVE_OBSERVATION_V1'
  observed_at_utc=$now.ToString('o')
