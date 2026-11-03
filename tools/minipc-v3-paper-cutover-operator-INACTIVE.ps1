@@ -2362,6 +2362,19 @@ function Test-V3Pr515PreEpochMarkerCancelCustodySOURCE_ONLY(
  return [pscustomobject]$out
 }
 
+# Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).
+# Signed independent terminal abort and atomic archival are not yet wired.
+# Direct invocation and the outer -Execute CLI both fail closed.
+function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
+ [string]$Root,[string]$ExpectedFenceSha256,
+ [string]$ReviewedRepoSha,[string]$ReviewedBundleSha256,
+ [string]$ReviewedStrategySha256,[byte[]]$SignedAbortPayload,
+ [byte[]]$SignedAbortCms,[string]$ReviewedSignerCertSha256,
+ [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
+ [string]$ExpectedCallerAclSha256,
+ [switch]$PreEpochOnly,[byte[]]$PreEpochSignedCurrentPayload,
+ [byte[]]$PreEpochSignedCurrentCms,[object]$PreEpochCloudOriginal) {
+ throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'
 # Physical PRESTOP marker archive primitive. Unlike File.Move after a
 # snapshot, the source file is opened for READ+DELETE with ZERO sharing; its
 # complete SHA256 is checked through that SAME handle and the Windows rename
@@ -2486,19 +2499,7 @@ public static class V3Pr515NativeFenceRenameV1 {
  }
 }
 
-# Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).
-# Signed independent terminal abort and atomic archival are not yet wired.
-# Direct invocation and the outer -Execute CLI both fail closed.
-function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
- [string]$Root,[string]$ExpectedFenceSha256,
- [string]$ReviewedRepoSha,[string]$ReviewedBundleSha256,
- [string]$ReviewedStrategySha256,[byte[]]$SignedAbortPayload,
- [byte[]]$SignedAbortCms,[string]$ReviewedSignerCertSha256,
- [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
- [string]$ExpectedCallerAclSha256,
- [switch]$PreEpochOnly,[byte[]]$PreEpochSignedCurrentPayload,
- [byte[]]$PreEpochSignedCurrentCms,[object]$PreEpochCloudOriginal) {
- throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'
+
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'V3_MARKER_CANCEL_ORIGINALHOST_WINDOWS_REQUIRED'
  }
