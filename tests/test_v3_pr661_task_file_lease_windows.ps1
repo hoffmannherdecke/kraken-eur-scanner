@@ -22,7 +22,7 @@ $pairDefs=@($ast.FindAll({param($n)
 },$true))
 if($pairDefs.Count -ne 1){throw 'V3_FILE_LEASE_PAIR_HELPER_MISSING'}
 . ([scriptblock]::Create($pairDefs[0].Extent.Text))
-foreach($functionName in @('Test-V3IndependentOriginalHostCmsSignature',
+foreach($functionName in @('Test-V3IndependentOriginalHostCmsSignature','Test-V3Pr661SignedCloudBoundaryFields',
  'Test-V3Pr661SignedIssuerPrestopReceipt','Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY')){
  $f=@($ast.FindAll({param($n)
   $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $functionName
@@ -41,7 +41,10 @@ try{$testPin=([BitConverter]::ToString($hash.ComputeHash($cert.RawData))).Replac
 finally{$hash.Dispose()}
 function New-IssuerTestInput {
  $wire=([ordered]@{
-  kind='V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1'
+  cloud_active_series_count=1;cloud_original_active_series_count=1
+  cloud_cas_rpc_count=0;cloud_executor_can_login=$false
+  cloud_observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+  kind='V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1' 
   observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
   actor='v3_cas_audit_reader_actor';requested_role='v3_cas_audit_reader'
   epoch_id='V3CAS-AUDIT-99999999999999999999999999999999'

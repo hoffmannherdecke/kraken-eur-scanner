@@ -2,7 +2,7 @@
 # Extract the pure verification function by AST. NEVER source/execute the
 # actual Mini-PC cutover operator, task, Cloud client or any release path.
 [CmdletBinding()]
-param([string]$CommittedIssuerJson='')
+param([string]$CommittedIssuerJson='',[string]$CommittedAbortJson='')
 $ErrorActionPreference='Stop'
 $ps=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'
 $tokens=$null;$errors=$null
@@ -16,6 +16,12 @@ $defs=@($ast.FindAll({
 },$true))
 if($defs.Count -ne 1){throw 'V3_INDEPENDENT_SIGNED_ORIGINAL_FUNCTION_MISSING_OR_DUPLICATE'}
 . ([scriptblock]::Create($defs[0].Extent.Text))
+$cloudBoundary=@($ast.FindAll({param($node)
+ $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -ceq 'Test-V3Pr661SignedCloudBoundaryFields'
+},$true))
+if($cloudBoundary.Count -ne 1){throw 'V3_SIGNED_CLOUD_BOUNDARY_MISSING_OR_DUPLICATE'}
+. ([scriptblock]::Create($cloudBoundary[0].Extent.Text))
 $issuerVerifier=@($ast.FindAll({param($node)
  $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
  $node.Name -eq 'Test-V3Pr661SignedIssuerPrestopReceipt'
@@ -161,6 +167,8 @@ try {
   # A durable abort remains valid as historical data; a fresh independent
   # read must not expire forever merely because the abort is over 90s old.
   $abortRow=@{
+   cloud_active_series_count=1;cloud_original_active_series_count=1
+   cloud_cas_rpc_count=0;cloud_executor_can_login=$false;cloud_observed_at_utc=$observed
    kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1'
    epoch_id='V3CAS-AUDIT-99999999999999999999999999999999'
    source_sha256=('a'*64);prepared_fence_sha256=('b'*64);caller_acl_sha256=('c'*64)
@@ -198,11 +206,25 @@ try {
      (Review-AbortFixture ($abortWire+' ') $abortCms $pin).signed_abort_fields_and_pins_match){
    throw 'V3_ABORT_STALE_SIGNATURE_OR_PIN_ACCEPTED'
   }
+  if($CommittedAbortJson){
+   $fixture=Get-Item -LiteralPath $CommittedAbortJson -Force -ErrorAction Stop
+   if($fixture.Name -cne 'terminal-abort.json' -or $fixture.Length -gt 4096 -or
+      [bool]($fixture.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+    throw 'V3_CI_TERMINAL_ABORT_FIXTURE_SCOPE_HOLD'
+   }
+   $wire=[IO.File]::ReadAllText($fixture.FullName,[Text.UTF8Encoding]::new($false,$true)).TrimEnd("`r","`n")
+   $actual=Review-AbortFixture $wire (Sign-ReaderMock $wire $cert) $pin
+   if($actual.signed_abort_fields_and_pins_match -ne $true -or $actual.marker_only_cancel_authorized -ne $false){
+    throw 'V3_REAL_READER_TERMINAL_ABORT_PUBLIC_CLOUD_JOIN_FAILED_OR_FALSE_RELEASE'
+   }
+  }
   Write-Output 'V3_DURABLE_TERMINAL_ABORT_FRESH_READ_REAL_CMS_POSITIVE_NEGATIVES_PASS'
   # Behavioral check of the ACTUAL existing verifier. An optional fixture
   # comes from a separately authenticated PG17 Reader after issuer COMMIT in
   # the existing networkless database test, never from a production account.
   $issuerWire=([ordered]@{
+   cloud_active_series_count=1;cloud_original_active_series_count=1
+   cloud_cas_rpc_count=0;cloud_executor_can_login=$false;cloud_observed_at_utc=$observed
    kind='V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1'
    observed_at_utc=$observed
    actor='v3_cas_audit_reader_actor';requested_role='v3_cas_audit_reader'
@@ -245,6 +267,8 @@ try {
    [regex]::Replace($issuerWire,'("inhibit_started_at_utc"\s*:\s*")[^"]+"','${1}INVALID"'),
    [regex]::Replace($issuerWire,'("inhibit_started_at_utc"\s*:\s*")[^"]+"',('${1}'+$futureAt+'"')),
    $issuerWire.Replace(('a'*64),('e'*64)),
+   [regex]::Replace($issuerWire,'"cloud_active_series_count"\s*:\s*1','"cloud_active_series_count":2'),
+   [regex]::Replace($issuerWire,'"cloud_cas_rpc_count"\s*:\s*0','"cloud_cas_rpc_count":1'),
    [regex]::Replace($issuerWire,'"unknown_count"\s*:\s*0','"unknown_count":1'),
    [regex]::Replace($issuerWire,'"native_stop_done"\s*:\s*false','"native_stop_done":true'),
    [regex]::Replace($issuerWire,'"cas_or_paper_authorized"\s*:\s*false','"cas_or_paper_authorized":true'),

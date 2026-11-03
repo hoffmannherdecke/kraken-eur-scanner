@@ -147,8 +147,14 @@ if($PreparedAbortSignedCurrent){
  $checks[0].Sql=@'
 SET ROLE v3_cas_audit_reader;
 BEGIN TRANSACTION READ ONLY;
+WITH cloud_current AS MATERIALIZED (SELECT v3_cas_audit.read_forward_t0_current_v1() AS c)
 SELECT pg_catalog.jsonb_build_object(
  'kind','V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1',
+ 'cloud_active_series_count',c->'active_series_count',
+ 'cloud_original_active_series_count',c->'original_active_series_count',
+ 'cloud_cas_rpc_count',c->'cas_rpc_count',
+ 'cloud_executor_can_login',c->'executor_can_login',
+ 'cloud_observed_at_utc',c->'observed_at_utc' ,
  'observed_at_utc',pg_catalog.replace(pg_catalog.to_char(
   pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
  'epoch_id',a.epoch_id,'source_sha256',a.source_sha256,
@@ -158,7 +164,7 @@ SELECT pg_catalog.jsonb_build_object(
  'created_at_utc',pg_catalog.replace(pg_catalog.to_char(
   a.created_at_utc AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z'
 )::text
-FROM v3_cas_audit.prepared_fence_abort_v1 a
+FROM v3_cas_audit.prepared_fence_abort_v1 a CROSS JOIN cloud_current
 WHERE session_user='v3_cas_audit_reader_actor'
  AND current_user='v3_cas_audit_reader'
  AND (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1)=1
@@ -181,7 +187,13 @@ if($IssuerPrestopSignedCurrent){
  $checks[0].Sql=@'
 SET ROLE v3_cas_audit_reader;
 BEGIN TRANSACTION READ ONLY;
-SELECT v3_cas_audit.read_committed_pre_stop_inhibit_v1()::text;
+WITH cloud_current AS MATERIALIZED (SELECT v3_cas_audit.read_forward_t0_current_v1() AS c)
+SELECT (v3_cas_audit.read_committed_pre_stop_inhibit_v1() || pg_catalog.jsonb_build_object(
+ 'cloud_active_series_count',c->'active_series_count',
+ 'cloud_original_active_series_count',c->'original_active_series_count',
+ 'cloud_cas_rpc_count',c->'cas_rpc_count',
+ 'cloud_executor_can_login',c->'executor_can_login',
+ 'cloud_observed_at_utc',c->'observed_at_utc' ))::text FROM cloud_current;
 COMMIT;
 '@
 }
@@ -283,7 +295,7 @@ COMMIT;
 # ISO-8601 strings as DateTime, and formatting them loses the original 'Z'.
 # Only allowlisted fields are parsed from the original JSON text.
 function Read-V3ReaderUtcLiteral([string]$RawJson,[string]$Name) {
-    if($Name -cnotin @('observed_at_utc','opened_at_utc','intent_created_at_utc')){
+    if($Name -cnotin @('observed_at_utc','opened_at_utc','intent_created_at_utc','cloud_observed_at_utc')){
         throw 'V3_READER_UTC_FIELD_NOT_ALLOWLISTED'
     }
     $pattern='"'+[regex]::Escape($Name)+'"\s*:\s*"(?<utc>[^"\\]*)"'
@@ -417,10 +429,25 @@ foreach ($check in $checks) {
             $wire=($output|Out-String).Trim()
             if($wire.Length -lt 150 -or $wire.Length -gt 4096){throw 'V3_ISSUER_PRESTOP_WIRE_SIZE_HOLD'}
             $row=$wire|ConvertFrom-Json -ErrorAction Stop
+            foreach($field in @('cloud_active_series_count','cloud_original_active_series_count')){
+                if($wire -cnotmatch ('"'+$field+'"\s*:\s*1(?=\s*[,}])')){
+                    throw 'V3_SIGNED_READER_PUBLIC_ORIGINAL_ONLY_HOLD'
+                }
+            }
+            if($wire -cnotmatch '"cloud_cas_rpc_count"\s*:\s*0(?=\s*[,}])' -or
+               $wire -cnotmatch '"cloud_executor_can_login"\s*:\s*false(?=\s*[,}])'){
+                throw 'V3_SIGNED_READER_PUBLIC_CAS_OR_LOGIN_HOLD'
+            }
+            $cloudAt=Read-V3ReaderUtcLiteral -RawJson $wire -Name 'cloud_observed_at_utc'
+            $cloudAge=([datetimeoffset]::UtcNow-$cloudAt.utc).TotalSeconds
+            if($cloudAge -lt -5 -or $cloudAge -gt 60){throw 'V3_SIGNED_READER_PUBLIC_STALE_HOLD'}
+
             $fields=@('kind','observed_at_utc','actor','requested_role','epoch_id',
               'source_sha256','original_fence_sha256','caller_acl_sha256',
               'issuer_actor','inhibit_started_at_utc','state','native_stop_done',
-              'unknown_count','cas_or_paper_authorized')
+              'unknown_count','cas_or_paper_authorized',
+                'cloud_active_series_count','cloud_original_active_series_count',
+                'cloud_cas_rpc_count','cloud_executor_can_login','cloud_observed_at_utc')
             $actual=@($row.PSObject.Properties.Name)
             if($row -isnot [pscustomobject] -or $actual.Count -ne $fields.Count -or
                @($actual|Where-Object {$_ -cnotin $fields}).Count -ne 0){
@@ -469,9 +496,24 @@ foreach ($check in $checks) {
                 throw 'V3_PREPARED_ABORT_WIRE_SIZE_HOLD'
             }
             $row=$wire|ConvertFrom-Json -ErrorAction Stop
+            foreach($field in @('cloud_active_series_count','cloud_original_active_series_count')){
+                if($wire -cnotmatch ('"'+$field+'"\s*:\s*1(?=\s*[,}])')){
+                    throw 'V3_SIGNED_READER_PUBLIC_ORIGINAL_ONLY_HOLD'
+                }
+            }
+            if($wire -cnotmatch '"cloud_cas_rpc_count"\s*:\s*0(?=\s*[,}])' -or
+               $wire -cnotmatch '"cloud_executor_can_login"\s*:\s*false(?=\s*[,}])'){
+                throw 'V3_SIGNED_READER_PUBLIC_CAS_OR_LOGIN_HOLD'
+            }
+            $cloudAt=Read-V3ReaderUtcLiteral -RawJson $wire -Name 'cloud_observed_at_utc'
+            $cloudAge=([datetimeoffset]::UtcNow-$cloudAt.utc).TotalSeconds
+            if($cloudAge -lt -5 -or $cloudAge -gt 60){throw 'V3_SIGNED_READER_PUBLIC_STALE_HOLD'}
+
             $fields=@('kind','epoch_id','source_sha256','prepared_fence_sha256',
                 'caller_acl_sha256','issuer_actor','receipt_sha256','state',
-                'created_at_utc','observed_at_utc')
+                'created_at_utc','observed_at_utc',
+                'cloud_active_series_count','cloud_original_active_series_count',
+                'cloud_cas_rpc_count','cloud_executor_can_login','cloud_observed_at_utc')
             $actual=@($row.PSObject.Properties.Name)
             if($actual.Count -ne $fields.Count -or
                @($actual|Where-Object {$_ -cnotin $fields}).Count -ne 0){

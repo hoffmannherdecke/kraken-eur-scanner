@@ -53,6 +53,28 @@ if(($PreviewPreparedOriginalhostFence -or $ExecuteOriginalhostArmedOnly) -and
 # PR661: Independently CMS-authenticated Reader projection of the issuer's
 # separately COMMITTED PRE-STOP inhibit. Pure reviewer, NO host/Cloud mutation.
 # A signature or role label alone never authorizes a Task or PID operation.
+# The existing independently authenticated private T0 Reader also reads the
+# public active series under its original restricted definer. Bind that SAME
+# original output to the signed issuer/abort wire, rather than accepting a
+# caller-supplied public Cloud inventory. Pure validation, no release by itself.
+function Test-V3Pr661SignedCloudBoundaryFields([string]$Wire,[datetimeoffset]$ObservedAt) {
+ try{
+  foreach($field in @('cloud_active_series_count','cloud_original_active_series_count')){
+   if($Wire -cnotmatch ('"'+$field+'"\s*:\s*1(?=\s*[,}])')){return $false}
+  }
+  if($Wire -cnotmatch '"cloud_cas_rpc_count"\s*:\s*0(?=\s*[,}])' -or
+     $Wire -cnotmatch '"cloud_executor_can_login"\s*:\s*false(?=\s*[,}])'){return $false}
+  $m=[regex]::Match($Wire,'"cloud_observed_at_utc"\s*:\s*"(?<utc>[^"\\]*)"')
+  if(-not $m.Success -or [string]$m.Groups['utc'].Value -cnotmatch
+     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){return $false}
+  $at=[datetimeoffset]::MinValue
+  if(-not [datetimeoffset]::TryParseExact([string]$m.Groups['utc'].Value,
+    "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
+    [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$at)){return $false}
+  $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
+  return ($age -ge -5 -and $age -le 90 -and [math]::Abs(($ObservedAt-$at).TotalSeconds) -le 5)
+ }catch{return $false}
+}
 function Test-V3Pr661SignedIssuerPrestopReceipt(
  [byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedCertSha256,
  [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
@@ -86,7 +108,9 @@ function Test-V3Pr661SignedIssuerPrestopReceipt(
   $keys=@('kind','observed_at_utc','actor','requested_role','epoch_id',
     'source_sha256','original_fence_sha256','caller_acl_sha256',
     'issuer_actor','inhibit_started_at_utc','state',
-    'native_stop_done','unknown_count','cas_or_paper_authorized')
+    'native_stop_done','unknown_count','cas_or_paper_authorized',
+    'cloud_active_series_count','cloud_original_active_series_count',
+    'cloud_cas_rpc_count','cloud_executor_can_login','cloud_observed_at_utc')
   $actual=@($v.PSObject.Properties.Name)
   if($v -isnot [pscustomobject] -or $actual.Count -ne $keys.Count -or
      @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){throw 'FIELDS'}
@@ -121,6 +145,7 @@ function Test-V3Pr661SignedIssuerPrestopReceipt(
      $startedAt -gt $at){
    throw 'ISSUER_START_TIME_INVALID_OR_AFTER_READBACK'
   }
+  if(-not(Test-V3Pr661SignedCloudBoundaryFields -Wire $wire -ObservedAt $at)){throw 'CLOUD_CURRENT_BOUNDARY_MISMATCH'}
   $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
   if($age -lt -5 -or $age -gt 30 -or
     [string]$v.kind -cne 'V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1' -or
@@ -2767,7 +2792,9 @@ function Test-V3Pr515SignedPreparedAbortReadback(
   # caller-supplied claims of authorization or a host-local SQL simulation.
   $keys=@('kind','epoch_id','source_sha256','prepared_fence_sha256',
     'caller_acl_sha256','issuer_actor','receipt_sha256','state',
-    'created_at_utc','observed_at_utc')
+    'created_at_utc','observed_at_utc',
+    'cloud_active_series_count','cloud_original_active_series_count',
+    'cloud_cas_rpc_count','cloud_executor_can_login','cloud_observed_at_utc')
   $actual=@($obj.PSObject.Properties.Name)
   if($obj -isnot [pscustomobject] -or $actual.Count -ne $keys.Count -or
      @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){
@@ -2801,6 +2828,7 @@ function Test-V3Pr515SignedPreparedAbortReadback(
        "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
        [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$createdAt) -or
      $createdAt -gt $at){throw 'ABORT_WIRE_CREATION_AFTER_OBSERVATION'}
+  if(-not(Test-V3Pr661SignedCloudBoundaryFields -Wire $wire -ObservedAt $at)){throw 'ABORT_CLOUD_CURRENT_BOUNDARY_MISMATCH'}
   $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
   if($age -lt -5 -or $age -gt 90 -or
      [string]$obj.kind -cne 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1' -or

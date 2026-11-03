@@ -1068,6 +1068,19 @@ lock=" RAISE EXCEPTION 'V3_PREPARED_ABORT_SOURCE_INACTIVE_NO_PRODUCTION_INSTALL'
 assert s.count(lock)==1
 print(s.replace(lock," NULL; -- ISOLATED disposable PG17 only",1))
 PY
+# Reuse the existing restricted public/private CURRENT Reader definer. It
+# supplies original public-series truth; do not introduce public table grants.
+t0_sql="supabase/v3-cas-t0-private-reader-witness-INACTIVE.sql"
+if pg -f - < "$t0_sql" >/dev/null 2>&1; then
+ echo 'FAIL_T0_SOURCE_HARDLOCK_BYPASSED' >&2; exit 1
+fi
+python - "$t0_sql" <<'PY_T0' | pg -f - >/dev/null
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text('utf-8')
+lock="  RAISE EXCEPTION 'V3_T0_READER_WITNESS_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+assert s.count(lock)==1
+print(s.replace(lock,"  NULL; -- ISOLATED disposable PG17 only",1))
+PY_T0
 # Return to disposable bootstrap-era fixture privileges for synthetic
 # SET SESSION AUTHORIZATION and data assertions, never original production.
 pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
@@ -1117,11 +1130,24 @@ issuer_transaction() {
   psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
   -U v3_cas_inhibit_issuer_actor -d postgres "$@"
 }
+# Execute the actual static Notebook Reader SQL, not a parallel test query.
+notebook_reader_sql() {
+ python - "$1" <<'PY_READER'
+import pathlib,sys
+s=pathlib.Path('tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1').read_text('utf-8')
+start='if($'+sys.argv[1]+'){\n $checks='
+assert s.count(start)==1
+part=s.split(start,1)[1]
+print(part.split("$checks[0].Sql=@'",1)[1].split("\n'@",1)[0])
+PY_READER
+}
+issuer_reader_sql=$(notebook_reader_sql IssuerPrestopSignedCurrent)
+abort_reader_sql=$(notebook_reader_sql PreparedAbortSignedCurrent)
 committed_issuer_reader() {
  docker exec -e PGPASSWORD='CI-READER-NO-PRODUCTION-SECRET' "$container" \
   psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
   -U v3_cas_audit_reader_actor -d postgres \
-  -c 'SET ROLE v3_cas_audit_reader; SELECT v3_cas_audit.read_committed_pre_stop_inhibit_v1()::text;'
+  -c "$issuer_reader_sql"
 }
 if [[ "$(issuer_transaction -c 'SELECT session_user;')" != v3_cas_inhibit_issuer_actor ]]; then
  echo 'FAIL_ISSUER_TRANSACTION_ACTOR_NOT_AUTHENTICATED' >&2; exit 1
@@ -1144,8 +1170,6 @@ fi
 issuer_transaction -c "BEGIN; $begin_inhibit COMMIT;" >/dev/null
 committed_issuer_reader >"$transition_tmp/issuer-prestop.json"
 command -v pwsh >/dev/null || { echo 'FAIL_SIGNED_ISSUER_INTEGRATION_REQUIRES_PWSH' >&2; exit 1; }
-pwsh -NoProfile -NonInteractive -File tests/test_v3_originalhost_signed_cms_offline.ps1 \
- -CommittedIssuerJson "$transition_tmp/issuer-prestop.json"
 # Check the second executor identity as well as its actor. The source must
 # refuse a live-login executor even when the separately signed row exists.
 pg_root_db -c 'ALTER ROLE v3_cas_executor LOGIN;' >/dev/null
@@ -1174,6 +1198,11 @@ fi
 if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/aborted.err"; then
  echo 'FAIL_ABORTED_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
 fi
+docker exec -e PGPASSWORD='CI-READER-NO-PRODUCTION-SECRET' "$container" \
+ psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
+ -U v3_cas_audit_reader_actor -d postgres -c "$abort_reader_sql" >"$transition_tmp/terminal-abort.json"
+pwsh -NoProfile -NonInteractive -File tests/test_v3_originalhost_signed_cms_offline.ps1 \
+ -CommittedIssuerJson "$transition_tmp/issuer-prestop.json" -CommittedAbortJson "$transition_tmp/terminal-abort.json"
 echo 'V3_PG17_ISSUER_COMMIT_DISTINCT_READER_REAL_CMS_ABORT_INTEGRATION_PASS_NOT_NATIVE_RELEASE'
 echo 'V3_PG17_POSTSTOP_CONFIRMED_NO_INTENT_TERMINAL_ABORT_PASS_NOT_NATIVE_RESTORE'
 pg -f - <<'SQL' >/dev/null
