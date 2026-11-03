@@ -32,7 +32,7 @@ if($pre.LastIndexOf("throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDEN
  throw 'V3_NATIVE_SMOKE_PARENT_HARDLOCK_MISSING'
 }
 $head=$src.Substring($begin,[Math]::Min(12000,$src.Length-$begin))
-$match=[regex]::Match($head,"(?s)\$src=@'\r?\n(?<code>.*?)\r?\n'@")
+$match=[regex]::Match($head, '(?s)\$src=@''\r?\n(?<code>.*?)\r?\n''@')
 if(-not $match.Success){throw 'V3_NATIVE_SMOKE_EMBEDDED_CSHARP_MISSING'}
 $code=$match.Groups['code'].Value
 if($code -notmatch 'SetFileInformationByHandle' -or
