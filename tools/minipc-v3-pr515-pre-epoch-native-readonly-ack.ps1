@@ -180,9 +180,9 @@ if($NotebookReaderJson -or $NotebookReaderCms -or $ReviewedNotebookCertificateSh
 # could ever request separate authorization. This is a snapshot stability
 # signal, NOT an exclusive OS lock or TOCTOU-free task/PID custody.
 $firstNative=($tasks|Sort-Object name|ConvertTo-Json -Depth 4 -Compress)
-$firstPids=(@($old|Sort-Object pid,ppid|ForEach-Object {
+$firstPids=(@($old|ForEach-Object {
  "$($_.pid):$($_.ppid):$($_.created_utc)"
-}) -join '|')
+} | Sort-Object) -join '|')
 $firstFenceHash=$fenceHash
 $firstFencePhase=$marker
 Start-Sleep -Milliseconds 750
