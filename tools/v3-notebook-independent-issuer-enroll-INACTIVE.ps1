@@ -2,17 +2,24 @@
 # One-time LOCAL credential preparation only. Never contacts Supabase or invokes CAS.
 # Existing reader/writer DPAPI identities, Mini-PC and active V2R4 are untouched.
 [CmdletBinding()]
-param([switch]$Stage,[switch]$VerifyLocal,[switch]$RemoveEnrollmentSql)
+param([switch]$Stage,[switch]$VerifyLocal,[switch]$RemoveEnrollmentSql,
+ [switch]$VerifySourceAuthority,[string]$ReviewedSourceCommit='',
+ [string]$OriginalhostOperatorFile='',[string]$NotebookReaderFile='',
+ [string]$ReviewedNotebookCertificateSha256='')
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 if (([int]$Stage.IsPresent+[int]$VerifyLocal.IsPresent+
-     [int]$RemoveEnrollmentSql.IsPresent) -gt 1) { throw 'V3_ISSUER_MODE_CONFLICT' }
+     [int]$RemoveEnrollmentSql.IsPresent+[int]$VerifySourceAuthority.IsPresent) -gt 1) { throw 'V3_ISSUER_MODE_CONFLICT' }
+if(-not $VerifySourceAuthority -and ($ReviewedSourceCommit -or $OriginalhostOperatorFile -or
+   $NotebookReaderFile -or $ReviewedNotebookCertificateSha256)){
+ throw 'V3_ISSUER_SOURCE_AUTHORITY_ARGUMENTS_OUTSIDE_MODE'
+}
 $role='v3_cas_inhibit_issuer_actor'
 $root=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer'
 $secretPath=Join-Path $root 'issuer-currentuser.dpapi'
 $sqlPath=Join-Path $root 'issuer-enroll-ONE-TIME.sql'
 $entropy=[Text.Encoding]::ASCII.GetBytes('V3_CAS_INDEPENDENT_ISSUER_NOTEBOOK_V1')
-if (-not ($Stage -or $VerifyLocal -or $RemoveEnrollmentSql)) {
+if (-not ($Stage -or $VerifyLocal -or $RemoveEnrollmentSql -or $VerifySourceAuthority)) {
  [pscustomobject]@{state='INACTIVE_PREVIEW';role=$role;network_used=$false;
    credential_created=$false;cloud_changed=$false;cas_invoked=$false} |
    ConvertTo-Json -Compress
@@ -98,12 +105,109 @@ function Assert-Safe([string]$path,[bool]$folder) {
   }
  }
 }
-if ($RemoveEnrollmentSql -or $VerifyLocal) {
+if ($RemoveEnrollmentSql -or $VerifyLocal -or $VerifySourceAuthority) {
  if (-not [IO.Directory]::Exists($root)) {throw 'V3_ISSUER_NOT_STAGED'}
 } elseif (-not [IO.Directory]::Exists($root)) {
  [void][IO.Directory]::CreateDirectory($root,(New-SafeAcl $true))
 }
 Assert-Safe $root $true
+function Write-SafeNew([string]$path,[byte[]]$bytes) {
+ $fs=[IO.FileStream]::new($path,[IO.FileMode]::CreateNew,
+    [Security.AccessControl.FileSystemRights]::Write,[IO.FileShare]::None,
+    4096,[IO.FileOptions]::WriteThrough,(New-SafeAcl $false))
+ try{$fs.Write($bytes,0,$bytes.Length);$fs.Flush($true)}
+ finally{$fs.Dispose()}
+ Assert-Safe $path $false
+}
+# PR661_SOURCE_AUTHORITY_READONLY_BEGIN
+# New differential ACK only: the existing issuer login and existing Notebook
+# key bind the reviewed operator/Reader bytes. No schema, epoch, inhibit,
+# permission, native Task, marker, CAS or Paper is changed by this mode.
+if($VerifySourceAuthority){
+ if($ReviewedSourceCommit -cnotmatch '^[a-f0-9]{40}$' -or
+    $ReviewedNotebookCertificateSha256 -cne
+     '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'){
+  throw 'V3_ISSUER_SOURCE_AUTHORITY_COMMIT_OR_ACCEPTED_SIGNER_HOLD'
+ }
+ $files=@(
+  @{path=$OriginalhostOperatorFile;name='minipc-v3-paper-cutover-operator-INACTIVE.ps1'},
+  @{path=$NotebookReaderFile;name='v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1'})
+ $digests=@()
+ foreach($spec in $files){
+  $file=Get-Item -LiteralPath $spec.path -Force -ErrorAction Stop
+  if($file.PSIsContainer -or $file.Name -cne $spec.name -or
+     $file.Length -lt 100 -or $file.Length -gt 1048576 -or
+     [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+   throw 'V3_ISSUER_SOURCE_AUTHORITY_FILE_SCOPE_HOLD'
+  }
+  $digests+=@((Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant())
+ }
+ Assert-Safe $secretPath $false
+ $psql='C:\Program Files\PostgreSQL\17\bin\psql.exe'
+ if(-not [IO.File]::Exists($psql)){throw 'V3_ISSUER_SOURCE_AUTHORITY_PSQL17_MISSING'}
+ $certificate=@(Get-ChildItem Cert:\CurrentUser\My | Where-Object {
+  $hash=[Security.Cryptography.SHA256]::Create()
+  try{([BitConverter]::ToString($hash.ComputeHash([byte[]]$_.RawData))).Replace('-','').ToLowerInvariant() -ceq $ReviewedNotebookCertificateSha256}
+  finally{$hash.Dispose()}
+ })
+ if($certificate.Count -ne 1 -or -not $certificate[0].HasPrivateKey -or
+    $certificate[0].NotBefore.ToUniversalTime() -gt [datetime]::UtcNow -or
+    $certificate[0].NotAfter.ToUniversalTime() -lt [datetime]::UtcNow){
+  throw 'V3_ISSUER_SOURCE_AUTHORITY_EXISTING_KEY_HOLD'
+ }
+ $plain=$null;$password=$null;$output=$null
+ $oldPassword=$env:PGPASSWORD;$oldRoot=$env:PGSSLROOTCERT
+ try{
+  $plain=[Security.Cryptography.ProtectedData]::Unprotect(
+   [IO.File]::ReadAllBytes($secretPath),$entropy,
+   [Security.Cryptography.DataProtectionScope]::CurrentUser)
+  $password=[Text.Encoding]::ASCII.GetString($plain)
+  if($password -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_ISSUER_SOURCE_AUTHORITY_SECRET_SHAPE_HOLD'}
+  $env:PGPASSWORD=$password;$env:PGSSLROOTCERT='system'
+  $connection='host=aws-1-eu-west-1.pooler.supabase.com port=5432 dbname=postgres user=v3_cas_inhibit_issuer_actor.nlgzjmqgwueojlyqmoru sslmode=verify-full connect_timeout=10'
+  $query="BEGIN TRANSACTION READ ONLY; SELECT session_user || '|' || current_user || '|' || current_database(); COMMIT;"
+  $output=@(& $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $connection -c $query 2>&1)
+  if($LASTEXITCODE -ne 0 -or $output.Count -ne 1 -or [string]$output[0] -cne
+     'v3_cas_inhibit_issuer_actor|v3_cas_inhibit_issuer_actor|postgres'){
+   throw 'V3_ISSUER_SOURCE_AUTHORITY_LIVE_SESSION_HOLD'
+  }
+ }catch{throw 'V3_ISSUER_SOURCE_AUTHORITY_LIVE_READ_HOLD_NO_RAW_DIAGNOSTICS'}
+ finally{
+  $env:PGPASSWORD=$oldPassword;$env:PGSSLROOTCERT=$oldRoot
+  if($null -ne $plain){[Array]::Clear($plain,0,$plain.Length)}
+  $password=$null;$output=$null;$oldPassword=$null
+ }
+ $nonce=[guid]::NewGuid().ToString('N')
+ $wire=[ordered]@{
+  kind='V3_PR661_NOTEBOOK_ISSUER_SOURCE_AUTHORITY_ACK_V1'
+  observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture)
+  nonce=$nonce;source_commit=$ReviewedSourceCommit
+  operator_sha256=$digests[0];notebook_reader_sha256=$digests[1]
+  issuer_tool_sha256=(Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  issuer_actor='v3_cas_inhibit_issuer_actor';database='postgres'
+  transport='PG17_VERIFY_FULL_SYSTEM_CA'
+  scope='REVIEWED_SOURCE_BINDING_ONLY_NOT_RUNTIME_RELEASE'
+  cloud_changed=$false;native_runtime_authorized=$false;cas_or_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ Add-Type -AssemblyName System.Security -ErrorAction Stop
+ $bytes=[Text.UTF8Encoding]::new($false).GetBytes($wire)
+ $cms=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$bytes),$true)
+ $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($certificate[0])
+ $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+ $cms.ComputeSignature($signer)
+ $folder=Join-Path $root ('source-authority-'+$nonce)
+ [void][IO.Directory]::CreateDirectory($folder,(New-SafeAcl $true))
+ Assert-Safe $folder $true
+ Write-SafeNew (Join-Path $folder 'source-authority.json') $bytes
+ Write-SafeNew (Join-Path $folder 'source-authority.cms') ([byte[]]$cms.Encode())
+ [pscustomobject]@{kind='V3_PR661_NOTEBOOK_SOURCE_AUTHORITY_TRANSFER_V1'
+  local_directory=$folder;source_commit=$ReviewedSourceCommit
+  certificate_sha256=$ReviewedNotebookCertificateSha256
+  cloud_changed=$false;native_runtime_authorized=$false;cas_or_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ return
+}
+# PR661_SOURCE_AUTHORITY_READONLY_END
 if ($RemoveEnrollmentSql) {
  if ([IO.File]::Exists($sqlPath)) {
   Assert-Safe $sqlPath $false
@@ -167,14 +271,6 @@ if ($VerifyLocal) {
 if ([IO.File]::Exists($secretPath) -or [IO.File]::Exists($sqlPath) -or
     [IO.Directory]::Exists($secretPath) -or [IO.Directory]::Exists($sqlPath)) {
  throw 'V3_ISSUER_EXISTING_IDENTITY_HOLD'
-}
-function Write-SafeNew([string]$path,[byte[]]$bytes) {
- $fs=[IO.FileStream]::new($path,[IO.FileMode]::CreateNew,
-    [Security.AccessControl.FileSystemRights]::Write,[IO.FileShare]::None,
-    4096,[IO.FileOptions]::WriteThrough,(New-SafeAcl $false))
- try{$fs.Write($bytes,0,$bytes.Length);$fs.Flush($true)}
- finally{$fs.Dispose()}
- Assert-Safe $path $false
 }
 $random=New-Object byte[] 32
 $rng=[Security.Cryptography.RandomNumberGenerator]::Create()
