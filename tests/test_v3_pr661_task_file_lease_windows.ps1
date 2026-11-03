@@ -275,8 +275,11 @@ try{$null=$f.GetTask('__TASK__').RunEx($null,2,0,$null)}catch{$runEx='DENIED'}
  [IO.File]::WriteAllText($sourceFile,'# disposable read-only original-source fixture')
  $sourceSha=(Get-FileHash $sourceFile).Hash.ToLowerInvariant()
  foreach($n in @($name,$secondName)){$folder.GetTask($n).Stop(0)}
- $fullTaskNames=@('PR661-CI-FileLease-'+[guid]::NewGuid().ToString('N'),
-  'PR661-CI-FileLease-'+[guid]::NewGuid().ToString('N'))
+ $fullTaskNames=@(('PR661-CI-FileLease-'+[guid]::NewGuid().ToString('N')),
+  ('PR661-CI-FileLease-'+[guid]::NewGuid().ToString('N')))
+ if($fullTaskNames.Count -ne 2 -or @($fullTaskNames|Where-Object {
+    $_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'
+   }).Count){throw 'CI_FULL_OPERATOR_TASK_NAME_CONSTRUCTION'}
  $fullNative=@();$fullDescendants=@()
  foreach($index in @(0,1)){
   $n=$fullTaskNames[$index];$role=if($index -eq 0){'candidate'}else{'wait'}
@@ -385,11 +388,11 @@ Start-Sleep -Seconds 120
  catch{if($_.Exception.Message -notlike '*NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED*'){throw};$productionRejected=$true}
  if(-not $productionRejected){throw 'FAIL_FULL_OPERATOR_PRODUCTION_GATE_OPENED'}
  $heldResult=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY @fullInput
+ $completeSession=$heldResult.held_session
  if($heldResult.status -cne 'HOLD_FENCE_AND_SESSION_NO_AUTOMATIC_REARM' -or
     $heldResult.error_code -cne 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED'){
   throw ('FAIL_FULL_OPERATOR_INVALID_ABORT_PATH: '+$heldResult.status+' '+$heldResult.error_code)
  }
- $completeSession=$heldResult.held_session
  if(-not(Test-V3Pr661HeldIntakeDefinitionPair $completeSession.pair $fullTaskNames) -or -not(Test-Path $markerPath)){
   throw 'FAIL_FULL_OPERATOR_ERROR_LOST_PAIR_OR_FENCE'
  }
@@ -449,6 +452,7 @@ Start-Sleep -Seconds 120
   privileged_handle_closure_excluded=$false;cas_or_paper_authorized=$false
  }|ConvertTo-Json -Compress
 }catch{
+ Write-Output ('PR661_HOSTED_TEST_FAILURE_CODE='+$_.Exception.Message)
  Write-Output ('PR661_HOSTED_TEST_FAILURE_AT='+$_.ScriptStackTrace)
  throw
 }finally{
