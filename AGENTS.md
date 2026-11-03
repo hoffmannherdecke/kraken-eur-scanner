@@ -1,5 +1,5 @@
 <!-- V3_RELEASE_CONTINUATION_20261103 -->
-V3-Paper-Fortsetzung: verbindlich #353 (Arbeitsmodus) und #99 (Live-Owner); historische Listen sind keine Aufträge.
+V3-Paper-Fortsetzung: verbindlich #353 (Arbeitsmodus) und #99 (Live-Owner); alte Listen sind kein Auftrag.
 
 # Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
 
