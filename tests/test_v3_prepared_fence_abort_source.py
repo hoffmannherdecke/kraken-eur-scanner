@@ -370,6 +370,53 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, script)
 
+    def test_single_originalhost_operator_wires_pinned_notebook_t0_native_readback(self):
+        operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        section = operator.split("if($ReviewSignedForwardT0NativeBridge){", 1)[1].split(
+            "if($ExpectedPreparedFenceSha256 -and -not $ExecuteOriginalhostArmedOnly)", 1
+        )[0]
+        for token in (
+            "[switch]$ReviewSignedForwardT0NativeBridge",
+            "[string]$ReviewedBridgeHelperSource",
+            "[string]$ExpectedBridgeHelperGitBlob",
+        ):
+            self.assertIn(token, operator)
+        for token in (
+            "V3_SIGNED_T0_NATIVE_BRIDGE_ARGUMENTS_HOLD",
+            "V3_SIGNED_T0_NATIVE_BRIDGE_ORIGINALHOST_ONLY",
+            "V3_SIGNED_T0_NATIVE_BRIDGE_SOURCE_BLOB_DRIFT",
+            "git hash-object -- $pin.path",
+            "$ExpectedOriginalhostOperatorGitBlob",
+            "$ExpectedBridgeHelperGitBlob",
+            "$childArgs=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$helper",
+            "$output=@(& powershell.exe @childArgs)",
+            "V3_SIGNED_T0_NATIVE_BRIDGE_CHILD_READBACK_HOLD",
+            "cross_source_readonly_evidence_sha256",
+            "two_native_observations_750ms_apart_stable",
+            "signed_current_cloud_and_originalhost_within_30_seconds",
+            "independently_authenticated_cloud_issuer_custody -ne $false",
+            "complete_prospective_unknown_custody -ne $false",
+            "exclusive_task_pid_antirace_proven -ne $false",
+            "marker_cancel_authorized -ne $false",
+            "native_stop_or_restore_authorized -ne $false",
+            "cas_or_paper_authorized -ne $false",
+            "status='SIGNED_CURRENT_CROSS_SOURCE_DIGEST_VERIFIED_NOT_RELEASE'",
+            "independently_authorized_issuer_cloud_custody=$false",
+            "enforceable_scheduler_pid_exclusion=$false",
+            "effectful_marker_or_native_stop_executed=$false",
+            "original_v2r4_modified=$false",
+        ):
+            self.assertIn(token, section)
+        for forbidden in (
+            "Stop-ScheduledTask", "Disable-ScheduledTask",
+            "Enable-ScheduledTask", "Start-ScheduledTask",
+            "Invoke-Sqlcmd", "Remove-Item", "Set-Content"
+        ):
+            self.assertNotIn(forbidden, section)
+        # Production/STOP still hardlocked outside the read-only bridge.
+        self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", operator)
+        self.assertIn("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED", operator)
+
     def test_isolated_native_windows_smoke_cannot_touch_originalhost(self):
         path = ROOT / "tests" / "test_v3_pr515_native_exclusive_rename_smoke.ps1"
         smoke = path.read_text(encoding="utf-8")
