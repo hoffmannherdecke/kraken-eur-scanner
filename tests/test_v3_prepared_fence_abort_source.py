@@ -373,24 +373,24 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
     def test_single_originalhost_operator_wires_pinned_notebook_t0_native_readback(self):
         operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         section = operator.split("if($ReviewSignedForwardT0NativeBridge){", 1)[1].split(
-            "if($ExpectedPreparedFenceSha256 -and -not $ExecuteOriginalhostArmedOnly)", 1
+            "# Physically grounded, READONLY Phase-A cancellation review.", 1
         )[0]
         for token in (
             "[switch]$ReviewSignedForwardT0NativeBridge",
-            "[string]$ReviewedBridgeHelperSource",
-            "[string]$ExpectedBridgeHelperGitBlob",
+            "[string]$BridgeHelperFile",
+            "[string]$ReviewedBridgeHelperGitBlob",
         ):
             self.assertIn(token, operator)
         for token in (
-            "V3_SIGNED_T0_NATIVE_BRIDGE_ARGUMENTS_HOLD",
-            "V3_SIGNED_T0_NATIVE_BRIDGE_ORIGINALHOST_ONLY",
-            "V3_SIGNED_T0_NATIVE_BRIDGE_SOURCE_BLOB_DRIFT",
-            "git hash-object -- $pin.path",
+            "V3_NATIVE_T0_BRIDGE_ARGUMENTS_HOLD",
+            "V3_NATIVE_T0_BRIDGE_WRONG_HOST",
+            "V3_NATIVE_T0_BRIDGE_BLOB_MISMATCH",
+            "git hash-object -- $pin.Path",
             "$ExpectedOriginalhostOperatorGitBlob",
-            "$ExpectedBridgeHelperGitBlob",
-            "$childArgs=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$helper",
-            "$output=@(& powershell.exe @childArgs)",
-            "V3_SIGNED_T0_NATIVE_BRIDGE_CHILD_READBACK_HOLD",
+            "$ReviewedBridgeHelperGitBlob",
+            "$args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$helper",
+            "$wire=@(& powershell.exe @args)",
+            "V3_NATIVE_T0_BRIDGE_CHILD_HOLD",
             "cross_source_readonly_evidence_sha256",
             "two_native_observations_750ms_apart_stable",
             "signed_current_cloud_and_originalhost_within_30_seconds",
@@ -398,22 +398,17 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
             "complete_prospective_unknown_custody -ne $false",
             "exclusive_task_pid_antirace_proven -ne $false",
             "marker_cancel_authorized -ne $false",
-            "native_stop_or_restore_authorized -ne $false",
             "cas_or_paper_authorized -ne $false",
-            "status='SIGNED_CURRENT_CROSS_SOURCE_DIGEST_VERIFIED_NOT_RELEASE'",
-            "independently_authorized_issuer_cloud_custody=$false",
-            "enforceable_scheduler_pid_exclusion=$false",
-            "effectful_marker_or_native_stop_executed=$false",
-            "original_v2r4_modified=$false",
+            "status='SIGNED_CURRENT_T0_NATIVE_JOIN_NOT_RELEASE'",
+            "independent_issuer_and_unknown_custody_proven=$false",
+            "exclusive_os_task_pid_lock_proven=$false",
+            "marker_stop_cas_or_paper_authorized=$false",
         ):
             self.assertIn(token, section)
-        for forbidden in (
-            "Stop-ScheduledTask", "Disable-ScheduledTask",
-            "Enable-ScheduledTask", "Start-ScheduledTask",
-            "Invoke-Sqlcmd", "Remove-Item", "Set-Content"
-        ):
+        for forbidden in ("Stop-ScheduledTask", "Disable-ScheduledTask",
+                          "Enable-ScheduledTask", "Start-ScheduledTask",
+                          "Invoke-Sqlcmd", "Remove-Item", "Set-Content"):
             self.assertNotIn(forbidden, section)
-        # Production/STOP still hardlocked outside the read-only bridge.
         self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", operator)
         self.assertIn("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED", operator)
 
