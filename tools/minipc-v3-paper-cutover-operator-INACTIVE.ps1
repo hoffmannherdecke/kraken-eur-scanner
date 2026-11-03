@@ -5902,23 +5902,26 @@ if($BackupOriginalIntake) {
       [IO.FileAttributes]::ReparsePoint)){
   throw 'V3_SIGNED_T0_NATIVE_BRIDGE_REVIEWED_SOURCE_REQUIRED'
  }
- $sourcePaths=@(@($operator,$ExpectedOriginalhostOperatorGitBlob),
-                @($helper,$ExpectedBridgeHelperGitBlob))
- foreach($pin in $sourcePaths){
-  $actual=@(& git hash-object -- ([string]$pin[0]) 2>$null)
+ $sourcePins=@(
+  [pscustomobject]@{path=$operator;sha=$ExpectedOriginalhostOperatorGitBlob},
+  [pscustomobject]@{path=$helper;sha=$ExpectedBridgeHelperGitBlob}
+ )
+ foreach($pin in $sourcePins){
+  $actual=@(& git hash-object -- $pin.path 2>$null)
   if($LASTEXITCODE -ne 0 -or $actual.Count -ne 1 -or
-     [string]$actual[0] -cne [string]$pin[1]){
+     [string]$actual[0] -cne [string]$pin.sha){
    throw 'V3_SIGNED_T0_NATIVE_BRIDGE_SOURCE_BLOB_DRIFT'
   }
  }
  # Existing helper itself enforces Mistral D: pair co-location, pinned
  # detached CMS, genuine Reader wire, freshness and two native observations.
- $output=@(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $helper
-  -TradingRoot $TradingRoot
-  -ExpectedCandidateRepoSha $ReviewedRepoCommitSha
-  -NotebookReaderJson $NotebookReaderJson
-  -NotebookReaderCms $NotebookReaderCms
-  -ReviewedNotebookCertificateSha256 $ReviewedNotebookCertificateSha256)
+ $childArgs=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$helper,
+  '-TradingRoot',$TradingRoot,
+  '-ExpectedCandidateRepoSha',$ReviewedRepoCommitSha,
+  '-NotebookReaderJson',$NotebookReaderJson,
+  '-NotebookReaderCms',$NotebookReaderCms,
+  '-ReviewedNotebookCertificateSha256',$ReviewedNotebookCertificateSha256)
+ $output=@(& powershell.exe @childArgs)
  if($LASTEXITCODE -ne 0 -or $output.Count -ne 1 -or
     ([string]$output[0]).Length -gt 16384){
   throw 'V3_SIGNED_T0_NATIVE_BRIDGE_CHILD_READBACK_HOLD'
