@@ -86,7 +86,7 @@ if($NotebookReaderJson -or $NotebookReaderCms -or $ReviewedNotebookCertificateSh
      $item.Length -lt 32 -or $item.Length -gt 32768){
    throw 'V3_T0_PAIR_UNSAFE_FILE'
   }
-  $bytes+=,@([IO.File]::ReadAllBytes($full))
+  $bytes += ,([IO.File]::ReadAllBytes($full))
  }
  if([IO.Path]::GetFileName($pair[0]) -cne 'reader.json' -or
     [IO.Path]::GetFileName($pair[1]) -cne 'reader.cms' -or
