@@ -109,6 +109,68 @@ REVOKE ALL ON FUNCTION v3_cas_audit.record_prepared_fence_abort_v1(text,text,tex
  FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION v3_cas_audit.record_prepared_fence_abort_v1(text,text,text,text,text)
  TO v3_cas_inhibit_issuer_actor;
+-- Prospective, independently authenticated COMMITTED pre-STOP issuer readback.
+-- Source-only: the FIRST effectful SQL statement still unconditionally RAISES.
+-- Reuses the existing NOLOGIN audit owner and already enrolled Reader actor.
+-- Must never be interpreted as a release or continuous UNKNOWN-history custody.
+CREATE FUNCTION v3_cas_audit.read_committed_pre_stop_inhibit_v1()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
+SET search_path='pg_catalog','v3_cas_audit'
+AS $read$
+DECLARE v_result jsonb;
+BEGIN
+ IF session_user <> 'v3_cas_audit_reader_actor'
+    OR pg_catalog.current_setting('role',true) <> 'v3_cas_audit_reader'
+    OR (SELECT rolcanlogin FROM pg_catalog.pg_roles
+        WHERE rolname='v3_cas_executor_actor') IS DISTINCT FROM FALSE
+    OR (SELECT count(*) FROM v3_cas_audit.epoch_v1) <> 1
+    OR (SELECT count(*) FROM v3_cas_audit.executor_inhibit_v1) <> 1
+    OR (SELECT count(*) FROM v3_cas_audit.intent_v1) <> 0
+    OR (SELECT count(*) FROM v3_cas_audit.attempt_v1) <> 0
+    OR (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1) <> 0
+    OR to_regprocedure(
+      'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
+      ) IS NOT NULL
+ THEN RAISE EXCEPTION 'V3_ISSUER_PRESTOP_READER_HOLD'; END IF;
+ SELECT pg_catalog.jsonb_build_object(
+  'kind','V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1',
+  'observed_at_utc',pg_catalog.to_char(
+    pg_catalog.clock_timestamp() AT TIME ZONE 'UTC',
+    'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+  'actor',session_user,'requested_role','v3_cas_audit_reader',
+  'epoch_id',i.epoch_id,'source_sha256',i.source_sha256,
+  'original_fence_sha256',i.original_fence_sha256,
+  'caller_acl_sha256',i.caller_acl_sha256,
+  'issuer_actor',i.issuer_id,
+  'inhibit_started_at_utc',pg_catalog.to_char(
+    i.inhibit_started_at_utc AT TIME ZONE 'UTC',
+    'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+  'state',i.state,'native_stop_done',false,
+  'unknown_count',0,'cas_or_paper_authorized',false
+ ) INTO v_result
+ FROM v3_cas_audit.executor_inhibit_v1 i
+ JOIN v3_cas_audit.epoch_v1 e ON e.epoch_id=i.epoch_id
+ WHERE NOT e.sealed AND e.next_ordinal=1
+   AND e.predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+   AND e.source_sha256=i.source_sha256
+   AND e.original_fence_sha256=i.original_fence_sha256
+   AND e.approved_caller_acl_sha256=i.caller_acl_sha256
+   AND i.state='INHIBITED'
+   AND i.issuer_id='v3_cas_inhibit_issuer_actor'
+   AND i.native_stop_at_utc IS NULL
+   AND i.acknowledged_at_utc IS NULL
+   AND i.receipt_sha256 IS NULL;
+ IF v_result IS NULL THEN
+  RAISE EXCEPTION 'V3_ISSUER_PRESTOP_SOURCE_OR_STATE_HOLD';
+ END IF;
+ RETURN v_result;
+END $read$;
+REVOKE ALL ON FUNCTION v3_cas_audit.read_committed_pre_stop_inhibit_v1()
+ FROM PUBLIC,anon,authenticated,service_role,
+      v3_cas_inhibit_issuer_actor,v3_cas_executor_actor,
+      v3_cas_audit_writer_actor,v3_cas_audit_reader_actor;
+GRANT EXECUTE ON FUNCTION v3_cas_audit.read_committed_pre_stop_inhibit_v1()
+ TO v3_cas_audit_reader;
 -- A terminal abort must also prevent *future* intent/UNKNOWN inserts through
 -- the existing append function or any direct privileged insert path. Serialize
 -- against the same epoch row lock used by the abort append: no TOCTOU gap.

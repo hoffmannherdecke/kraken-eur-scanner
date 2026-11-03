@@ -30,8 +30,9 @@
 param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]$CaFile='',
  [switch]$ExportSignedPrecommitCloudInventory,[string]$ReviewedNotebookCertificateSha256='',
  [switch]$PrecommitRestoreCustody,[string]$ReviewedOriginalFenceSha256='',
- [switch]$ForwardT0SignedCurrent,[switch]$PreparedAbortSignedCurrent)
-if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
+ [switch]$ForwardT0SignedCurrent,[switch]$PreparedAbortSignedCurrent,
+ [switch]$IssuerPrestopSignedCurrent)
+if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
 if($PrecommitRestoreCustody -and
    ($ExportSignedPrecommitCloudInventory -or
     $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
@@ -49,10 +50,11 @@ if($ForwardT0SignedCurrent -and $ReviewedNotebookCertificateSha256 -cnotmatch '^
  throw 'V3_FORWARD_T0_SIGNER_EXPLICIT_PIN_REQUIRED'
 }
 if($PreparedAbortSignedCurrent -and $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_PREPARED_ABORT_SIGNER_PIN_REQUIRED'}
-if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and -not $ForwardT0SignedCurrent -and -not $PreparedAbortSignedCurrent -and $ReviewedNotebookCertificateSha256){
+if($IssuerPrestopSignedCurrent -and $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_ISSUER_PRESTOP_SIGNER_PIN_REQUIRED'}
+if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and -not $ForwardT0SignedCurrent -and -not $PreparedAbortSignedCurrent -and -not $IssuerPrestopSignedCurrent -and $ReviewedNotebookCertificateSha256){
  throw 'V3_SIGNED_READER_PIN_WITHOUT_EXPORT'
 }
-$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent)
+$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent)
 if(-not $decisionReaderMode -and $CaFile){throw 'V3_READER_CA_FILE_DECISION_MODE_ONLY'}
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -166,6 +168,18 @@ WHERE session_user='v3_cas_audit_reader_actor'
  AND NOT pg_catalog.pg_has_role(session_user,'v3_cas_audit_writer','SET')
  AND NOT pg_catalog.has_table_privilege(current_user,
    'v3_cas_audit.prepared_fence_abort_v1','INSERT,UPDATE,DELETE');
+COMMIT;
+'@
+}
+# Prospective issuer COMMIT readback only. No issuer credential access and
+# no direct table SELECT. A live independent Reader signs actual PG17 output.
+if($IssuerPrestopSignedCurrent){
+ $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
+ if($checks.Count -ne 1){throw 'V3_ISSUER_PRESTOP_READER_AMBIGUOUS'}
+ $checks[0].Sql=@'
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+SELECT v3_cas_audit.read_committed_pre_stop_inhibit_v1()::text;
 COMMIT;
 '@
 }
@@ -395,7 +409,57 @@ foreach ($check in $checks) {
         $tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}
         $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=$tlsMode connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
-        if($PreparedAbortSignedCurrent){
+        if($IssuerPrestopSignedCurrent){
+            if($LASTEXITCODE -ne 0){throw 'V3_ISSUER_PRESTOP_READER_SQL_HOLD'}
+            $holdClass='ISSUER_PRESTOP_READER_JSON_AND_PINS'
+            $wire=($output|Out-String).Trim()
+            if($wire.Length -lt 150 -or $wire.Length -gt 4096){throw 'V3_ISSUER_PRESTOP_WIRE_SIZE_HOLD'}
+            $row=$wire|ConvertFrom-Json -ErrorAction Stop
+            $fields=@('kind','observed_at_utc','actor','requested_role','epoch_id',
+              'source_sha256','original_fence_sha256','caller_acl_sha256',
+              'issuer_actor','inhibit_started_at_utc','state','native_stop_done',
+              'unknown_count','cas_or_paper_authorized')
+            $actual=@($row.PSObject.Properties.Name)
+            if($row -isnot [pscustomobject] -or $actual.Count -ne $fields.Count -or
+               @($actual|Where-Object {$_ -cnotin $fields}).Count -ne 0){
+                throw 'V3_ISSUER_PRESTOP_WIRE_FIELDS_HOLD'
+            }
+            foreach($field in $fields){
+                if(@([regex]::Matches($wire,('"'+[regex]::Escape($field)+'"\s*:'))).Count -ne 1){
+                    throw 'V3_ISSUER_PRESTOP_DUPLICATE_FIELD_HOLD'
+                }
+            }
+            $at=Read-V3ReaderUtcLiteral -RawJson $wire -Name 'observed_at_utc'
+            $age=([datetimeoffset]::UtcNow-$at.utc).TotalSeconds
+            if($age -lt -5 -or $age -gt 30 -or
+               [string]$row.kind -cne 'V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1' -or
+               [string]$row.actor -cne 'v3_cas_audit_reader_actor' -or
+               [string]$row.requested_role -cne 'v3_cas_audit_reader' -or
+               [string]$row.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
+               [string]$row.state -cne 'INHIBITED' -or
+               [string]$row.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+               [string]$row.source_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+               [string]$row.original_fence_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+               [string]$row.caller_acl_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+               $row.native_stop_done -ne $false -or
+               [string]$row.unknown_count -cne '0' -or
+               $row.cas_or_paper_authorized -ne $false){
+                throw 'V3_ISSUER_PRESTOP_NOT_INHIBITED_OR_STALE_HOLD'
+            }
+            $signed=Save-V3SignedNotebookReaderSnapshot -RawJson $wire -CertSha256 $ReviewedNotebookCertificateSha256
+            [pscustomobject]@{
+                kind='V3_NOTEBOOK_ISSUER_PRESTOP_READER_CMS_TRANSFER_V1'
+                status='SIGNED_COMMITTED_PRESTOP_INHIBIT_NOT_RELEASE'
+                local_directory=$signed.local_directory
+                receipt='reader.json';signature='reader.cms'
+                certificate_sha256=$signed.certificate_sha256
+                issuer_transaction_readback_signed=$true
+                continuous_unknown_custody_proven=$false
+                native_task_stop_authorized=$false
+                cas_or_paper_authorized=$false
+            }|ConvertTo-Json -Compress -Depth 3
+            $passed++
+        } elseif($PreparedAbortSignedCurrent){
             if($LASTEXITCODE -ne 0){throw 'V3_PREPARED_ABORT_READER_SQL_HOLD'}
             $holdClass='PREPARED_ABORT_READER_JSON_AND_ISSUER'
             $wire=($output|Out-String).Trim()
@@ -712,6 +776,7 @@ foreach ($check in $checks) {
         if($PreparedAbortSignedCurrent){
             Write-Output "READER_PREPARED_ABORT_HOLD_CLASS=$holdClass"
         }
+        if($IssuerPrestopSignedCurrent){Write-Output "READER_ISSUER_PRESTOP_HOLD_CLASS=$holdClass"}
     }
     finally {
         Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
@@ -720,7 +785,7 @@ foreach ($check in $checks) {
         if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
     }
 }
-if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent){
+if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent){
  if($passed -ne 1){exit 1}
  return
 }

@@ -50,6 +50,321 @@ if(($PreviewPreparedOriginalhostFence -or $ExecuteOriginalhostArmedOnly) -and
  throw 'V3_PREPARED_ARMED_MODE_CANNOT_COMBINE_WITH_READER_OR_OTHER_OPERATOR_MODES'
 }
 
+# PR661: Independently CMS-authenticated Reader projection of the issuer's
+# separately COMMITTED PRE-STOP inhibit. Pure reviewer, NO host/Cloud mutation.
+# A signature or role label alone never authorizes a Task or PID operation.
+function Test-V3Pr661SignedIssuerPrestopReceipt(
+ [byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedCertSha256,
+ [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
+ [string]$ExpectedFenceSha256,[string]$ExpectedAclSha256) {
+ $out=[ordered]@{
+  kind='V3_PR661_SIGNED_ISSUER_PRESTOP_READER_REVIEW_V1'
+  status='HOLD_ISSUER_PRESTOP_NOT_AUTHENTICATED'
+  cms_and_exact_epoch_pins_valid=$false
+  signed_cloud_row_matches_pre_stop_inhibit=$false
+  continuous_cloud_cas_unknown_custody_proven=$false
+  originalhost_scheduler_exclusion_proven=$false
+  native_stop_or_restore_authorized=$false
+  marker_cancel_authorized=$false
+  cas_or_paper_authorized=$false
+ }
+ if($null -eq $Payload -or $Payload.Length -lt 150 -or
+    $Payload.Length -gt 4096 -or $null -eq $Cms -or
+    $Cms.Length -lt 64 -or $Cms.Length -gt 32768 -or
+    $ExpectedEpochId -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+    $ExpectedSourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedFenceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedAclSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  return [pscustomobject]$out
+ }
+ $sig=Test-V3IndependentOriginalHostCmsSignature -ReceiptUtf8 $Payload `
+   -DetachedCms $Cms -ReviewedSignerCertificateSha256 $ReviewedCertSha256
+ if($sig.crypto_signature_valid -ne $true){return [pscustomobject]$out}
+ try {
+  $wire=([Text.UTF8Encoding]::new($false,$true)).GetString($Payload)
+  $v=$wire|ConvertFrom-Json -ErrorAction Stop
+  $keys=@('kind','observed_at_utc','actor','requested_role','epoch_id',
+    'source_sha256','original_fence_sha256','caller_acl_sha256',
+    'issuer_actor','inhibit_started_at_utc','state',
+    'native_stop_done','unknown_count','cas_or_paper_authorized')
+  $actual=@($v.PSObject.Properties.Name)
+  if($v -isnot [pscustomobject] -or $actual.Count -ne $keys.Count -or
+     @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){throw 'FIELDS'}
+  foreach($key in $keys){
+   if(@([regex]::Matches($wire,'"'+[regex]::Escape($key)+'"\s*:')).Count -ne 1){
+    throw 'DUPLICATE_FIELD'
+   }
+  }
+  $m=[regex]::Match($wire,'"observed_at_utc"\s*:\s*"(?<t>[^"\\]+)"')
+  if(-not $m.Success -or [string]$m.Groups['t'].Value -cnotmatch
+     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
+   throw 'TIME_LITERAL'
+  }
+  $at=[datetimeoffset]::MinValue
+  if(-not [datetimeoffset]::TryParseExact([string]$m.Groups['t'].Value,
+     "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+     [Globalization.CultureInfo]::InvariantCulture,
+     [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$at)){
+   throw 'BAD_TIME'
+  }
+  $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
+  if($age -lt -5 -or $age -gt 30 -or
+    [string]$v.kind -cne 'V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1' -or
+    [string]$v.actor -cne 'v3_cas_audit_reader_actor' -or
+    [string]$v.requested_role -cne 'v3_cas_audit_reader' -or
+    [string]$v.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
+    [string]$v.state -cne 'INHIBITED' -or
+    [string]$v.epoch_id -cne $ExpectedEpochId -or
+    [string]$v.source_sha256 -cne $ExpectedSourceSha256 -or
+    [string]$v.original_fence_sha256 -cne $ExpectedFenceSha256 -or
+    [string]$v.caller_acl_sha256 -cne $ExpectedAclSha256 -or
+    $wire -cnotmatch '"native_stop_done"\s*:\s*false(?=\s*[,}])' -or
+    $wire -cnotmatch '"unknown_count"\s*:\s*0(?=\s*[,}])' -or
+    $wire -cnotmatch '"cas_or_paper_authorized"\s*:\s*false(?=\s*[,}])'){
+   throw 'PIN_OR_AUTHORITY_MISMATCH'
+  }
+  $out.status='SIGNED_COMMITTED_ISSUER_PRESTOP_READER_MATCH_NOT_RELEASE'
+  $out.cms_and_exact_epoch_pins_valid=$true
+  $out.signed_cloud_row_matches_pre_stop_inhibit=$true
+ } catch {
+  # Never disclose untrusted payload or promote failed parsing to authority.
+ }
+ return [pscustomobject]$out
+}
+# One invocation, exclusive cooperating operator (NOT scheduler) custody.
+# The previously tested read-only helper validates signed CURRENT CMS and
+# native Task XML/PID snapshots in one bounded invocation. This wrapper also
+# enforces the PRE-STOP issuer receipt's exact epoch/source/fence/ACL pins.
+function Test-V3Pr661HeldIssuerAndNativeReviewSOURCE_ONLY(
+ [byte[]]$IssuerPayload,[byte[]]$IssuerCms,[string]$IssuerCertSha256,
+ [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
+ [string]$ExpectedFenceSha256,[string]$ExpectedAclSha256,
+ [string]$NativeHelperPath,[string]$ReviewedNativeHelperGitBlob,
+ [string]$ExpectedCandidateRepoSha) {
+ $out=[ordered]@{
+  kind='V3_PR661_HELD_ISSUER_AND_ORIGINALHOST_REVIEW_V1'
+  status='HOLD_ISSUER_OR_ORIGINALHOST_OR_MUTEX'
+  held_cooperating_operator_mutex=$false
+  signed_committed_issuer_receipt_pins_match=$false
+  native_task_pid_snapshots_matched=$false
+  scheduler_and_pid_exclusion_proven=$false
+  cloud_cas_unknown_continuity_proven=$false
+  native_stop_or_restore_authorized=$false
+  marker_cancel_authorized=$false
+  cas_or_paper_authorized=$false
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    $ReviewedNativeHelperGitBlob -cnotmatch '^[a-f0-9]{40}$' -or
+    $ExpectedCandidateRepoSha -cnotmatch '^[a-f0-9]{40}$' -or
+    -not([IO.File]::Exists($NativeHelperPath))){return [pscustomobject]$out}
+ $mutex=$null;$held=$false
+ try {
+  $mutex=[Threading.Mutex]::new($false,'Global\V3Pr661OriginalhostOneShotOperator')
+  try {$held=$mutex.WaitOne(0,$false)} catch [Threading.AbandonedMutexException] {
+   # A crashed previous owner means independently verified cleanup is absent.
+   $held=$true;throw 'V3_PR661_ABANDONED_OPERATOR_MUTEX_HOLD'
+  }
+  if(-not $held){throw 'V3_PR661_CONCURRENT_OPERATOR_HOLD'}
+  $out.held_cooperating_operator_mutex=$true
+  $signed=Test-V3Pr661SignedIssuerPrestopReceipt -Payload $IssuerPayload `
+   -Cms $IssuerCms -ReviewedCertSha256 $IssuerCertSha256 `
+   -ExpectedEpochId $ExpectedEpochId -ExpectedSourceSha256 $ExpectedSourceSha256 `
+   -ExpectedFenceSha256 $ExpectedFenceSha256 -ExpectedAclSha256 $ExpectedAclSha256
+  if($signed.signed_cloud_row_matches_pre_stop_inhibit -ne $true){
+   throw 'V3_PR661_SIGNED_ISSUER_PRESTOP_HOLD'
+  }
+  $out.signed_committed_issuer_receipt_pins_match=$true
+  # An exact Git-blob-pinned, read-only originalhost helper; no arbitrary
+  # caller callback may be executed by this function. A zero-CAS signed T0
+  # is impossible AFTER issuer COMMIT; do not reuse it as evidence.
+  $helperFull=[IO.Path]::GetFullPath($NativeHelperPath)
+  if([IO.Path]::GetFileName($helperFull) -cne
+     'minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1' -or
+     [bool]((Get-Item -LiteralPath $helperFull -Force).Attributes -band
+       [IO.FileAttributes]::ReparsePoint)){
+   throw 'V3_PR661_NATIVE_HELPER_PATH_HOLD'
+  }
+  $blob=@(& git hash-object -- $helperFull 2>$null)
+  if($LASTEXITCODE -ne 0 -or $blob.Count -ne 1 -or
+     [string]$blob[0] -cne $ReviewedNativeHelperGitBlob){
+   throw 'V3_PR661_NATIVE_HELPER_BLOB_HOLD'
+  }
+  $raw=@(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $helperFull `
+    -TradingRoot 'C:\Users\ADMIN\Trading' `
+    -ExpectedCandidateRepoSha $ExpectedCandidateRepoSha)
+  if($LASTEXITCODE -ne 0 -or $raw.Count -ne 1){
+   throw 'V3_PR661_NATIVE_HELPER_READONLY_HOLD'
+  }
+  $n=([string]$raw[0])|ConvertFrom-Json -ErrorAction Stop
+  if($null -eq $n -or
+     [string]$n.kind -cne 'V3_PR515_PRE_EPOCH_ORIGINALHOST_NATIVE_OBSERVATION_V1' -or
+     $n.old_task_config_observed -ne $true -or
+     $n.two_native_observations_750ms_apart_stable -ne $true -or
+     $n.exclusive_task_pid_antirace_proven -ne $false -or
+     $n.cas_or_paper_authorized -ne $false){
+   throw 'V3_PR661_NATIVE_SIGNED_T0_OR_DRIFT_HOLD'
+  }
+  $out.native_task_pid_snapshots_matched=$true
+  $out.status='SIGNED_ISSUER_AND_NATIVE_REVIEW_MATCH_NOT_EXCLUSIVE_RELEASE'
+ }catch{
+  # No secret, process command-line, or untrusted JSON emitted.
+ }finally{
+  if($held -and $null -ne $mutex){$mutex.ReleaseMutex()}
+  if($null -ne $mutex){$mutex.Dispose()}
+ }
+ return [pscustomobject]$out
+}
+# GATED source for the ONE originalhost phase-B native stop; NEVER invoked by
+# the existing CLI, which is independently hardlocked. A cooperating mutex
+# does NOT lock Task Scheduler or block privileged SYSTEM/Administrator. The
+# real STOP is therefore subject to a separately reviewed operational gate.
+function Invoke-V3Pr661ScopedNativeStopSOURCE_ONLY(
+ [byte[]]$IssuerPayload,[byte[]]$IssuerCms,[string]$IssuerCertSha256,
+ [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
+ [string]$ExpectedFenceSha256,[string]$ExpectedAclSha256,
+ [string]$ReviewedCandidateRepoSha) {
+ throw 'V3_PR661_NATIVE_STOP_UNRELEASED_EFFECTFUL_SOURCE_HARDLOCK'
+ # Everything below is dormant until an independent safety review replaces
+ # the entrypoint with a source/commit-pinned, one-time authorized operator.
+ # Partial failures intentionally retain the ARMED fence, NEVER auto-rearm.
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    $ExpectedFenceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ReviewedCandidateRepoSha -cnotmatch '^[a-f0-9]{40}$'){
+  throw 'V3_PR661_NATIVE_WINDOWS_OR_SOURCE_PIN_HOLD'
+ }
+ $principal=[Security.Principal.WindowsPrincipal]::new(
+   [Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_PR661_NATIVE_ADMIN_HOLD'
+ }
+ $mutex=$null;$held=$false
+ try {
+  $mutex=[Threading.Mutex]::new($false,'Global\V3Pr661OriginalhostOneShotOperator')
+  try{$held=$mutex.WaitOne(0,$false)}catch [Threading.AbandonedMutexException]{
+   $held=$true;throw 'V3_PR661_ABANDONED_MUTEX_HOLD'
+  }
+  if(-not $held){throw 'V3_PR661_CONCURRENT_OPERATOR_HOLD'}
+  $signed=Test-V3Pr661SignedIssuerPrestopReceipt -Payload $IssuerPayload `
+    -Cms $IssuerCms -ReviewedCertSha256 $IssuerCertSha256 `
+    -ExpectedEpochId $ExpectedEpochId -ExpectedSourceSha256 $ExpectedSourceSha256 `
+    -ExpectedFenceSha256 $ExpectedFenceSha256 -ExpectedAclSha256 $ExpectedAclSha256
+  if($signed.signed_cloud_row_matches_pre_stop_inhibit -ne $true){
+   throw 'V3_PR661_INDEPENDENT_ISSUER_ACK_REQUIRED'
+  }
+  $root='C:\Users\ADMIN\Trading'
+  $fence=Join-Path $root 'State\v3-experimental-paper-old-intake-fence.json'
+  $maintenance=Join-Path $root 'State\v2r4-technical-cutover-maintenance.json'
+  if((Test-Path -LiteralPath $maintenance) -or
+     -not(Test-Path -LiteralPath $fence -PathType Leaf)){
+   throw 'V3_PR661_FENCE_OR_FOREIGN_MAINTENANCE_HOLD'
+  }
+  $item=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+  if($item.Length -lt 100 -or $item.Length -gt 8192 -or
+     [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+     (Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ExpectedFenceSha256){
+   throw 'V3_PR661_EXACT_ARMED_FENCE_HOLD'
+  }
+  $acl=Get-Acl -LiteralPath $fence -ErrorAction Stop
+  if(-not $acl.AreAccessRulesProtected){throw 'V3_PR661_FENCE_ACL_UNPROTECTED'}
+  foreach($rule in @($acl.Access)){
+   if($rule.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
+      $rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -notin
+      @('S-1-5-18','S-1-5-32-544')){
+    throw 'V3_PR661_FENCE_FOREIGN_WRITER_HOLD'
+   }
+  }
+  $marker=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop | ConvertFrom-Json
+  if([string]$marker.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+     [string]$marker.phase -cne 'ARMED' -or
+     [string]$marker.proposed_v3_repo_sha -cne $ReviewedCandidateRepoSha){
+   throw 'V3_PR661_MARKER_PHASE_OR_REPO_HOLD'
+  }
+  $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  $protected=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+  if(-not(Test-V3ScopedIntakeTaskSet -Names $names)){
+   throw 'V3_PR661_SCOPED_TASK_SET_HOLD'
+  }
+  foreach($name in @($names+$protected)){
+   $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+   if([string]$task.State -cne 'Running' -or
+      @($task.Actions).Count -ne 1 -or
+      [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')){
+    throw 'V3_PR661_ORIGINAL_TASK_IDENTITY_OR_STATE_HOLD'
+   }
+  }
+  $v3=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction Stop
+  if([string]$v3.State -cne 'Disabled'){throw 'V3_PR661_V3_WRITER_NOT_DISABLED'}
+  # Re-evaluate the exact signed receipt while the one-shot operator holds
+  # the mutex, but NEVER infer that it excludes privileged Task/PID starts.
+  if((Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne
+      $ExpectedFenceSha256){throw 'V3_PR661_FENCE_CHANGED_BEFORE_STOP'}
+  # This second hardlock is intentionally before EVERY Task mutation. The
+  # existing Global mutex does not block independent SYSTEM Scheduler starts.
+  # A separately reviewed privileged Scheduler/PID gate is required first.
+  throw 'V3_PR661_SCHEDULER_PID_EXCLUSIVE_GATE_NOT_YET_PROVEN'
+  foreach($name in $names){
+   Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
+  }
+  foreach($name in $names){
+   Stop-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
+  }
+  # Check ONLY the two exact original intake Task action arguments. Do not
+  # confuse protected Lifecycle/CloudSync PIDs with stopped intake PIDs.
+  # This is a post-stop OBSERVATION, not an exclusive scheduler lease.
+  $intakeArgs=@()
+  foreach($name in $names){
+   $t=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+   if(@($t.Actions).Count -ne 1){throw 'V3_PR661_INTAKE_ACTION_DRIFT'}
+   $arg=([string]$t.Actions[0].Arguments).Replace('\','/')
+   if($arg.Length -lt 10){throw 'V3_PR661_INTAKE_ARGUMENT_AMBIGUOUS'}
+   $intakeArgs+=@($arg)
+  }
+  $protectedArgs=@()
+  foreach($name in $protected){
+   $t=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+   if(@($t.Actions).Count -ne 1){throw 'V3_PR661_PROTECTED_ACTION_DRIFT'}
+   $protectedArgs+=@(([string]$t.Actions[0].Arguments).Replace('\','/'))
+  }
+  if(@($intakeArgs | Select-Object -Unique).Count -ne 2 -or
+     @($intakeArgs | Where-Object { $_ -in $protectedArgs }).Count -ne 0){
+   throw 'V3_PR661_INTAKE_ACTION_NOT_DISJOINT_FROM_PROTECTED'
+  }
+  $quiet=$false
+  for($i=0;$i -lt 30;$i++){
+   Start-Sleep -Seconds 2
+   $tasks=@($names | ForEach-Object {Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop})
+   $protectedNow=@($protected | ForEach-Object {Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop})
+   $pids=@(Get-CimInstance Win32_Process -ErrorAction Stop |
+     Where-Object {
+      if([string]$_.Name -notmatch '^(?i:pythonw?\.exe)$'){return $false}
+      $line=([string]$_.CommandLine).Replace('\','/')
+      @($intakeArgs | Where-Object {
+       $line.IndexOf($_,[StringComparison]::OrdinalIgnoreCase) -ge 0
+      }).Count -gt 0
+     })
+   if(@($tasks | Where-Object {[string]$_.State -cne 'Disabled'}).Count -eq 0 -and
+      @($protectedNow | Where-Object {[string]$_.State -cne 'Running'}).Count -eq 0 -and
+      $pids.Count -eq 0){$quiet=$true;break}
+  }
+  if(-not $quiet){throw 'V3_PR661_NATIVE_TASK_OR_PID_NOT_QUIESCENT_LEAVE_FENCE'}
+  if((Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne
+     $ExpectedFenceSha256){throw 'V3_PR661_POSTSTOP_FENCE_DRIFT_LEAVE_FENCE'}
+  return [pscustomobject]@{
+   kind='V3_PR661_ORIGINALHOST_SCOPED_NATIVE_STOP_SOURCE_V1'
+   status='NATIVE_STOP_REQUESTED_PENDING_INDEPENDENT_TWO_CYCLE_ACK'
+   old_intake_task_scope=$names
+   protected_lifecycle_cloudsync_unchanged_here=$true
+   independent_two_cycle_no_rearm_proven=$false
+   continuous_cloud_cas_unknown_custody_proven=$false
+   scheduler_exclusive_privileged_lease_proven=$false
+   marker_cancel_or_restore_authorized=$false
+   cas_or_paper_authorized=$false
+  }
+ } finally {
+  if($held -and $null -ne $mutex){$mutex.ReleaseMutex()}
+  if($null -ne $mutex){$mutex.Dispose()}
+ }
+}
 # Pure readiness policy, executable by existing offline CI without running
 # any host commands. These checks are only PRE-CUTOVER discovery.
 function Test-V3CutoverPreparationPolicy([object]$Report,[bool]$FenceMarkerPresent,[bool]$MaintenanceMarkerPresent) {

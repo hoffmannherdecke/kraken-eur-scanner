@@ -21,13 +21,62 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
 
     def test_no_parallel_cas_executor_or_public_permissions(self):
         self.assertEqual(len(re.findall(r"(?i)\bCREATE TABLE\b", self.code)), 1)
-        self.assertEqual(len(re.findall(r"(?i)\bCREATE FUNCTION\b", self.code)), 2)
+        self.assertEqual(len(re.findall(r"(?i)\bCREATE FUNCTION\b", self.code)), 3)
         self.assertNotRegex(self.code, r"(?i)\bCREATE (?:ROLE|SCHEMA|EXTENSION)\b")
         self.assertIn("FORCE ROW LEVEL SECURITY", self.code)
         self.assertIn("REVOKE ALL ON FUNCTION", self.code)
         self.assertIn("FROM PUBLIC,anon,authenticated,service_role", self.code)
         self.assertNotRegex(self.code, r"(?im)^\s*(?:UPDATE|DELETE|TRUNCATE)\s+v3_cas_audit\.prepared_fence_abort_v1")
 
+    def test_committed_issuer_prestop_reader_is_private_and_never_release(self):
+        required = (
+            "read_committed_pre_stop_inhibit_v1",
+            "session_user <> 'v3_cas_audit_reader_actor'",
+            "current_setting('role',true) <> 'v3_cas_audit_reader'",
+            "'V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1'",
+            "'v3_cas_inhibit_issuer_actor'",
+            "'INHIBITED'",
+            "i.native_stop_at_utc IS NULL",
+            "i.acknowledged_at_utc IS NULL",
+            "i.receipt_sha256 IS NULL",
+            "count(*) FROM v3_cas_audit.intent_v1) <> 0",
+            "count(*) FROM v3_cas_audit.attempt_v1) <> 0",
+            "'cas_or_paper_authorized',false",
+            "GRANT EXECUTE ON FUNCTION v3_cas_audit.read_committed_pre_stop_inhibit_v1()",
+            "TO v3_cas_audit_reader",
+        )
+        for value in required:
+            self.assertIn(value, self.sql)
+        self.assertNotIn("TO service_role;", self.sql.split(
+            "GRANT EXECUTE ON FUNCTION v3_cas_audit.read_committed_pre_stop_inhibit_v1()", 1
+        )[1].split("-- A terminal abort", 1)[0])
+        self.assertLess(
+            self.sql.index("V3_PREPARED_ABORT_SOURCE_INACTIVE_NO_PRODUCTION_INSTALL"),
+            self.sql.index("CREATE FUNCTION v3_cas_audit.read_committed_pre_stop_inhibit_v1"),
+        )
+    def test_pr661_scoped_native_stop_stays_source_hardlocked(self):
+        operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        start = operator.index("function Invoke-V3Pr661ScopedNativeStopSOURCE_ONLY(")
+        end = operator.index("# Pure readiness policy, executable by existing offline CI", start)
+        body = operator[start:end]
+        self.assertRegex(body, r"(?s)\) \{\s*throw 'V3_PR661_NATIVE_STOP_UNRELEASED_EFFECTFUL_SOURCE_HARDLOCK'")
+        self.assertLess(body.index("V3_PR661_NATIVE_STOP_UNRELEASED_EFFECTFUL_SOURCE_HARDLOCK"), body.index("Disable-ScheduledTask"))
+        self.assertIn("Test-V3Pr661SignedIssuerPrestopReceipt", body)
+        self.assertIn("V3_PR661_INDEPENDENT_ISSUER_ACK_REQUIRED", body)
+        self.assertIn("V3_PR661_EXACT_ARMED_FENCE_HOLD", body)
+        self.assertIn("Test-V3ScopedIntakeTaskSet -Names $names", body)
+        self.assertIn("V3_PR661_V3_WRITER_NOT_DISABLED", body)
+        self.assertIn("Stop-ScheduledTask -TaskName $name", body)
+        self.assertIn("V3_PR661_NATIVE_TASK_OR_PID_NOT_QUIESCENT_LEAVE_FENCE", body)
+        self.assertIn("continuous_cloud_cas_unknown_custody_proven=$false", body)
+        self.assertIn("scheduler_exclusive_privileged_lease_proven=$false", body)
+        self.assertIn("V3_PR661_SCHEDULER_PID_EXCLUSIVE_GATE_NOT_YET_PROVEN", body)
+        self.assertLess(body.index("V3_PR661_SCHEDULER_PID_EXCLUSIVE_GATE_NOT_YET_PROVEN"), body.index("Disable-ScheduledTask"))
+        self.assertIn("V3_PR661_INTAKE_ACTION_NOT_DISJOINT_FROM_PROTECTED", body)
+        self.assertIn("$protectedNow", body)
+        self.assertNotIn("$_.CommandLine -match '(?i)v2r4|wait_launcher'", body)
+        self.assertIn("cas_or_paper_authorized=$false", body)
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED", operator)
     def test_independent_reader_only_receipt_access(self):
         self.assertIn("CREATE POLICY v3_prepared_abort_reader_select_v1", self.code)
         self.assertIn("FOR SELECT TO v3_cas_audit_reader USING (true)", self.code)
