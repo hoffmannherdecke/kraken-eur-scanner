@@ -50,41 +50,6 @@ if(($PreviewPreparedOriginalhostFence -or $ExecuteOriginalhostArmedOnly) -and
  throw 'V3_PREPARED_ARMED_MODE_CANNOT_COMBINE_WITH_READER_OR_OTHER_OPERATOR_MODES'
 }
 
-# Pure native permission transform. No Task API, ACL write, job assignment,
-# process action or release occurs here. The original effectful owner remains
-# hardlocked; this descriptor is first tested on disposable hosted tasks.
-function New-V3Pr661TaskExecuteDenyDescriptor([string]$OriginalSddl) {
- if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
-    [string]::IsNullOrWhiteSpace($OriginalSddl) -or $OriginalSddl.Length -gt 8192){
-  throw 'V3_TASK_EXECUTE_DENY_INPUT_HOLD'
- }
- $descriptor=[Security.AccessControl.RawSecurityDescriptor]::new($OriginalSddl)
- if($null -eq $descriptor.DiscretionaryAcl -or
-    $null -ne $descriptor.SystemAcl){throw 'V3_TASK_EXECUTE_DENY_DACL_SCOPE_HOLD'}
- # Task Scheduler materializes inherited ACEs as explicit when protecting
- # the temporary DACL. Mirror that native transformation BEFORE writing,
- # retaining each SID, qualifier, access mask and other propagation flags.
- # The original SDDL remains separate and unchanged for exact restoration.
- for($i=0;$i -lt $descriptor.DiscretionaryAcl.Count;$i++){
-  $ace=$descriptor.DiscretionaryAcl[$i]
-  $ace.AceFlags=[Security.AccessControl.AceFlags](
-   [int]$ace.AceFlags -band (-bnot [int][Security.AccessControl.AceFlags]::Inherited))
- }
- # Deny FILE_EXECUTE only. Preserve read and WRITE_DAC so an explicitly
- # authorized recovery can restore the exact saved descriptor. Keep every
- # original ACE and original owner/group; never grant a new identity rights.
- foreach($sid in @('S-1-5-18','S-1-5-32-544')){
-  $ace=[Security.AccessControl.CommonAce]::new(
-   [Security.AccessControl.AceFlags]::None,
-   [Security.AccessControl.AceQualifier]::AccessDenied,0x20,
-   [Security.Principal.SecurityIdentifier]::new($sid),$false,$null)
-  $descriptor.DiscretionaryAcl.InsertAce(0,$ace)
- }
- $descriptor.SetFlags($descriptor.ControlFlags -bor
-  [Security.AccessControl.ControlFlags]::DiscretionaryAclProtected)
- return $descriptor.GetSddlForm([Security.AccessControl.AccessControlSections]::All)
-}
-
 # PR661: Independently CMS-authenticated Reader projection of the issuer's
 # separately COMMITTED PRE-STOP inhibit. Pure reviewer, NO host/Cloud mutation.
 # A signature or role label alone never authorizes a Task or PID operation.
@@ -2397,44 +2362,52 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  }
  # Even a valid signature is NOT a release: privilege cannot be inferred
  # from a CMS key, an ARMED marker, or a cooperating mutex.
- # Native descriptor mutation belongs to THIS original owner only. This
- # nested helper is unreachable through the preceding mandatory RETURN;
- # hosted CI extracts it by AST for random disposable task names only.
- function Set-V3Pr661OwnedTaskExecuteGuardSOURCE_ONLY(
-  [ValidateSet('Apply','Restore')][string]$Operation,
-  [string]$TaskName,[string]$OriginalSddl) {
+ # A readonly OS handle on an ALREADY DISABLED task definition is staged
+ # under this sole owner. No ACL changes, job reassignment or task mutation.
+ # The surrounding production path remains behind its original hardlock.
+ function Open-V3Pr661DisabledTaskDefinitionLeaseSOURCE_ONLY([string]$TaskName) {
   if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
-   throw 'V3_NATIVE_TASK_GUARD_WINDOWS_ONLY'
+   throw 'V3_TASK_DEFINITION_LEASE_WINDOWS_ONLY'
   }
-  $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and
-            $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
+  $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
   if($sandbox){
-   if($TaskName -cnotmatch '^PR661-CI-ExecuteTarget-[a-f0-9]{32}$'){
-    throw 'V3_NATIVE_TASK_GUARD_SANDBOX_NAME_HOLD'
+   if($TaskName -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'){
+    throw 'V3_TASK_DEFINITION_LEASE_SANDBOX_NAME_HOLD'
    }
   }elseif($TaskName -cnotin @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
-   throw 'V3_NATIVE_TASK_GUARD_ORIGINAL_OWNER_SCOPE_HOLD'
+   throw 'V3_TASK_DEFINITION_LEASE_ORIGINAL_SCOPE_HOLD'
   }
-  $guarded=New-V3Pr661TaskExecuteDenyDescriptor $OriginalSddl
-  $expected=$OriginalSddl;$replacement=$guarded
-  if($Operation -ceq 'Restore'){$expected=$guarded;$replacement=$OriginalSddl}
-  $service=New-Object -ComObject 'Schedule.Service'
-  $service.Connect()
-  $task=$service.GetFolder('\').GetTask($TaskName)
-  if([string]$task.GetSecurityDescriptor(7) -cne $expected){
-   throw 'V3_NATIVE_TASK_GUARD_CURRENT_DESCRIPTOR_DRIFT'
+  $service=New-Object -ComObject 'Schedule.Service';$service.Connect()
+  if($service.GetFolder('\').GetTask($TaskName).Enabled){
+   throw 'V3_TASK_DEFINITION_LEASE_REQUIRES_ALREADY_DISABLED'
   }
-  # TASK_DONT_ADD_PRINCIPAL_ACE: preserve exact approved rights rather than
-  # silently adding an allow ACE during the temporary deny or restoration.
-  $task.SetSecurityDescriptor($replacement,16)
-  if([string]$task.GetSecurityDescriptor(7) -cne $replacement){
-   throw 'V3_NATIVE_TASK_GUARD_WRITE_READBACK_HOLD'
+  $path=Join-Path (Join-Path $env:SystemRoot 'System32\Tasks') $TaskName
+  $file=Get-Item -LiteralPath $path -Force -ErrorAction Stop
+  if($file.PSIsContainer -or $file.Length -lt 64 -or $file.Length -gt 1048576 -or
+     [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+   throw 'V3_TASK_DEFINITION_LEASE_UNSAFE_FILE'
   }
-  return [pscustomobject]@{
-   task_name=$TaskName;operation=$Operation;exact_descriptor_readback=$true
-   scheduler_task_stopped_here=$false;privileged_acl_rewrite_excluded=$false
-   cas_or_paper_authorized=$false
-  }
+  $stream=$null
+  try{
+   # Share READ only: existing read access remains available; new standard
+   # writes/deletes/replacements, including privileged Task API writes, must
+   # fail at the kernel. This is not immunity to forced handle closure or
+   # arbitrary administrator action outside the controlled operator window.
+   $stream=[IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+   if($service.GetFolder('\').GetTask($TaskName).Enabled){
+    throw 'V3_TASK_DEFINITION_LEASE_DISABLED_STATE_DRIFT'
+   }
+   $sha=[Security.Cryptography.SHA256]::Create()
+   try{$digest=([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()}
+   finally{$sha.Dispose()}
+   $stream.Position=0
+   return [pscustomobject]@{
+    task_name=$TaskName;definition_path=$path;definition_sha256=$digest
+    readonly_definition_handle=$stream
+    privileged_handle_closure_excluded=$false
+    process_family_quiescence_proven=$false;cas_or_paper_authorized=$false
+   }
+  }catch{if($null -ne $stream){$stream.Dispose()};throw}
  }
  throw 'V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED'
  # Exactly these two native task mutations, never Lifecycle or CloudSync.
