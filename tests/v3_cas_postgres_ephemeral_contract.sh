@@ -9,9 +9,11 @@ source_sql="supabase/v3-cas-preinvoke-ledger-INACTIVE.sql"
 # Reviewed one-time Stage-2 source; the dormant original retains its first RAISE.
 stage2_sql="supabase/v3-cas-audit-stage2-install-APPROVED-20261027.sql"
 container="v3-cas-pg-contract-$$"
+transition_tmp=''
 
 cleanup() {
   docker rm -f "$container" >/dev/null 2>&1 || true
+  if [[ -n "$transition_tmp" ]]; then rm -rf -- "$transition_tmp"; fi
 }
 trap cleanup EXIT
 
@@ -1100,12 +1102,72 @@ BEGIN
   IF SQLERRM NOT LIKE '%V3_PREPARED_ABORT_INTENT_OR_ISSUER_HOLD%' THEN RAISE; END IF;
  END;
 END $no_inhibit$;
-SELECT v3_cas_audit.begin_executor_inhibit_v1(
- 'V3CAS-AUDIT-99999999999999999999999999999999',
- repeat('a',64),repeat('b',64),repeat('c',64));
-SELECT v3_cas_audit.record_prepared_fence_abort_v1(
- 'V3CAS-AUDIT-99999999999999999999999999999999',
- repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64));
+SQL
+# Exercise the NEW connection through actual different authenticated sessions,
+# not SET SESSION AUTHORIZATION followed by begin+abort in the same session.
+# The sole issuer is the already existing disposable role. No production
+# connection, password, user, scheduler or alternative CAS executor is added.
+pg_root_db -c "ALTER ROLE v3_cas_inhibit_issuer_actor PASSWORD 'CI-ISSUER-NO-PRODUCTION-SECRET';" >/dev/null
+docker exec -u postgres "$container" sh -ec '
+ sed -i "1i host postgres v3_cas_inhibit_issuer_actor 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+'
+pg_root_db -c 'SELECT pg_reload_conf();' >/dev/null
+issuer_transaction() {
+ docker exec -e PGPASSWORD='CI-ISSUER-NO-PRODUCTION-SECRET' "$container" \
+  psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
+  -U v3_cas_inhibit_issuer_actor -d postgres "$@"
+}
+committed_issuer_reader() {
+ docker exec -e PGPASSWORD='CI-READER-NO-PRODUCTION-SECRET' "$container" \
+  psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
+  -U v3_cas_audit_reader_actor -d postgres \
+  -c 'SET ROLE v3_cas_audit_reader; SELECT v3_cas_audit.read_committed_pre_stop_inhibit_v1()::text;'
+}
+if [[ "$(issuer_transaction -c 'SELECT session_user;')" != v3_cas_inhibit_issuer_actor ]]; then
+ echo 'FAIL_ISSUER_TRANSACTION_ACTOR_NOT_AUTHENTICATED' >&2; exit 1
+fi
+transition_tmp=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/v3-cas-transition.XXXXXX")
+if committed_issuer_reader >"$transition_tmp/missing.json" 2>"$transition_tmp/missing.err"; then
+ echo 'FAIL_READER_ACCEPTED_MISSING_ISSUER_COMMIT' >&2; exit 1
+fi
+if ! rg -q 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/missing.err"; then
+ echo 'FAIL_MISSING_ISSUER_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
+fi
+begin_inhibit="SELECT v3_cas_audit.begin_executor_inhibit_v1('V3CAS-AUDIT-99999999999999999999999999999999',repeat('a',64),repeat('b',64),repeat('c',64));"
+issuer_transaction -c "BEGIN; $begin_inhibit ROLLBACK;" >/dev/null
+if committed_issuer_reader >"$transition_tmp/rollback.json" 2>"$transition_tmp/rollback.err"; then
+ echo 'FAIL_READER_ACCEPTED_ROLLEDBACK_ISSUER_TRANSACTION' >&2; exit 1
+fi
+if ! rg -q 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/rollback.err"; then
+ echo 'FAIL_ROLLBACK_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
+fi
+issuer_transaction -c "BEGIN; $begin_inhibit COMMIT;" >/dev/null
+committed_issuer_reader >"$transition_tmp/issuer-prestop.json"
+command -v pwsh >/dev/null || { echo 'FAIL_SIGNED_ISSUER_INTEGRATION_REQUIRES_PWSH' >&2; exit 1; }
+pwsh -NoProfile -NonInteractive -File tests/test_v3_originalhost_signed_cms_offline.ps1 \
+ -CommittedIssuerJson "$transition_tmp/issuer-prestop.json"
+# Check the second executor identity as well as its actor. The source must
+# refuse a live-login executor even when the separately signed row exists.
+pg_root_db -c 'ALTER ROLE v3_cas_executor LOGIN;' >/dev/null
+if committed_issuer_reader >"$transition_tmp/executor.json" 2>"$transition_tmp/executor.err"; then
+ echo 'FAIL_READER_ACCEPTED_EXECUTOR_LOGIN_DRIFT' >&2; exit 1
+fi
+if ! rg -q 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/executor.err"; then
+ echo 'FAIL_EXECUTOR_DRIFT_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
+fi
+pg_root_db -c 'ALTER ROLE v3_cas_executor NOLOGIN;' >/dev/null
+# Independent issuer now commits the terminal abort in its OWN new session.
+issuer_transaction -c "BEGIN; SELECT v3_cas_audit.record_prepared_fence_abort_v1('V3CAS-AUDIT-99999999999999999999999999999999',repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64)); COMMIT;" >/dev/null
+if committed_issuer_reader >"$transition_tmp/aborted.json" 2>"$transition_tmp/aborted.err"; then
+ echo 'FAIL_READER_ACCEPTED_ABORTED_EPOCH_AS_LIVE_PRESTOP' >&2; exit 1
+fi
+if ! rg -q 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/aborted.err"; then
+ echo 'FAIL_ABORTED_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
+fi
+echo 'V3_PG17_ISSUER_COMMIT_DISTINCT_READER_REAL_CMS_ABORT_INTEGRATION_PASS_NOT_NATIVE_RELEASE'
+pg -f - <<'SQL' >/dev/null
+SET SESSION AUTHORIZATION v3_cas_inhibit_issuer_actor;
+-- The independently committed abort above must refuse this replay.
 DO $no_replay$
 BEGIN
  BEGIN

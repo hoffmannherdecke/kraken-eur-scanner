@@ -123,6 +123,11 @@ BEGIN
     OR pg_catalog.current_setting('role',true) <> 'v3_cas_audit_reader'
     OR (SELECT rolcanlogin FROM pg_catalog.pg_roles
         WHERE rolname='v3_cas_executor_actor') IS DISTINCT FROM FALSE
+    OR (SELECT rolcanlogin FROM pg_catalog.pg_roles
+        WHERE rolname='v3_cas_executor') IS DISTINCT FROM FALSE
+    -- NOLOGIN prevents new logins; it does not terminate an earlier session.
+    OR EXISTS (SELECT 1 FROM pg_catalog.pg_stat_activity
+               WHERE usename IN ('v3_cas_executor_actor','v3_cas_executor'))
     OR (SELECT count(*) FROM v3_cas_audit.epoch_v1) <> 1
     OR (SELECT count(*) FROM v3_cas_audit.executor_inhibit_v1) <> 1
     OR (SELECT count(*) FROM v3_cas_audit.intent_v1) <> 0

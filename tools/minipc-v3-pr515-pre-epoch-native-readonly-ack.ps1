@@ -5,7 +5,8 @@ param([string]$TradingRoot='C:\Users\ADMIN\Trading',
       [Parameter(Mandatory=$true)][string]$ExpectedCandidateRepoSha,
       [string]$NotebookReaderJson='',
       [string]$NotebookReaderCms='',
-      [string]$ReviewedNotebookCertificateSha256='')
+      [string]$ReviewedNotebookCertificateSha256='',
+      [switch]$ReadNativeExclusionCapabilities)
 $ErrorActionPreference='Stop'
 if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
  throw 'V3_ORIGINALHOST_WINDOWS_ONLY'
@@ -19,6 +20,87 @@ $names=@('CryptoMiniPC-V2R4PaperCandidates',
  'CryptoMiniPC-V2R4PaperWait',
  'CryptoMiniPC-V2R4PaperLifecycle',
  'CryptoMiniPC-V2R4PaperCloudSync')
+if($ReadNativeExclusionCapabilities){
+ if($NotebookReaderJson -or $NotebookReaderCms -or $ReviewedNotebookCertificateSha256){
+  throw 'V3_NATIVE_CAPABILITY_MODE_CANNOT_SIGN_OR_REUSE_CLOUD_SNAPSHOTS'
+ }
+ # New, narrowly missing design input: Task DACL (not XML) and native Job
+ # membership (not a second PID-stability baseline). No changes are possible
+ # through these two query-only Win32 imports or Scheduler read calls.
+ $nativeType='V3Pr661QueryProcessJobV1'
+ if(-not($nativeType -as [type])){
+  Add-Type -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+public static class V3Pr661QueryProcessJobV1 {
+ [DllImport("kernel32.dll",SetLastError=true)]
+ static extern IntPtr OpenProcess(uint access,bool inherit,uint pid);
+ [DllImport("kernel32.dll",SetLastError=true)]
+ static extern bool IsProcessInJob(IntPtr process,IntPtr job,out bool member);
+ [DllImport("kernel32.dll",SetLastError=true)]
+ static extern bool CloseHandle(IntPtr handle);
+ public static bool Query(uint pid) {
+  // PROCESS_QUERY_LIMITED_INFORMATION only: no terminate, suspend, job
+  // assignment, memory write or child creation rights.
+  IntPtr handle=OpenProcess(0x1000,false,pid);
+  if(handle==IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
+  try {
+   bool member;
+   if(!IsProcessInJob(handle,IntPtr.Zero,out member))
+    throw new Win32Exception(Marshal.GetLastWin32Error());
+   return member;
+  } finally { CloseHandle(handle); }
+ }
+}
+'@ -ErrorAction Stop
+ }
+ $scheduler=New-Object -ComObject 'Schedule.Service'
+ $scheduler.Connect()
+ $folder=$scheduler.GetFolder('\')
+ $capabilities=@()
+ $jobRows=@()
+ $processRows=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ foreach($name in @($names[0],$names[1],'CryptoMiniPC-V3PaperSingleWriter','CryptoMiniPC-RuntimeSupervisor')){
+  $registered=$folder.GetTask($name)
+  $sddl=[string]$registered.GetSecurityDescriptor(7)
+  if([string]::IsNullOrWhiteSpace($sddl)){throw 'V3_NATIVE_TASK_DACL_UNAVAILABLE'}
+  $capabilities+=@([pscustomobject]@{task=$name;owner_group_dacl_sddl=$sddl})
+  if($name -notin @($names[0],$names[1])){continue}
+  $actions=$registered.Definition.Actions
+  if($actions.Count -ne 1){throw 'V3_NATIVE_JOB_QUERY_ACTION_SCOPE_AMBIGUOUS'}
+  $action=$actions.Item(1)
+  $arguments=([string]$action.Arguments).Replace('\','/')
+  if($arguments.Length -lt 10){throw 'V3_NATIVE_JOB_QUERY_ACTION_TOO_SHORT'}
+  $matches=@($processRows|Where-Object {
+   [string]$_.Name -match '(?i)^pythonw?\.exe$' -and
+   ([string]$_.CommandLine).Replace('\','/').IndexOf(
+    $arguments,[StringComparison]::OrdinalIgnoreCase) -ge 0
+  })
+  if($matches.Count -lt 1 -or $matches.Count -gt 2){
+   throw 'V3_NATIVE_JOB_QUERY_PROCESS_OWNER_AMBIGUOUS'
+  }
+  foreach($process in $matches){
+   $jobRows+=@([pscustomobject]@{
+    task=$name;pid=[int]$process.ProcessId;ppid=[int]$process.ParentProcessId
+    created_utc=([datetimeoffset]$process.CreationDate).ToUniversalTime().ToString('o')
+    member_of_existing_windows_job=[V3Pr661QueryProcessJobV1]::Query([uint32]$process.ProcessId)
+   })
+  }
+ }
+ [pscustomobject]@{
+  kind='V3_PR661_NATIVE_EXCLUSION_CAPABILITY_READONLY_V1'
+  source_candidate=$ExpectedCandidateRepoSha
+  observed_at_utc=[datetimeoffset]::UtcNow.ToString('o')
+  task_access_descriptors=$capabilities
+  intake_process_job_membership=$jobRows
+  status='DESIGN_INPUT_ONLY_NOT_A_HELD_EXCLUSIVE_LEASE'
+  scheduler_or_process_mutated=$false
+  cloud_or_cas_used=$false
+  release_authorized=$false
+ }|ConvertTo-Json -Depth 5
+ return
+}
 # Read-only exact registered XML identity for every native scheduler task.
 function Get-V3Pr515NativeTaskXmlSha256([string]$TaskName) {
  $xml=[string](Export-ScheduledTask -TaskName $TaskName -TaskPath '\' -ErrorAction Stop)

@@ -378,7 +378,8 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
             "cas_or_paper_authorized=$false",
         ):
             self.assertIn(required, script)
-        self.assertEqual(script.count("Get-CimInstance Win32_Process"), 2)
+        baseline = script.split("# Read-only exact registered XML identity for every native scheduler task.", 1)[1]
+        self.assertEqual(baseline.count("Get-CimInstance Win32_Process"), 2)
         for forbidden in ("Stop-ScheduledTask", "Disable-ScheduledTask",
                           "Enable-ScheduledTask", "Start-ScheduledTask",
                           "[IO.File]::Move(", "Remove-Item", "Invoke-Sqlcmd"):
@@ -407,10 +408,26 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
             "marker_cancel_authorized=$false",
         ):
             self.assertIn(required, script)
-        self.assertEqual(script.count("Get-CimInstance Win32_Process"), 2)
+        baseline = script.split("# Read-only exact registered XML identity for every native scheduler task.", 1)[1]
+        self.assertEqual(baseline.count("Get-CimInstance Win32_Process"), 2)
         for forbidden in ("Disable-ScheduledTask", "Stop-ScheduledTask",
                           "Set-Content", "Invoke-Sqlcmd", "Remove-Item"):
             self.assertNotIn(forbidden, script)
+
+    def test_new_native_exclusion_input_is_separate_query_only_and_returns_before_baseline(self):
+        script = (ROOT / "tools/minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1").read_text()
+        branch = script.split("if($ReadNativeExclusionCapabilities){", 1)[1].split(
+            "# Read-only exact registered XML identity for every native scheduler task.", 1)[0]
+        for token in ("GetSecurityDescriptor(7)", "OpenProcess(0x1000,false,pid)",
+                      "IsProcessInJob(handle,IntPtr.Zero,out member)", "CloseHandle(handle)",
+                      "DESIGN_INPUT_ONLY_NOT_A_HELD_EXCLUSIVE_LEASE", "release_authorized=$false"):
+            self.assertIn(token, branch)
+        self.assertEqual(branch.count("Get-CimInstance Win32_Process"), 1)
+        self.assertTrue(branch.rstrip().endswith("return\n}"))
+        for forbidden in ("SetSecurityDescriptor", "AssignProcessToJobObject", "TerminateProcess",
+                          "SuspendThread", "Stop-ScheduledTask", "Disable-ScheduledTask",
+                          "Get-V3Pr515NativeTaskXmlSha256", "Start-Sleep"):
+            self.assertNotIn(forbidden, branch)
 
     def test_native_registered_task_xml_drift_is_detected_without_mutation(self):
         script = (ROOT / "tools" / "minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1").read_text(encoding="utf-8")

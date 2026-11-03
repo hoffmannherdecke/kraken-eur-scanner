@@ -107,6 +107,20 @@ function Test-V3Pr661SignedIssuerPrestopReceipt(
      [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$at)){
    throw 'BAD_TIME'
   }
+  # Validate the issuer's own start, not just the Reader's recent observation.
+  # Parse the original JSON literal: newer PowerShell can coerce JSON dates.
+  $started=[regex]::Match($wire,'"inhibit_started_at_utc"\s*:\s*"(?<t>[^"\\]+)"')
+  $startedAt=[datetimeoffset]::MinValue
+  if(-not $started.Success -or
+     [string]$started.Groups['t'].Value -cnotmatch
+       '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$' -or
+     -not [datetimeoffset]::TryParseExact([string]$started.Groups['t'].Value,
+       "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+       [Globalization.CultureInfo]::InvariantCulture,
+       [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$startedAt) -or
+     $startedAt -gt $at){
+   throw 'ISSUER_START_TIME_INVALID_OR_AFTER_READBACK'
+  }
   $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
   if($age -lt -5 -or $age -gt 30 -or
     [string]$v.kind -cne 'V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1' -or
