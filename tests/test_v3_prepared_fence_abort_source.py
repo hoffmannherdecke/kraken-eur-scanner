@@ -235,6 +235,37 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, reader)
 
+    def test_physical_reader_binds_existing_cms_t0_to_host_without_release(self):
+        script = (ROOT / "tools" / "minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1").read_text(encoding="utf-8")
+        for required in (
+            "$NotebookReaderJson", "$NotebookReaderCms",
+            "$ReviewedNotebookCertificateSha256",
+            "V3_T0_PAIR_MUST_USE_EXISTING_MISTRAL_SHARE",
+            "[System.Security.Cryptography.Pkcs.SignedCms]",
+            "2.16.840.1.101.3.4.2.1",
+            "$signed.CheckSignature($true)",
+            "V3_T0_DUPLICATE_FIELD",
+            "V3_CAS_FORWARD_T0_CURRENT_CATALOG_READONLY_V1",
+            "V3_T0_UNEXPECTED_CAS_ACTIVITY",
+            "V3_T0_CLAIMED_FALSE_AUTHORITY",
+            "V3_T0_NOT_CONTEMPORANEOUS_WITH_HOST",
+            "signed_current_notebook_cloud_catalog_cryptographically_valid=$signedCurrentMatch",
+            "signed_current_cloud_and_originalhost_within_30_seconds=$notebookCloudTimeMatched",
+            "independent_notebook_issuer_authority_verified_here=$false",
+            "exclusive_task_pid_antirace_proven=$false",
+            "complete_prospective_unknown_custody=$false",
+            "marker_cancel_authorized=$false",
+            "process_task_marker_cloud_writes=0",
+        ):
+            self.assertIn(required, script)
+        for effect in (
+            "Stop-ScheduledTask", "Start-ScheduledTask",
+            "Disable-ScheduledTask", "Enable-ScheduledTask",
+            "[IO.File]::Move(", "Remove-Item", "Start-Process",
+            "Invoke-Sqlcmd", "Set-Content", "New-Item",
+        ):
+            self.assertNotIn(effect, script)
+
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
