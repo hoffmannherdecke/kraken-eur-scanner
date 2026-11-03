@@ -149,8 +149,8 @@ SET ROLE v3_cas_audit_reader;
 BEGIN TRANSACTION READ ONLY;
 SELECT pg_catalog.jsonb_build_object(
  'kind','V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1',
- 'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC',
-  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'observed_at_utc',pg_catalog.replace(pg_catalog.to_char(
+  pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
  'epoch_id',a.epoch_id,'source_sha256',a.source_sha256,
  'prepared_fence_sha256',a.prepared_fence_sha256,
  'caller_acl_sha256',a.caller_acl_sha256,'issuer_actor',a.issuer_actor,
