@@ -80,7 +80,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
     def test_sole_originalhost_stop_owner_requires_signed_issuer_without_release(self):
         operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         start = operator.index("function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(")
-        end = operator.index("function ", start + 60)
+        end = operator.index("\nfunction ", start + 60)
         body = operator[start:end]
         self.assertIn("[byte[]]$IndependentIssuerReaderJson", body)
         self.assertIn("[byte[]]$IndependentIssuerReaderCms", body)
@@ -477,7 +477,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
                           "Invoke-Sqlcmd", "Remove-Item", "Set-Content"):
             self.assertNotIn(forbidden, section)
         self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", operator)
-        self.assertIn("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED", operator)
+        self.assertIn("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED", operator)
 
     def test_isolated_native_windows_smoke_cannot_touch_originalhost(self):
         path = ROOT / "tests" / "test_v3_pr515_native_exclusive_rename_smoke.ps1"
