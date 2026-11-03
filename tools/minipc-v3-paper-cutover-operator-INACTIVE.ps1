@@ -3219,7 +3219,9 @@ public static class V3Pr515NativeFenceRenameV1 {
     int lenOffset=rootOffset+ptr;
     int nameOffset=lenOffset+4;
     byte[] name=System.Text.Encoding.Unicode.GetBytes(target);
-    int total=checked(nameOffset+name.Length);
+    // FileName is a NUL-terminated WCHAR string. FileNameLength still counts
+    // ONLY the actual UTF-16 name bytes; reserve and zero its terminator too.
+    int total=checked(nameOffset+name.Length+2);
     IntPtr memory=Marshal.AllocHGlobal(total);
     try{
      for(int i=0;i<total;i++)Marshal.WriteByte(memory,i,0);

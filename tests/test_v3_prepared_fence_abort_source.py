@@ -293,6 +293,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
             "FILE_FLAG_OPEN_REPARSE_POINT", "SetFileInformationByHandle",
             "sha.ComputeHash(bytes)", "FILE_RENAME_INFO_CLASS=3",
             "Marshal.WriteByte(memory,0,0)",
+            "int total=checked(nameOffset+name.Length+2);",
             "V3_EXCLUSIVE_ARCHIVE_PATH_SCOPE_HOLD",
             "V3_EXCLUSIVE_ARCHIVE_TARGET_EXISTS",
             "DemandAbsentTarget(target);",
