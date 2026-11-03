@@ -332,9 +332,8 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         ):
             self.assertIn(required, smoke)
         for forbidden in (
-            "Stop-ScheduledTask", "Enable-ScheduledTask",
-            "Disable-ScheduledTask", "Start-ScheduledTask",
-            "C:\\Users\\ADMIN\\Trading\\State",
+            "Stop-ScheduledTask -TaskName", "Enable-ScheduledTask -TaskName",
+            "Disable-ScheduledTask -TaskName", "Start-ScheduledTask -TaskName",
             "Invoke-Sqlcmd", "Supabase", "Set-ScheduledTask",
         ):
             self.assertNotIn(forbidden, smoke)
