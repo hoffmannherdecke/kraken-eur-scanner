@@ -2409,11 +2409,62 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
    }
   }catch{if($null -ne $stream){$stream.Dispose()};throw}
  }
+ # Acquire BOTH existing disabled definitions as a single owned resource.
+ # A partial acquisition never leaks a handle and never enables a task.
+ # On success ownership transfers to the caller through the returned handles;
+ # the caller must retain both throughout the complete native/Cloud transition.
+ function Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY([string[]]$TaskNames) {
+  $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
+  if($TaskNames.Count -ne 2 -or @($TaskNames|Select-Object -Unique).Count -ne 2){
+   throw 'V3_INTAKE_LEASE_PAIR_EXACT_TWO_DISTINCT_REQUIRED'
+  }
+  if($sandbox){
+   if(@($TaskNames|Where-Object {$_ -cnotmatch '^PR661-CI-FileLease-[a-f0-9]{32}$'}).Count){
+    throw 'V3_INTAKE_LEASE_PAIR_SANDBOX_SCOPE_HOLD'
+   }
+  }elseif(-not(Test-V3ScopedIntakeTaskSet -Names $TaskNames)){
+   throw 'V3_INTAKE_LEASE_PAIR_ORIGINAL_SCOPE_HOLD'
+  }
+  $leases=@()
+  try{
+   foreach($taskName in $TaskNames){
+    $leases+=@(Open-V3Pr661DisabledTaskDefinitionLeaseSOURCE_ONLY -TaskName $taskName)
+   }
+   foreach($lease in $leases){
+    if($lease.readonly_definition_handle.SafeFileHandle.IsClosed){
+     throw 'V3_INTAKE_LEASE_PAIR_HANDLE_CLOSED'
+    }
+   }
+   return [pscustomobject]@{
+    kind='V3_PR661_HELD_DISABLED_INTAKE_DEFINITION_PAIR_V1'
+    leases=$leases
+    process_family_quiescence_proven=$false
+    privileged_handle_closure_excluded=$false
+    cas_or_paper_authorized=$false
+   }
+  }catch{
+   foreach($lease in $leases){$lease.readonly_definition_handle.Dispose()}
+   throw
+  }
+ }
  throw 'V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED'
  # Exactly these two native task mutations, never Lifecycle or CloudSync.
  foreach($name in $tasks){
   Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
  }
+ $heldIntakePair=$null
+ $transferLeaseOwnership=$false
+ try{
+  $heldIntakePair=Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY -TaskNames $tasks
+  # Time spent disabling/acquiring is not allowed to extend CMS freshness.
+  $issuerAfterLease=Test-V3Pr661SignedIssuerPrestopReceipt `
+   -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
+   -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
+   -ExpectedEpochId $ReviewedIssuerEpochId -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
+   -ExpectedFenceSha256 $armedFenceSha -ExpectedAclSha256 $ReviewedIssuerCallerAclSha256
+  if($issuerAfterLease.signed_cloud_row_matches_pre_stop_inhibit -ne $true){
+   throw 'V3_PRECAS_ISSUER_EXPIRED_DURING_LEASE_ACQUISITION_LEAVE_DISABLED'
+  }
  foreach($name in $tasks){
   Stop-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
  }
@@ -2443,7 +2494,12 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  # Never automatically promote ARMED to QUIESCED: requires a separate
  # independent source/PID and original two-cycle Supervisor proof and another
  # atomic marker step. Keep the safe ARMED hold; no auto-rearm or CAS.
+ # A passing local observation never releases the held task definitions.
+ # Transfer ownership only together with the result; never serialize handles
+ # as an external authority or replace them with caller-supplied booleans.
+ $transferLeaseOwnership=$true
  return [pscustomobject]@{
+  held_intake_definition_pair=$heldIntakePair
   kind='V3_PR515_NATIVE_STOP_SOURCE_ONLY_V1'
   status='ARMED_FENCED_TWO_INTAKES_DISABLED_STOPPED_AWAIT_QUIESCED_INDEPENDENT_ACK'
   original_task_scope=@($tasks)
@@ -2455,6 +2511,13 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   cloud_cas_invoked=$false
   automatic_old_intake_rearm_allowed=$false
   paper_release_authorized=$false
+ }
+ }finally{
+  if(-not $transferLeaseOwnership -and $null -ne $heldIntakePair){
+   foreach($lease in $heldIntakePair.leases){$lease.readonly_definition_handle.Dispose()}
+  }
+  # The persisted Disabled definitions and ARMED fence survive exceptions or
+  # process death. No finally block may reenable, restart or remove the fence.
  }
 }
 
