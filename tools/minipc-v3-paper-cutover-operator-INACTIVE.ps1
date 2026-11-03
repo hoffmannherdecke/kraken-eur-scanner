@@ -50,6 +50,32 @@ if(($PreviewPreparedOriginalhostFence -or $ExecuteOriginalhostArmedOnly) -and
  throw 'V3_PREPARED_ARMED_MODE_CANNOT_COMBINE_WITH_READER_OR_OTHER_OPERATOR_MODES'
 }
 
+# Pure native permission transform. No Task API, ACL write, job assignment,
+# process action or release occurs here. The original effectful owner remains
+# hardlocked; this descriptor is first tested on disposable hosted tasks.
+function New-V3Pr661TaskExecuteDenyDescriptor([string]$OriginalSddl) {
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    [string]::IsNullOrWhiteSpace($OriginalSddl) -or $OriginalSddl.Length -gt 8192){
+  throw 'V3_TASK_EXECUTE_DENY_INPUT_HOLD'
+ }
+ $descriptor=[Security.AccessControl.RawSecurityDescriptor]::new($OriginalSddl)
+ if($null -eq $descriptor.DiscretionaryAcl -or
+    $null -ne $descriptor.SystemAcl){throw 'V3_TASK_EXECUTE_DENY_DACL_SCOPE_HOLD'}
+ # Deny FILE_EXECUTE only. Preserve read and WRITE_DAC so an explicitly
+ # authorized recovery can restore the exact saved descriptor. Keep every
+ # original ACE and original owner/group; never grant a new identity rights.
+ foreach($sid in @('S-1-5-18','S-1-5-32-544')){
+  $ace=[Security.AccessControl.CommonAce]::new(
+   [Security.AccessControl.AceFlags]::None,
+   [Security.AccessControl.AceQualifier]::AccessDenied,0x20,
+   [Security.Principal.SecurityIdentifier]::new($sid),$false,$null)
+  $descriptor.DiscretionaryAcl.InsertAce(0,$ace)
+ }
+ $descriptor.SetFlags($descriptor.ControlFlags -bor
+  [Security.AccessControl.ControlFlags]::DiscretionaryAclProtected)
+ return $descriptor.GetSddlForm([Security.AccessControl.AccessControlSections]::All)
+}
+
 # PR661: Independently CMS-authenticated Reader projection of the issuer's
 # separately COMMITTED PRE-STOP inhibit. Pure reviewer, NO host/Cloud mutation.
 # A signature or role label alone never authorizes a Task or PID operation.
@@ -2362,6 +2388,45 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  }
  # Even a valid signature is NOT a release: privilege cannot be inferred
  # from a CMS key, an ARMED marker, or a cooperating mutex.
+ # Native descriptor mutation belongs to THIS original owner only. This
+ # nested helper is unreachable through the preceding mandatory RETURN;
+ # hosted CI extracts it by AST for random disposable task names only.
+ function Set-V3Pr661OwnedTaskExecuteGuardSOURCE_ONLY(
+  [ValidateSet('Apply','Restore')][string]$Operation,
+  [string]$TaskName,[string]$OriginalSddl) {
+  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+   throw 'V3_NATIVE_TASK_GUARD_WINDOWS_ONLY'
+  }
+  $sandbox=($env:GITHUB_ACTIONS -ceq 'true' -and
+            $env:RUNNER_ENVIRONMENT -ceq 'github-hosted')
+  if($sandbox){
+   if($TaskName -cnotmatch '^PR661-CI-ExecuteTarget-[a-f0-9]{32}$'){
+    throw 'V3_NATIVE_TASK_GUARD_SANDBOX_NAME_HOLD'
+   }
+  }elseif($TaskName -cnotin @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
+   throw 'V3_NATIVE_TASK_GUARD_ORIGINAL_OWNER_SCOPE_HOLD'
+  }
+  $guarded=New-V3Pr661TaskExecuteDenyDescriptor $OriginalSddl
+  $expected=$OriginalSddl;$replacement=$guarded
+  if($Operation -ceq 'Restore'){$expected=$guarded;$replacement=$OriginalSddl}
+  $service=New-Object -ComObject 'Schedule.Service'
+  $service.Connect()
+  $task=$service.GetFolder('\').GetTask($TaskName)
+  if([string]$task.GetSecurityDescriptor(7) -cne $expected){
+   throw 'V3_NATIVE_TASK_GUARD_CURRENT_DESCRIPTOR_DRIFT'
+  }
+  # TASK_DONT_ADD_PRINCIPAL_ACE: preserve exact approved rights rather than
+  # silently adding an allow ACE during the temporary deny or restoration.
+  $task.SetSecurityDescriptor($replacement,16)
+  if([string]$task.GetSecurityDescriptor(7) -cne $replacement){
+   throw 'V3_NATIVE_TASK_GUARD_WRITE_READBACK_HOLD'
+  }
+  return [pscustomobject]@{
+   task_name=$TaskName;operation=$Operation;exact_descriptor_readback=$true
+   scheduler_task_stopped_here=$false;privileged_acl_rewrite_excluded=$false
+   cas_or_paper_authorized=$false
+  }
+ }
  throw 'V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED'
  # Exactly these two native task mutations, never Lifecycle or CloudSync.
  foreach($name in $tasks){

@@ -10,10 +10,20 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      native_exclusion_required: ${{ steps.native_scope.outputs.required }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 2
+      - name: Scope disposable Windows permission integration
+        id: native_scope
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(tools/minipc-v3-paper-cutover-operator-INACTIVE\.ps1|tests/test_v3_pr661_task_execute_deny_windows\.ps1|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
+            echo 'required=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'required=false' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -566,3 +576,14 @@ jobs:
           assert 'EVIDENCE_DIVERSITY_FASTTRACK_V1' not in Path('PROJECT_BACKLOG.md').read_text()
           print('ARCHITECTURE_CONTRACT_PASS')
           PY
+
+  native-task-exclusion-sandbox:
+    needs: validate
+    if: needs.validate.outputs.native_exclusion_required == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Disposable native task execute-denial and exact restoration
+        shell: pwsh
+        run: ./tests/test_v3_pr661_task_execute_deny_windows.ps1
