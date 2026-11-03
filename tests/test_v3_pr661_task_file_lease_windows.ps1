@@ -96,7 +96,7 @@ function Assert-DisabledRunDenied {
   if($cause.HResult -notin @(-2147216602,-2147024891)){throw}
  }
 }
-$lease=$null;$pair=$null;$runningProcess=$null;$operatorRoot=$null;$aftercareJob=$null;$completeSession=$null
+$lease=$null;$pair=$null;$runningProcess=$null;$operatorRoot=$null;$aftercareJob=$null;$completeSession=$null;$fullTaskNames=@()
 try{
  # A real long-running SYSTEM process: verify stop while both definitions
  # are held, rather than testing only tasks that have already exited.
@@ -275,7 +275,8 @@ try{$null=$f.GetTask('__TASK__').RunEx($null,2,0,$null)}catch{$runEx='DENIED'}
  [IO.File]::WriteAllText($sourceFile,'# disposable read-only original-source fixture')
  $sourceSha=(Get-FileHash $sourceFile).Hash.ToLowerInvariant()
  foreach($n in @($name,$secondName)){$folder.GetTask($n).Stop(0)}
- $fullTaskNames=@($name,$secondName)
+ $fullTaskNames=@('PR661-CI-FileLease-'+[guid]::NewGuid().ToString('N'),
+  'PR661-CI-FileLease-'+[guid]::NewGuid().ToString('N'))
  $fullNative=@();$fullDescendants=@()
  foreach($index in @(0,1)){
   $n=$fullTaskNames[$index];$role=if($index -eq 0){'candidate'}else{'wait'}
@@ -447,6 +448,9 @@ Start-Sleep -Seconds 120
   admin_and_system_runex_ignore_constraints_denied=$true
   privileged_handle_closure_excluded=$false;cas_or_paper_authorized=$false
  }|ConvertTo-Json -Compress
+}catch{
+ Write-Output ('PR661_HOSTED_TEST_FAILURE_AT='+$_.ScriptStackTrace)
+ throw
 }finally{
  if($null -ne $aftercareJob){Stop-Job $aftercareJob;Remove-Job $aftercareJob}
  if($null -ne $completeSession){
@@ -457,7 +461,7 @@ Start-Sleep -Seconds 120
  if($null -ne $pair){foreach($entry in $pair.leases){$entry.readonly_definition_handle.Dispose()}}
  if($null -ne $runningProcess){$runningProcess.Dispose()}
  $cert.Dispose();$rsa.Dispose()
- foreach($n in @($probeName,$name,$secondName)){
+ foreach($n in (@($probeName,$name,$secondName)+@($fullTaskNames))){
   try{$folder.GetTask($n).Stop(0);$folder.DeleteTask($n,0)}catch{
    $cause=$_.Exception;while($cause.InnerException){$cause=$cause.InnerException}
    if($cause.HResult -ne -2147024894){throw}
