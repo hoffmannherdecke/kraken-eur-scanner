@@ -306,6 +306,10 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
             verdict = "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE"
         elif first_open is None or candidate_id != first_open["id"]:
             verdict = "NOT_NEXT_OPEN_GATE_HOLD"
+        elif matched["layer"] == "SOURCE":
+            verdict = "NEXT_SOURCE_IMPLEMENTATION_REQUIRES_REVIEW_NOT_RUNTIME_ACK"
+        elif matched["layer"] == "PHYSICAL_STAGING":
+            verdict = "NEXT_PHYSICAL_INPUT_REQUIRES_BOUNDED_DEVICE_ACTION"
         else:
             verdict = "NEXT_GATE_BLOCKED_PENDING_REAL_ACK_AND_APPROVAL"
     return {
@@ -320,6 +324,12 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
             if first_open else None),
         "candidate_id": candidate_id,
         "candidate_verdict": verdict,
+        "next_work_class": (
+            "SOURCE_IMPLEMENTATION_AND_REVIEW" if first_open and first_open["layer"] == "SOURCE"
+            else "BOUNDED_PHYSICAL_INPUT" if first_open and first_open["layer"] == "PHYSICAL_STAGING"
+            else "ORIGINAL_RUNTIME_ACK_AND_APPLICABLE_APPROVAL" if first_open
+            else "NO_OPEN_DECLARED_STEP"
+        ),
         "counts_from_declared_owner_view": counts,
         "rework_detected_this_query": int(
             verdict == "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE"),

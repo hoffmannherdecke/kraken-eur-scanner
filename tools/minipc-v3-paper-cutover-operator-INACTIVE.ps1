@@ -61,6 +61,15 @@ function New-V3Pr661TaskExecuteDenyDescriptor([string]$OriginalSddl) {
  $descriptor=[Security.AccessControl.RawSecurityDescriptor]::new($OriginalSddl)
  if($null -eq $descriptor.DiscretionaryAcl -or
     $null -ne $descriptor.SystemAcl){throw 'V3_TASK_EXECUTE_DENY_DACL_SCOPE_HOLD'}
+ # Task Scheduler materializes inherited ACEs as explicit when protecting
+ # the temporary DACL. Mirror that native transformation BEFORE writing,
+ # retaining each SID, qualifier, access mask and other propagation flags.
+ # The original SDDL remains separate and unchanged for exact restoration.
+ for($i=0;$i -lt $descriptor.DiscretionaryAcl.Count;$i++){
+  $ace=$descriptor.DiscretionaryAcl[$i]
+  $ace.AceFlags=[Security.AccessControl.AceFlags](
+   [int]$ace.AceFlags -band (-bnot [int][Security.AccessControl.AceFlags]::Inherited))
+ }
  # Deny FILE_EXECUTE only. Preserve read and WRITE_DAC so an explicitly
  # authorized recovery can restore the exact saved descriptor. Keep every
  # original ACE and original owner/group; never grant a new identity rights.

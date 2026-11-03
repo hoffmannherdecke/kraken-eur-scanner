@@ -1122,6 +1122,33 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
         self.assertFalse(answer["ready_to_execute"])
         self.assertEqual(answer["past_duplicate_work_count"], "UNKNOWN_NOT_COLLECTED")
 
+    def test_next_missing_source_does_not_require_its_future_runtime_ack(self):
+        from tools.context_before_action import existing_owner_gate_decision
+        obj = self.body()
+        obj["steps"].insert(2, {
+            "id": "COMPLETE_EXECUTABLE_TRANSITION_SOURCE", "layer": "SOURCE", "state": "PENDING",
+            "evidence_class": "OWNER_BLOCKER", "evidence_url": obj["steps"][2]["evidence_url"],
+        })
+        result = existing_owner_gate_decision(self.encode(obj), "COMPLETE_EXECUTABLE_TRANSITION_SOURCE")
+        self.assertEqual(result["candidate_verdict"],
+                         "NEXT_SOURCE_IMPLEMENTATION_REQUIRES_REVIEW_NOT_RUNTIME_ACK")
+        self.assertEqual(result["next_work_class"], "SOURCE_IMPLEMENTATION_AND_REVIEW")
+        self.assertFalse(result["ready_to_execute"])
+        self.assertFalse(result["runtime_verified_independently"])
+
+    def test_next_physical_input_and_completed_ack_remain_distinct(self):
+        from tools.context_before_action import existing_owner_gate_decision
+        obj = self.body()
+        step = {"id": "NEW_NATIVE_DESIGN_INPUT", "layer": "PHYSICAL_STAGING", "state": "PENDING",
+                "evidence_class": "OWNER_BLOCKER", "evidence_url": obj["steps"][2]["evidence_url"]}
+        obj["steps"].insert(2, step)
+        result = existing_owner_gate_decision(self.encode(obj), step["id"])
+        self.assertEqual(result["candidate_verdict"], "NEXT_PHYSICAL_INPUT_REQUIRES_BOUNDED_DEVICE_ACTION")
+        self.assertFalse(result["ready_to_execute"])
+        step.update(state="DONE", evidence_class="PHYSICAL_ACK")
+        result = existing_owner_gate_decision(self.encode(obj), step["id"])
+        self.assertEqual(result["candidate_verdict"], "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE")
+
     def test_out_of_order_or_unregistered_work_is_not_next_action(self):
         from tools.context_before_action import existing_owner_gate_decision
         body = self.encode(self.body())
