@@ -2231,6 +2231,85 @@ function Invoke-V3Pr515ArmedToQuiescedSOURCE_ONLY(
  }
 }
 
+# Existing PR515 originalhost cryptographic terminal-abort verifier. Uses the
+# already present CMS primitive, never treats a signature as Cloud provenance.
+# A signed Reader representation alone cannot authorize marker removal.
+function Test-V3Pr515SignedPreparedAbortReadback(
+ [byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedCertSha256,
+ [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
+ [string]$ExpectedFenceSha256,[string]$ExpectedAclSha256) {
+ $out=[ordered]@{
+  kind='V3_PR515_SIGNED_PREPARED_ABORT_CRYPTO_REVIEW_V1'
+  status='HOLD_SIGNED_TERMINAL_ABORT_UNVERIFIED'
+  signed_abort_fields_and_pins_match=$false
+  independent_reader_cloud_provenance_verified_here=$false
+  complete_attempt_unknown_history_proven=$false
+  originalhost_pre_stop_running_verified_here=$false
+  marker_only_cancel_authorized=$false
+  native_task_mutations_authorized=$false
+  cas_or_paper_authorized=$false
+ }
+ if($null -eq $Payload -or $Payload.Length -lt 100 -or
+    $Payload.Length -gt 4096 -or $null -eq $Cms -or
+    $Cms.Length -lt 64 -or $Cms.Length -gt 32768 -or
+    $ExpectedEpochId -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+    $ExpectedSourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedFenceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedAclSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  return [pscustomobject]$out
+ }
+ $sig=Test-V3IndependentOriginalHostCmsSignature -ReceiptUtf8 $Payload -DetachedCms $Cms -ReviewedSignerCertificateSha256 $ReviewedCertSha256
+ if($sig.crypto_signature_valid -ne $true){return [pscustomobject]$out}
+ try {
+  $wire=([Text.UTF8Encoding]::new($false,$true)).GetString($Payload)
+  $obj=$wire|ConvertFrom-Json -ErrorAction Stop
+  # This JSON is a typed external READBACK contract; it is NOT produced by
+  # caller-supplied claims of authorization or a host-local SQL simulation.
+  $keys=@('kind','epoch_id','source_sha256','prepared_fence_sha256',
+    'caller_acl_sha256','issuer_actor','receipt_sha256','state',
+    'created_at_utc')
+  $actual=@($obj.PSObject.Properties.Name)
+  if($obj -isnot [pscustomobject] -or $actual.Count -ne $keys.Count -or
+     @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){
+   throw 'ABORT_WIRE_FIELDS'
+  }
+  foreach($field in $keys){
+   if(@([regex]::Matches($wire,('"'+[regex]::Escape($field)+'"\s*:'))).Count -ne 1){
+    throw 'ABORT_WIRE_DUPLICATE'
+   }
+  }
+  $timeLiteral=[regex]::Match($wire,'"created_at_utc"\s*:\s*"(?<v>[^"\\]*)"')
+  if(-not $timeLiteral.Success -or [string]$timeLiteral.Groups['v'].Value -cnotmatch
+    '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
+   throw 'ABORT_WIRE_TIME'
+  }
+  $at=[datetimeoffset]::MinValue
+  if(-not [datetimeoffset]::TryParseExact([string]$timeLiteral.Groups['v'].Value,
+    "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+    [Globalization.CultureInfo]::InvariantCulture,
+    [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$at)){
+   throw 'ABORT_WIRE_DATE'
+  }
+  $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
+  if($age -lt -5 -or $age -gt 90 -or
+     [string]$obj.kind -cne 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1' -or
+     [string]$obj.epoch_id -cne $ExpectedEpochId -or
+     [string]$obj.source_sha256 -cne $ExpectedSourceSha256 -or
+     [string]$obj.prepared_fence_sha256 -cne $ExpectedFenceSha256 -or
+     [string]$obj.caller_acl_sha256 -cne $ExpectedAclSha256 -or
+     [string]$obj.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
+     [string]$obj.receipt_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$obj.state -cne 'ABORT_RECORDED_NOT_RELEASED'){
+   throw 'ABORT_WIRE_SOURCE_OR_TIME_MISMATCH'
+  }
+  $out.signed_abort_fields_and_pins_match=$true
+  $out.status='SIGNED_TERMINAL_ABORT_FORMAT_AND_PINS_MATCH_NOT_RELEASE'
+ } catch {
+  # Malformed, replayed, stale or untrusted representations are only HOLD.
+ }
+ return [pscustomobject]$out
+}
+
 # Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).
 # Signed independent terminal abort and atomic archival are not yet wired.
 # Direct invocation and the outer -Execute CLI both fail closed.
