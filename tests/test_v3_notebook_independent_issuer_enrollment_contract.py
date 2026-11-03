@@ -93,7 +93,7 @@ class ForwardT0NotebookReaderSourceContract(unittest.TestCase):
         s=self.script
         self.assertIn("[switch]$ForwardT0SignedCurrent",s)
         self.assertIn("V3_FORWARD_T0_SIGNER_EXPLICIT_PIN_REQUIRED",s)
-        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent)",s)
+        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent)",s)
         self.assertEqual(s.count("SELECT v3_cas_audit.read_forward_t0_current_v1()::text;"),1)
         self.assertIn("BEGIN TRANSACTION READ ONLY;\nSELECT v3_cas_audit.read_forward_t0_current_v1()::text;\nCOMMIT;",s)
         self.assertIn("if($decisionReaderMode){'verify-full'}else{'require'}",s)
