@@ -200,6 +200,19 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertIn("if($Execute){", operator)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED", operator)
 
+    def test_pre_epoch_archive_identity_never_requires_nonexistent_epoch(self):
+        operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        start = operator.index("function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(")
+        end = operator.index("# Current PR515 PRE-COMMIT manual recovery SOURCE ONLY.", start)
+        body = operator[start:end]
+        self.assertIn("$archiveId='pre-epoch-'+$ExpectedFenceSha256", body)
+        self.assertIn("V3_MARKER_CANCEL_PRE_EPOCH_EPOCH_ID_FORBIDDEN", body)
+        self.assertIn("V3_MARKER_CANCEL_POST_EPOCH_ID_INVALID", body)
+        self.assertIn("$archiveId=$ExpectedEpochId", body)
+        self.assertLess(body.index("if($PreEpochOnly){"), body.index("$archiveId='pre-epoch-'"))
+        self.assertLess(body.index("throw 'V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED'"), body.index("[IO.File]::Move($fence,$archive)"))
+        self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", body)
+
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
