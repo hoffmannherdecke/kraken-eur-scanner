@@ -322,7 +322,8 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         for required in (
             "$notebookPayloadSha256=",
             "$notebookCmsSha256=",
-            "$signedCurrentMatch -and $notebookCloudTimeMatched -and $shortNativeStable",
+            "$signedCurrentMatch -and $notebookCloudTimeMatched -and $shortNativeStable -and $pass",
+            "$_.state -cne 'Running' -or $_.action_count -ne 1",
             "'V3_PR515_READONLY_CROSS_SOURCE_EVIDENCE_V1'",
             "$ExpectedCandidateRepoSha",
             "$firstNative",
