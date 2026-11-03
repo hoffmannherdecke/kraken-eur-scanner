@@ -331,6 +331,7 @@ Start-Sleep -Seconds 120
    after_disable_enabled_only_native_xml_comparison=$ExpectedArmed.IsPresent
    poststop_disabled_only_native_xml_recheck_pass=$ExpectedArmed.IsPresent
    single_local_supervisor_pr515_armed_observation_only=$ExpectedArmed.IsPresent
+   single_local_supervisor_pr515_quiesced_observation_only=$ExpectedQuiesced.IsPresent
    two_distinct_supervisor_cycles_verified=$false;old_intake_pid_family_absence_independently_verified=$false
    independent_cloud_cas_never_invoked_verified=$false;local_poststop_snapshot_is_not_independent_cloud_ack=$ExpectedArmed.IsPresent
   }
