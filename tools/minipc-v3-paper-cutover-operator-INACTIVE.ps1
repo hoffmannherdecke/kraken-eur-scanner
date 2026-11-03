@@ -3224,6 +3224,80 @@ if($ExpectedPreparedFenceSha256 -and -not $ExecuteOriginalhostArmedOnly){throw '
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
+# Single-operator signed current T0 + native Task/PID review. This remains
+# READ ONLY: a valid digest is not a held scheduler lock or issuer approval.
+if($ReviewSignedForwardT0NativeBridge){
+ if($Execute -or $ExecuteOriginalhostArmedOnly -or
+    $PreviewPreparedOriginalhostFence -or $ReviewOriginalhostArmedOnlyRecovery -or
+    $BackupOriginalIntake -or $PreviewPr515PreCas -or $PreviewPr515Quiesced -or
+    $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle -or
+    $ValidatePr515RestoreXml -or $VerifyNotebookPrecommitCms -or
+    $ReviewExistingTwoSourcePrecommit -or $ReviewSignedCurrentCasCustody -or
+    $Confirm -or $SuccessorSeriesId -or $OriginalBackupDirectory -or
+    $ReviewedV3BundleSha256 -or $ReviewedV3StrategySha256 -or
+    $ExpectedArmedFenceSha256 -or $ExpectedCurrentFenceSha256 -or
+    $ExpectedPreparedFenceSha256 -or $ExpectedCandidatesActionSha256 -or
+    $ExpectedWaitActionSha256 -or $ExistingNotebookReaderJson -or
+    $ExistingCloudInventoryJson -or
+    $ReviewedRepoCommitSha -cnotmatch '^[a-f0-9]{40}$' -or
+    $ExpectedOriginalhostOperatorGitBlob -cnotmatch '^[a-f0-9]{40}$' -or
+    $ReviewedBridgeHelperGitBlob -cnotmatch '^[a-f0-9]{40}$' -or
+    $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    -not $NotebookReaderJson -or -not $NotebookReaderCms -or
+    -not $BridgeHelperFile){
+  throw 'V3_NATIVE_T0_BRIDGE_ARGUMENTS_HOLD'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+   -not([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals(
+     'C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_NATIVE_T0_BRIDGE_WRONG_HOST'
+ }
+ $helper=[IO.Path]::GetFullPath($BridgeHelperFile)
+ if(-not [IO.File]::Exists($helper) -or
+    [bool]((Get-Item -LiteralPath $helper).Attributes -band
+      [IO.FileAttributes]::ReparsePoint)){
+  throw 'V3_NATIVE_T0_BRIDGE_UNSAFE_HELPER'
+ }
+ foreach($pin in @(
+  [pscustomobject]@{Path=$PSCommandPath;Sha=$ExpectedOriginalhostOperatorGitBlob},
+  [pscustomobject]@{Path=$helper;Sha=$ReviewedBridgeHelperGitBlob}
+ )){
+  $actual=@(& git hash-object -- $pin.Path 2>$null)
+  if($LASTEXITCODE -ne 0 -or $actual.Count -ne 1 -or
+     [string]$actual[0] -cne [string]$pin.Sha){
+   throw 'V3_NATIVE_T0_BRIDGE_BLOB_MISMATCH'
+  }
+ }
+ $args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$helper,
+  '-TradingRoot',$TradingRoot,'-ExpectedCandidateRepoSha',$ReviewedRepoCommitSha,
+  '-NotebookReaderJson',$NotebookReaderJson,'-NotebookReaderCms',$NotebookReaderCms,
+  '-ReviewedNotebookCertificateSha256',$ReviewedNotebookCertificateSha256)
+ $wire=@(& powershell.exe @args)
+ if($LASTEXITCODE -ne 0 -or $wire.Count -ne 1){throw 'V3_NATIVE_T0_BRIDGE_CHILD_HOLD'}
+ $receipt=([string]$wire[0])|ConvertFrom-Json -ErrorAction Stop
+ if([string]$receipt.kind -cne 'V3_PR515_PRE_EPOCH_ORIGINALHOST_NATIVE_OBSERVATION_V1' -or
+    [string]$receipt.expected_candidate_repo_sha -cne $ReviewedRepoCommitSha -or
+    [string]$receipt.cross_source_readonly_evidence_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $receipt.old_task_config_observed -ne $true -or
+    $receipt.two_native_observations_750ms_apart_stable -ne $true -or
+    $receipt.signed_current_cloud_and_originalhost_within_30_seconds -ne $true -or
+    $receipt.exclusive_task_pid_antirace_proven -ne $false -or
+    $receipt.independently_authenticated_cloud_issuer_custody -ne $false -or
+    $receipt.complete_prospective_unknown_custody -ne $false -or
+    $receipt.marker_cancel_authorized -ne $false -or
+    $receipt.cas_or_paper_authorized -ne $false){
+  throw 'V3_NATIVE_T0_BRIDGE_PROOF_HOLD'
+ }
+ [pscustomobject]@{
+  kind='V3_PR515_SIGNED_T0_NATIVE_BRIDGE_REVIEW_V1'
+  status='SIGNED_CURRENT_T0_NATIVE_JOIN_NOT_RELEASE'
+  cross_source_readonly_evidence_sha256=[string]$receipt.cross_source_readonly_evidence_sha256
+  independent_issuer_and_unknown_custody_proven=$false
+  exclusive_os_task_pid_lock_proven=$false
+  marker_stop_cas_or_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ return
+}
 # Physically grounded, READONLY Phase-A cancellation review. Cannot be
 # combined with STOP, restore or any other operator action.
 if($ReviewOriginalhostArmedOnlyRecovery){
