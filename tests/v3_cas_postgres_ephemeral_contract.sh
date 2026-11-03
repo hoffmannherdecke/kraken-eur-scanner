@@ -1163,7 +1163,7 @@ issuer_transaction -c "BEGIN; SELECT v3_cas_audit.confirm_executor_inhibit_v1('V
 if committed_issuer_reader >"$transition_tmp/stopped.json" 2>"$transition_tmp/stopped.err"; then
  echo 'FAIL_POSTSTOP_CONFIRM_ACCEPTED_AS_PRESTOP' >&2; exit 1
 fi
-if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/stopped.err"; then
+if ! grep -Fq 'V3_ISSUER_PRESTOP_SOURCE_OR_STATE_HOLD' "$transition_tmp/stopped.err"; then
  echo 'FAIL_POSTSTOP_CONFIRM_DID_NOT_REACH_READER_GUARD' >&2; exit 1
 fi
 # Independent issuer now commits the terminal abort in its OWN new session.
