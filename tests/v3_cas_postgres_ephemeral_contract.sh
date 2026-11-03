@@ -1130,7 +1130,7 @@ transition_tmp=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/v3-cas-transition.XX
 if committed_issuer_reader >"$transition_tmp/missing.json" 2>"$transition_tmp/missing.err"; then
  echo 'FAIL_READER_ACCEPTED_MISSING_ISSUER_COMMIT' >&2; exit 1
 fi
-if ! rg -q 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/missing.err"; then
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/missing.err"; then
  echo 'FAIL_MISSING_ISSUER_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
 fi
 begin_inhibit="SELECT v3_cas_audit.begin_executor_inhibit_v1('V3CAS-AUDIT-99999999999999999999999999999999',repeat('a',64),repeat('b',64),repeat('c',64));"
@@ -1138,7 +1138,7 @@ issuer_transaction -c "BEGIN; $begin_inhibit ROLLBACK;" >/dev/null
 if committed_issuer_reader >"$transition_tmp/rollback.json" 2>"$transition_tmp/rollback.err"; then
  echo 'FAIL_READER_ACCEPTED_ROLLEDBACK_ISSUER_TRANSACTION' >&2; exit 1
 fi
-if ! rg -q 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/rollback.err"; then
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/rollback.err"; then
  echo 'FAIL_ROLLBACK_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
 fi
 issuer_transaction -c "BEGIN; $begin_inhibit COMMIT;" >/dev/null
@@ -1152,7 +1152,7 @@ pg_root_db -c 'ALTER ROLE v3_cas_executor LOGIN;' >/dev/null
 if committed_issuer_reader >"$transition_tmp/executor.json" 2>"$transition_tmp/executor.err"; then
  echo 'FAIL_READER_ACCEPTED_EXECUTOR_LOGIN_DRIFT' >&2; exit 1
 fi
-if ! rg -q 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/executor.err"; then
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/executor.err"; then
  echo 'FAIL_EXECUTOR_DRIFT_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
 fi
 pg_root_db -c 'ALTER ROLE v3_cas_executor NOLOGIN;' >/dev/null
@@ -1161,7 +1161,7 @@ issuer_transaction -c "BEGIN; SELECT v3_cas_audit.record_prepared_fence_abort_v1
 if committed_issuer_reader >"$transition_tmp/aborted.json" 2>"$transition_tmp/aborted.err"; then
  echo 'FAIL_READER_ACCEPTED_ABORTED_EPOCH_AS_LIVE_PRESTOP' >&2; exit 1
 fi
-if ! rg -q 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/aborted.err"; then
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/aborted.err"; then
  echo 'FAIL_ABORTED_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
 fi
 echo 'V3_PG17_ISSUER_COMMIT_DISTINCT_READER_REAL_CMS_ABORT_INTEGRATION_PASS_NOT_NATIVE_RELEASE'
