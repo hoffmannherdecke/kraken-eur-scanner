@@ -313,6 +313,33 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
                           "[IO.File]::Move(", "Remove-Item", "Invoke-Sqlcmd"):
             self.assertNotIn(forbidden, script)
 
+    def test_isolated_native_windows_smoke_cannot_touch_originalhost(self):
+        path = ROOT / "tests" / "test_v3_pr515_native_exclusive_rename_smoke.ps1"
+        smoke = path.read_text(encoding="utf-8")
+        for required in (
+            "V3_NATIVE_SMOKE_WINDOWS_ONLY",
+            "V3_NATIVE_SMOKE_OPERATOR_NOT_EXACT_REVIEWED_BYTES",
+            "V3_NATIVE_SMOKE_PARENT_HARDLOCK_MISSING",
+            "V3-Pr515-NativeSmoke-",
+            "GetTempPath()",
+            "[V3Pr515NativeFenceRenameV1]::RenamePinned",
+            "wrong_sha_denied=$wrongHashRejected",
+            "overwrite_denied=$existingTargetRejected",
+            "sharing_conflict_denied=$shareConflictRejected",
+            "originalhost_marker_or_tasks_mutated=$false",
+            "operator_release_authorized=$false",
+            "v3_paper_authorized=$false",
+        ):
+            self.assertIn(required, smoke)
+        for forbidden in (
+            "Stop-ScheduledTask", "Enable-ScheduledTask",
+            "Disable-ScheduledTask", "Start-ScheduledTask",
+            "C:\\Users\\ADMIN\\Trading\\State",
+            "Invoke-Sqlcmd", "Supabase", "Set-ScheduledTask",
+        ):
+            self.assertNotIn(forbidden, smoke)
+        self.assertIn("[IO.Directory]::Delete($root,$true)", smoke)
+
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
