@@ -52,6 +52,13 @@ REVOKE ALL ON v3_cas_audit.prepared_fence_abort_v1
  v3_cas_executor,v3_cas_executor_actor,v3_cas_audit_writer,
  v3_cas_audit_writer_actor,v3_cas_audit_reader,v3_cas_audit_reader_actor,
  v3_cas_inhibit_issuer_actor;
+-- Reuse the existing independent read-only CAS actor; no new login, writer or
+-- service role. A terminal abort without an external Reader readback cannot
+-- safely authorize any originalhost marker-only cancellation.
+CREATE POLICY v3_prepared_abort_reader_select_v1
+ ON v3_cas_audit.prepared_fence_abort_v1
+ FOR SELECT TO v3_cas_audit_reader USING (true);
+GRANT SELECT ON v3_cas_audit.prepared_fence_abort_v1 TO v3_cas_audit_reader;
 -- Exact issuer, unsealed zero-intent epoch, prior independent inhibit and
 -- NO native STOP: append once, never delete or imply permission to rearm.
 CREATE FUNCTION v3_cas_audit.record_prepared_fence_abort_v1(
@@ -133,6 +140,10 @@ REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 DO $post$ BEGIN
  IF pg_has_role('postgres','v3_cas_audit_table_owner','SET')
     OR has_schema_privilege('v3_cas_audit_table_owner','v3_cas_audit','CREATE')
+    OR NOT has_table_privilege('v3_cas_audit_reader',
+           'v3_cas_audit.prepared_fence_abort_v1','SELECT')
+    OR has_table_privilege('v3_cas_audit_reader',
+           'v3_cas_audit.prepared_fence_abort_v1','INSERT,UPDATE,DELETE')
     OR has_table_privilege('service_role','v3_cas_audit.prepared_fence_abort_v1','SELECT')
     OR has_table_privilege('v3_cas_inhibit_issuer_actor',
            'v3_cas_audit.prepared_fence_abort_v1','INSERT')
