@@ -93,11 +93,11 @@ class ForwardT0NotebookReaderSourceContract(unittest.TestCase):
         s=self.script
         self.assertIn("[switch]$ForwardT0SignedCurrent",s)
         self.assertIn("V3_FORWARD_T0_SIGNER_EXPLICIT_PIN_REQUIRED",s)
-        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent)",s)
+        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent)",s)
         self.assertEqual(s.count("SELECT v3_cas_audit.read_forward_t0_current_v1()::text;"),1)
         self.assertIn("BEGIN TRANSACTION READ ONLY;\nSELECT v3_cas_audit.read_forward_t0_current_v1()::text;\nCOMMIT;",s)
         self.assertIn("if($decisionReaderMode){'verify-full'}else{'require'}",s)
-        self.assertEqual(s.count("Save-V3SignedNotebookReaderSnapshot -RawJson $wire -CertSha256 $ReviewedNotebookCertificateSha256"),1)
+        self.assertEqual(s.count("Save-V3SignedNotebookReaderSnapshot -RawJson $wire -CertSha256 $ReviewedNotebookCertificateSha256"),3)
         self.assertLess(s.index("$row=$wire|ConvertFrom-Json"),s.index("Save-V3SignedNotebookReaderSnapshot -RawJson $wire"))
 
     def test_exact_cloud_schema_and_fail_closed_fields(self):

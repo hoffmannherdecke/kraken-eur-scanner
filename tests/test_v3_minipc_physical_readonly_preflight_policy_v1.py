@@ -25,7 +25,9 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotRegex(outside,r"(?m)^\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\b")
         self.assertNotRegex(dormant,r"(?m)^\s*(?:Start|Enable|Register)-ScheduledTask\b")
         self.assertIn("V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED",dormant)
-        self.assertRegex(dormant,r"(?s)\) \{\s*# Native STOP is still source-locked\..*?if\(-not \$OnlyOriginalArmed\)\{throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'\}")
+        self.assertIn("if(-not $OnlyOriginalArmed -and -not $isolatedRun){throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'}", dormant)
+        self.assertIn("V3_PR661_COMPLETE_SESSION_PRODUCTION_RELEASE_LOCKED", dormant)
+        self.assertIn("Test-V3Pr661HostedOperatorScope -Root $Root -Tasks $IsolatedTaskNames", dormant)
         self.assertIn("if($ExecuteOriginalhostArmedOnly -or $PreviewPreparedOriginalhostFence){",outside)
         self.assertIn("V3_PR515_ARMED_ONLY_OPERATOR_BLOB_PIN_MISMATCH",outside)
         self.assertIn("V3_PR515_ARMED_ONLY_ORIGINAL_INTAKE_PREFLIGHT_HOLD",outside)
@@ -33,8 +35,9 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertLess(outside.index("V3_PR515_ARMED_ONLY_OPERATOR_BLOB_PIN_MISMATCH"),outside.index("Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root"))
         self.assertLess(outside.index("V3_PR515_ARMED_ONLY_ORIGINAL_INTAKE_PREFLIGHT_HOLD"),outside.index("Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root"))
         self.assertIn("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",dormant)
-        self.assertLess(dormant.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
-                        dormant.index("Disable-ScheduledTask"))
+        armed_phase=dormant.split(" if((Test-Path -LiteralPath $fence)",1)[1]
+        self.assertNotRegex(armed_phase,r"(?m)^\s*(?:Disable|Stop)-ScheduledTask\b")
+        self.assertIn("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",armed_phase)
         self.assertIn("if($Execute){",outside)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",outside)
         self.assertEqual(len(re.findall(r"(?m)^\s*\$receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY\b",outside)),1)
@@ -42,18 +45,21 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("V3_PR515_ARMED_ONLY_HANDOFF_NOT_ATTESTED_LEAVE_FENCE",outside)
         self.assertLess(outside.index("$completeWaitSnapshot=($waitSnapshotReadable"),outside.index("if($ExecuteOriginalhostArmedOnly -or $PreviewPreparedOriginalhostFence){"))
         self.assertIn("(-not $ExecuteOriginalhostArmedOnly) -and (-not $PreviewPreparedOriginalhostFence) -and",outside)
-        self.assertLess(dormant.index("V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1"),dormant.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"))
+        self.assertLess(dormant.index("V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1"),dormant.index("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED"))
         self.assertEqual(len(re.findall(r"(?m)^\s*Enable-ScheduledTask\b",restore)),1)
         self.assertEqual(len(re.findall(r"(?m)^\s*Start-ScheduledTask\b",restore)),1)
-        self.assertEqual(len(re.findall(r"(?m)^\s*Remove-Item\b",restore)),1)
+        self.assertNotRegex(restore,r"(?m)^\s*Remove-Item\b")
+        self.assertEqual(restore.count("$archived=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY"),1)
         self.assertNotRegex(outside,r"(?m)^\s*(?:Enable|Start|Disable|Stop|Register)-ScheduledTask\b")
         self.assertNotRegex(outside,r"(?m)^\s*Remove-Item\b")
-        self.assertRegex(restore,r"(?s)\) \{\s*throw 'V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED'")
+        self.assertIn("if(-not $isolatedRun -or $null -eq $SignedAbortPayload",restore)
+        self.assertIn("Test-V3Pr661HostedOperatorScope -Root $Root -Tasks $IsolatedTaskNames",restore)
+        self.assertIn("V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED",restore)
         self.assertIn("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED",restore)
         self.assertLess(restore.index("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED"),
                         restore.index("Enable-ScheduledTask"))
         self.assertLess(restore.index("Enable-ScheduledTask"),restore.index("Start-ScheduledTask"))
-        self.assertLess(restore.index("Start-ScheduledTask"),restore.index("Remove-Item"))
+        self.assertLess(restore.index("Start-ScheduledTask"),restore.index("$archived=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY"))
         self.assertIn("Test-V3Pr515QuiescedRecoveryIdentity",restore)
         self.assertIn("Resolve-V3ScopedCutoverRecovery",restore)
         self.assertIn("QUIESCED",restore)
@@ -83,7 +89,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("if($ExpectedPreparedFenceSha -cnotmatch '^[a-f0-9]{64}$'",source)
         self.assertLess(source.index("V3_PREPARED_FENCE_PIN_MISMATCH_BEFORE_WRITE"),
                         source.index("$temp=$fence+'.'+[guid]::NewGuid()"))
-        self.assertIn("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED",source)
+        self.assertIn("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED",source)
         self.assertIn("V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED",source)
 
     def test_no_side_effect_commands_or_runtime_invocation(self):
@@ -424,9 +430,9 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required,wait)
         self.assertLess(stop.index("$armed=$false"),
-                        stop.index("Disable-ScheduledTask"))
-        self.assertLess(stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
-                        stop.index("Disable-ScheduledTask"))
+                        stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"))
+        armed=stop.split(" if((Test-Path -LiteralPath $fence)",1)[1]
+        self.assertNotRegex(armed,r"(?m)^\s*(?:Disable|Stop)-ScheduledTask\b")
         self.assertIn("Never automatically promote ARMED to QUIESCED",stop)
         self.assert_locked_pr515_native_stop_only(s)
 
@@ -945,8 +951,8 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotIn("V3_PRECAS_SUPERVISOR_NOT_RUNNING",stop)
         self.assertLess(stop.index("V3_PRECAS_SUPERVISOR_SCHEDULE_OR_OWNER_DRIFT"),
                         stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"))
-        self.assertLess(stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
-                        stop.index("Disable-ScheduledTask"))
+        armed=stop.split(" if((Test-Path -LiteralPath $fence)",1)[1]
+        self.assertNotRegex(armed,r"(?m)^\s*(?:Disable|Stop)-ScheduledTask\b")
         self.assert_locked_pr515_native_stop_only(source)
 
     def test_pr515_armed_stage4_phase_boundary_prevents_stop(self):
@@ -975,17 +981,21 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             "independent_complete_attempt_history_attested_here=$false",
             "native_intake_tasks_changed_here=$false",
             "automatic_old_writer_rearm_allowed=$false",
-            "V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED",
+            "V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED",
         ):
             self.assertIn(token,stop,token)
         self.assertLess(stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
                         stop.index("V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1"))
         self.assertLess(stop.index("return [pscustomobject]@{\n  kind='V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'"),
-                        stop.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"))
+                        stop.index("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED"))
         # Match the actual command statements, not the earlier explanatory comments.
         native_disable=stop.index("\n  Disable-ScheduledTask -TaskName")
         native_stop=stop.index("\n  Stop-ScheduledTask -TaskName")
-        self.assertLess(stop.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"),
+        self.assertLess(stop.index("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED"),
+                        stop.index("return Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY"))
+        self.assertLess(stop.index("V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD"),
+                        native_disable)
+        self.assertLess(stop.index("V3_ISSUER_BOUND_NATIVE_STOP_SIGNATURE_OR_PIN_HOLD"),
                         native_disable)
         self.assertLess(native_disable,native_stop)
         self.assert_locked_pr515_native_stop_only(source)

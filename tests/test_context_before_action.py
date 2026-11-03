@@ -15,6 +15,50 @@ from tools.context_before_action import (
 
 class ContextBeforeActionTests(unittest.TestCase):
 
+    def test_actual_v3_source_barriers_are_not_reported_as_only_missing_runtime_ack(self):
+        from tools.context_before_action import v3_execution_path_readiness, compact_decision_brief
+        result = v3_execution_path_readiness(ROOT)
+        self.assertEqual(result["status"], "INSPECTED_SOURCE_HAS_NO_RELEASED_COMPLETE_TRANSITION_PATH")
+        self.assertEqual({x["operation"] for x in result["known_source_barriers"]},
+                         {"NATIVE_STOP", "ARMED_TO_QUIESCED", "PRESTOP_MARKER_CANCEL", "PRECOMMIT_RESTORE"})
+        lines = (ROOT / result["source_path"]).read_text().splitlines()
+        for barrier in result["known_source_barriers"]:
+            self.assertIn(barrier["guard"], lines[barrier["line"] - 1])
+        packet = build(ROOT, "operations", work_domain="strategy_release", strategy_version="V3")
+        self.assertEqual(compact_decision_brief(packet)["existing_transition_execution_path"], result)
+        self.assertFalse(result["baseline_device_retest_can_resolve_this"])
+        self.assertFalse(result["executable_success_path_proven"])
+        self.assertFalse(result["production_or_physical_execution_authorized"])
+
+    def test_removing_known_locks_never_becomes_a_positive_delivery_or_release_proof(self):
+        from tools.context_before_action import v3_execution_path_readiness
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = root / "tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1"
+            source.parent.mkdir()
+            source.write_text("function fake { return $true }\n")
+            result = v3_execution_path_readiness(root)
+            self.assertEqual(result["status"], "NO_KNOWN_GUARD_FOUND_EXECUTABILITY_AND_APPROVAL_UNPROVEN")
+            self.assertFalse(result["executable_success_path_proven"])
+            self.assertFalse(result["production_or_physical_execution_authorized"])
+            source.unlink()
+            result = v3_execution_path_readiness(root)
+            self.assertEqual(result["status"], "SOURCE_UNAVAILABLE_NEEDS_TARGETED_REVIEW")
+            self.assertFalse(result["production_or_physical_execution_authorized"])
+
+    def test_execution_path_scan_does_not_promote_comments_or_another_strategy_to_work(self):
+        from tools.context_before_action import v3_execution_path_readiness
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = root / "tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1"
+            source.parent.mkdir()
+            source.write_text("# throw 'V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED'\n")
+            self.assertEqual(v3_execution_path_readiness(root)["known_source_barriers"], [])
+        for domain, version in (("infrastructure", "V3"), ("project_general", None),
+                                ("strategy_release", "V4"), ("strategy_development", "V3")):
+            packet = build(ROOT, "operations", work_domain=domain, strategy_version=version)
+            self.assertNotIn("existing_transition_execution_path", packet["next_action_selector"])
+
     def test_hardware_and_general_collaboration_never_inherit_v3_release(self):
         # Work domain selects the owner/gate family; knowledge scopes do not.
         for scope in ("operations", "architecture", "strategy", "research"):
@@ -1077,6 +1121,33 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
         self.assertFalse(answer["runtime_verified_independently"])
         self.assertFalse(answer["ready_to_execute"])
         self.assertEqual(answer["past_duplicate_work_count"], "UNKNOWN_NOT_COLLECTED")
+
+    def test_next_missing_source_does_not_require_its_future_runtime_ack(self):
+        from tools.context_before_action import existing_owner_gate_decision
+        obj = self.body()
+        obj["steps"].insert(2, {
+            "id": "COMPLETE_EXECUTABLE_TRANSITION_SOURCE", "layer": "SOURCE", "state": "PENDING",
+            "evidence_class": "OWNER_BLOCKER", "evidence_url": obj["steps"][2]["evidence_url"],
+        })
+        result = existing_owner_gate_decision(self.encode(obj), "COMPLETE_EXECUTABLE_TRANSITION_SOURCE")
+        self.assertEqual(result["candidate_verdict"],
+                         "NEXT_SOURCE_IMPLEMENTATION_REQUIRES_REVIEW_NOT_RUNTIME_ACK")
+        self.assertEqual(result["next_work_class"], "SOURCE_IMPLEMENTATION_AND_REVIEW")
+        self.assertFalse(result["ready_to_execute"])
+        self.assertFalse(result["runtime_verified_independently"])
+
+    def test_next_physical_input_and_completed_ack_remain_distinct(self):
+        from tools.context_before_action import existing_owner_gate_decision
+        obj = self.body()
+        step = {"id": "NEW_NATIVE_DESIGN_INPUT", "layer": "PHYSICAL_STAGING", "state": "PENDING",
+                "evidence_class": "OWNER_BLOCKER", "evidence_url": obj["steps"][2]["evidence_url"]}
+        obj["steps"].insert(2, step)
+        result = existing_owner_gate_decision(self.encode(obj), step["id"])
+        self.assertEqual(result["candidate_verdict"], "NEXT_PHYSICAL_INPUT_REQUIRES_BOUNDED_DEVICE_ACTION")
+        self.assertFalse(result["ready_to_execute"])
+        step.update(state="DONE", evidence_class="PHYSICAL_ACK")
+        result = existing_owner_gate_decision(self.encode(obj), step["id"])
+        self.assertEqual(result["candidate_verdict"], "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE")
 
     def test_out_of_order_or_unregistered_work_is_not_next_action(self):
         from tools.context_before_action import existing_owner_gate_decision

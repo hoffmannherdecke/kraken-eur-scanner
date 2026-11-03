@@ -306,6 +306,10 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
             verdict = "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE"
         elif first_open is None or candidate_id != first_open["id"]:
             verdict = "NOT_NEXT_OPEN_GATE_HOLD"
+        elif matched["layer"] == "SOURCE":
+            verdict = "NEXT_SOURCE_IMPLEMENTATION_REQUIRES_REVIEW_NOT_RUNTIME_ACK"
+        elif matched["layer"] == "PHYSICAL_STAGING":
+            verdict = "NEXT_PHYSICAL_INPUT_REQUIRES_BOUNDED_DEVICE_ACTION"
         else:
             verdict = "NEXT_GATE_BLOCKED_PENDING_REAL_ACK_AND_APPROVAL"
     return {
@@ -320,6 +324,12 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
             if first_open else None),
         "candidate_id": candidate_id,
         "candidate_verdict": verdict,
+        "next_work_class": (
+            "SOURCE_IMPLEMENTATION_AND_REVIEW" if first_open and first_open["layer"] == "SOURCE"
+            else "BOUNDED_PHYSICAL_INPUT" if first_open and first_open["layer"] == "PHYSICAL_STAGING"
+            else "ORIGINAL_RUNTIME_ACK_AND_APPLICABLE_APPROVAL" if first_open
+            else "NO_OPEN_DECLARED_STEP"
+        ),
         "counts_from_declared_owner_view": counts,
         "rework_detected_this_query": int(
             verdict == "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE"),
@@ -1306,13 +1316,71 @@ def project_work_domain_boundary(root: Path, config: dict, work_domain: str, str
     }
 
 
+def v3_execution_path_readiness(root: Path) -> dict:
+    """Locate known source barriers; NEVER infer execution authority from their absence.
+
+    This is a source diagnostic of the existing PR515 owner, not a PowerShell
+    interpreter, new release gate, runtime monitor or substitute for a reviewed
+    variant. In particular, a pending operational ACK must not hide an entrypoint
+    that cannot execute the operation in the inspected source at all.
+    """
+    path = "tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1"
+    source = root / path
+    result = {
+        "kind": "V3_EXISTING_OPERATOR_EXECUTION_PATH_DIAGNOSTIC_V1",
+        "source_path": path,
+        "status": "SOURCE_UNAVAILABLE_NEEDS_TARGETED_REVIEW",
+        "known_source_barriers": [],
+        "executable_success_path_proven": False,
+        "production_or_physical_execution_authorized": False,
+        "source_scan_is_not_positive_integration_or_runtime_proof": True,
+        "ci_success_is_not_transition_completion": True,
+        "completed_baselines_must_not_be_repeated_to_resolve_source_barriers": True,
+    }
+    if not source.is_file() or source.is_symlink():
+        return result
+    raw = source.read_bytes()
+    result["source_sha256"] = hashlib.sha256(raw).hexdigest()
+    text = raw.decode("utf-8-sig")
+    # Exact guards in the original owner, not generic searches for HOLD in
+    # comments, historical drill tools or unrelated strategy functions.
+    guards = {
+        "V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED": "NATIVE_STOP",
+        "V3_PR515_ARMED_TO_QUIESCED_SOURCE_UNCONDITIONALLY_LOCKED": "ARMED_TO_QUIESCED",
+        "V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED": "PRESTOP_MARKER_CANCEL",
+        "V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED": "PRECOMMIT_RESTORE",
+    }
+    for number, line in enumerate(text.splitlines(), 1):
+        match = re.fullmatch(r"\s*throw\s+'([^']+)'\s*;?\s*(?:#.*)?", line)
+        if match and match[1] in guards:
+            result["known_source_barriers"].append({
+                "operation": guards[match[1]], "line": number, "guard": match[1],
+            })
+    if result["known_source_barriers"]:
+        result.update(
+            status="INSPECTED_SOURCE_HAS_NO_RELEASED_COMPLETE_TRANSITION_PATH",
+            next_work="COMPLETE_AND_REVIEW_EXISTING_TRANSITION_PATH_BEFORE_DEVICE_EXECUTION",
+            baseline_device_retest_can_resolve_this=False,
+            source_only_refinement_is_transition_completion=False,
+            missing_runtime_ack_is_not_the_only_open_dependency=True,
+        )
+    else:
+        # Removing/renaming a guard is NOT a successful implementation. The
+        # positive integration and independent approval must still be supplied.
+        result.update(
+            status="NO_KNOWN_GUARD_FOUND_EXECUTABILITY_AND_APPROVAL_UNPROVEN",
+            next_work="REVIEW_FULL_SUCCESS_AND_ABORT_PATHS_AND_APPLICABLE_APPROVALS",
+        )
+    return result
+
+
 def project_next_action_selector(operational: dict, root: Path, work_domain: str = "project_general", strategy_version: str | None = None) -> dict:
     """Route self-service before manual steps; no automatic tool availability claims."""
     runner = operational["projectwide_reviewed_runner"]
     reuse = runner["capability_reuse_policy"]
     workspace = runner["scoped_workspace"]
     v3 = runner["reviewed_v3_fixed_paths"]
-    return {
+    result = {
         "kind": "PROJECT_NEXT_ACTION_SELECTOR_V1",
         "decision_order": [
             "USE_AVAILABLE_CONNECTED_GITHUB_OR_CLOUD_READBACK_FIRST",
@@ -1341,6 +1409,9 @@ def project_next_action_selector(operational: dict, root: Path, work_domain: str
         "no_arbitrary_shell_or_admin_rights": True,
         "no_new_scheduler_or_runtime_execution": True,
     }
+    if work_domain == "strategy_release" and strategy_version == "V3":
+        result["existing_transition_execution_path"] = v3_execution_path_readiness(root)
+    return result
 
 
 def build(root: Path, scope: str, work_domain: str = "project_general", strategy_version: str | None = None) -> dict:
@@ -1461,7 +1532,7 @@ def compact_decision_brief(packet: dict) -> dict:
         "AGENTS.md", "project-current-state.json",
         "PROJECT_BACKLOG.md", "docs/project-control-plane-governance.md"
     ) if path in routed]
-    return {
+    result = {
         "kind": "CONTEXT_BEFORE_ACTION_DECISION_BRIEF_V1",
         "scope": packet["scope"],
         "work_domain": packet["work_domain_boundary"]["work_domain"],
@@ -1490,6 +1561,9 @@ def compact_decision_brief(packet: dict) -> dict:
         "no_live_runtime_or_trading_authority": True,
         "history_or_hash_is_not_live_proof": True,
     }
+    if "existing_transition_execution_path" in selector:
+        result["existing_transition_execution_path"] = selector["existing_transition_execution_path"]
+    return result
 
 
 def main() -> int:

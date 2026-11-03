@@ -38,7 +38,12 @@ BEGIN
         WHERE status='active' AND series_id='PAPER-V2R4-20261009T110135Z') <> 1
     OR (SELECT count(*) FROM v3_cas_audit.epoch_v1) <> 1
     OR (SELECT count(*) FROM v3_cas_audit.intent_v1) <> 1
-    OR pg_catalog.to_regprocedure(
+    OR pg_catalog.to_regclass('v3_cas_audit.prepared_fence_abort_v1') IS NULL
+    -- A terminal issuer abort is durable and must never be sealed/reused.
+    -- The abort ledger is mandatory for the same released CAS epoch path.
+    OR EXISTS (SELECT 1 FROM v3_cas_audit.prepared_fence_abort_v1
+               WHERE epoch_id=v_id)
+   OR pg_catalog.to_regprocedure(
       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
       ) IS NOT NULL THEN
   RAISE EXCEPTION 'V3_STAGE5_SEAL_UNEXPECTED_SERIES_AUDIT_OR_CAS_HOLD';

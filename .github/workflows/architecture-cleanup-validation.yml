@@ -10,22 +10,32 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      native_exclusion_required: ${{ steps.native_scope.outputs.required }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 2
+      - name: Scope disposable Windows permission integration
+        id: native_scope
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(tools/minipc-v3-paper-cutover-operator-INACTIVE\.ps1|tests/test_v3_pr661_task_file_lease_windows\.ps1|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
+            echo 'required=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'required=false' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: V3 CAS preinvoke ledger inert source and separate transaction tests
-        run: python -m unittest tests.test_v3_cas_preinvoke_ledger_inactive tests.test_v3_cas_preinvoke_signed_candidate_inactive -v
+        run: python -m unittest tests.test_v3_cas_preinvoke_ledger_inactive tests.test_v3_cas_preinvoke_signed_candidate_inactive tests.test_v3_prepared_fence_abort_source -v
       - name: V3 Paper Notebook one-time offline snapshots (no CAS or external service)
         shell: pwsh
         run: ./tests/test_v3_notebook_onetime_paper_witness.ps1
       - name: V3 CAS isolated real PostgreSQL 17 native ACL/transaction tests
         run: |
           # Avoid the Docker pull on unrelated project-wide architecture PRs.
-          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(supabase/v3-cas-preinvoke-ledger-INACTIVE\.sql|tests/v3_cas_postgres_ephemeral_contract\.sh|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
+          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(supabase/v3-cas-preinvoke-ledger-INACTIVE\.sql|supabase/v3-cas-prepared-fence-abort-INACTIVE\.sql|tests/v3_cas_postgres_ephemeral_contract\.sh|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
             bash tests/v3_cas_postgres_ephemeral_contract.sh
           else
             echo 'V3_PG17_EPHEMERAL_UNCHANGED_SKIP'
@@ -566,3 +576,14 @@ jobs:
           assert 'EVIDENCE_DIVERSITY_FASTTRACK_V1' not in Path('PROJECT_BACKLOG.md').read_text()
           print('ARCHITECTURE_CONTRACT_PASS')
           PY
+
+  native-task-exclusion-sandbox:
+    needs: validate
+    if: needs.validate.outputs.native_exclusion_required == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Disposable disabled task definition lease and recovery
+        shell: pwsh
+        run: ./tests/test_v3_pr661_task_file_lease_windows.ps1

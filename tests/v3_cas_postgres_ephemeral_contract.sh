@@ -9,9 +9,11 @@ source_sql="supabase/v3-cas-preinvoke-ledger-INACTIVE.sql"
 # Reviewed one-time Stage-2 source; the dormant original retains its first RAISE.
 stage2_sql="supabase/v3-cas-audit-stage2-install-APPROVED-20261027.sql"
 container="v3-cas-pg-contract-$$"
+transition_tmp=''
 
 cleanup() {
   docker rm -f "$container" >/dev/null 2>&1 || true
+  if [[ -n "$transition_tmp" ]]; then rm -rf -- "$transition_tmp"; fi
 }
 trap cleanup EXIT
 
@@ -975,6 +977,11 @@ VALUES ('V3CAS-AUDIT-ffffffffffffffffffffffffffffffff',1,
  repeat('d',64),repeat('a',64),repeat('b',64));
 SQL
 pg_root -c 'ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;' >/dev/null
+# Stage5 now requires the terminal abort ledger. Its real protected ACL,
+# issuer and transaction behavior is tested below in this SAME disposable
+# database. Here use only an ephemeral minimal read-only fixture to keep the
+# earlier Stage5 positive/negative seal test deterministic before that install.
+pg_root_db -c "CREATE TABLE v3_cas_audit.prepared_fence_abort_v1(epoch_id text PRIMARY KEY); GRANT SELECT ON v3_cas_audit.prepared_fence_abort_v1 TO postgres;" >/dev/null
 # The UNMODIFIED source must error before setting even temporary privileges.
 if pg -f - < "$stage5_seal" >/dev/null 2>&1; then
   echo 'FAIL_STAGE5_SEAL_LOCK_EXECUTED' >&2; exit 1
@@ -1002,6 +1009,13 @@ assert "__" not in s
 print(s)
 PY
 }
+# A terminal abort must independently reject Stage5 even when the original
+# intent and all source/fence/ACL pins otherwise match.
+pg_root_db -c "INSERT INTO v3_cas_audit.prepared_fence_abort_v1 VALUES ('V3CAS-AUDIT-ffffffffffffffffffffffffffffffff');" >/dev/null
+if render_stage5_synthetic_only | pg -f - >/dev/null 2>&1; then
+  echo 'FAIL_STAGE5_ACCEPTED_TERMINALLY_ABORTED_EPOCH' >&2; exit 1
+fi
+pg_root_db -c "DELETE FROM v3_cas_audit.prepared_fence_abort_v1;" >/dev/null
 render_stage5_synthetic_only | pg -f - >/dev/null
 if [[ "$(pg -Atc "select count(*) from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-ffffffffffffffffffffffffffffffff' and sealed and next_ordinal=2")" != 1 ]] ||
    [[ "$(pg -Atc "select has_column_privilege('postgres','v3_cas_audit.epoch_v1','sealed','UPDATE')")" != f ]] ||
@@ -1018,6 +1032,238 @@ pg_root_db -f - <<'SQL' >/dev/null
 TRUNCATE v3_cas_audit.intent_v1, v3_cas_audit.epoch_v1;
 REVOKE SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 FROM postgres;
 SQL
+# Dispose only this temporary Stage5 compatibility fixture. The actual
+# prepared abort schema is installed/tested below from the original SQL.
+pg_root_db -c "DROP TABLE v3_cas_audit.prepared_fence_abort_v1;" >/dev/null
 echo 'V3_PG17_STAGE5_REAL_SYNTHETIC_SEAL_RESTORE_PASS'
+
+# PR661: reuse THIS EXISTING networkless PG17 container for the new source.
+# Run the exact existing inhibit schema first, unlocked ONLY in the disposable
+# in-memory stream; the committed source files remain hardlocked.
+# Match productive PostgreSQL 17 non-superuser CREATEROLE membership semantics.
+# The prior legacy isolated fixtures temporarily made postgres SUPERUSER.
+pg_root -c "ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
+inhibit_sql="supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql"
+abort_sql="supabase/v3-cas-prepared-fence-abort-INACTIVE.sql"
+if pg -f - < "$abort_sql" >/dev/null 2>&1; then
+ echo 'FAIL_PREPARED_ABORT_SOURCE_HARDLOCK_BYPASSED' >&2; exit 1
+fi
+if [[ "$(pg -Atc "select to_regclass('v3_cas_audit.prepared_fence_abort_v1') is null")" != t ]]; then
+ echo 'FAIL_PREPARED_ABORT_HARDLOCK_CREATED_TABLE' >&2; exit 1
+fi
+python - "$inhibit_sql" <<'PY' | pg -f - >/dev/null
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text('utf-8')
+lock="  RAISE EXCEPTION 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE_OWNER_AND_ISSUER_NOT_ABSOLVED';"
+assert s.count(lock)==1
+print(s.replace(lock,"  NULL; -- ISOLATED disposable PG17 only",1))
+PY
+# Production issuer enrollment is already proven; synthetic CI enables only
+# the disposable role, never credentials or network access.
+pg_root_db -c "ALTER ROLE v3_cas_inhibit_issuer_actor LOGIN CONNECTION LIMIT 1;" >/dev/null
+python - "$abort_sql" <<'PY' | pg -f - >/dev/null
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text('utf-8')
+lock=" RAISE EXCEPTION 'V3_PREPARED_ABORT_SOURCE_INACTIVE_NO_PRODUCTION_INSTALL';"
+assert s.count(lock)==1
+print(s.replace(lock," NULL; -- ISOLATED disposable PG17 only",1))
+PY
+# Reuse the existing restricted public/private CURRENT Reader definer. It
+# supplies original public-series truth; do not introduce public table grants.
+t0_sql="supabase/v3-cas-t0-private-reader-witness-INACTIVE.sql"
+if pg -f - < "$t0_sql" >/dev/null 2>&1; then
+ echo 'FAIL_T0_SOURCE_HARDLOCK_BYPASSED' >&2; exit 1
+fi
+python - "$t0_sql" <<'PY_T0' | pg -f - >/dev/null
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text('utf-8')
+lock="  RAISE EXCEPTION 'V3_T0_READER_WITNESS_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+assert s.count(lock)==1
+print(s.replace(lock,"  NULL; -- ISOLATED disposable PG17 only",1))
+PY_T0
+# Return to disposable bootstrap-era fixture privileges for synthetic
+# SET SESSION AUTHORIZATION and data assertions, never original production.
+pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
+pg -f - <<'SQL' >/dev/null
+INSERT INTO v3_cas_audit.epoch_v1
+ (epoch_id, predecessor_series_id, expected_rpc, source_sha256,
+ original_fence_sha256, approved_caller_acl_sha256)
+VALUES ('V3CAS-AUDIT-99999999999999999999999999999999',
+ 'PAPER-V2R4-20261009T110135Z',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ repeat('a',64),repeat('b',64),repeat('c',64));
+DO $reject_owner$
+BEGIN
+ BEGIN
+  PERFORM v3_cas_audit.record_prepared_fence_abort_v1(
+   'V3CAS-AUDIT-99999999999999999999999999999999',
+   repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64));
+  RAISE EXCEPTION 'FAIL_NON_ISSUER_ABORT_ACCEPTED';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM NOT LIKE '%V3_PREPARED_ABORT_CAS_OR_ACTOR_HOLD%' THEN RAISE; END IF;
+ END;
+END $reject_owner$;
+SET SESSION AUTHORIZATION v3_cas_inhibit_issuer_actor;
+DO $no_inhibit$
+BEGIN
+ BEGIN
+  PERFORM v3_cas_audit.record_prepared_fence_abort_v1(
+   'V3CAS-AUDIT-99999999999999999999999999999999',
+   repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64));
+  RAISE EXCEPTION 'FAIL_ABORT_WITHOUT_INHIBIT_ACCEPTED';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM NOT LIKE '%V3_PREPARED_ABORT_INTENT_OR_ISSUER_HOLD%' THEN RAISE; END IF;
+ END;
+END $no_inhibit$;
+SQL
+# Exercise the NEW connection through actual different authenticated sessions,
+# not SET SESSION AUTHORIZATION followed by begin+abort in the same session.
+# The sole issuer is the already existing disposable role. No production
+# connection, password, user, scheduler or alternative CAS executor is added.
+pg_root_db -c "ALTER ROLE v3_cas_inhibit_issuer_actor PASSWORD 'CI-ISSUER-NO-PRODUCTION-SECRET';" >/dev/null
+docker exec -u postgres "$container" sh -ec '
+ sed -i "1i host postgres v3_cas_inhibit_issuer_actor 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+'
+pg_root_db -c 'SELECT pg_reload_conf();' >/dev/null
+issuer_transaction() {
+ docker exec -e PGPASSWORD='CI-ISSUER-NO-PRODUCTION-SECRET' "$container" \
+  psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
+  -U v3_cas_inhibit_issuer_actor -d postgres "$@"
+}
+# Execute the actual static Notebook Reader SQL, not a parallel test query.
+notebook_reader_sql() {
+ python - "$1" <<'PY_READER'
+import pathlib,sys
+s=pathlib.Path('tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1').read_text('utf-8')
+start='if($'+sys.argv[1]+'){\n $checks='
+assert s.count(start)==1
+part=s.split(start,1)[1]
+print(part.split("$checks[0].Sql=@'",1)[1].split("\n'@",1)[0])
+PY_READER
+}
+issuer_reader_sql=$(notebook_reader_sql IssuerPrestopSignedCurrent)
+abort_reader_sql=$(notebook_reader_sql PreparedAbortSignedCurrent)
+committed_issuer_reader() {
+ docker exec -e PGPASSWORD='CI-READER-NO-PRODUCTION-SECRET' "$container" \
+  psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
+  -U v3_cas_audit_reader_actor -d postgres \
+  -c "$issuer_reader_sql"
+}
+if [[ "$(issuer_transaction -c 'SELECT session_user;')" != v3_cas_inhibit_issuer_actor ]]; then
+ echo 'FAIL_ISSUER_TRANSACTION_ACTOR_NOT_AUTHENTICATED' >&2; exit 1
+fi
+transition_tmp=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/v3-cas-transition.XXXXXX")
+if committed_issuer_reader >"$transition_tmp/missing.json" 2>"$transition_tmp/missing.err"; then
+ echo 'FAIL_READER_ACCEPTED_MISSING_ISSUER_COMMIT' >&2; exit 1
+fi
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/missing.err"; then
+ echo 'FAIL_MISSING_ISSUER_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
+fi
+begin_inhibit="SELECT v3_cas_audit.begin_executor_inhibit_v1('V3CAS-AUDIT-99999999999999999999999999999999',repeat('a',64),repeat('b',64),repeat('c',64));"
+issuer_transaction -c "BEGIN; $begin_inhibit ROLLBACK;" >/dev/null
+if committed_issuer_reader >"$transition_tmp/rollback.json" 2>"$transition_tmp/rollback.err"; then
+ echo 'FAIL_READER_ACCEPTED_ROLLEDBACK_ISSUER_TRANSACTION' >&2; exit 1
+fi
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/rollback.err"; then
+ echo 'FAIL_ROLLBACK_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
+fi
+issuer_transaction -c "BEGIN; $begin_inhibit COMMIT;" >/dev/null
+committed_issuer_reader >"$transition_tmp/issuer-prestop.json"
+command -v pwsh >/dev/null || { echo 'FAIL_SIGNED_ISSUER_INTEGRATION_REQUIRES_PWSH' >&2; exit 1; }
+# Check the second executor identity as well as its actor. The source must
+# refuse a live-login executor even when the separately signed row exists.
+pg_root_db -c 'ALTER ROLE v3_cas_executor LOGIN;' >/dev/null
+if committed_issuer_reader >"$transition_tmp/executor.json" 2>"$transition_tmp/executor.err"; then
+ echo 'FAIL_READER_ACCEPTED_EXECUTOR_LOGIN_DRIFT' >&2; exit 1
+fi
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/executor.err"; then
+ echo 'FAIL_EXECUTOR_DRIFT_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
+fi
+pg_root_db -c 'ALTER ROLE v3_cas_executor NOLOGIN;' >/dev/null
+# Exercise the recovery case that used to be impossible: native STOP is
+# already independently confirmed, but NO intent/attempt/CAS has been opened.
+# This is an isolated server timestamp, never a fabricated production STOP ACK.
+issuer_transaction -c "BEGIN; SELECT v3_cas_audit.confirm_executor_inhibit_v1('V3CAS-AUDIT-99999999999999999999999999999999',clock_timestamp()-interval '1 millisecond',repeat('e',64)); COMMIT;" >/dev/null
+if committed_issuer_reader >"$transition_tmp/stopped.json" 2>"$transition_tmp/stopped.err"; then
+ echo 'FAIL_POSTSTOP_CONFIRM_ACCEPTED_AS_PRESTOP' >&2; exit 1
+fi
+if ! grep -Fq 'V3_ISSUER_PRESTOP_SOURCE_OR_STATE_HOLD' "$transition_tmp/stopped.err"; then
+ echo 'FAIL_POSTSTOP_CONFIRM_DID_NOT_REACH_READER_GUARD' >&2; exit 1
+fi
+# Independent issuer now commits the terminal abort in its OWN new session.
+issuer_transaction -c "BEGIN; SELECT v3_cas_audit.record_prepared_fence_abort_v1('V3CAS-AUDIT-99999999999999999999999999999999',repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64)); COMMIT;" >/dev/null
+if committed_issuer_reader >"$transition_tmp/aborted.json" 2>"$transition_tmp/aborted.err"; then
+ echo 'FAIL_READER_ACCEPTED_ABORTED_EPOCH_AS_LIVE_PRESTOP' >&2; exit 1
+fi
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/aborted.err"; then
+ echo 'FAIL_ABORTED_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
+fi
+docker exec -e PGPASSWORD='CI-READER-NO-PRODUCTION-SECRET' "$container" \
+ psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
+ -U v3_cas_audit_reader_actor -d postgres -c "$abort_reader_sql" >"$transition_tmp/terminal-abort.json"
+pwsh -NoProfile -NonInteractive -File tests/test_v3_originalhost_signed_cms_offline.ps1 \
+ -CommittedIssuerJson "$transition_tmp/issuer-prestop.json" -CommittedAbortJson "$transition_tmp/terminal-abort.json"
+echo 'V3_PG17_ISSUER_COMMIT_DISTINCT_READER_REAL_CMS_ABORT_INTEGRATION_PASS_NOT_NATIVE_RELEASE'
+echo 'V3_PG17_POSTSTOP_CONFIRMED_NO_INTENT_TERMINAL_ABORT_PASS_NOT_NATIVE_RESTORE'
+pg -f - <<'SQL' >/dev/null
+SET SESSION AUTHORIZATION v3_cas_inhibit_issuer_actor;
+-- The independently committed abort above must refuse this replay.
+DO $no_replay$
+BEGIN
+ BEGIN
+  PERFORM v3_cas_audit.record_prepared_fence_abort_v1(
+   'V3CAS-AUDIT-99999999999999999999999999999999',
+   repeat('a',64),repeat('b',64),repeat('c',64),repeat('e',64));
+  RAISE EXCEPTION 'FAIL_ABORT_REPLAY_ACCEPTED';
+ EXCEPTION WHEN unique_violation THEN NULL;
+ END;
+END $no_replay$;
+RESET SESSION AUTHORIZATION;
+-- Independently enrolled/read-only Reader has one explicitly SETtable
+-- NOLOGIN role. The issuer's durable terminal abort must be visible here,
+-- without making a new actor, enabling any writer, or exposing the public API.
+SET SESSION AUTHORIZATION v3_ci_reader_login;
+SET ROLE v3_cas_audit_reader;
+DO $independent_reader$
+BEGIN
+ IF (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1
+     WHERE epoch_id='V3CAS-AUDIT-99999999999999999999999999999999'
+       AND state='ABORT_RECORDED_NOT_RELEASED'
+       AND receipt_sha256=repeat('d',64)) <> 1 THEN
+  RAISE EXCEPTION 'FAIL_INDEPENDENT_READER_CANNOT_READ_TERMINAL_ABORT';
+ END IF;
+ IF has_table_privilege(current_user,
+       'v3_cas_audit.prepared_fence_abort_v1','INSERT,UPDATE,DELETE') THEN
+  RAISE EXCEPTION 'FAIL_INDEPENDENT_READER_GAINED_ABORT_WRITE';
+ END IF;
+END $independent_reader$;
+RESET ROLE;
+RESET SESSION AUTHORIZATION;
+DO $assert_terminal$
+BEGIN
+ IF (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1
+     WHERE state='ABORT_RECORDED_NOT_RELEASED' AND
+       receipt_sha256=repeat('d',64))<>1 THEN
+  RAISE EXCEPTION 'FAIL_NOT_DURABLE_TERMINAL_ABORT';
+ END IF;
+ BEGIN
+   INSERT INTO v3_cas_audit.intent_v1(epoch_id)
+    VALUES ('V3CAS-AUDIT-99999999999999999999999999999999');
+   RAISE EXCEPTION 'FAIL_ABORTED_EPOCH_INTENT_ACCEPTED';
+ EXCEPTION WHEN OTHERS THEN
+   IF SQLERRM NOT LIKE '%V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT%'
+   THEN RAISE; END IF;
+ END;
+ BEGIN
+   INSERT INTO v3_cas_audit.attempt_v1(epoch_id)
+    VALUES ('V3CAS-AUDIT-99999999999999999999999999999999');
+   RAISE EXCEPTION 'FAIL_ABORTED_EPOCH_UNKNOWN_ACCEPTED';
+ EXCEPTION WHEN OTHERS THEN
+   IF SQLERRM NOT LIKE '%V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT%'
+   THEN RAISE; END IF;
+ END;
+END $assert_terminal$;
+SQL
+echo 'V3_PG17_PREPARED_ABORT_ISSUER_ZERO_INTENT_REPLAY_UNKNOWN_NEGATIVE_PASS'
 
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
