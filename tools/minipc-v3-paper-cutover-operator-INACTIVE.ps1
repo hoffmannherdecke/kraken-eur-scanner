@@ -2439,7 +2439,20 @@ public static class V3Pr515NativeFenceRenameV1 {
  static extern SafeFileHandle Open(string path,uint access,uint share,IntPtr security,uint creation,uint flags,IntPtr template);
  [DllImport("kernel32.dll",SetLastError=true)]
  static extern bool SetFileInformationByHandle(SafeFileHandle file,uint cls,IntPtr data,uint size);
+ [DllImport("kernel32.dll",EntryPoint="GetFileAttributesW",CharSet=CharSet.Unicode,SetLastError=true)]
+ static extern uint GetFileAttributes(string path);
+ static void DemandAbsentTarget(string target) {
+  uint result=GetFileAttributes(target);
+  if(result!=0xFFFFFFFF) throw new IOException("archive-target-already-exists");
+  int error=Marshal.GetLastWin32Error();
+  if(error!=2 && error!=3) throw new Win32Exception(error,"archive-target-unknown");
+ }
  public static void RenamePinned(string source,string target,string expected) {
+  // Two fail-closed destination probes; zero ReplaceIfExists is mandatory.
+  // These reject a pre-existing target and avoid misleading rename-success
+  // claims. A concurrent privileged filesystem actor STILL needs separately
+  // enforced exclusive originalhost/parent-directory custody before release.
+  DemandAbsentTarget(target);
   using(var handle=Open(source,GENERIC_READ|DELETE_ACCESS,0,IntPtr.Zero,
                          OPEN_EXISTING,FILE_FLAG_OPEN_REPARSE_POINT,IntPtr.Zero)){
    if(handle.IsInvalid) throw new Win32Exception(Marshal.GetLastWin32Error(),"exclusive-open-denied");
@@ -2472,6 +2485,7 @@ public static class V3Pr515NativeFenceRenameV1 {
      Marshal.WriteIntPtr(memory,rootOffset,IntPtr.Zero);
      Marshal.WriteInt32(memory,lenOffset,name.Length);
      Marshal.Copy(name,0,IntPtr.Add(memory,nameOffset),name.Length);
+     DemandAbsentTarget(target);
      if(!SetFileInformationByHandle(handle,FILE_RENAME_INFO_CLASS,memory,(uint)total))
       throw new Win32Exception(Marshal.GetLastWin32Error(),"atomic-exclusive-rename-denied");
     }finally{Marshal.FreeHGlobal(memory);}
