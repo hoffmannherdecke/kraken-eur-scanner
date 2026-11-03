@@ -77,6 +77,24 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertNotIn("$_.CommandLine -match '(?i)v2r4|wait_launcher'", body)
         self.assertIn("cas_or_paper_authorized=$false", body)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED", operator)
+    def test_sole_originalhost_stop_owner_requires_signed_issuer_without_release(self):
+        operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        start = operator.index("function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(")
+        end = operator.index("function ", start + 60)
+        body = operator[start:end]
+        self.assertIn("[byte[]]$IndependentIssuerReaderJson", body)
+        self.assertIn("[byte[]]$IndependentIssuerReaderCms", body)
+        self.assertIn("Test-V3Pr661SignedIssuerPrestopReceipt", body)
+        self.assertIn("-ExpectedFenceSha256 $armedFenceSha", body)
+        self.assertIn("V3_PR515_PHASE_B_EXACT_SIGNED_ISSUER_COMMIT_HOLD", body)
+        self.assertIn("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED", body)
+        self.assertLess(body.index("return [pscustomobject]@{\n  kind='V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'"),
+                        body.index("Test-V3Pr661SignedIssuerPrestopReceipt"))
+        self.assertLess(body.index("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED"),
+                        body.index("Disable-ScheduledTask"))
+        self.assertEqual(operator.count("Disable-ScheduledTask -TaskName $name"), 1)
+        self.assertEqual(operator.count("Stop-ScheduledTask -TaskName $name"), 1)
+
     def test_independent_reader_only_receipt_access(self):
         self.assertIn("CREATE POLICY v3_prepared_abort_reader_select_v1", self.code)
         self.assertIn("FOR SELECT TO v3_cas_audit_reader USING (true)", self.code)
