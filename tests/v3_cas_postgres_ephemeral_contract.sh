@@ -1117,6 +1117,26 @@ BEGIN
  END;
 END $no_replay$;
 RESET SESSION AUTHORIZATION;
+-- Independently enrolled/read-only Reader has one explicitly SETtable
+-- NOLOGIN role. The issuer's durable terminal abort must be visible here,
+-- without making a new actor, enabling any writer, or exposing the public API.
+SET SESSION AUTHORIZATION v3_ci_reader_login;
+SET ROLE v3_cas_audit_reader;
+DO $independent_reader$
+BEGIN
+ IF (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1
+     WHERE epoch_id='V3CAS-AUDIT-99999999999999999999999999999999'
+       AND state='ABORT_RECORDED_NOT_RELEASED'
+       AND receipt_sha256=repeat('d',64)) <> 1 THEN
+  RAISE EXCEPTION 'FAIL_INDEPENDENT_READER_CANNOT_READ_TERMINAL_ABORT';
+ END IF;
+ IF has_table_privilege(current_user,
+       'v3_cas_audit.prepared_fence_abort_v1','INSERT,UPDATE,DELETE') THEN
+  RAISE EXCEPTION 'FAIL_INDEPENDENT_READER_GAINED_ABORT_WRITE';
+ END IF;
+END $independent_reader$;
+RESET ROLE;
+RESET SESSION AUTHORIZATION;
 DO $assert_terminal$
 BEGIN
  IF (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1
