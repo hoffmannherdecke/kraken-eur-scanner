@@ -2075,7 +2075,12 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  [string]$Root,[object]$OriginalReadback,[string]$BackupFolder,
  [string]$ReviewedPr515Sha,[string]$SuccessorId,
  [string]$ReviewedRepoSha,[string]$ReviewedBundleSha,[string]$ReviewedStrategySha,
- [switch]$OnlyOriginalArmed,[string]$ExpectedPreparedFenceSha) {
+ [switch]$OnlyOriginalArmed,[string]$ExpectedPreparedFenceSha,
+ [byte[]]$IndependentIssuerReaderJson,[byte[]]$IndependentIssuerReaderCms,
+ [string]$ReviewedIssuerReaderCertificateSha256='',
+ [string]$ReviewedIssuerEpochId='',
+ [string]$ReviewedIssuerSourceSha256='',
+ [string]$ReviewedIssuerCallerAclSha256='') {
  # Native STOP is still source-locked. The explicitly opted-in call may ONLY
  # reach the existing protected ARMED-fence readback and mandatory RETURN.
  # It must never fall through to the dormant Disable/Stop commands below.
@@ -2322,11 +2327,28 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   cloud_cas_invoked=$false
   v3_paper_release_authorized=$false
  }
- # PHASE B intentionally dormant. The old in-function STOP is not reachable
- # through the new ARMED handoff and must NOT be connected by deleting the
- # return; it needs a separate independently authenticated Stage4/issuer
- # receipt gate against the exact original_fence_sha256 first.
- throw 'V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED'
+ # PHASE B is not reachable through the preceding mandatory return.
+ # The ONLY originalhost Task mutation owner now contains the signed, pinned
+ # independent issuer COMMIT check itself; no secondary STOP function may
+ # acquire authority from a mutex or a locally asserted success boolean.
+ # A separately approved and source-pinned one-shot Phase B must still prove
+ # continuous Cloud/UNKNOWN custody and privileged scheduler/PID exclusion.
+ $issuerReview=Test-V3Pr661SignedIssuerPrestopReceipt `
+   -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
+   -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
+   -ExpectedEpochId $ReviewedIssuerEpochId `
+   -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
+   -ExpectedFenceSha256 $armedFenceSha `
+   -ExpectedAclSha256 $ReviewedIssuerCallerAclSha256
+ if($issuerReview.signed_cloud_row_matches_pre_stop_inhibit -ne $true -or
+    $issuerReview.continuous_cloud_cas_unknown_custody_proven -ne $false -or
+    $issuerReview.originalhost_scheduler_exclusion_proven -ne $false -or
+    $issuerReview.native_stop_or_restore_authorized -ne $false){
+  throw 'V3_PR515_PHASE_B_EXACT_SIGNED_ISSUER_COMMIT_HOLD'
+ }
+ # Even a valid signature is NOT a release: privilege cannot be inferred
+ # from a CMS key, an ARMED marker, or a cooperating mutex.
+ throw 'V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED'
  # Exactly these two native task mutations, never Lifecycle or CloudSync.
  foreach($name in $tasks){
   Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
