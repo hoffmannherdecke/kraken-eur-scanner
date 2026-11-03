@@ -11,40 +11,17 @@ class NotebookIssuerEnrollmentContract(unittest.TestCase):
         cls.active="\n".join(line for line in cls.s.splitlines() if not line.lstrip().startswith("#"))
 
     def test_default_inert_and_no_runtime(self):
-        s=self.active.split("if($VerifySourceAuthority){",1)[0]
+        s=self.active
         self.assertIn("INACTIVE_PREVIEW",s)
         self.assertIn("cloud_changed=$false",s)
-        self.assertLess(s.index("INACTIVE_PREVIEW"),s.index("Add-Type -AssemblyName System.Security"))
         for forbidden in ("Invoke-Expression","Invoke-RestMethod","Invoke-WebRequest",
-                          "KRAKEN_API_KEY",
+                          "psql.exe","PGPASSWORD","KRAKEN_API_KEY",
                           "Register-ScheduledTask","Start-ScheduledTask",
                           "Invoke-Command","Start-Process","New-PSSession",
                           "GRANT v3_cas_executor","set role v3_cas_executor",
                           "create function","create role","drop role",
                           "service_role_key","reader.dpapi","writer.dpapi"):
-            self.assertNotIn(forbidden.lower(),self.active.lower(),forbidden)
-
-    def test_source_authority_is_live_readonly_and_existing_identity_only(self):
-        s=self.s.split("# PR661_SOURCE_AUTHORITY_READONLY_BEGIN",1)[1].split(
-            "# PR661_SOURCE_AUTHORITY_READONLY_END",1)[0]
-        for expected in ("if($VerifySourceAuthority)", "BEGIN TRANSACTION READ ONLY;",
-                         "SELECT session_user", "COMMIT;", "sslmode=verify-full",
-                         "PGSSLROOTCERT='system'", "Cert:\\CurrentUser\\My",
-                         "V3_PR661_NOTEBOOK_ISSUER_SOURCE_AUTHORITY_ACK_V1",
-                         "REVIEWED_SOURCE_BINDING_ONLY_NOT_RUNTIME_RELEASE",
-                         "source_commit=$ReviewedSourceCommit", "operator_sha256=$digests[0]",
-                         "notebook_reader_sha256=$digests[1]", "issuer_tool_sha256=",
-                         "SignedCms]::new", "CmsSigner]::new", "Write-SafeNew",
-                         "native_runtime_authorized=$false", "cas_or_paper_authorized=$false",
-                         "$env:PGPASSWORD=$oldPassword", "[Array]::Clear($plain"):
-            self.assertIn(expected,s,expected)
-        for forbidden in ("CREATE ROLE", "ALTER ROLE", "GRANT ", "INSERT INTO", "UPDATE ",
-                          "begin_executor_inhibit", "confirm_executor_inhibit", "record_prepared",
-                          "New-SelfSignedCertificate", "Disable-ScheduledTask", "Start-ScheduledTask"):
-            self.assertNotIn(forbidden,s)
-        self.assertIn("V3_ISSUER_SOURCE_AUTHORITY_ARGUMENTS_OUTSIDE_MODE",self.s)
-        self.assertIn("+[int]$VerifySourceAuthority.IsPresent) -gt 1",self.s)
-        self.assertIn("V3_ISSUER_SOURCE_AUTHORITY_LIVE_READ_HOLD_NO_RAW_DIAGNOSTICS",s)
+            self.assertNotIn(forbidden.lower(),s.lower(),forbidden)
 
     def test_windows_dpapi_framework_loaded_before_local_mutation(self):
         s=self.active

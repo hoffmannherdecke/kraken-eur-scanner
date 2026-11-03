@@ -22,12 +22,6 @@ $cloudBoundary=@($ast.FindAll({param($node)
 },$true))
 if($cloudBoundary.Count -ne 1){throw 'V3_SIGNED_CLOUD_BOUNDARY_MISSING_OR_DUPLICATE'}
 . ([scriptblock]::Create($cloudBoundary[0].Extent.Text))
-$authorityVerifier=@($ast.FindAll({param($node)
- $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
- $node.Name -ceq 'Test-V3Pr661NotebookIssuerSourceAuthority'
-},$true))
-if($authorityVerifier.Count -ne 1){throw 'V3_ISSUER_SOURCE_AUTHORITY_VERIFIER_MISSING'}
-. ([scriptblock]::Create($authorityVerifier[0].Extent.Text))
 $issuerVerifier=@($ast.FindAll({param($node)
  $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
  $node.Name -eq 'Test-V3Pr661SignedIssuerPrestopReceipt'
@@ -170,39 +164,6 @@ try {
    $c.ComputeSignature($sign)
    return ,([byte[]]$c.Encode())
   }
-  $authorityRow=@{
-   kind='V3_PR661_NOTEBOOK_ISSUER_SOURCE_AUTHORITY_ACK_V1'
-   observed_at_utc=$observed;nonce=('f'*32);source_commit=('a'*40)
-   operator_sha256=('b'*64);notebook_reader_sha256=('c'*64);issuer_tool_sha256=('d'*64)
-   issuer_actor='v3_cas_inhibit_issuer_actor';database='postgres'
-   transport='PG17_VERIFY_FULL_SYSTEM_CA';scope='REVIEWED_SOURCE_BINDING_ONLY_NOT_RUNTIME_RELEASE'
-   cloud_changed=$false;native_runtime_authorized=$false;cas_or_paper_authorized=$false
-  }
-  function Review-SourceAuthorityFixture([string]$wire,[byte[]]$signature,[string]$certificatePin){
-   Test-V3Pr661NotebookIssuerSourceAuthority -Payload ([Text.Encoding]::UTF8.GetBytes($wire)) `
-    -Cms $signature -ReviewedCertificateSha256 $certificatePin -ExpectedSourceCommit ('a'*40) `
-    -ExpectedOperatorSha256 ('b'*64) -ExpectedNotebookReaderSha256 ('c'*64) -ExpectedIssuerToolSha256 ('d'*64)
-  }
-  $authorityWire=$authorityRow|ConvertTo-Json -Compress
-  $authorityCms=Sign-ReaderMock $authorityWire $cert
-  $authority=Review-SourceAuthorityFixture $authorityWire $authorityCms $pin
-  if($authority.crypto_and_exact_issuer_source_context_match -ne $true -or
-     $authority.native_runtime_authorized -ne $false -or $authority.cloud_install_authorized -ne $false -or
-     $authority.physical_issuer_execution_accepted_here -ne $false){
-   throw 'V3_ISSUER_SOURCE_AUTHORITY_CMS_POSITIVE_OR_FALSE_RELEASE'
-  }
-  foreach($field in @('source_commit','operator_sha256','issuer_actor','scope','native_runtime_authorized')){
-   $bad=$authorityRow.Clone();$bad[$field]=if($field -ceq 'native_runtime_authorized'){$true}else{'WRONG'}
-   $wire=$bad|ConvertTo-Json -Compress
-   if((Review-SourceAuthorityFixture $wire (Sign-ReaderMock $wire $cert) $pin).crypto_and_exact_issuer_source_context_match){
-    throw 'V3_ISSUER_SOURCE_AUTHORITY_FOREIGN_CONTEXT_ACCEPTED'
-   }
-  }
-  if((Review-SourceAuthorityFixture $authorityWire $authorityCms ('0'*64)).crypto_and_exact_issuer_source_context_match -or
-     (Review-SourceAuthorityFixture ($authorityWire+' ') $authorityCms $pin).crypto_and_exact_issuer_source_context_match){
-   throw 'V3_ISSUER_SOURCE_AUTHORITY_WRONG_SIGNATURE_OR_PIN_ACCEPTED'
-  }
-  Write-Output 'V3_ISSUER_SOURCE_BINDING_REAL_CMS_POSITIVE_NEGATIVES_PASS_NOT_RUNTIME_RELEASE'
   # A durable abort remains valid as historical data; a fresh independent
   # read must not expire forever merely because the abort is over 90s old.
   $abortRow=@{

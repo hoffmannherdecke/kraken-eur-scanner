@@ -33,8 +33,7 @@ param(
  [string]$ExistingCloudInventoryJson='',
  [switch]$ReviewSignedForwardT0NativeBridge,
  [string]$BridgeHelperFile='',
- [string]$ReviewedBridgeHelperGitBlob='',
- [switch]$ReviewNotebookIssuerSourceAuthority,[string]$NotebookReaderSourceFile=''
+ [string]$ReviewedBridgeHelperGitBlob=''
 )
 # V3 experimental Paper scoped operator: SOURCE PREPARATION ONLY.
 # GitHub/CI draft; not an installed cutover, not a stop, not a rollback.
@@ -54,66 +53,6 @@ if(($PreviewPreparedOriginalhostFence -or $ExecuteOriginalhostArmedOnly) -and
 # PR661: Independently CMS-authenticated Reader projection of the issuer's
 # separately COMMITTED PRE-STOP inhibit. Pure reviewer, NO host/Cloud mutation.
 # A signature or role label alone never authorizes a Task or PID operation.
-# Cryptographic source-binding verifier. A physical independent execution ACK
-# is accepted separately by the original owner; this function never releases
-# Task mutation, Cloud installation, CAS or Paper from an uploaded claim.
-function Test-V3Pr661NotebookIssuerSourceAuthority(
- [byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedCertificateSha256,
- [string]$ExpectedSourceCommit,[string]$ExpectedOperatorSha256,
- [string]$ExpectedNotebookReaderSha256,[string]$ExpectedIssuerToolSha256) {
- $out=[ordered]@{kind='V3_PR661_NOTEBOOK_ISSUER_SOURCE_AUTHORITY_REVIEW_V1'
-  status='HOLD_SOURCE_AUTHORITY_SIGNATURE_OR_CONTEXT'
-  crypto_and_exact_issuer_source_context_match=$false
-  physical_issuer_execution_accepted_here=$false
-  native_runtime_authorized=$false;cloud_install_authorized=$false;cas_or_paper_authorized=$false}
- if($null -eq $Payload -or $Payload.Length -lt 200 -or $Payload.Length -gt 4096 -or
-    $null -eq $Cms -or $Cms.Length -lt 64 -or $Cms.Length -gt 32768 -or
-    $ExpectedSourceCommit -cnotmatch '^[a-f0-9]{40}$'){return [pscustomobject]$out}
- foreach($hash in @($ExpectedOperatorSha256,$ExpectedNotebookReaderSha256,$ExpectedIssuerToolSha256)){
-  if($hash -cnotmatch '^[a-f0-9]{64}$'){return [pscustomobject]$out}
- }
- $sig=Test-V3IndependentOriginalHostCmsSignature -ReceiptUtf8 $Payload -DetachedCms $Cms `
-  -ReviewedSignerCertificateSha256 $ReviewedCertificateSha256
- if($sig.crypto_signature_valid -ne $true){return [pscustomobject]$out}
- try{
-  $wire=[Text.UTF8Encoding]::new($false,$true).GetString($Payload)
-  $v=$wire|ConvertFrom-Json -ErrorAction Stop
-  $keys=@('kind','observed_at_utc','nonce','source_commit','operator_sha256',
-   'notebook_reader_sha256','issuer_tool_sha256','issuer_actor','database','transport',
-   'scope','cloud_changed','native_runtime_authorized','cas_or_paper_authorized')
-  $actual=@($v.PSObject.Properties.Name)
-  if($v -isnot [pscustomobject] -or $actual.Count -ne $keys.Count -or
-     @($actual|Where-Object {$_ -cnotin $keys}).Count){throw 'SOURCE_ACK_FIELDS'}
-  foreach($key in $keys){if([regex]::Matches($wire,'"'+$key+'"\s*:').Count -ne 1){throw 'SOURCE_ACK_DUPLICATE'}}
-  $m=[regex]::Match($wire,'"observed_at_utc"\s*:\s*"(?<utc>[^"\\]*)"')
-  $at=[datetimeoffset]::MinValue
-  if(-not $m.Success -or [string]$m.Groups['utc'].Value -cnotmatch
-    '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$' -or
-    -not [datetimeoffset]::TryParseExact([string]$m.Groups['utc'].Value,
-     "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
-     [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$at)){throw 'SOURCE_ACK_TIME'}
-  $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
-  if($age -lt -5 -or $age -gt 3600 -or
-     [string]$v.kind -cne 'V3_PR661_NOTEBOOK_ISSUER_SOURCE_AUTHORITY_ACK_V1' -or
-     [string]$v.nonce -cnotmatch '^[a-f0-9]{32}$' -or
-     [string]$v.source_commit -cne $ExpectedSourceCommit -or
-     [string]$v.operator_sha256 -cne $ExpectedOperatorSha256 -or
-     [string]$v.notebook_reader_sha256 -cne $ExpectedNotebookReaderSha256 -or
-     [string]$v.issuer_tool_sha256 -cne $ExpectedIssuerToolSha256 -or
-     [string]$v.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
-     [string]$v.database -cne 'postgres' -or
-     [string]$v.transport -cne 'PG17_VERIFY_FULL_SYSTEM_CA' -or
-     [string]$v.scope -cne 'REVIEWED_SOURCE_BINDING_ONLY_NOT_RUNTIME_RELEASE'){
-   throw 'SOURCE_ACK_CONTEXT'
-  }
-  foreach($key in @('cloud_changed','native_runtime_authorized','cas_or_paper_authorized')){
-   if($wire -cnotmatch ('"'+$key+'"\s*:\s*false(?=\s*[,}])')){throw 'SOURCE_ACK_AUTHORITY'}
-  }
-  $out.crypto_and_exact_issuer_source_context_match=$true
-  $out.status='EXACT_SIGNED_ISSUER_SOURCE_BINDING_MATCH_NOT_RUNTIME_RELEASE'
- }catch{}
- return [pscustomobject]$out
-}
 # The existing independently authenticated private T0 Reader also reads the
 # public active series under its original restricted definer. Bind that SAME
 # original output to the signed issuer/abort wire, rather than accepting a
@@ -3817,41 +3756,6 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
  }
 }
 
-# Explicit isolated read-only mode, before any originalhost inventory or
-# mutation mode. Do not silently combine it with another requested operation.
-if($ReviewNotebookIssuerSourceAuthority){
- $allowed=@('ReviewNotebookIssuerSourceAuthority','NotebookReaderJson','NotebookReaderCms',
-  'ReviewedNotebookCertificateSha256','ReviewedRepoCommitSha','BridgeHelperFile','NotebookReaderSourceFile')
- if(@($PSBoundParameters.Keys|Where-Object {$_ -cnotin $allowed}).Count){
-  throw 'V3_ISSUER_SOURCE_AUTHORITY_REVIEW_MODE_CONFLICT'
- }
- $specs=@(
-  @{path=$NotebookReaderJson;name='source-authority.json';max=4096},
-  @{path=$NotebookReaderCms;name='source-authority.cms';max=32768},
-  @{path=$BridgeHelperFile;name='v3-notebook-independent-issuer-enroll-INACTIVE.ps1';max=1048576},
-  @{path=$NotebookReaderSourceFile;name='v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1';max=1048576})
- $files=@()
- foreach($spec in $specs){
-  $file=Get-Item -LiteralPath $spec.path -Force -ErrorAction Stop
-  if($file.PSIsContainer -or $file.Name -cne $spec.name -or
-     $file.Length -lt 64 -or $file.Length -gt $spec.max -or
-     [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){
-   throw 'V3_ISSUER_SOURCE_AUTHORITY_REVIEW_FILE_SCOPE_HOLD'
-  }
-  $files+=@($file)
- }
- if($files[0].DirectoryName -cne $files[1].DirectoryName){throw 'V3_ISSUER_SOURCE_AUTHORITY_PAIR_DIRECTORY_HOLD'}
- $result=Test-V3Pr661NotebookIssuerSourceAuthority `
-  -Payload ([IO.File]::ReadAllBytes($files[0].FullName)) -Cms ([IO.File]::ReadAllBytes($files[1].FullName)) `
-  -ReviewedCertificateSha256 $ReviewedNotebookCertificateSha256 -ExpectedSourceCommit $ReviewedRepoCommitSha `
-  -ExpectedOperatorSha256 ((Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()) `
-  -ExpectedIssuerToolSha256 ((Get-FileHash -LiteralPath $files[2].FullName -Algorithm SHA256).Hash.ToLowerInvariant()) `
-  -ExpectedNotebookReaderSha256 ((Get-FileHash -LiteralPath $files[3].FullName -Algorithm SHA256).Hash.ToLowerInvariant())
- $result|ConvertTo-Json -Compress
- if($result.crypto_and_exact_issuer_source_context_match -ne $true){exit 1}
- return
-}
-if($NotebookReaderSourceFile){throw 'V3_ISSUER_SOURCE_AUTHORITY_SOURCE_FILE_OUTSIDE_MODE'}
 if($ExpectedPreparedFenceSha256 -and -not $ExecuteOriginalhostArmedOnly){throw 'V3_PREPARED_SHA_UNRELATED_MODE'}
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
