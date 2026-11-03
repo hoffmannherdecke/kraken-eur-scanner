@@ -2316,7 +2316,10 @@ function Test-V3Pr515SignedPreparedAbortReadback(
 function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
  [string]$Root,[string]$ExpectedFenceSha256,
  [string]$ReviewedRepoSha,[string]$ReviewedBundleSha256,
- [string]$ReviewedStrategySha256,[object]$IndependentAbortCustody) {
+ [string]$ReviewedStrategySha256,[byte[]]$SignedAbortPayload,
+ [byte[]]$SignedAbortCms,[string]$ReviewedSignerCertSha256,
+ [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
+ [string]$ExpectedCallerAclSha256) {
  throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'V3_MARKER_CANCEL_ORIGINALHOST_WINDOWS_REQUIRED'
@@ -2354,8 +2357,21 @@ function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
     $marker.drill_only -eq $true){
   throw 'V3_MARKER_CANCEL_NOT_EXACT_PRESTOP_ARMED'
  }
- # Caller-supplied JSON is never sufficient issuer/Cloud/UNKNOWN custody.
- # No file mutations until verified signature plus no-clobber archival exists.
+ # Cryptographically verify the exact terminal abort record with the
+ # existing certificate pin. This is necessary but NEVER sufficient:
+ # independently authenticated live Reader provenance, UNKNOWN coverage,
+ # task/PID safety and atomic archival still require their original ACKs.
+ $signed=Test-V3Pr515SignedPreparedAbortReadback -Payload $SignedAbortPayload -Cms $SignedAbortCms -ReviewedCertSha256 $ReviewedSignerCertSha256 -ExpectedEpochId $ExpectedEpochId -ExpectedSourceSha256 $ExpectedSourceSha256 -ExpectedFenceSha256 $ExpectedFenceSha256 -ExpectedAclSha256 $ExpectedCallerAclSha256
+ if($signed.signed_abort_fields_and_pins_match -ne $true){
+  throw 'V3_MARKER_CANCEL_SIGNED_TERMINAL_ABORT_MISMATCH'
+ }
+ if($signed.independent_reader_cloud_provenance_verified_here -ne $true -or
+    $signed.complete_attempt_unknown_history_proven -ne $true -or
+    $signed.marker_only_cancel_authorized -ne $true){
+  throw 'V3_MARKER_CANCEL_INDEPENDENT_CLOUD_OR_UNKNOWN_CUSTODY_HOLD'
+ }
+ # Even a future signed/independent verification requires the separate
+ # atomic no-clobber archive and physical aftercare implementation.
  throw 'V3_MARKER_CANCEL_SIGNED_CLOUD_ABORT_AND_ATOMIC_ARCHIVE_NOT_IMPLEMENTED'
 }
 
