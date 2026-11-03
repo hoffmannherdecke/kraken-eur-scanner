@@ -149,6 +149,8 @@ SET ROLE v3_cas_audit_reader;
 BEGIN TRANSACTION READ ONLY;
 SELECT pg_catalog.jsonb_build_object(
  'kind','V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1',
+ 'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC',
+  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
  'epoch_id',a.epoch_id,'source_sha256',a.source_sha256,
  'prepared_fence_sha256',a.prepared_fence_sha256,
  'caller_acl_sha256',a.caller_acl_sha256,'issuer_actor',a.issuer_actor,
@@ -469,7 +471,7 @@ foreach ($check in $checks) {
             $row=$wire|ConvertFrom-Json -ErrorAction Stop
             $fields=@('kind','epoch_id','source_sha256','prepared_fence_sha256',
                 'caller_acl_sha256','issuer_actor','receipt_sha256','state',
-                'created_at_utc')
+                'created_at_utc','observed_at_utc')
             $actual=@($row.PSObject.Properties.Name)
             if($actual.Count -ne $fields.Count -or
                @($actual|Where-Object {$_ -cnotin $fields}).Count -ne 0){
@@ -480,16 +482,25 @@ foreach ($check in $checks) {
                     throw 'V3_PREPARED_ABORT_WIRE_DUPLICATE'
                 }
             }
-            $time=[regex]::Match($wire,'"created_at_utc"\s*:\s*"(?<utc>[^"\\]*)"')
+            $time=[regex]::Match($wire,'"observed_at_utc"\s*:\s*"(?<utc>[^"\\]*)"')
             if(-not $time.Success -or [string]$time.Groups['utc'].Value -cnotmatch
                 '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
                 throw 'V3_PREPARED_ABORT_WIRE_TIME'
             }
-            $created=[datetimeoffset]::ParseExact([string]$time.Groups['utc'].Value,
+            $observed=[datetimeoffset]::ParseExact([string]$time.Groups['utc'].Value,
                 "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
                 [Globalization.CultureInfo]::InvariantCulture,
                 [Globalization.DateTimeStyles]::AssumeUniversal)
-            $age=([datetimeoffset]::UtcNow-$created).TotalSeconds
+            $createdLiteral=[regex]::Match($wire,'"created_at_utc"\s*:\s*"(?<utc>[^"\\]*)"')
+            if(-not $createdLiteral.Success -or [string]$createdLiteral.Groups['utc'].Value -cnotmatch
+               '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
+                throw 'V3_PREPARED_ABORT_CREATION_TIME_HOLD'
+            }
+            $created=[datetimeoffset]::ParseExact([string]$createdLiteral.Groups['utc'].Value,
+                "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
+                [Globalization.DateTimeStyles]::AssumeUniversal)
+            if($created -gt $observed){throw 'V3_PREPARED_ABORT_CREATION_AFTER_OBSERVATION'}
+            $age=([datetimeoffset]::UtcNow-$observed).TotalSeconds
             if($age -lt -5 -or $age -gt 60 -or
                [string]$row.kind -cne 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1' -or
                [string]$row.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or

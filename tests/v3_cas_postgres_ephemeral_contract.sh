@@ -1156,6 +1156,16 @@ if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/executor.err"; th
  echo 'FAIL_EXECUTOR_DRIFT_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
 fi
 pg_root_db -c 'ALTER ROLE v3_cas_executor NOLOGIN;' >/dev/null
+# Exercise the recovery case that used to be impossible: native STOP is
+# already independently confirmed, but NO intent/attempt/CAS has been opened.
+# This is an isolated server timestamp, never a fabricated production STOP ACK.
+issuer_transaction -c "BEGIN; SELECT v3_cas_audit.confirm_executor_inhibit_v1('V3CAS-AUDIT-99999999999999999999999999999999',clock_timestamp()-interval '1 millisecond',repeat('e',64)); COMMIT;" >/dev/null
+if committed_issuer_reader >"$transition_tmp/stopped.json" 2>"$transition_tmp/stopped.err"; then
+ echo 'FAIL_POSTSTOP_CONFIRM_ACCEPTED_AS_PRESTOP' >&2; exit 1
+fi
+if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/stopped.err"; then
+ echo 'FAIL_POSTSTOP_CONFIRM_DID_NOT_REACH_READER_GUARD' >&2; exit 1
+fi
 # Independent issuer now commits the terminal abort in its OWN new session.
 issuer_transaction -c "BEGIN; SELECT v3_cas_audit.record_prepared_fence_abort_v1('V3CAS-AUDIT-99999999999999999999999999999999',repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64)); COMMIT;" >/dev/null
 if committed_issuer_reader >"$transition_tmp/aborted.json" 2>"$transition_tmp/aborted.err"; then
@@ -1165,6 +1175,7 @@ if ! grep -Fq 'V3_ISSUER_PRESTOP_READER_HOLD' "$transition_tmp/aborted.err"; the
  echo 'FAIL_ABORTED_READBACK_DID_NOT_REACH_REAL_GUARD' >&2; exit 1
 fi
 echo 'V3_PG17_ISSUER_COMMIT_DISTINCT_READER_REAL_CMS_ABORT_INTEGRATION_PASS_NOT_NATIVE_RELEASE'
+echo 'V3_PG17_POSTSTOP_CONFIRMED_NO_INTENT_TERMINAL_ABORT_PASS_NOT_NATIVE_RESTORE'
 pg -f - <<'SQL' >/dev/null
 SET SESSION AUTHORIZATION v3_cas_inhibit_issuer_actor;
 -- The independently committed abort above must refuse this replay.

@@ -986,6 +986,10 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         native_disable=stop.index("\n  Disable-ScheduledTask -TaskName")
         native_stop=stop.index("\n  Stop-ScheduledTask -TaskName")
         self.assertLess(stop.index("V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED"),
+                        stop.index("return Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY"))
+        self.assertLess(stop.index("V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD"),
+                        native_disable)
+        self.assertLess(stop.index("V3_ISSUER_BOUND_NATIVE_STOP_SIGNATURE_OR_PIN_HOLD"),
                         native_disable)
         self.assertLess(native_disable,native_stop)
         self.assert_locked_pr515_native_stop_only(source)

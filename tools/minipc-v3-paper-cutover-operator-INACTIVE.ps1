@@ -2767,7 +2767,7 @@ function Test-V3Pr515SignedPreparedAbortReadback(
   # caller-supplied claims of authorization or a host-local SQL simulation.
   $keys=@('kind','epoch_id','source_sha256','prepared_fence_sha256',
     'caller_acl_sha256','issuer_actor','receipt_sha256','state',
-    'created_at_utc')
+    'created_at_utc','observed_at_utc')
   $actual=@($obj.PSObject.Properties.Name)
   if($obj -isnot [pscustomobject] -or $actual.Count -ne $keys.Count -or
      @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){
@@ -2778,7 +2778,7 @@ function Test-V3Pr515SignedPreparedAbortReadback(
     throw 'ABORT_WIRE_DUPLICATE'
    }
   }
-  $timeLiteral=[regex]::Match($wire,'"created_at_utc"\s*:\s*"(?<v>[^"\\]*)"')
+  $timeLiteral=[regex]::Match($wire,'"observed_at_utc"\s*:\s*"(?<v>[^"\\]*)"')
   if(-not $timeLiteral.Success -or [string]$timeLiteral.Groups['v'].Value -cnotmatch
     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
    throw 'ABORT_WIRE_TIME'
@@ -2790,6 +2790,17 @@ function Test-V3Pr515SignedPreparedAbortReadback(
     [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$at)){
    throw 'ABORT_WIRE_DATE'
   }
+  # An old durable terminal record may be freshly read again. Validate its
+  # original time separately; never extend freshness using record creation.
+  $createdLiteral=[regex]::Match($wire,'"created_at_utc"\s*:\s*"(?<v>[^"\\]*)"')
+  $createdAt=[datetimeoffset]::MinValue
+  if(-not $createdLiteral.Success -or
+     [string]$createdLiteral.Groups['v'].Value -cnotmatch
+       '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$' -or
+     -not [datetimeoffset]::TryParseExact([string]$createdLiteral.Groups['v'].Value,
+       "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
+       [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$createdAt) -or
+     $createdAt -gt $at){throw 'ABORT_WIRE_CREATION_AFTER_OBSERVATION'}
   $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
   if($age -lt -5 -or $age -gt 90 -or
      [string]$obj.kind -cne 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1' -or

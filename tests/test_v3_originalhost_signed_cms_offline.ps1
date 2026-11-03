@@ -22,6 +22,12 @@ $issuerVerifier=@($ast.FindAll({param($node)
 },$true))
 if($issuerVerifier.Count -ne 1){throw 'V3_ISSUER_PRESTOP_VERIFIER_MISSING_OR_DUPLICATE'}
 . ([scriptblock]::Create($issuerVerifier[0].Extent.Text))
+$abortVerifier=@($ast.FindAll({param($node)
+ $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -ceq 'Test-V3Pr515SignedPreparedAbortReadback'
+},$true))
+if($abortVerifier.Count -ne 1){throw 'V3_ABORT_VERIFIER_MISSING_OR_DUPLICATE'}
+. ([scriptblock]::Create($abortVerifier[0].Extent.Text))
 # Parse the new read-only native capability mode and compile its query-only
 # interop type without invoking any Windows API or running the host helper.
 $nativeHelper=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1'
@@ -152,6 +158,47 @@ try {
    $c.ComputeSignature($sign)
    return ,([byte[]]$c.Encode())
   }
+  # A durable abort remains valid as historical data; a fresh independent
+  # read must not expire forever merely because the abort is over 90s old.
+  $abortRow=@{
+   kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1'
+   epoch_id='V3CAS-AUDIT-99999999999999999999999999999999'
+   source_sha256=('a'*64);prepared_fence_sha256=('b'*64);caller_acl_sha256=('c'*64)
+   issuer_actor='v3_cas_inhibit_issuer_actor';receipt_sha256=('d'*64)
+   state='ABORT_RECORDED_NOT_RELEASED'
+   created_at_utc=[datetimeoffset]::UtcNow.AddHours(-1).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+   observed_at_utc=$observed
+  }
+  function Review-AbortFixture([string]$wire,[byte[]]$signature,[string]$certificatePin){
+   Test-V3Pr515SignedPreparedAbortReadback -Payload ([Text.Encoding]::UTF8.GetBytes($wire)) `
+    -Cms $signature -ReviewedCertSha256 $certificatePin `
+    -ExpectedEpochId 'V3CAS-AUDIT-99999999999999999999999999999999' `
+    -ExpectedSourceSha256 ('a'*64) -ExpectedFenceSha256 ('b'*64) -ExpectedAclSha256 ('c'*64)
+  }
+  $abortWire=$abortRow|ConvertTo-Json -Compress
+  $abortCms=Sign-ReaderMock $abortWire $cert
+  $abortPositive=Review-AbortFixture $abortWire $abortCms $pin
+  if($abortPositive.signed_abort_fields_and_pins_match -ne $true -or
+     $abortPositive.marker_only_cancel_authorized -ne $false -or
+     $abortPositive.complete_attempt_unknown_history_proven -ne $false){
+   throw 'V3_OLD_DURABLE_ABORT_FRESH_READ_FAILED_OR_FALSE_RELEASE'
+  }
+  foreach($field in @('observed_at_utc','created_at_utc')){
+   $bad=$abortRow.Clone()
+   $bad[$field]=[datetimeoffset]::UtcNow.AddMinutes(2).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+   $wire=$bad|ConvertTo-Json -Compress
+   if((Review-AbortFixture $wire (Sign-ReaderMock $wire $cert) $pin).signed_abort_fields_and_pins_match){
+    throw 'V3_ABORT_FUTURE_TIME_ACCEPTED'
+   }
+  }
+  $bad=$abortRow.Clone();$bad.observed_at_utc=[datetimeoffset]::UtcNow.AddMinutes(-3).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+  $wire=$bad|ConvertTo-Json -Compress
+  if((Review-AbortFixture $wire (Sign-ReaderMock $wire $cert) $pin).signed_abort_fields_and_pins_match -or
+     (Review-AbortFixture $abortWire $abortCms ('0'*64)).signed_abort_fields_and_pins_match -or
+     (Review-AbortFixture ($abortWire+' ') $abortCms $pin).signed_abort_fields_and_pins_match){
+   throw 'V3_ABORT_STALE_SIGNATURE_OR_PIN_ACCEPTED'
+  }
+  Write-Output 'V3_DURABLE_TERMINAL_ABORT_FRESH_READ_REAL_CMS_POSITIVE_NEGATIVES_PASS'
   # Behavioral check of the ACTUAL existing verifier. An optional fixture
   # comes from a separately authenticated PG17 Reader after issuer COMMIT in
   # the existing networkless database test, never from a production account.

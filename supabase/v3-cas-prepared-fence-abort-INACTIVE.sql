@@ -59,8 +59,10 @@ CREATE POLICY v3_prepared_abort_reader_select_v1
  ON v3_cas_audit.prepared_fence_abort_v1
  FOR SELECT TO v3_cas_audit_reader USING (true);
 GRANT SELECT ON v3_cas_audit.prepared_fence_abort_v1 TO v3_cas_audit_reader;
--- Exact issuer, unsealed zero-intent epoch, prior independent inhibit and
--- NO native STOP: append once, never delete or imply permission to rearm.
+-- Exact issuer, unsealed zero-intent epoch and prior independent inhibit.
+-- Terminalize before OR after native STOP, while CAS remains unavailable.
+-- Append once, never delete or imply permission to rearm. A separately
+-- authenticated terminal readback and originalhost recovery are still required.
 CREATE FUNCTION v3_cas_audit.record_prepared_fence_abort_v1(
  p_epoch text,p_source text,p_fence text,p_acl text,p_receipt text)
 RETURNS timestamptz LANGUAGE plpgsql SECURITY DEFINER
@@ -76,6 +78,8 @@ BEGIN
     OR p_receipt !~ '^[a-f0-9]{64}$'
     OR (SELECT rolcanlogin FROM pg_roles WHERE rolname='v3_cas_executor_actor') IS DISTINCT FROM FALSE
     OR (SELECT rolcanlogin FROM pg_roles WHERE rolname='v3_cas_executor') IS DISTINCT FROM FALSE
+    OR EXISTS (SELECT 1 FROM pg_catalog.pg_stat_activity
+               WHERE usename IN ('v3_cas_executor_actor','v3_cas_executor'))
     OR to_regprocedure('public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)') IS NOT NULL
     -- This private SECURITY DEFINER cannot infer public-series custody.
     -- A separately authenticated original Cloud reader must bind series truth.
@@ -95,7 +99,7 @@ BEGIN
        WHERE i.epoch_id=p_epoch AND i.source_sha256=p_source
          AND i.original_fence_sha256=p_fence AND i.caller_acl_sha256=p_acl
          AND i.state='INHIBITED' AND i.issuer_id='v3_cas_inhibit_issuer_actor'
-         AND i.native_stop_at_utc IS NULL AND i.acknowledged_at_utc IS NULL)
+)
  THEN RAISE EXCEPTION 'V3_PREPARED_ABORT_INTENT_OR_ISSUER_HOLD'; END IF;
  INSERT INTO v3_cas_audit.prepared_fence_abort_v1
   (epoch_id,source_sha256,prepared_fence_sha256,caller_acl_sha256,
