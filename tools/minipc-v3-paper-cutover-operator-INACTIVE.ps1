@@ -2310,6 +2310,58 @@ function Test-V3Pr515SignedPreparedAbortReadback(
  return [pscustomobject]$out
 }
 
+# Pre-EPOCH originalhost marker cancellation custody: reuse the existing
+# signed original Notebook CURRENT no-CAS verifier, not the issuer's POST-EPOCH
+# terminal abort function. The first ARMED fence precedes Stage4 epoch, so it
+# cannot have a matching terminal abort row. This explicitly breaks the false
+# source-level dependency, but does not authenticate public Cloud inventory.
+# Independent anti-race/complete UNKNOWN coverage is a separate owner ACK.
+function Test-V3Pr515PreEpochMarkerCancelCustodySOURCE_ONLY(
+ [byte[]]$SignedCurrentPayload,[byte[]]$SignedCurrentCms,
+ [string]$ReviewedSignerCertSha256,[string]$ExpectedFenceSha256,
+ [object]$FreshCloudOriginal) {
+ $out=[ordered]@{
+  kind='V3_PR515_PRE_EPOCH_ARMED_MARKER_CUSTODY_V1'
+  status='HOLD_PRE_EPOCH_INDEPENDENT_CUSTODY_NOT_WIRED'
+  signed_reader_no_cas_matches_original_fence=$false
+  current_public_old_only_snapshot_matches=$false
+  observations_within_30_seconds=$false
+  independent_cloud_provenance_authenticated_here=$false
+  complete_attempt_unknown_history_authenticated_here=$false
+  exclusive_native_pre_stop_task_and_pid_state_verified_here=$false
+  atomic_marker_only_cancel_authorized=$false
+  native_task_mutation_authorized=$false
+  post_epoch_terminal_abort_required=$false
+  cas_or_paper_authorized=$false
+ }
+ if($ExpectedFenceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $null -eq $SignedCurrentPayload -or $null -eq $SignedCurrentCms -or
+    $null -eq $FreshCloudOriginal){return [pscustomobject]$out}
+ $signed=Test-V3Pr515SignedCurrentNoCasCustody -Payload $SignedCurrentPayload -Cms $SignedCurrentCms -ReviewedCertSha256 $ReviewedSignerCertSha256 -CurrentOriginalFenceSha256 $ExpectedFenceSha256
+ if($signed.signature_and_current_fence_match -ne $true -or
+    $signed.current_notebook_reader_no_cas_capability_observed -ne $true -or
+    $signed.previous_cas_attempts_excluded -ne $false -or
+    $signed.precommit_task_restore_authorized -ne $false){
+  $out.status='HOLD_PRE_EPOCH_SIGNED_READER_FENCE_OR_NO_CAS_MISMATCH'
+  return [pscustomobject]$out
+ }
+ $out.signed_reader_no_cas_matches_original_fence=$true
+ # The existing join is deliberately NOT an authenticated public Cloud
+ # original and cannot establish the absence of a hidden/UNKNOWN attempt.
+ $review=Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $signed -Cloud $FreshCloudOriginal -CurrentOriginalFenceSha256 $ExpectedFenceSha256
+ if($review.public_current_old_only_matched -eq $true){
+  $out.current_public_old_only_snapshot_matches=$true
+  $out.observations_within_30_seconds=($review.observations_within_30_seconds -eq $true)
+ }
+ if($out.current_public_old_only_snapshot_matches -ne $true){
+  $out.status='HOLD_PRE_EPOCH_PUBLIC_CURRENT_OLD_ONLY_NOT_MATCHED'
+ }
+ # Never accept caller-supplied booleans claiming independent custody.
+ # The genuine Cloud original, continuous CAS/UNKNOWN history, and native
+ # PID/task/ACL/anti-race receipts require independent issuer verification.
+ return [pscustomobject]$out
+}
+
 # Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).
 # Signed independent terminal abort and atomic archival are not yet wired.
 # Direct invocation and the outer -Execute CLI both fail closed.
@@ -2319,7 +2371,9 @@ function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
  [string]$ReviewedStrategySha256,[byte[]]$SignedAbortPayload,
  [byte[]]$SignedAbortCms,[string]$ReviewedSignerCertSha256,
  [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
- [string]$ExpectedCallerAclSha256) {
+ [string]$ExpectedCallerAclSha256,
+ [switch]$PreEpochOnly,[byte[]]$PreEpochSignedCurrentPayload,
+ [byte[]]$PreEpochSignedCurrentCms,[object]$PreEpochCloudOriginal) {
  throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'V3_MARKER_CANCEL_ORIGINALHOST_WINDOWS_REQUIRED'
@@ -2356,6 +2410,32 @@ function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
     $marker.persistent_until_explicit_owner_release -ne $true -or
     $marker.drill_only -eq $true){
   throw 'V3_MARKER_CANCEL_NOT_EXACT_PRESTOP_ARMED'
+ }
+ # Separate first ARMED PRE-EPOCH from POST-EPOCH terminal abort.
+ # PRE-EPOCH can have no issuer terminal abort row, since Stage4 epoch follows
+ # the ARMED fence. Explicitly require a pinned CMS-signed no-CAS readback.
+ # Neither a signed current snapshot nor an unauthenticated public inventory
+ # establishes durable continuous CAS/UNKNOWN custody. Fail closed here.
+ if($PreEpochOnly){
+  if($ExpectedEpochId -or $SignedAbortPayload -or $SignedAbortCms){
+   throw 'V3_MARKER_CANCEL_PRE_EPOCH_CANNOT_USE_POST_EPOCH_ABORT'
+  }
+  $pre=Test-V3Pr515PreEpochMarkerCancelCustodySOURCE_ONLY -SignedCurrentPayload $PreEpochSignedCurrentPayload -SignedCurrentCms $PreEpochSignedCurrentCms -ReviewedSignerCertSha256 $ReviewedSignerCertSha256 -ExpectedFenceSha256 $ExpectedFenceSha256 -FreshCloudOriginal $PreEpochCloudOriginal
+  if($pre.signed_reader_no_cas_matches_original_fence -ne $true -or
+     $pre.current_public_old_only_snapshot_matches -ne $true -or
+     $pre.observations_within_30_seconds -ne $true){
+   throw 'V3_MARKER_CANCEL_PRE_EPOCH_SIGNED_T0_OR_CLOUD_MISMATCH'
+  }
+  if($pre.independent_cloud_provenance_authenticated_here -ne $true -or
+     $pre.complete_attempt_unknown_history_authenticated_here -ne $true -or
+     $pre.exclusive_native_pre_stop_task_and_pid_state_verified_here -ne $true -or
+     $pre.atomic_marker_only_cancel_authorized -ne $true){
+   throw 'V3_MARKER_CANCEL_PRE_EPOCH_INDEPENDENT_CUSTODY_AND_ANTIRACE_HOLD'
+  }
+  throw 'V3_MARKER_CANCEL_PRE_EPOCH_PHYSICAL_ARCHIVE_NOT_RELEASED'
+ }
+ if($PreEpochSignedCurrentPayload -or $PreEpochSignedCurrentCms -or $PreEpochCloudOriginal){
+  throw 'V3_MARKER_CANCEL_POST_EPOCH_CANNOT_USE_PRE_EPOCH_SNAPSHOT'
  }
  # Cryptographically verify the exact terminal abort record with the
  # existing certificate pin. This is necessary but NEVER sufficient:
