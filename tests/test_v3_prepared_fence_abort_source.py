@@ -266,6 +266,26 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         ):
             self.assertNotIn(effect, script)
 
+    def test_native_double_snapshot_drift_cannot_promote_exclusive_lease(self):
+        script = (ROOT / "tools" / "minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1").read_text(encoding="utf-8")
+        for required in (
+            "Start-Sleep -Milliseconds 750",
+            "$firstNative -ceq $secondNative",
+            "$firstPids -ceq $secondPids",
+            "$firstFenceHash -ceq $secondFenceHash",
+            "two_native_observations_750ms_apart_stable=$shortNativeStable",
+            "local_snapshot_not_an_exclusive_native_lock=$true",
+            "exclusive_task_pid_antirace_proven=$false",
+            "marker_cancel_authorized=$false",
+            "cas_or_paper_authorized=$false",
+        ):
+            self.assertIn(required, script)
+        self.assertEqual(script.count("Get-CimInstance Win32_Process"), 2)
+        for forbidden in ("Stop-ScheduledTask", "Disable-ScheduledTask",
+                          "Enable-ScheduledTask", "Start-ScheduledTask",
+                          "[IO.File]::Move(", "Remove-Item", "Invoke-Sqlcmd"):
+            self.assertNotIn(forbidden, script)
+
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
