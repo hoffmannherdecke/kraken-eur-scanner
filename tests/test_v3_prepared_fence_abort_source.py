@@ -136,7 +136,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
             "V3_MARKER_CANCEL_BAD_HOST_OR_RELEASE_PINS",
             "V3_MARKER_CANCEL_FENCE_CHANGED",
             "V3_MARKER_CANCEL_NOT_EXACT_PRESTOP_ARMED",
-            "V3_MARKER_CANCEL_SIGNED_CLOUD_ABORT_AND_ATOMIC_ARCHIVE_NOT_IMPLEMENTED",
+            "V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED",
             "Test-V3ScopedIntakeTaskSet",
             "proposed_v3_repo_sha",
             "proposed_v3_bundle_sha256",
@@ -146,9 +146,18 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         for forbidden in (
             "Stop-ScheduledTask", "Start-ScheduledTask",
             "Disable-ScheduledTask", "Enable-ScheduledTask",
-            "Remove-Item", "[IO.File]::Move(", "[IO.File]::Replace(",
+            "Remove-Item", "[IO.File]::Replace(",
         ):
             self.assertNotIn(forbidden, body)
+        self.assertIn("[IO.File]::Move($fence,$archive)", body)
+        self.assertLess(body.index("throw 'V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED'"),
+                        body.index("[IO.File]::Move($fence,$archive)"))
+        self.assertIn("V3_MARKER_CANCEL_ARCHIVE_EXISTS_OR_FENCE_DRIFT", body)
+        self.assertIn("V3_MARKER_CANCEL_POST_RENAME_READBACK_HOLD_PRESERVE_ARCHIVE", body)
+        self.assertIn("V3_MARKER_CANCEL_V2R4_ORIGINAL_TASK_STATE_CHANGED", body)
+        self.assertIn("v3-experimental-paper-old-intake-fence.aborted-", body)
+        self.assertIn("CryptoMiniPC-V3PaperSingleWriter", body)
+        self.assertNotIn("Copy-Item", body)
         self.assertIn("if($Execute){", operator)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED", operator)
 
