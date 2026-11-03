@@ -95,6 +95,45 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertIn("marker_only_cancel_authorized=$false", reader)
         self.assertIn("native_task_change_authorized=$false", reader)
 
+    def test_first_armed_pre_epoch_uses_existing_signed_no_cas_not_terminal_abort(self):
+        operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        start = operator.index("function Test-V3Pr515PreEpochMarkerCancelCustodySOURCE_ONLY(")
+        end = operator.index("# Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).", start)
+        pre = operator[start:end]
+        marker_start = operator.index("function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(")
+        marker_end = operator.index("# Current PR515 PRE-COMMIT manual recovery SOURCE ONLY.", marker_start)
+        cancel = operator[marker_start:marker_end]
+        self.assertIn("Test-V3Pr515SignedCurrentNoCasCustody", pre)
+        self.assertIn("Get-V3Pr515SignedCasAndCloudSeriesReview", pre)
+        self.assertIn("post_epoch_terminal_abort_required=$false", pre)
+        for field in (
+            "independent_cloud_provenance_authenticated_here=$false",
+            "complete_attempt_unknown_history_authenticated_here=$false",
+            "exclusive_native_pre_stop_task_and_pid_state_verified_here=$false",
+            "atomic_marker_only_cancel_authorized=$false",
+            "native_task_mutation_authorized=$false",
+            "cas_or_paper_authorized=$false",
+        ):
+            self.assertIn(field, pre)
+        self.assertNotIn("Test-V3Pr515SignedPreparedAbortReadback", pre)
+        self.assertIn("[switch]$PreEpochOnly", cancel)
+        self.assertIn("V3_MARKER_CANCEL_PRE_EPOCH_CANNOT_USE_POST_EPOCH_ABORT", cancel)
+        self.assertIn("V3_MARKER_CANCEL_POST_EPOCH_CANNOT_USE_PRE_EPOCH_SNAPSHOT", cancel)
+        self.assertIn("V3_MARKER_CANCEL_PRE_EPOCH_INDEPENDENT_CUSTODY_AND_ANTIRACE_HOLD", cancel)
+        self.assertLess(
+            cancel.index("if($PreEpochOnly){"),
+            cancel.index("Test-V3Pr515SignedPreparedAbortReadback"),
+        )
+        self.assertRegex(
+            cancel,
+            r"(?s)\) \{\s*throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'",
+        )
+        for forbidden in (
+            "Remove-Item", "[IO.File]::Move(", "Stop-ScheduledTask",
+            "Start-ScheduledTask", "Enable-ScheduledTask", "Disable-ScheduledTask",
+        ):
+            self.assertNotIn(forbidden, pre)
+
     def test_originalhost_signed_abort_review_cannot_claim_release(self):
         operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         start = operator.index("function Test-V3Pr515SignedPreparedAbortReadback(")
