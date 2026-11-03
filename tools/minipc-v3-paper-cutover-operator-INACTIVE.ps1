@@ -30,7 +30,10 @@ param(
  [switch]$ReviewSignedCurrentCasCustody,
  [string]$ExpectedCurrentFenceSha256='',
  [string]$ExistingNotebookReaderJson='',
- [string]$ExistingCloudInventoryJson=''
+ [string]$ExistingCloudInventoryJson='',
+ [switch]$ReviewSignedForwardT0NativeBridge,
+ [string]$BridgeHelperFile='',
+ [string]$ReviewedBridgeHelperGitBlob=''
 )
 # V3 experimental Paper scoped operator: SOURCE PREPARATION ONLY.
 # GitHub/CI draft; not an installed cutover, not a stop, not a rollback.
