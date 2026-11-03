@@ -77,6 +77,35 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         )
         self.assertLess(stage5.index("prepared_fence_abort_v1"), stage5.index("UPDATE v3_cas_audit.epoch_v1 SET sealed=true"))
 
+    def test_originalhost_marker_only_cancel_remains_independently_locked(self):
+        operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        start = operator.index("function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(")
+        end = operator.index("# Current PR515 PRE-COMMIT manual recovery SOURCE ONLY.", start)
+        body = operator[start:end]
+        self.assertRegex(
+            body,
+            r"(?s)\) \{\s*throw 'V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED'",
+        )
+        for required in (
+            "V3_MARKER_CANCEL_BAD_HOST_OR_RELEASE_PINS",
+            "V3_MARKER_CANCEL_FENCE_CHANGED",
+            "V3_MARKER_CANCEL_NOT_EXACT_PRESTOP_ARMED",
+            "V3_MARKER_CANCEL_SIGNED_CLOUD_ABORT_AND_ATOMIC_ARCHIVE_NOT_IMPLEMENTED",
+            "Test-V3ScopedIntakeTaskSet",
+            "proposed_v3_repo_sha",
+            "proposed_v3_bundle_sha256",
+            "proposed_v3_strategy_sha256",
+        ):
+            self.assertIn(required, body)
+        for forbidden in (
+            "Stop-ScheduledTask", "Start-ScheduledTask",
+            "Disable-ScheduledTask", "Enable-ScheduledTask",
+            "Remove-Item", "[IO.File]::Move(", "[IO.File]::Replace(",
+        ):
+            self.assertNotIn(forbidden, body)
+        self.assertIn("if($Execute){", operator)
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED", operator)
+
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
