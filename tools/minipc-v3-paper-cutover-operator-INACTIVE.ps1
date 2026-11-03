@@ -3239,10 +3239,13 @@ public static class V3Pr515NativeFenceRenameV1 {
   Add-Type -TypeDefinition $src -ErrorAction Stop
  }
  [V3Pr515NativeFenceRenameV1]::RenamePinned($from,$to,$ExpectedSha256)
- if([IO.File]::Exists($from) -or -not [IO.File]::Exists($to) -or
-    (Get-FileHash -LiteralPath $to -Algorithm SHA256).Hash.ToLowerInvariant() -cne
-      $ExpectedSha256){
-  throw 'V3_EXCLUSIVE_ARCHIVE_POSTRENAME_READBACK_HOLD'
+ $sourceStillExists=[IO.File]::Exists($from)
+ $archiveNowExists=[IO.File]::Exists($to)
+ $archiveHashMatches=($archiveNowExists -and
+   (Get-FileHash -LiteralPath $to -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $ExpectedSha256)
+ if($sourceStillExists -or -not $archiveNowExists -or -not $archiveHashMatches){
+  throw ('V3_EXCLUSIVE_ARCHIVE_POSTRENAME_READBACK_HOLD source_exists={0} archive_exists={1} hash_matches={2}' -f
+    $sourceStillExists,$archiveNowExists,$archiveHashMatches)
  }
  return [pscustomobject]@{
   kind='V3_PR515_EXCLUSIVE_NTFS_PRESTOP_ARCHIVE_V1'
