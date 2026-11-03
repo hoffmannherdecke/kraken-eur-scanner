@@ -19,12 +19,26 @@ $names=@('CryptoMiniPC-V2R4PaperCandidates',
  'CryptoMiniPC-V2R4PaperWait',
  'CryptoMiniPC-V2R4PaperLifecycle',
  'CryptoMiniPC-V2R4PaperCloudSync')
+# Read-only exact registered XML identity for every native scheduler task.
+function Get-V3Pr515NativeTaskXmlSha256([string]$TaskName) {
+ $xml=[string](Export-ScheduledTask -TaskName $TaskName -TaskPath '\' -ErrorAction Stop)
+ if([string]::IsNullOrWhiteSpace($xml) -or $xml.Length -lt 64){
+  throw 'V3_NATIVE_TASK_XML_NOT_READABLE'
+ }
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try {
+  return ([BitConverter]::ToString($sha.ComputeHash(
+   ([Text.UTF8Encoding]::new($false)).GetBytes($xml)
+  ))).Replace('-','').ToLowerInvariant()
+ }finally{$sha.Dispose()}
+}
 $now=[datetimeoffset]::UtcNow
 $tasks=@()
 foreach($name in $names){
  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
  $tasks+=@([pscustomobject][ordered]@{
   name=$name
+  registered_task_xml_sha256=(Get-V3Pr515NativeTaskXmlSha256 -TaskName $name)
   state=[string]$task.State
   action_count=@($task.Actions).Count
   principal_is_system=([string]$task.Principal.UserId -in @(
@@ -32,6 +46,7 @@ foreach($name in $names){
  })
 }
 $v3=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction Stop
+$firstV3XmlSha256=Get-V3Pr515NativeTaskXmlSha256 -TaskName 'CryptoMiniPC-V3PaperSingleWriter'
 $fence=Join-Path $root 'State\v3-experimental-paper-old-intake-fence.json'
 $maintenance=Join-Path $root 'State\v2r4-technical-cutover-maintenance.json'
 $marker='ABSENT'
@@ -201,6 +216,7 @@ foreach($name in $names){
  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
  $secondTasks+=@([pscustomobject][ordered]@{
   name=$name
+  registered_task_xml_sha256=(Get-V3Pr515NativeTaskXmlSha256 -TaskName $name)
   state=[string]$task.State
   action_count=@($task.Actions).Count
   principal_is_system=([string]$task.Principal.UserId -in @(
@@ -216,6 +232,7 @@ $secondPids=(@(Get-CimInstance Win32_Process -ErrorAction Stop |
   "$([int]$_.ProcessId):$([int]$_.ParentProcessId):$(if($_.CreationDate){([datetimeoffset]$_.CreationDate).ToUniversalTime().ToString('o')}else{''})"
  } | Sort-Object) -join '|')
 $secondV3=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction Stop
+$secondV3XmlSha256=Get-V3Pr515NativeTaskXmlSha256 -TaskName 'CryptoMiniPC-V3PaperSingleWriter'
 $secondFenceExists=Test-Path -LiteralPath $fence
 $secondFenceHash=''
 if($secondFenceExists){
@@ -232,6 +249,7 @@ $shortNativeStable=(
  $firstFenceHash -ceq $secondFenceHash -and
  ($firstFencePhase -ceq 'ARMED') -eq $secondFenceExists -and
  [string]$secondV3.State -ceq [string]$v3.State -and
+ $firstV3XmlSha256 -ceq $secondV3XmlSha256 -and
  -not(Test-Path -LiteralPath $maintenance))
 # Bind CURRENT signed Notebook bytes to both observed native Host snapshots.
 # A digest cannot supply continuous issuer custody, OS exclusion or permission.
@@ -246,6 +264,7 @@ if($signedCurrentMatch -and $notebookCloudTimeMatched -and $shortNativeStable){
   $firstFencePhase,
   $firstFenceHash,
   [string]$v3.State,
+  $firstV3XmlSha256,
   $ReviewedNotebookCertificateSha256,
   $notebookPayloadSha256,
   $notebookCmsSha256
@@ -271,6 +290,7 @@ $pass=(@($tasks|Where-Object {
  old_tasks=$tasks
  old_python_processes=$old
  v3_task_disabled=([string]$v3.State -ceq 'Disabled')
+ v3_registered_task_xml_sha256=$firstV3XmlSha256
  original_fence_phase=$marker
  original_fence_sha256=$fenceHash
  foreign_maintenance_present=(Test-Path -LiteralPath $maintenance)
