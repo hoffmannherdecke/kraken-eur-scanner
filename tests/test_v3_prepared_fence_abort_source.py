@@ -188,9 +188,9 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
             "Remove-Item", "[IO.File]::Replace(",
         ):
             self.assertNotIn(forbidden, body)
-        self.assertIn("[IO.File]::Move($fence,$archive)", body)
+        self.assertIn("Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source $fence -Archive $archive -ExpectedSha256 $ExpectedFenceSha256", body)
         self.assertLess(body.index("throw 'V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED'"),
-                        body.index("[IO.File]::Move($fence,$archive)"))
+                        body.index("Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source $fence"))
         self.assertIn("V3_MARKER_CANCEL_ARCHIVE_EXISTS_OR_FENCE_DRIFT", body)
         self.assertIn("V3_MARKER_CANCEL_POST_RENAME_READBACK_HOLD_PRESERVE_ARCHIVE", body)
         self.assertIn("V3_MARKER_CANCEL_V2R4_ORIGINAL_TASK_STATE_CHANGED", body)
@@ -199,6 +199,29 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertNotIn("Copy-Item", body)
         self.assertIn("if($Execute){", operator)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED", operator)
+
+    def test_native_rename_uses_same_exclusive_open_handle_and_never_self_releases(self):
+        operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        start = operator.index("function Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY(")
+        end = operator.index("# Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).", start)
+        native = operator[start:end]
+        for required in (
+            "CreateFileW", "GENERIC_READ|DELETE_ACCESS,0",
+            "FILE_FLAG_OPEN_REPARSE_POINT", "SetFileInformationByHandle",
+            "sha.ComputeHash(bytes)", "FILE_RENAME_INFO_CLASS=3",
+            "Marshal.WriteByte(memory,0,0)",
+            "V3_EXCLUSIVE_ARCHIVE_PATH_SCOPE_HOLD",
+            "V3_EXCLUSIVE_ARCHIVE_TARGET_EXISTS",
+            "V3_EXCLUSIVE_ARCHIVE_POSTRENAME_READBACK_HOLD",
+            "independent_issuer_cas_custody_verified_here=$false",
+            "cas_or_paper_authorized=$false",
+        ):
+            self.assertIn(required, native)
+        self.assertNotIn("[IO.File]::Move(", native)
+        self.assertNotIn("Stop-ScheduledTask", native)
+        self.assertNotIn("Disable-ScheduledTask", native)
+        self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", operator)
+        self.assertIn("V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED", operator)
 
     def test_pre_epoch_archive_identity_never_requires_nonexistent_epoch(self):
         operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
@@ -210,7 +233,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         self.assertIn("V3_MARKER_CANCEL_POST_EPOCH_ID_INVALID", body)
         self.assertIn("$archiveId=$ExpectedEpochId", body)
         self.assertLess(body.index("if($PreEpochOnly){"), body.index("$archiveId='pre-epoch-'"))
-        self.assertLess(body.index("throw 'V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED'"), body.index("[IO.File]::Move($fence,$archive)"))
+        self.assertLess(body.index("throw 'V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED'"), body.index("Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source $fence"))
         self.assertIn("V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED", body)
 
     def test_one_shot_native_observation_not_a_release_operator(self):
