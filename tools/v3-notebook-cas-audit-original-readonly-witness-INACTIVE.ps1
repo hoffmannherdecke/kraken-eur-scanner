@@ -168,11 +168,16 @@ FROM v3_cas_audit.prepared_fence_abort_v1 a CROSS JOIN cloud_current
 WHERE session_user='v3_cas_audit_reader_actor'
  AND current_user='v3_cas_audit_reader'
  AND (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1)=1
- AND (SELECT count(*) FROM v3_cas_audit.epoch_v1)=1
- AND (SELECT count(*) FROM v3_cas_audit.intent_v1)=0
- AND (SELECT count(*) FROM v3_cas_audit.attempt_v1)=0
+ AND c->>'epoch_count'='1'
+ AND c->>'intent_count'='0'
+ AND c->>'attempt_count'='0'
+ AND c->>'dispatch_unknown_count'='0'
  AND (SELECT rolcanlogin FROM pg_catalog.pg_roles
    WHERE rolname='v3_cas_executor_actor') IS FALSE
+ AND (SELECT rolcanlogin FROM pg_catalog.pg_roles
+   WHERE rolname='v3_cas_executor') IS FALSE
+ AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_stat_activity
+   WHERE usename IN ('v3_cas_executor_actor','v3_cas_executor'))
  AND NOT pg_catalog.pg_has_role(session_user,'v3_cas_audit_writer','SET')
  AND NOT pg_catalog.has_table_privilege(current_user,
    'v3_cas_audit.prepared_fence_abort_v1','INSERT,UPDATE,DELETE');
