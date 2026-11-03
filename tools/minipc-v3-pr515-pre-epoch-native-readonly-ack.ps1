@@ -68,6 +68,8 @@ $old=@($processes|Where-Object {
 # release. Do not promote cryptographic validity to a native effectful gate.
 $signedCurrentMatch=$false
 $notebookCloudTimeMatched=$false
+$notebookPayloadSha256=''
+$notebookCmsSha256=''
 if($NotebookReaderJson -or $NotebookReaderCms -or $ReviewedNotebookCertificateSha256){
  if(-not $NotebookReaderJson -or -not $NotebookReaderCms -or
     $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){
@@ -170,6 +172,14 @@ if($NotebookReaderJson -or $NotebookReaderCms -or $ReviewedNotebookCertificateSh
   }
   $diff=($now-$t).TotalSeconds
   if($diff -lt -5 -or $diff -gt 30){throw 'V3_T0_NOT_CONTEMPORANEOUS_WITH_HOST'}
+  # Exact signed input pins for later release review; never issuer authority.
+  $contentHash=[Security.Cryptography.SHA256]::Create()
+  try {
+   $notebookPayloadSha256=([BitConverter]::ToString(
+    $contentHash.ComputeHash($payload))).Replace('-','').ToLowerInvariant()
+   $notebookCmsSha256=([BitConverter]::ToString(
+    $contentHash.ComputeHash($cms))).Replace('-','').ToLowerInvariant()
+  }finally{$contentHash.Dispose()}
   $signedCurrentMatch=$true
   $notebookCloudTimeMatched=$true
  } catch {
@@ -223,6 +233,31 @@ $shortNativeStable=(
  ($firstFencePhase -ceq 'ARMED') -eq $secondFenceExists -and
  [string]$secondV3.State -ceq [string]$v3.State -and
  -not(Test-Path -LiteralPath $maintenance))
+# Bind CURRENT signed Notebook bytes to both observed native Host snapshots.
+# A digest cannot supply continuous issuer custody, OS exclusion or permission.
+$crossSourceEvidenceSha256=''
+if($signedCurrentMatch -and $notebookCloudTimeMatched -and $shortNativeStable){
+ $evidenceLines=@(
+  'V3_PR515_READONLY_CROSS_SOURCE_EVIDENCE_V1',
+  $ExpectedCandidateRepoSha,
+  $now.ToUniversalTime().ToString('o'),
+  $firstNative,
+  $firstPids,
+  $firstFencePhase,
+  $firstFenceHash,
+  [string]$v3.State,
+  $ReviewedNotebookCertificateSha256,
+  $notebookPayloadSha256,
+  $notebookCmsSha256
+ )
+ $canonical=[string]::Join("`n",$evidenceLines)
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try {
+  $crossSourceEvidenceSha256=([BitConverter]::ToString(
+   $sha.ComputeHash(([Text.UTF8Encoding]::new($false)).GetBytes($canonical))
+  )).Replace('-','').ToLowerInvariant()
+ }finally{$sha.Dispose()}
+}
 $pass=(@($tasks|Where-Object {
  $_.action_count -ne 1 -or $_.principal_is_system -ne $true
 }).Count -eq 0 -and [string]$v3.State -ceq 'Disabled' -and
@@ -241,6 +276,8 @@ $pass=(@($tasks|Where-Object {
  foreign_maintenance_present=(Test-Path -LiteralPath $maintenance)
  signed_current_notebook_cloud_catalog_cryptographically_valid=$signedCurrentMatch
  signed_current_cloud_and_originalhost_within_30_seconds=$notebookCloudTimeMatched
+ cross_source_readonly_evidence_sha256=$crossSourceEvidenceSha256
+ cross_source_evidence_is_release_authority=$false
  independent_notebook_issuer_authority_verified_here=$false
  status='PHYSICAL_READONLY_OBSERVATION_NOT_AN_INDEPENDENT_RELEASE_ACK'
  two_native_observations_750ms_apart_stable=$shortNativeStable
