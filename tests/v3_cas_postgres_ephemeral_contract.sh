@@ -975,6 +975,11 @@ VALUES ('V3CAS-AUDIT-ffffffffffffffffffffffffffffffff',1,
  repeat('d',64),repeat('a',64),repeat('b',64));
 SQL
 pg_root -c 'ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;' >/dev/null
+# Stage5 now requires the terminal abort ledger. Its real protected ACL,
+# issuer and transaction behavior is tested below in this SAME disposable
+# database. Here use only an ephemeral minimal read-only fixture to keep the
+# earlier Stage5 positive/negative seal test deterministic before that install.
+pg_root_db -c "CREATE TABLE v3_cas_audit.prepared_fence_abort_v1(epoch_id text PRIMARY KEY); GRANT SELECT ON v3_cas_audit.prepared_fence_abort_v1 TO postgres;" >/dev/null
 # The UNMODIFIED source must error before setting even temporary privileges.
 if pg -f - < "$stage5_seal" >/dev/null 2>&1; then
   echo 'FAIL_STAGE5_SEAL_LOCK_EXECUTED' >&2; exit 1
@@ -1002,6 +1007,13 @@ assert "__" not in s
 print(s)
 PY
 }
+# A terminal abort must independently reject Stage5 even when the original
+# intent and all source/fence/ACL pins otherwise match.
+pg_root_db -c "INSERT INTO v3_cas_audit.prepared_fence_abort_v1 VALUES ('V3CAS-AUDIT-ffffffffffffffffffffffffffffffff');" >/dev/null
+if render_stage5_synthetic_only | pg -f - >/dev/null 2>&1; then
+  echo 'FAIL_STAGE5_ACCEPTED_TERMINALLY_ABORTED_EPOCH' >&2; exit 1
+fi
+pg_root_db -c "DELETE FROM v3_cas_audit.prepared_fence_abort_v1;" >/dev/null
 render_stage5_synthetic_only | pg -f - >/dev/null
 if [[ "$(pg -Atc "select count(*) from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-ffffffffffffffffffffffffffffffff' and sealed and next_ordinal=2")" != 1 ]] ||
    [[ "$(pg -Atc "select has_column_privilege('postgres','v3_cas_audit.epoch_v1','sealed','UPDATE')")" != f ]] ||
@@ -1018,6 +1030,9 @@ pg_root_db -f - <<'SQL' >/dev/null
 TRUNCATE v3_cas_audit.intent_v1, v3_cas_audit.epoch_v1;
 REVOKE SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 FROM postgres;
 SQL
+# Dispose only this temporary Stage5 compatibility fixture. The actual
+# prepared abort schema is installed/tested below from the original SQL.
+pg_root_db -c "DROP TABLE v3_cas_audit.prepared_fence_abort_v1;" >/dev/null
 echo 'V3_PG17_STAGE5_REAL_SYNTHETIC_SEAL_RESTORE_PASS'
 
 # PR661: reuse THIS EXISTING networkless PG17 container for the new source.
