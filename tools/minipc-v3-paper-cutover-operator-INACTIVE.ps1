@@ -2362,6 +2362,130 @@ function Test-V3Pr515PreEpochMarkerCancelCustodySOURCE_ONLY(
  return [pscustomobject]$out
 }
 
+# Physical PRESTOP marker archive primitive. Unlike File.Move after a
+# snapshot, the source file is opened for READ+DELETE with ZERO sharing; its
+# complete SHA256 is checked through that SAME handle and the Windows rename
+# is issued against the still-open handle. No copy/delete or overwrite.
+# This is solely an OS-level file serialization primitive. It does not prove
+# exclusive scheduler/PID custody, CAS/UNKNOWN completeness, issuer authority,
+# or any permission to reach this function. The parent operator remains locked.
+function Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY(
+ [string]$Source,[string]$Archive,[string]$ExpectedSha256) {
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    $ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_EXCLUSIVE_ARCHIVE_WRONG_HOST_OR_HASH'
+ }
+ $root='C:\Users\ADMIN\Trading\State'
+ $from=[IO.Path]::GetFullPath($Source)
+ $to=[IO.Path]::GetFullPath($Archive)
+ if(-not [string]::Equals([IO.Path]::GetDirectoryName($from),$root,
+     [StringComparison]::OrdinalIgnoreCase) -or
+    -not [string]::Equals([IO.Path]::GetDirectoryName($to),$root,
+     [StringComparison]::OrdinalIgnoreCase) -or
+    [string]::Equals($from,$to,[StringComparison]::OrdinalIgnoreCase) -or
+    [IO.Path]::GetFileName($from) -cne
+      'v3-experimental-paper-old-intake-fence.json' -or
+    [IO.Path]::GetFileName($to) -cnotmatch
+      '^v3-experimental-paper-old-intake-fence\.aborted-(pre-epoch-[a-f0-9]{64}|[A-Za-z0-9_-]{1,128})\.json$'){
+  throw 'V3_EXCLUSIVE_ARCHIVE_PATH_SCOPE_HOLD'
+ }
+ if([IO.File]::Exists($to)){throw 'V3_EXCLUSIVE_ARCHIVE_TARGET_EXISTS'}
+ # The exact source is a non-reparse NTFS file with protected owner ACL;
+ # reject foreign grants and any file/symlink substitution BEFORE opening.
+ $it=Get-Item -LiteralPath $from -Force -ErrorAction Stop
+ if($it.PSIsContainer -or
+    [bool]($it.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $it.Length -lt 100 -or $it.Length -gt 8192){
+  throw 'V3_EXCLUSIVE_ARCHIVE_UNSAFE_SOURCE'
+ }
+ $acl=Get-Acl -LiteralPath $from -ErrorAction Stop
+ if(-not $acl.AreAccessRulesProtected){throw 'V3_EXCLUSIVE_ARCHIVE_ACL_NOT_PROTECTED'}
+ foreach($r in @($acl.Access)){
+  if($r.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
+     $r.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -notin
+       @('S-1-5-18','S-1-5-32-544')){
+   throw 'V3_EXCLUSIVE_ARCHIVE_FOREIGN_WRITER'
+  }
+ }
+ # Add-Type is deliberately ephemeral: no new installed binary or service.
+ $typeName='V3Pr515NativeFenceRenameV1'
+ if(-not($typeName -as [type])){
+  $src=@'
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+using System.ComponentModel;
+public static class V3Pr515NativeFenceRenameV1 {
+ const uint GENERIC_READ=0x80000000;
+ const uint DELETE_ACCESS=0x00010000;
+ const uint OPEN_EXISTING=3;
+ const uint FILE_FLAG_OPEN_REPARSE_POINT=0x00200000;
+ const uint FILE_RENAME_INFO_CLASS=3;
+ [DllImport("kernel32.dll",EntryPoint="CreateFileW",CharSet=CharSet.Unicode,SetLastError=true)]
+ static extern SafeFileHandle Open(string path,uint access,uint share,IntPtr security,uint creation,uint flags,IntPtr template);
+ [DllImport("kernel32.dll",SetLastError=true)]
+ static extern bool SetFileInformationByHandle(SafeFileHandle file,uint cls,IntPtr data,uint size);
+ public static void RenamePinned(string source,string target,string expected) {
+  using(var handle=Open(source,GENERIC_READ|DELETE_ACCESS,0,IntPtr.Zero,
+                         OPEN_EXISTING,FILE_FLAG_OPEN_REPARSE_POINT,IntPtr.Zero)){
+   if(handle.IsInvalid) throw new Win32Exception(Marshal.GetLastWin32Error(),"exclusive-open-denied");
+   using(var stream=new FileStream(handle,FileAccess.Read,4096,false)){
+    if(stream.Length<100||stream.Length>8192) throw new InvalidOperationException("length");
+    byte[] bytes=new byte[(int)stream.Length];
+    int count=0;
+    while(count<bytes.Length){
+     int n=stream.Read(bytes,count,bytes.Length-count);
+     if(n<=0) throw new EndOfStreamException();
+     count+=n;
+    }
+    using(var sha=System.Security.Cryptography.SHA256.Create()){
+     string digest=BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-","").ToLowerInvariant();
+     if(!String.Equals(digest,expected,StringComparison.Ordinal))
+      throw new InvalidOperationException("source-sha-drift");
+    }
+    // FILE_RENAME_INFO (class 3): BOOLEAN at 0, HANDLE at aligned offset,
+    // DWORD FileNameLength, then UTF-16 absolute target, NO ReplaceIfExists.
+    int ptr=IntPtr.Size;
+    int rootOffset=(1+ptr-1)&~(ptr-1);
+    int lenOffset=rootOffset+ptr;
+    int nameOffset=lenOffset+4;
+    byte[] name=System.Text.Encoding.Unicode.GetBytes(target);
+    int total=checked(nameOffset+name.Length);
+    IntPtr memory=Marshal.AllocHGlobal(total);
+    try{
+     for(int i=0;i<total;i++)Marshal.WriteByte(memory,i,0);
+     Marshal.WriteByte(memory,0,0);
+     Marshal.WriteIntPtr(memory,rootOffset,IntPtr.Zero);
+     Marshal.WriteInt32(memory,lenOffset,name.Length);
+     Marshal.Copy(name,0,IntPtr.Add(memory,nameOffset),name.Length);
+     if(!SetFileInformationByHandle(handle,FILE_RENAME_INFO_CLASS,memory,(uint)total))
+      throw new Win32Exception(Marshal.GetLastWin32Error(),"atomic-exclusive-rename-denied");
+    }finally{Marshal.FreeHGlobal(memory);}
+   }
+  }
+ }
+}
+'@
+  Add-Type -TypeDefinition $src -ErrorAction Stop
+ }
+ [V3Pr515NativeFenceRenameV1]::RenamePinned($from,$to,$ExpectedSha256)
+ if([IO.File]::Exists($from) -or -not [IO.File]::Exists($to) -or
+    (Get-FileHash -LiteralPath $to -Algorithm SHA256).Hash.ToLowerInvariant() -cne
+      $ExpectedSha256){
+  throw 'V3_EXCLUSIVE_ARCHIVE_POSTRENAME_READBACK_HOLD'
+ }
+ return [pscustomobject]@{
+  kind='V3_PR515_EXCLUSIVE_NTFS_PRESTOP_ARCHIVE_V1'
+  status='ATOMIC_FILE_RENAME_CONFIRMED_NO_CAS_OR_PAPER_RELEASE'
+  original_fence_sha256=$ExpectedSha256
+  archive_present=$true
+  native_task_changes=$false
+  independent_issuer_cas_custody_verified_here=$false
+  cas_or_paper_authorized=$false
+ }
+}
+
 # Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).
 # Signed independent terminal abort and atomic archival are not yet wired.
 # Direct invocation and the outer -Execute CLI both fail closed.
@@ -2492,9 +2616,9 @@ function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(
  # The physically authorized path still requires independent anti-race,
  # original task/PID readbacks and an external issuer custody ACK.
  throw 'V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED'
- [IO.File]::Move($fence,$archive)
- if([IO.File]::Exists($fence) -or -not [IO.File]::Exists($archive) -or
-    (Get-FileHash -LiteralPath $archive -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ExpectedFenceSha256){
+ $nativeArchive=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source $fence -Archive $archive -ExpectedSha256 $ExpectedFenceSha256
+ if([string]$nativeArchive.status -cne
+   'ATOMIC_FILE_RENAME_CONFIRMED_NO_CAS_OR_PAPER_RELEASE'){
   throw 'V3_MARKER_CANCEL_POST_RENAME_READBACK_HOLD_PRESERVE_ARCHIVE'
  }
  # Archival does not unlock CAS, Stage4/5, native STOP or Paper.
