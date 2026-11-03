@@ -77,6 +77,34 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
         )
         self.assertLess(stage5.index("prepared_fence_abort_v1"), stage5.index("UPDATE v3_cas_audit.epoch_v1 SET sealed=true"))
 
+    def test_originalhost_signed_abort_review_cannot_claim_release(self):
+        operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        start = operator.index("function Test-V3Pr515SignedPreparedAbortReadback(")
+        end = operator.index("# Scoped originalhost ARMED marker-only cancel (SOURCE ONLY; no release).", start)
+        body = operator[start:end]
+        self.assertIn("Test-V3IndependentOriginalHostCmsSignature", body)
+        self.assertIn("SIGNED_TERMINAL_ABORT_FORMAT_AND_PINS_MATCH_NOT_RELEASE", body)
+        for field in (
+            "epoch_id", "source_sha256", "prepared_fence_sha256",
+            "caller_acl_sha256", "receipt_sha256", "issuer_actor",
+            "created_at_utc", "ABORT_RECORDED_NOT_RELEASED",
+            "ABORT_WIRE_DUPLICATE", "ABORT_WIRE_SOURCE_OR_TIME_MISMATCH",
+        ):
+            self.assertIn(field, body)
+        for denied in (
+            "independent_reader_cloud_provenance_verified_here=$false",
+            "complete_attempt_unknown_history_proven=$false",
+            "marker_only_cancel_authorized=$false",
+            "native_task_mutations_authorized=$false",
+        ):
+            self.assertIn(denied, body)
+        for forbidden in (
+            "Stop-ScheduledTask", "Start-ScheduledTask",
+            "Disable-ScheduledTask", "Enable-ScheduledTask",
+            "Remove-Item", "[IO.File]::Move(", "[IO.File]::Replace(",
+        ):
+            self.assertNotIn(forbidden, body)
+
     def test_originalhost_marker_only_cancel_remains_independently_locked(self):
         operator = (ROOT / "tools" / "minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         start = operator.index("function Invoke-V3Pr515ArmedMarkerOnlyCancelSOURCE_ONLY(")
