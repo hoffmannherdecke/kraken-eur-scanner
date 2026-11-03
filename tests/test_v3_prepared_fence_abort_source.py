@@ -317,6 +317,33 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
                           "[IO.File]::Move(", "Remove-Item", "Invoke-Sqlcmd"):
             self.assertNotIn(forbidden, script)
 
+    def test_readonly_cross_source_digest_is_bound_but_never_release(self):
+        script = (ROOT / "tools" / "minipc-v3-pr515-pre-epoch-native-readonly-ack.ps1").read_text(encoding="utf-8")
+        for required in (
+            "$notebookPayloadSha256=",
+            "$notebookCmsSha256=",
+            "$signedCurrentMatch -and $notebookCloudTimeMatched -and $shortNativeStable",
+            "'V3_PR515_READONLY_CROSS_SOURCE_EVIDENCE_V1'",
+            "$ExpectedCandidateRepoSha",
+            "$firstNative",
+            "$firstPids",
+            "$firstFencePhase",
+            "$firstFenceHash",
+            "$ReviewedNotebookCertificateSha256",
+            "$notebookPayloadSha256",
+            "$notebookCmsSha256",
+            "cross_source_readonly_evidence_sha256=$crossSourceEvidenceSha256",
+            "cross_source_evidence_is_release_authority=$false",
+            "independently_authenticated_cloud_issuer_custody=$false",
+            "exclusive_task_pid_antirace_proven=$false",
+            "marker_cancel_authorized=$false",
+        ):
+            self.assertIn(required, script)
+        self.assertEqual(script.count("Get-CimInstance Win32_Process"), 2)
+        for forbidden in ("Disable-ScheduledTask", "Stop-ScheduledTask",
+                          "Set-Content", "Invoke-Sqlcmd", "Remove-Item"):
+            self.assertNotIn(forbidden, script)
+
     def test_isolated_native_windows_smoke_cannot_touch_originalhost(self):
         path = ROOT / "tests" / "test_v3_pr515_native_exclusive_rename_smoke.ps1"
         smoke = path.read_text(encoding="utf-8")
