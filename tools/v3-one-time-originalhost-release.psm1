@@ -4064,6 +4064,9 @@ function Assert-V3ReleaseMutationBoundary([ValidateSet('STOP','RESTORE','ARCHIVE
  }
  # Revalidate actual package bytes and the original signed approval each time,
  # never a serialized authorized=true or an exported caller callback.
+ $currentPin=Assert-V3ReleaseAuthorityAdmission -Bytes $ctx.admission_bytes `
+  -ExpectedSha256 $ctx.admission_sha256 -ReleaseCommit ([string]$a.release_commit)
+ if($currentPin -cne $ctx.authority_pin){throw 'V3_RELEASE_AUTHORITY_ADMISSION_CHANGED'}
  $hashes=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $ctx.package_root
  $null=Assert-V3OneTimeReleaseAuthorization -Payload $ctx.payload -Cms $ctx.cms `
   -ReviewedAuthorityCertificateSha256 $ctx.authority_pin -Scope ORIGINALHOST_ABORT_RESTORE `
@@ -4136,11 +4139,13 @@ function Invoke-V3OneTimeOriginalhostRelease {
  $tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
  $script:V3ReleaseContext=[pscustomobject]@{
   authorization=$authorization;payload=$Approval;cms=$ApprovalCms;authority_pin=$ReviewedAuthorityCertificateSha256
+  admission_bytes=$AuthorityAdmission;admission_sha256=$ExpectedAuthorityAdmissionSha256
   package_root=$PackageRoot;tasks=$tasks;abort_json=$TerminalAbortJson;abort_cms=$TerminalAbortCms
   catalog_readback=$InstallReadbackJson;stop_attempted=$false
  }
- $session=$null;$journal=$null
+ $session=$null;$journal=$null;$packageLease=$null
  try {
+  $packageLease=Open-V3ReleasePackageReadLease -PackageRoot $PackageRoot -Inventory $hashes
   if(-not(Test-V3ReleaseOriginalhostScope -Root $script:V3ReleaseRoot -Tasks $tasks)){
    throw 'V3_RELEASE_INTERACTIVE_ORIGINALHOST_ONLY'
   }
@@ -4208,6 +4213,7 @@ function Invoke-V3OneTimeOriginalhostRelease {
    try{$session.mutex.ReleaseMutex()}catch{};$session.mutex.Dispose()
   }
   $script:V3ReleaseContext=$null
+  foreach($stream in $packageLease){$stream.Dispose()}
  }
 }
 

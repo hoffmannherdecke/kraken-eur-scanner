@@ -241,6 +241,18 @@ CREATE TRIGGER v3_reject_aborted_attempt_insert_v1
 REVOKE ALL ON FUNCTION v3_cas_audit.reject_aborted_epoch_dispatch_v1()
  FROM PUBLIC,anon,authenticated,service_role;
 
+DO $release_record$
+BEGIN
+ IF current_setting('v3_release.expires_at')::timestamptz <= clock_timestamp() THEN
+  RAISE EXCEPTION 'V3_RELEASE_INSTALL_EXPIRED_BEFORE_COMMIT';
+ END IF;
+ EXECUTE format('COMMENT ON TABLE v3_cas_audit.prepared_fence_abort_v1 IS %L',
+  jsonb_build_object('kind','V3_ONE_TIME_ABORT_INSTALL_V1',
+   'release_id',current_setting('v3_release.release_id'),
+   'release_commit',current_setting('v3_release.release_commit'),
+   'approval_sha256',current_setting('v3_release.approval_sha256'),
+   'source_sha256',current_setting('v3_release.source_sha256'))::text);
+END $release_record$;
 RESET ROLE;
 REVOKE CREATE ON SCHEMA v3_cas_audit FROM v3_cas_audit_table_owner;
 REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
@@ -259,18 +271,12 @@ DO $post$ BEGIN
  THEN RAISE EXCEPTION 'V3_PREPARED_ABORT_PRIVILEGE_RESTORE_HOLD'; END IF;
 END $post$;
 
-DO $release_record$
-BEGIN
+
+DO $expiry$ BEGIN
  IF current_setting('v3_release.expires_at')::timestamptz <= clock_timestamp() THEN
   RAISE EXCEPTION 'V3_RELEASE_INSTALL_EXPIRED_BEFORE_COMMIT';
  END IF;
- EXECUTE format('COMMENT ON TABLE v3_cas_audit.prepared_fence_abort_v1 IS %L',
-  jsonb_build_object('kind','V3_ONE_TIME_ABORT_INSTALL_V1',
-   'release_id',current_setting('v3_release.release_id'),
-   'release_commit',current_setting('v3_release.release_commit'),
-   'approval_sha256',current_setting('v3_release.approval_sha256'),
-   'source_sha256',current_setting('v3_release.source_sha256'))::text);
-END $release_record$;
+END $expiry$;
 COMMIT;
 -- A broken connection around COMMIT means UNKNOWN, never automatic retry.
 -- The separate read-only original-catalog readback reconciles that outcome.

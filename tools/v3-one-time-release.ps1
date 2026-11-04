@@ -107,6 +107,8 @@ function Get-V3ReleaseVerifiedReadback([string]$Sql,[string]$ReleaseSql,[Securit
 }
 
 $hashes=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $PackageRoot
+$packageLease=Open-V3ReleasePackageReadLease -PackageRoot $PackageRoot -Inventory $hashes
+try {
 if($Mode -eq 'Inventory'){
  [pscustomobject]@{kind='V3_ONE_TIME_RELEASE_INVENTORY_V1';artifacts=$hashes;
    production_authorized=$false;cloud_contacted=$false;host_mutated=$false}|ConvertTo-Json -Depth 5
@@ -120,13 +122,17 @@ if($Mode -ne 'ReadbackCloud'){
  # with its exact digest in the reviewed execution instruction. Never create
  # it, auto-enroll the candidate Notebook certificate, or accept a free pin.
  $admissionBytes=Read-V3ReleaseLocalBytes -Path $AuthorityAdmissionJson
- $authorityPin=Assert-V3ReleaseAuthorityAdmission -Bytes $admissionBytes `
-  -ExpectedSha256 $ExpectedAuthorityAdmissionSha256 -ReleaseCommit $ExpectedReleaseCommit
+ if($Mode -ne 'OriginalhostAbortRestore'){
+  $authorityPin=Assert-V3ReleaseAuthorityAdmission -Bytes $admissionBytes `
+   -ExpectedSha256 $ExpectedAuthorityAdmissionSha256 -ReleaseCommit $ExpectedReleaseCommit
+ }
  $approval=Read-V3ReleaseLocalBytes -Path $ApprovalJson
  $cms=Read-V3ReleaseLocalBytes -Path $ApprovalCms -MaxBytes 32768
- $authorized=Assert-V3OneTimeReleaseAuthorization -Payload $approval -Cms $cms `
-  -ReviewedAuthorityCertificateSha256 $authorityPin -Scope $scope `
-  -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $hashes
+ if($Mode -ne 'OriginalhostAbortRestore'){
+  $authorized=Assert-V3OneTimeReleaseAuthorization -Payload $approval -Cms $cms `
+   -ReviewedAuthorityCertificateSha256 $authorityPin -Scope $scope `
+   -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $hashes
+ }
 }
 if($Mode -eq 'OriginalhostAbortRestore'){
  Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
@@ -164,3 +170,5 @@ if($Mode -eq 'InstallCloud'){
     [string]$row.installation.release_commit -cne $ExpectedReleaseCommit){throw 'V3_RELEASE_INSTALL_COMMIT_BINDING_READBACK_HOLD'}
 }
 $original
+
+}finally{foreach($stream in $packageLease){$stream.Dispose()}}

@@ -133,9 +133,47 @@ function Assert-V3ReleaseAuthorityAdmission([byte[]]$Bytes,[string]$ExpectedSha2
     [string]$a.original_approval_url -cnotmatch '^https://github\.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-[0-9]+$'){
   throw 'V3_RELEASE_INDEPENDENT_AUTHORITY_NOT_ADMITTED'
  }
- # ExpectedSha256 is an independent trust input from the reviewed #99
- # execution instruction, not a digest discovered from this untrusted file.
+ # A file digest and a local accepted=true flag are NOT original authority.
+ # Re-read the existing #99 decision itself from GitHub over authenticated
+ # HTTPS. No redirects, arbitrary URL, token, secondary owner or new service.
+ $id=([regex]::Match([string]$a.original_approval_url,'issuecomment-([0-9]+)$')).Groups[1].Value
+ $url='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/comments/'+$id
+ $original=Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 10 -MaximumRedirection 0 `
+  -Headers @{Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}
+ if([string]$original.id -cne $id -or [string]$original.user.login -cne 'hoffmannherdecke' -or
+    [string]$original.user.id -cne '331995561' -or
+    [string]$original.issue_url -cne 'https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/99'){
+  throw 'V3_RELEASE_ORIGINAL_OWNER_IDENTITY_HOLD'
+ }
+ $decision=Read-V3ReleaseJson ([Text.Encoding]::UTF8.GetBytes([string]$original.body))
+ $decisionFields=@('kind','release_commit','certificate_sha256','independent_key_custody_accepted')
+ if(@($decision.PSObject.Properties).Count -ne $decisionFields.Count -or
+    @($decision.PSObject.Properties.Name|Where-Object {$_ -cnotin $decisionFields}).Count -or
+    [string]$decision.kind -cne 'V3_INDEPENDENT_RELEASE_AUTHORITY_ADMISSION_V1' -or
+    [string]$decision.release_commit -cne $ReleaseCommit -or
+    [string]$decision.certificate_sha256 -cne [string]$a.certificate_sha256 -or
+    $decision.independent_key_custody_accepted -isnot [bool] -or
+    $decision.independent_key_custody_accepted -ne $true){throw 'V3_RELEASE_ORIGINAL_OWNER_ADMISSION_NOT_MATCHED'}
+ # ExpectedSha256 is a separate trust input from the reviewed execution
+ # instruction. This code never creates/posts the independent owner decision.
  return [string]$a.certificate_sha256
 }
 
-Export-ModuleMember -Function Get-V3ReleaseSha256,Read-V3ReleaseJson,Assert-V3ReleaseCms,Assert-V3OneTimeReleaseAuthorization,Read-V3ReleaseLocalBytes,Get-V3OneTimeReleaseArtifactInventory,Assert-V3ReleaseAuthorityAdmission
+function Open-V3ReleasePackageReadLease([string]$PackageRoot,[hashtable]$Inventory) {
+ $streams=[Collections.Generic.List[IO.FileStream]]::new()
+ try {
+  foreach($path in $Inventory.Keys){
+   $full=Join-Path $PackageRoot $path
+   $null=Read-V3ReleaseLocalBytes -Path $full -MaxBytes 1048576
+   $stream=[IO.File]::Open($full,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+   $streams.Add($stream)
+   $sha=[Security.Cryptography.SHA256]::Create()
+   try{$actual=([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()}
+   finally{$sha.Dispose();$stream.Position=0}
+   if($actual -cne [string]$Inventory[$path]){throw 'V3_RELEASE_PACKAGE_CHANGED_BEFORE_READ_LEASE'}
+  }
+  return ,$streams
+ }catch{foreach($stream in $streams){$stream.Dispose()};throw}
+}
+
+Export-ModuleMember -Function Get-V3ReleaseSha256,Read-V3ReleaseJson,Assert-V3ReleaseCms,Assert-V3OneTimeReleaseAuthorization,Read-V3ReleaseLocalBytes,Get-V3OneTimeReleaseArtifactInventory,Assert-V3ReleaseAuthorityAdmission,Open-V3ReleasePackageReadLease

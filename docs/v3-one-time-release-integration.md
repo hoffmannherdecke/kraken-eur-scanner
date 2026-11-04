@@ -39,7 +39,7 @@ privileged operator window; as in PR661, kernel handles do not claim immunity
 to forced handle closure or arbitrary administrator actions outside that
 window. Such interference requires HOLD and independent reconciliation.
 
-STOP, restore and atomic archive recheck scoped authorization, package bytes,
+Read-only package file leases prevent replacement of verified runtime bytes during execution. STOP, restore and atomic archive recheck scoped authorization, package bytes,
 fresh signed terminal proof, exact ARMED fence, protected task XML and V3
 Disabled state. Both disabled task-definition handles are retained by the
 same original PR661 session. A post-lease expired prestop signature now fails
@@ -54,6 +54,8 @@ independent reconciliation under #99 is required. No cleanup deletes it.
 The existing #99 authority must independently admit the public certificate,
 its key custody and the exact release commit. This development does **not**
 admit the existing candidate certificate or generate a production signature.
+The operator re-reads the referenced original #99 comment over fixed GitHub HTTPS on admission and again before each native mutation. It checks the actual repository owner identity and exact commit/certificate/custody decision; a local file, digest or accepted flag alone cannot admit a key. The reviewer posts a plain JSON original decision with `kind`, `release_commit`, `certificate_sha256`, and `independent_key_custody_accepted` only. This implementation never posts that decision. Revocation, deletion or an unavailable original means HOLD.
+
 The reviewed execution instruction must independently supply the SHA256 of
 this exact external admission record (never calculate that trust input from
 an untrusted downloaded admission file):

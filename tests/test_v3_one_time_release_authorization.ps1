@@ -66,6 +66,34 @@ try {
  $escaped=[Text.Encoding]::UTF8.GetBytes('{"ki\u006ed":"x"}')
  $denied=$false;try{$null=Read-V3ReleaseJson $escaped}catch{$denied=$true}
  if(-not $denied){throw 'RELEASE_ESCAPED_KEY_ACCEPTED'};$checks++
+ # A local file/hash/accepted flag cannot confer authority without the
+ # original #99 decision. Mock HTTPS only in this disposable unit test.
+ $authModule=Get-Module 'v3-one-time-release-authorization'
+ $admission=[ordered]@{kind='V3_INDEPENDENT_RELEASE_AUTHORITY_ADMISSION_V1';certificate_sha256=$pin;
+  release_commit=('1'*40);independent_key_custody_accepted=$true;
+  original_approval_url='https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-1000000000'}
+ $admissionBytes=[Text.Encoding]::UTF8.GetBytes(($admission|ConvertTo-Json -Compress))
+ $admissionHash=Get-V3ReleaseSha256 $admissionBytes
+ $decision=@{kind=$admission.kind;certificate_sha256=$pin;release_commit=('1'*40);independent_key_custody_accepted=$true}|ConvertTo-Json -Compress
+ & $authModule {
+  param($Body)
+  $script:TestOriginalDecision=[pscustomobject]@{id='1000000000';user=[pscustomobject]@{login='hoffmannherdecke';id='331995561'};
+   issue_url='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/99';body=$Body}
+  function script:Invoke-RestMethod {param($Uri,$Method,$TimeoutSec,$MaximumRedirection,$Headers)
+   if($Uri -cne 'https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/comments/1000000000' -or
+      $Method -cne 'Get' -or $MaximumRedirection -ne 0){throw 'TEST_UNBOUNDED_ADMISSION_REQUEST'}
+   return $script:TestOriginalDecision
+  }
+ } $decision
+ $accepted=Assert-V3ReleaseAuthorityAdmission $admissionBytes $admissionHash ('1'*40)
+ if($accepted -cne $pin){throw 'RELEASE_ORIGINAL_ADMISSION_REJECTED'};$checks++
+ & $authModule {$script:TestOriginalDecision.user.login='wrong-author'}
+ $denied=$false;try{$null=Assert-V3ReleaseAuthorityAdmission $admissionBytes $admissionHash ('1'*40)}catch{$denied=$true}
+ if(-not $denied){throw 'RELEASE_LOCAL_ADMISSION_ACCEPTED_WITH_WRONG_ORIGIN'};$checks++
+ & $authModule {$script:TestOriginalDecision.user.login='hoffmannherdecke';$script:TestOriginalDecision.issue_url='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/353'}
+ $denied=$false;try{$null=Assert-V3ReleaseAuthorityAdmission $admissionBytes $admissionHash ('1'*40)}catch{$denied=$true}
+ if(-not $denied){throw 'RELEASE_ADMISSION_WRONG_OWNER_ACCEPTED'};$checks++
+ & $authModule {Remove-Item Function:Invoke-RestMethod}
  # Unsigned/default execution is inventory only on every platform.
  $wire=& (Join-Path $root 'tools/v3-one-time-release.ps1')
  $inventory=($wire -join "`n")|ConvertFrom-Json

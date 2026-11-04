@@ -21,7 +21,8 @@ class ReleaseContract(unittest.TestCase):
     def test_same_cloud_ddl_with_separate_transaction_admission(self):
         source=(ROOT/'supabase/v3-cas-prepared-fence-abort-INACTIVE.sql').read_text()
         release=(ROOT/'supabase/v3-cas-prepared-fence-abort-release.sql').read_text()
-        self.assertIn(source[source.index('DO $pre$'):source.index('COMMIT;')],release)
+        without_record=re.sub(r'(?s)DO \$release_record\$.*?END \$release_record\$;\n','',release)
+        self.assertIn(source[source.index('DO $pre$'):source.index('COMMIT;')],without_record)
         self.assertLess(release.index('V3_RELEASE_INSTALL_AUTHORIZATION_CONTEXT_HOLD'),release.index('GRANT CREATE'))
         self.assertLess(release.index('pg_try_advisory_xact_lock'),release.index('GRANT CREATE'))
         self.assertIn("to_regclass('v3_cas_audit.prepared_fence_abort_v1') IS NOT NULL",release)
