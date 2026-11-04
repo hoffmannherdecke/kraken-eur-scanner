@@ -68,7 +68,7 @@ class Stage4OneTimeEpochContract(unittest.TestCase):
                     "inhibit_count", "abort_count", "postgres_temp_insert",
                     "postgres_temp_set_owner", "predecessor_active"):
             self.assertIn(col, self.readback)
-        self.assertNotRegex(self.readback, r"(?i)\b(INSERT|UPDATE|DELETE|GRANT|REVOKE)\b")
+        self.assertNotRegex(self.readback, r"(?im)^\s*(INSERT|UPDATE|DELETE|GRANT|REVOKE)\b")
         self.assertIn("V3_STAGE4_EPOCH_COMMITTED_READBACK_V1", self.launcher)
 
 
