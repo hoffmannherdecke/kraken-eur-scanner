@@ -1073,13 +1073,14 @@ SELECT set_config('v3_release.source_sha256','86dfebe688eda78ba14000a63f534e3295
 SELECT set_config('v3_release.approval_sha256',repeat('a',64),false);
 SELECT set_config('v3_release.release_commit',repeat('b',40),false);
 SELECT set_config('v3_release.release_id','V3-ONETIME-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',false);
-SELECT set_config('v3_release.expires_at',to_char(clock_timestamp()+interval '5 minutes' AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"'),false);
+SELECT set_config('v3_release.expires_at',to_char((clock_timestamp()+interval '5 minutes') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"'),false);
 SQL
 }
 if pg -f - < "$release_sql" >/dev/null 2>&1; then
  echo 'FAIL_RELEASE_SQL_ACCEPTED_MISSING_CONTEXT' >&2; exit 1
 fi
-for fault in expired wrong_source partial_failure; do
+for fault in expired wrong_source partial_failure interrupted; do
+ fault_log="$(mktemp)"
  if {
    release_context
    if [[ "$fault" == expired ]]; then
@@ -1090,10 +1091,23 @@ for fault in expired wrong_source partial_failure; do
    if [[ "$fault" == partial_failure ]]; then
     # Inject a failure *after* DDL, but before COMMIT, in the disposable stream.
     sed '/^COMMIT;$/i DO $failure$ BEGIN RAISE EXCEPTION '\''CI_PARTIAL_FAILURE'\''; END $failure$;' "$release_sql"
+   elif [[ "$fault" == interrupted ]]; then
+    sed '/^COMMIT;$/,$d' "$release_sql"
    else cat "$release_sql"; fi
-  } | pg -f - >/dev/null 2>&1; then
+  } | pg -f - >"$fault_log" 2>&1; then
+   if [[ "$fault" != interrupted ]]; then
    echo "FAIL_RELEASE_SQL_ACCEPTED_$fault" >&2; exit 1
+   fi
+ elif [[ "$fault" == interrupted ]]; then
+  cat "$fault_log" >&2; exit 1
  fi
+ if [[ "$fault" != interrupted ]]; then
+  expected=V3_RELEASE_INSTALL_BASELINE_OR_EXPIRY_HOLD
+  if [[ "$fault" == wrong_source ]]; then expected=V3_RELEASE_INSTALL_AUTHORIZATION_CONTEXT_HOLD; fi
+  if [[ "$fault" == partial_failure ]]; then expected=CI_PARTIAL_FAILURE; fi
+  if ! grep -q "$expected" "$fault_log"; then cat "$fault_log" >&2; exit 1; fi
+ fi
+ rm -f "$fault_log"
  if [[ "$(pg -Atc "SELECT to_regclass('v3_cas_audit.prepared_fence_abort_v1') IS NULL AND NOT pg_has_role('postgres','v3_cas_audit_table_owner','SET') AND NOT has_schema_privilege('v3_cas_audit_table_owner','v3_cas_audit','CREATE')")" != t ]]; then
   echo "FAIL_RELEASE_ROLLBACK_OR_PRIVILEGE_RESTORE_$fault" >&2; exit 1
  fi
