@@ -495,3 +495,18 @@ jobs:
           $global:LASTEXITCODE = 0
           Write-Host 'WATCHDOG_SMOKE_OK'
           exit 0
+
+      - name: Validate PR666 scoped task-switch script and fail-closed regression
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            'tools/minipc-v2r4-pr666-inert-code-stage.ps1', [ref]$tokens, [ref]$errors)
+          if (@($errors).Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_ }
+            throw 'PR666_SCOPED_RELEASE_POWERSHELL_PARSE_FAIL'
+          }
+          python -m unittest tests.test_v2r4_pr666_scoped_release -v
+          if ($LASTEXITCODE -ne 0) { throw 'PR666_SCOPED_RELEASE_NEGATIVE_TEST_FAIL' }
+          Write-Host 'PR666_SCOPED_RELEASE_SOURCE_TEST_PASS'
