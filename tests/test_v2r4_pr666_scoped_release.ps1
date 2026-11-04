@@ -53,4 +53,19 @@ Assert ($script:StopCalls -eq 0) 'idle task must not be stopped'
 $script:TaskState='Running'
 StopBounded 'FakeCandidate'
 Assert ($script:StopCalls -eq 1) 'running task must stop once'
+
+# Exercise actual Windows PowerShell 5.1 top-level mode selection with StrictMode.
+# Previous code raised PropertyNotFoundStrict for a single -Stage mode.
+$operator=Join-Path $PSScriptRoot '..\tools\minipc-v2r4-pr666-inert-code-stage.ps1'
+$missingRoot=Join-Path $env:TEMP ('pr667-absent-'+[guid]::NewGuid().ToString('N'))
+if(Test-Path -LiteralPath $missingRoot){throw 'PR667_TEST_ROOT_EXISTS'}
+$single=(& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy RemoteSigned -File $operator -TradingRoot $missingRoot -Stage -Confirm 'STAGE_PR666_INERT_ONLY' 2>&1 | Out-String)
+Assert ($LASTEXITCODE -ne 0) 'nonexistent root must fail without task mutation'
+Assert ($single -match 'Trading root missing') 'single Stage must pass mode gate and hold on missing root'
+Assert ($single -notmatch 'PropertyNotFoundStrict') 'Windows PowerShell 5.1 scalar Count regression'
+$double=(& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy RemoteSigned -File $operator -TradingRoot $missingRoot -Stage -Execute 2>&1 | Out-String)
+Assert ($LASTEXITCODE -ne 0) 'conflicting switches must fail'
+Assert ($double -match 'choose exactly one mode') 'conflicting mode must be blocked'
+Assert (-not (Test-Path -LiteralPath $missingRoot)) 'offline tests cannot create trading state'
+Write-Output 'PR666_POWERSHELL51_MODE_GATE_POSITIVE_NEGATIVE_PASS'
 Write-Output 'PR666_OFFLINE_QUIESCENCE_POSITIVE_NEGATIVE_PASS'
