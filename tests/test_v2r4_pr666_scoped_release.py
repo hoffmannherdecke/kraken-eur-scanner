@@ -28,6 +28,16 @@ class Pr666ScopedReleaseTests(unittest.TestCase):
         self.assertNotIn("CryptoMiniPC-V2R4PaperWait", assignment.group(1))
         self.assertNotIn("CryptoMiniPC-V2R4PaperCloudSync", assignment.group(1))
 
+    def test_mode_gate_is_windows_powershell_51_strictmode_safe(self):
+        self.assertIn(
+            "([int][bool]$Stage + [int][bool]$Execute + [int][bool]$Rollback)",
+            SOURCE,
+        )
+        self.assertNotIn(
+            "Where-Object {$_}).Count -le 1",
+            SOURCE,
+        )
+
     def test_inert_byte_inventory_and_rollback_guards(self):
         for predicate in (
             "function Verify-Stage", "function ActiveChildren", "function Quiet",

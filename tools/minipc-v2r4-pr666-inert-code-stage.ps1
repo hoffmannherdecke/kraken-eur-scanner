@@ -182,7 +182,7 @@ function Check-Preflight {
     Need (-not (Test-Path -LiteralPath (Join-Path $root ('State\'+$p)))) ('conflicting transition '+$p)
   }
 }
-Need ((@([bool]$Stage,[bool]$Execute,[bool]$Rollback)|Where-Object {$_}).Count -le 1) 'choose exactly one mode'
+Need (([int][bool]$Stage + [int][bool]$Execute + [int][bool]$Rollback) -le 1) 'choose exactly one mode'
 Need (Test-Path -LiteralPath $root -PathType Container) 'Trading root missing'
 if($Rollback){
   Need-Admin
