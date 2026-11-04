@@ -29,6 +29,11 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         native_pid = patch.object(launcher.os, "getpid", return_value=21704)
         native_pid.start()
         self.addCleanup(native_pid.stop)
+        binding = patch.object(launcher, "_COMPILED_RUNTIME_BINDING",
+            (self.BUNDLE, self.STRATEGY, self.REPO, self.SID))
+        binding.start()
+        self.addCleanup(binding.stop)
+
     REPO = "a" * 40
     BUNDLE = "b" * 64
     STRATEGY = "c" * 64
@@ -1163,6 +1168,14 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             "task_state": "Running",
             "series_id": series_id,
             "release_repo_sha": pin,
+            "successor_series_assignment": {
+                "release_owner": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99",
+                "decision": "ISSUED_FOR_EXACT_RUNTIME_RELEASE",
+                "successor_series_id": series_id, "repo_sha": pin,
+                "code_fingerprint_sha256": self.BUNDLE,
+                "strategy_fingerprint_sha256": self.STRATEGY,
+                "independent_decision_reference": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-123456789",
+            },
             # Strict OS process/task identity fields are MOCK-only here;
             # they cannot grant real independent originalhost authority.
             "native_python_parent_pid": 21704,
@@ -1704,3 +1717,139 @@ class NativeStageSourcePinTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CompiledRuntimeSnapshotTests(unittest.TestCase):
+    """Fresh isolated processes, synthetic stages only; no host/release ACKs."""
+    REPO = 'a' * 40
+    SID = 'PAPER-V3-20261104T133710Z'
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temp.name) / 'Staging' / ('V3Paper-INACTIVE-' + cls.REPO[:12])
+        cls.root.mkdir(parents=True)
+        cls.repo = Path(launcher.__file__).resolve().parent.parent
+        from tools.v3_experimental_paper_technical_gate import assess_v3_native_source_import_closure, BUNDLE_SOURCE
+        import shutil
+        closure = assess_v3_native_source_import_closure(cls.repo)
+        assert closure['static_local_import_closure_complete'], closure
+        cls.files = [r[0] for r in closure['candidate_transitive_files']] + [BUNDLE_SOURCE]
+        for rel in cls.files:
+            p = cls.root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(cls.repo / rel, p)
+        cls.manifest = dict(
+            kind='V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1',
+            status='STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED', source_git_sha=cls.REPO,
+            v3_paper_activated=False, task_changes=False,
+            source_closure_is_only_candidate_not_loaded_code_ack=True,
+            tracked_code_files=len(cls.files),
+            source_manifest=[dict(relative_path=r, sha256=hashlib.sha256((cls.root/r).read_bytes()).hexdigest()) for r in cls.files],
+            static_transitive_closure_files=[r[0] for r in closure['candidate_transitive_files']],
+            static_transitive_closure_file_count=len(closure['candidate_transitive_files']),
+            static_transitive_closure_sha256=closure['candidate_transitive_source_sha256'])
+        cls.marker = cls.root / 'v3-paper-inactive-source-manifest.json'
+        cls.marker.write_text(json.dumps(cls.manifest))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temp.cleanup()
+
+    def measure(self, *, isolated=True):
+        import subprocess, sys
+        return subprocess.run([sys.executable, *(['-I'] if isolated else []), '-B',
+            str(self.root/'paper_evaluator/v3_paper_minipc_native_launcher_v1.py'),
+            '--runtime-identity-readonly', '--expected-source-sha', self.REPO,
+            '--proposed-v3-series', self.SID], capture_output=True, text=True, timeout=30)
+
+    def test_fresh_runtime_deterministic_pins_and_no_authority(self):
+        a, b = self.measure(), self.measure()
+        self.assertEqual(a.returncode, 0, a.stderr)
+        self.assertEqual(b.returncode, 0, b.stderr)
+        first, second = json.loads(a.stdout), json.loads(b.stdout)
+        for field in ('code_fingerprint_sha256', 'strategy_fingerprint_sha256'):
+            self.assertEqual(first[field], second[field])
+            self.assertRegex(first[field], '^[a-f0-9]{64}$')
+        self.assertEqual(first['series_status'], 'PROPOSED_NOT_ISSUED')
+        self.assertFalse(first['paper_release_authorized'])
+        self.assertFalse(first['task_changes'])
+        self.assertFalse(first['cloud_cas_performed'])
+        self.assertEqual(set(first['loaded_snapshot_files']), set(self.manifest['static_transitive_closure_files']))
+        for obj, field in ((first['code_identity'], 'code_fingerprint_sha256'),
+                           (first['strategy_identity'], 'strategy_fingerprint_sha256')):
+            raw = json.dumps(obj, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), first[field])
+        self.assertFalse(list(self.root.rglob('__pycache__')))
+
+    def test_nonisolated_process_rejected(self):
+        result = self.measure(isolated=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('isolated -I -B', result.stderr)
+        self.assertEqual(result.stdout, '')
+
+    def test_changed_bytes_abort_before_any_proposal(self):
+        p = self.root/'paper_evaluator/v3_paper_minipc_one_candidate_v1.py'
+        old = p.read_bytes()
+        try:
+            p.write_bytes(old + b'\n# unapproved change\n')
+            result = self.measure()
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('snapshot byte drift', result.stderr)
+            self.assertEqual(result.stdout, '')
+        finally:
+            p.write_bytes(old)
+
+    def test_valid_timestamp_poisoned_pyc_is_never_loaded(self):
+        import importlib.util, importlib._bootstrap_external, marshal, shutil
+        p = self.root/'paper_evaluator/v3_paper_minipc_one_candidate_v1.py'
+        pyc = Path(importlib.util.cache_from_source(str(p)))
+        pyc.parent.mkdir()
+        try:
+            payload = importlib._bootstrap_external._code_to_timestamp_pyc(
+                compile("raise RuntimeError('POISONED_PYC_EXECUTED')", str(p), 'exec'),
+                int(p.stat().st_mtime), p.stat().st_size)
+            pyc.write_bytes(payload)
+            result = self.measure()
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn('POISONED_PYC_EXECUTED', result.stderr)
+        finally:
+            shutil.rmtree(pyc.parent)
+
+    def test_measurement_blocks_import_time_network_and_file_write(self):
+        p = self.root/'paper_evaluator/v3_paper_minipc_one_candidate_v1.py'
+        old = p.read_bytes()
+        marker = self.marker.read_bytes()
+        target = self.root/'must-not-exist'
+        for code in (f"open({str(target)!r}, 'w').write('bad')", "__import__('socket').socket()"):
+            with self.subTest(code=code):
+                try:
+                    p.write_bytes(old + ('\n' + code + '\n').encode())
+                    m = json.loads(marker)
+                    for row in m['source_manifest']:
+                        if row['relative_path'] == p.relative_to(self.root).as_posix():
+                            row['sha256'] = hashlib.sha256(p.read_bytes()).hexdigest()
+                    self.marker.write_text(json.dumps(m))
+                    result = self.measure()
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('runtime measurement forbids', result.stderr)
+                    self.assertEqual(result.stdout, '')
+                    self.assertFalse(target.exists())
+                finally:
+                    p.write_bytes(old)
+                    self.marker.write_bytes(marker)
+
+    def test_binding_and_series_decision_fail_closed(self):
+        args = dict(bundle_sha256='b'*64, strategy_sha256='c'*64,
+                    repo_sha=self.REPO, series_id=self.SID)
+        with patch.object(launcher, '_COMPILED_RUNTIME_BINDING', None):
+            with self.assertRaisesRegex(ValueError, 'retained compiled'):
+                launcher._require_compiled_runtime_binding(args)
+        with patch.object(launcher, '_COMPILED_RUNTIME_BINDING',
+                ('b'*64, 'c'*64, self.REPO, self.SID)):
+            launcher._require_compiled_runtime_binding(args)
+            with self.assertRaises(ValueError):
+                launcher._require_compiled_runtime_binding(dict(args, bundle_sha256='d'*64))
+        for decision in (None, {}, {'decision': 'PROPOSED_NOT_ISSUED'}):
+            with self.assertRaisesRegex(ValueError, 'issuance'):
+                launcher.validate_successor_series_assignment(decision, **args)

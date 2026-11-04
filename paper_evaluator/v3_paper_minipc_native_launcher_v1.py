@@ -24,6 +24,187 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+# The readonly CLI calls this bootstrap BEFORE any project import. A later
+# authorized host bootstrap may use the returned native module; this loader
+# itself never invokes a worker, reads credentials or installs a Task.
+def load_native_runtime_snapshot(*, repo_sha: str, proposed_series_id: str):
+    import importlib.abc
+    import importlib.util
+    import marshal
+    from types import MappingProxyType
+
+    if (not isinstance(repo_sha, str) or not re.fullmatch(r"[a-f0-9]{40}", repo_sha)
+            or not isinstance(proposed_series_id, str)
+            or not re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z", proposed_series_id)
+            or not sys.flags.isolated or not sys.dont_write_bytecode):
+        raise ValueError("isolated -I -B interpreter and exact release proposal required")
+    datetime.strptime(proposed_series_id, "PAPER-V3-%Y%m%dT%H%M%SZ")
+    root = Path(__file__).absolute().parent.parent
+    marker = root / "v3-paper-inactive-source-manifest.json"
+    if (marker.is_symlink() or not marker.is_file() or marker.stat().st_size > 131072):
+        raise ValueError("bounded original stage manifest required")
+    manifest_bytes = marker.read_bytes()
+    manifest = json.loads(manifest_bytes)
+    if (manifest.get("source_git_sha") != repo_sha
+            or root.name != "V3Paper-INACTIVE-" + repo_sha[:12]
+            or root.parent.name != "Staging"):
+        raise ValueError("exact immutable inactive stage required")
+    rows = manifest.get("source_manifest")
+    if not isinstance(rows, list) or not 20 <= len(rows) <= 350:
+        raise ValueError("bounded staged byte inventory required")
+    source = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("invalid staged snapshot row")
+        rel, digest = row.get("relative_path"), row.get("sha256")
+        if (not isinstance(rel, str) or not re.fullmatch(r"[A-Za-z0-9_./-]+", rel)
+                or rel.startswith("/") or ".." in Path(rel).parts or "//" in rel
+                or rel in source or not isinstance(digest, str)
+                or not re.fullmatch(r"[a-f0-9]{64}", digest)):
+            raise ValueError("invalid staged snapshot row")
+        target = root / rel
+        if (not target.is_file() or target.is_symlink()
+                or any(p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+                       for p in (target.parent, *target.parents))
+                or target.stat().st_size > 524288):
+            raise ValueError("unsafe staged snapshot path")
+        raw = target.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != digest:
+            raise ValueError("staged snapshot byte drift: " + rel)
+        source[rel] = raw
+    # Compile the retained bytes, NEVER SourceFileLoader.get_code()/a .pyc.
+    # The same code objects are retained by the finder and executed below.
+    codes = MappingProxyType({rel: compile(raw, str(root / rel), "exec",
+                                         dont_inherit=True, optimize=0)
+                              for rel, raw in source.items() if rel.endswith(".py")})
+    source = MappingProxyType(source)
+    loaded = set()
+    class SnapshotFinder(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+        def find_spec(self, fullname, path=None, target=None):
+            rel = fullname.replace(".", "/")
+            candidate = rel + ".py"
+            package = rel + "/__init__.py"
+            if package in codes:
+                return importlib.util.spec_from_loader(fullname, self, is_package=True)
+            if candidate in codes:
+                return importlib.util.spec_from_loader(fullname, self)
+            if any(key.startswith(rel + "/") for key in codes):
+                return importlib.util.spec_from_loader(fullname, self, is_package=True)
+            if fullname.split(".")[0] in {key.split("/")[0].removesuffix(".py") for key in codes}:
+                raise ImportError("local module outside immutable runtime snapshot: " + fullname)
+            return None
+        def create_module(self, spec):
+            return None
+        def exec_module(self, module):
+            rel = module.__name__.replace(".", "/")
+            rel = rel + "/__init__.py" if module.__spec__.submodule_search_locations is not None else rel + ".py"
+            if rel not in codes:  # namespace only, no executable bytes
+                module.__path__ = [str(root / module.__name__.replace(".", "/"))]
+                return
+            module.__file__ = str(root / rel)
+            module.__spec__.origin = module.__file__
+            loaded.add(rel)
+            exec(codes[rel], module.__dict__)
+
+    # All project references in the RETURNED module must be freshly imported
+    # through this retained snapshot. Never reuse sys.modules from a checkout.
+    local_names = {rel[:-3].replace("/", ".").removesuffix(".__init__") for rel in codes}
+    prefixes = {name.split(".")[0] for name in local_names}
+    for name in list(sys.modules):
+        if name.split(".")[0] in prefixes:
+            del sys.modules[name]
+    finder = SnapshotFinder()
+    sys.meta_path.insert(0, finder)
+    import importlib
+    native = importlib.import_module("paper_evaluator.v3_paper_minipc_native_launcher_v1")
+    native._require_staged_v3_source_manifest(repo_sha=repo_sha)
+    # Import the entire existing static closure, including deferred strategy
+    # modules. The readonly CLI prohibits network/process/write effects.
+    for rel in manifest["static_transitive_closure_files"]:
+        if rel not in codes:
+            raise ValueError("static closure outside compiled snapshot")
+        name = rel[:-3].replace("/", ".")
+        if name.endswith(".__init__"):
+            name = name[:-9]
+        importlib.import_module(name)
+    if not set(manifest["static_transitive_closure_files"]).issubset(loaded):
+        raise ValueError("runtime closure not completely loaded from retained bytes")
+    def digest(value):
+        return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
+                                         allow_nan=False).encode("utf-8")).hexdigest()
+    executable = Path(sys.executable)
+    code_identity = {
+        "kind": "V3_COMPILED_RUNTIME_BYTE_IDENTITY_V1",
+        "repo_sha": repo_sha,
+        "source_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "python_version": sys.version,
+        "python_executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
+        "cache_tag": sys.implementation.cache_tag,
+        "optimize": 0,
+        "files": [[rel, hashlib.sha256(source[rel]).hexdigest(),
+                   hashlib.sha256(marshal.dumps(codes[rel])).hexdigest()]
+                  for rel in sorted(codes)],
+    }
+    code_sha = digest(code_identity)
+    bundle = source["research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json"]
+    if json.loads(bundle).get("strategy_revision") != native.REVISION:
+        raise ValueError("loaded policy revision differs from worker")
+    strategy_identity = {
+        "kind": "V3_COMPILED_STRATEGY_BYTE_IDENTITY_V1",
+        "strategy_revision": native.REVISION,
+        "code_fingerprint_sha256": code_sha,
+        "policy_utf8_sha256": hashlib.sha256(bundle).hexdigest(),
+    }
+    proposal = {
+        "kind": "V3_RUNTIME_RELEASE_IDENTITY_PROPOSAL_V1",
+        "status": "MEASURED_ISOLATED_RUNTIME_NOT_AUTHORIZED",
+        "repo_sha": repo_sha,
+        "successor_series_id": proposed_series_id,
+        "series_status": "PROPOSED_NOT_ISSUED",
+        "release_owner": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99",
+        "code_identity": code_identity, "strategy_identity": strategy_identity,
+        "code_fingerprint_sha256": code_sha,
+        "strategy_fingerprint_sha256": digest(strategy_identity),
+        "loaded_snapshot_files": sorted(loaded),
+        "measurement_pid": os.getpid(),
+        "observed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "task_changes": False, "cloud_cas_performed": False,
+        "paper_release_authorized": False, "real_money_actions": False,
+    }
+    # This state is local correlation, never an independent authority receipt.
+    native._COMPILED_RUNTIME_POLICY_BYTES = bundle
+    native._COMPILED_RUNTIME_BINDING = (code_sha, digest(strategy_identity),
+                                       repo_sha, proposed_series_id)
+    return native, proposal
+
+
+def _runtime_identity_readonly_bootstrap() -> int:
+    parser = argparse.ArgumentParser(description="Measure inactive V3 executable bytes only")
+    parser.add_argument("--runtime-identity-readonly", action="store_true", required=True)
+    parser.add_argument("--expected-source-sha", required=True)
+    parser.add_argument("--proposed-v3-series", required=True)
+    args = parser.parse_args()
+    # Measurement process is deliberately incapable of external side effects.
+    # Python audit hooks are not an authorization boundary for production.
+    def readonly_audit(event, values):
+        if (event.startswith(("socket.", "subprocess.", "os.spawn", "os.exec"))
+                or event in {"os.system", "os.remove", "os.rename", "os.mkdir", "os.rmdir"}):
+            raise PermissionError("runtime measurement forbids side effects: " + event)
+        if event == "open":
+            mode, flags = values[1], values[2]
+            if (isinstance(mode, str) and any(c in mode for c in "wax+")
+                    or isinstance(flags, int) and flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC)):
+                raise PermissionError("runtime measurement forbids file writes")
+    sys.addaudithook(readonly_audit)
+    _, proposal = load_native_runtime_snapshot(
+        repo_sha=args.expected_source_sha, proposed_series_id=args.proposed_v3_series)
+    print(json.dumps(proposal, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__" and "--runtime-identity-readonly" in sys.argv:
+    raise SystemExit(_runtime_identity_readonly_bootstrap())
+
 from tools.v3_experimental_paper_technical_gate import (
     assess_v3_native_source_import_closure, validate_experimental_paper_packet,
 )
@@ -44,6 +225,40 @@ PHASES = ("FIRST_SCANNER_MODEL_P4", "FOLLOWUP_6H24H72H", "CLOUD_RECEIPT_ACK")
 SERIES = re.compile(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z")
 REPO_SHA = re.compile(r"[0-9a-f]{40}")
 FILE_SHA = re.compile(r"[0-9a-f]{64}")
+
+
+_COMPILED_RUNTIME_BINDING = None
+
+
+def _require_compiled_runtime_binding(phase_args: dict[str, Any]) -> None:
+    expected = (phase_args["bundle_sha256"], phase_args["strategy_sha256"],
+                phase_args["repo_sha"], phase_args["series_id"])
+    if _COMPILED_RUNTIME_BINDING != expected:
+        raise ValueError("native dispatch requires exact retained compiled runtime snapshot")
+
+
+def validate_successor_series_assignment(assignment: Any, *, series_id: str,
+        repo_sha: str, bundle_sha256: str, strategy_sha256: str) -> None:
+    """Correlate the EXISTING independently authenticated owner's decision.
+
+    This parser does not issue IDs or authenticate JSON. The originalhost
+    release provider remains responsible for authenticating the decision.
+    No time-derived default, source digest promotion or self-approval exists.
+    """
+    expected = {
+        "release_owner": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99",
+        "decision": "ISSUED_FOR_EXACT_RUNTIME_RELEASE",
+        "successor_series_id": series_id, "repo_sha": repo_sha,
+        "code_fingerprint_sha256": bundle_sha256,
+        "strategy_fingerprint_sha256": strategy_sha256,
+    }
+    if (not isinstance(assignment, dict)
+            or any(assignment.get(k) != v for k, v in expected.items())
+            or not isinstance(assignment.get("independent_decision_reference"), str)
+            or not re.fullmatch(r"https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-[0-9]+",
+                                assignment["independent_decision_reference"])):
+        raise ValueError("independent exact runtime successor-series issuance required")
+    datetime.strptime(series_id, "PAPER-V3-%Y%m%dT%H%M%SZ")
 
 
 def validate_one_owner_contract(*, phase: str, series_id: str,
@@ -239,6 +454,7 @@ def dispatch_after_native_release_readback(*,
     phase = phase_args["phase"]
     series_id = phase_args["series_id"]
     pin = phase_args["repo_sha"]
+    _require_compiled_runtime_binding(phase_args)
     report = originalhost_readback()
     if not isinstance(report, dict):
         raise ValueError("original native host readback missing")
@@ -275,6 +491,10 @@ def dispatch_after_native_release_readback(*,
             or report["approved_six_proof_release_packet_sha256"]
                 != expected_release_packet_sha256):
         raise ValueError("independent originalhost approved different six-proof release packet")
+    validate_successor_series_assignment(report.get("successor_series_assignment"),
+        series_id=series_id, repo_sha=pin,
+        bundle_sha256=phase_args["bundle_sha256"],
+        strategy_sha256=phase_args["strategy_sha256"])
     expected = {
         "kind": "V3_NATIVE_ONE_OWNER_POST_CAS_ORIGINALHOST_READBACK_V1",
         "source": "ORIGINAL_MINIPC_WINDOWS_TASK_PROCESS_AND_FENCE",
