@@ -147,6 +147,8 @@ function Backup-Tasks([string]$directory){
   return $states
 }
 function Restore-Tasks([string]$directory,[bool]$startPrevious){
+  # Never restart old task definitions unless their original executable is intact.
+  Need ((Sha (Join-Path $old $file)) -ceq $oldSha.ToLowerInvariant()) 'old rollback executable SHA mismatch'
   # NEVER restore/start old children alongside any successor child.
   Quiet 25
   $states=Get-Content -LiteralPath (Join-Path $directory 'task-states.json') -Raw | ConvertFrom-Json
@@ -170,8 +172,9 @@ function Check-Preflight {
   Need (Test-Path -LiteralPath $old -PathType Container) 'original release absent'
   Need ((Sha (Join-Path $old $file)) -ceq $oldSha.ToLowerInvariant()) 'frozen original SHA mismatch'
   $c=Get-Content -LiteralPath (Join-Path $old 'paper_runtime_control.json') -Raw | ConvertFrom-Json
-  Need ([string]$c.series_id -ceq $series -and $c.paper_only -eq $true -and
-        $c.real_money_actions_enabled -eq $false) 'active PAPER guards or series drift'
+  Need ([string]$c.series_id -ceq $series -and $c.enabled -eq $true -and
+        $c.paper_only -eq $true -and $c.real_money_actions_enabled -eq $false -and
+        [double]$c.scout_notional_eur -eq 50 -and [double]$c.stage2_notional_eur -eq 50) 'active PAPER guards or series drift'
   foreach($n in $names){$null=OriginalAction $n}
   # Disallow competing bounded operator and V3 transition.
   foreach($p in @('v2r4-technical-cutover-maintenance.json','v2r4-technical-cutover-operator-lock.json',
