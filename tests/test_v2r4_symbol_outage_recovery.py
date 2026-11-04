@@ -158,5 +158,58 @@ class KrakenSymbolRecoveryTests(unittest.TestCase):
             self.assertEqual(hb["counters"]["evaluated"],0)
             self.assertEqual(st["processed"],{})
 
+    def test_evaluator_timeout_uses_existing_retry_limit_without_order(self):
+        now=datetime(2026,10,8,21,30,tzinfo=timezone.utc)
+        event=specimen("DOGE/EUR",now-timedelta(seconds=30))
+        with tempfile.TemporaryDirectory() as td:
+            app,trading,args,key=fixture_app(Path(td),now,event)
+            key.write_text("x"*32,"utf-8")
+            eid=runtime.event_id(event)
+            timeout=runtime.subprocess.TimeoutExpired(cmd=["python","evaluate.py"],timeout=150)
+            with patch.object(runtime,"utcnow",return_value=now), \
+                 patch.object(runtime,"eur_pairs",return_value=self.online()), \
+                 patch.object(runtime.subprocess,"run",side_effect=timeout) as runner:
+                for attempt in range(1,4):
+                    self.assertEqual(runtime.run_candidates(args),0)
+                    hb=json.loads((trading/"State"/"v2r4-paper-candidate-runtime-heartbeat.json").read_text())
+                    st=json.loads((trading/"State"/"v2r4-paper-candidate-runtime-state.json").read_text())
+                    self.assertEqual(hb["status"],"DEGRADED")
+                    self.assertEqual(hb["counters"]["failures"],1)
+                    self.assertIn("EVAL_TIMEOUT_150S",hb["errors"][0])
+                    self.assertEqual(st["attempts"][eid],attempt)
+                    if attempt<3:
+                        self.assertNotIn(eid,st["processed"])
+                    else:
+                        self.assertEqual(st["processed"][eid]["status"],"EVALUATION_FAILED_TERMINAL")
+                        self.assertEqual(st["processed"][eid]["attempts"],3)
+                self.assertEqual(runner.call_count,3)
+                self.assertEqual(runtime.run_candidates(args),0)
+                self.assertEqual(runner.call_count,3)
+            self.assertFalse(list((app/"paper_decisions").glob("*.json")))
+
+    def test_evaluator_timeout_does_not_block_other_candidate_in_same_cycle(self):
+        now=datetime(2026,10,8,21,30,tzinfo=timezone.utc)
+        first=specimen("DOGE/EUR",now-timedelta(seconds=30))
+        second=specimen("ETH/EUR",now-timedelta(seconds=20))
+        with tempfile.TemporaryDirectory() as td:
+            app,trading,args,key=fixture_app(Path(td),now,first)
+            key.write_text("x"*32,"utf-8")
+            (trading/"State"/"v2r4-ws-shadow-events"/"later.json").write_text(json.dumps(second),"utf-8")
+            timeout=runtime.subprocess.TimeoutExpired(cmd=["python","evaluate.py"],timeout=150)
+            ok=SimpleNamespace(returncode=0,stderr="")
+            with patch.object(runtime,"utcnow",return_value=now), \
+                 patch.object(runtime,"eur_pairs",return_value=self.online()), \
+                 patch.object(runtime.subprocess,"run",side_effect=[timeout,ok]) as runner:
+                self.assertEqual(runtime.run_candidates(args),0)
+                self.assertEqual(runner.call_count,2)
+            hb=json.loads((trading/"State"/"v2r4-paper-candidate-runtime-heartbeat.json").read_text())
+            st=json.loads((trading/"State"/"v2r4-paper-candidate-runtime-state.json").read_text())
+            self.assertEqual(hb["status"],"DEGRADED")
+            self.assertEqual(hb["counters"]["failures"],1)
+            self.assertEqual(hb["counters"]["evaluated"],1)
+            self.assertEqual(len(st["processed"]),1)
+            self.assertEqual(len(st["attempts"]),1)
+            self.assertFalse(list((app/"paper_decisions").glob("*.json")))
+
 if __name__=="__main__":
     unittest.main()
