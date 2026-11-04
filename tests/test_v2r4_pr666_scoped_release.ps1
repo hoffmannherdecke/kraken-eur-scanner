@@ -11,6 +11,7 @@ $file='v2r4-paper-local-runtime.py'
 $stageFile='C:\Trading\Runtime\v2r4-pr666-inert-b4c751fbe9df\v2r4-paper-local-runtime.py'
 $script:Samples=@()
 function Get-CimInstance {
+  [CmdletBinding()]
   param([string]$ClassName)
   if($ClassName -ne 'Win32_Process'){throw 'Unexpected CIM query'}
   return $script:Samples
@@ -42,6 +43,7 @@ function Task {
   [pscustomobject]@{State=$script:TaskState}
 }
 function Stop-ScheduledTask {
+  [CmdletBinding()]
   param([string]$TaskName)
   $script:StopCalls++
   $script:TaskState='Ready'
