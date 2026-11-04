@@ -237,7 +237,9 @@ if($Execute){
     foreach($n in $names){
       $a=$actions[$n]
       # Change ONLY action; all existing triggers, principal, settings, and task XML retained.
-      $newAction=New-ScheduledTaskAction -Execute $a.execute -Argument $a.arguments -WorkingDirectory $a.working_directory
+      $actionParams=@{Execute=$a.execute;Argument=$a.arguments}
+      if(-not [string]::IsNullOrWhiteSpace($a.working_directory)){$actionParams['WorkingDirectory']=$a.working_directory}
+      $newAction=New-ScheduledTaskAction @actionParams
       Set-ScheduledTask -TaskName $n -Action $newAction -ErrorAction Stop | Out-Null
       $bound=Task $n
       Need (@($bound.Actions).Count -eq 1 -and
