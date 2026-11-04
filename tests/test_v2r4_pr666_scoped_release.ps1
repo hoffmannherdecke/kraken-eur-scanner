@@ -16,8 +16,8 @@ function Get-CimInstance {
   return $script:Samples
 }
 function Assert([bool]$value,[string]$why){if(-not $value){throw ('PR666_OFFLINE_ASSERT: '+$why)}}
-function Proc([int]$processId,[string]$name,[string]$args){
-  [pscustomobject]@{ProcessId=$processId;Name=$name;CommandLine=$args;CreationDate=[datetime]::UtcNow}
+function Proc([int]$processId,[string]$name,[string]$commandLine){
+  [pscustomobject]@{ProcessId=$processId;Name=$name;CommandLine=$commandLine;CreationDate=[datetime]::UtcNow}
 }
 $script:Samples=@(
   (Proc 2001 'python.exe' ('python.exe "'+$old+'\v2r4-paper-local-runtime.py" --role candidates')),
