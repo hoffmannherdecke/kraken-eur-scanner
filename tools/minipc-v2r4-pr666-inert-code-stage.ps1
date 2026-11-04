@@ -85,14 +85,23 @@ function Verify-Stage {
   return $m
 }
 function ActiveChildren {
-  # No reliance on task state alone: Python evaluator children can survive Task stop.
+  # Scheduled tasks can leave Python/evaluator or supervisor children running.
   $needleOld=(Join-Path $old $file).Replace('\','/')
   $needleNew=$stageFile.Replace('\','/')
   $eval=(Join-Path $old 'paper_evaluator\evaluate.py').Replace('\','/')
   $supervisorScript='minipc-runtime-supervisor.ps1'
   @(
     Get-CimInstance Win32_Process -ErrorAction Stop |
-      Where-Object { [string]$_.Name -match '^(?:pythonw?|powershell|pwsh)\.exe
+      Where-Object { [string]$_.Name -match '^(?:pythonw?|powershell|pwsh)\.exe$' } |
+      Where-Object {
+        $cmd=([string]$_.CommandLine).Replace('\','/')
+        $cmd.IndexOf($needleOld,[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+        $cmd.IndexOf($needleNew,[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+        $cmd.IndexOf($eval,[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+        ($_.Name -match '(?i)^(?:powershell|pwsh)\.exe$' -and
+         $cmd.IndexOf($supervisorScript,[StringComparison]::OrdinalIgnoreCase) -ge 0)
+      } | Select-Object ProcessId,CreationDate,CommandLine
+  )
 }
 function Quiet([int]$seconds=195){
   $end=(Get-Date).AddSeconds($seconds)
@@ -249,7 +258,7 @@ if($Execute){
         try{
           $hb=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
           $hbAt=([datetime]$hb.checked_at_utc).ToUniversalTime()
-          $processes=@(ActiveChildren | Where-Object {([string]$_.CommandLine).Replace('\','/').Contains($stageFile.Replace('\','/'))})
+          $processes=@(ActiveChildren | Where-Object {([string]$_.CommandLine).Replace('\','/').IndexOf($stageFile.Replace('\','/'),[StringComparison]::OrdinalIgnoreCase) -ge 0})
           if([string]$hb.status -ceq 'HEALTHY' -and $hbAt -gt $started -and
              ($hbAt-[datetime]::UtcNow).TotalSeconds -le 5 -and
              $processes.Count -gt 0 -and
