@@ -95,6 +95,8 @@ function ActiveChildren {
       Where-Object { [string]$_.Name -match '^(?:pythonw?|powershell|pwsh)\.exe$' } |
       Where-Object {
         $cmd=([string]$_.CommandLine).Replace('\','/')
+        ([string]$_.Name -match '^pythonw?\.exe$' -and
+         $cmd.IndexOf($file,[StringComparison]::OrdinalIgnoreCase) -ge 0) -or
         $cmd.IndexOf($needleOld,[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
         $cmd.IndexOf($needleNew,[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
         $cmd.IndexOf($eval,[StringComparison]::OrdinalIgnoreCase) -ge 0 -or
