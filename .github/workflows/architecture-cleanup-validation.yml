@@ -587,6 +587,9 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
+      - name: Release authorization on native Windows PowerShell 5.1
+        shell: pwsh
+        run: ./tests/test_v3_one_time_release_authorization.ps1
       - name: Disposable disabled task definition lease and recovery
         shell: pwsh
         run: ./tests/test_v3_pr661_task_file_lease_windows.ps1

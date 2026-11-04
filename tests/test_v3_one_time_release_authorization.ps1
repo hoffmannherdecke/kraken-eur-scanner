@@ -1,8 +1,24 @@
 # New release authorization tests. Ephemeral keys only; no host/Cloud action.
+param([switch]$FrameworkChild,[string]$FixtureDirectory='')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $root=Split-Path $PSScriptRoot -Parent
 Import-Module (Join-Path $root 'tools/v3-one-time-release-authorization.psm1') -Force
+if($FrameworkChild){
+ if($env:OS -cne 'Windows_NT' -or $env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted'){
+  throw 'RELEASE_FRAMEWORK_TEST_DISPOSABLE_WINDOWS_ONLY'
+ }
+ $fixture=Get-Content -LiteralPath (Join-Path $FixtureDirectory 'context.json') -Raw|ConvertFrom-Json
+ $hashes=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $root
+ $null=Assert-V3OneTimeReleaseAuthorization -Payload ([IO.File]::ReadAllBytes((Join-Path $FixtureDirectory 'approval.json'))) `
+  -Cms ([IO.File]::ReadAllBytes((Join-Path $FixtureDirectory 'approval.cms'))) `
+  -ReviewedAuthorityCertificateSha256 ([string]$fixture.pin) -Scope CLOUD_ABORT_INSTALL `
+  -ExpectedReleaseCommit ('1'*40) -ExpectedArtifacts $hashes
+ $inventory=& (Join-Path $root 'tools/v3-one-time-release.ps1')
+ if((($inventory -join "`n")|ConvertFrom-Json).production_authorized -ne $false){throw 'RELEASE_PS51_DEFAULT_AUTHORITY'}
+ Write-Output 'V3_ONE_TIME_RELEASE_WINDOWS_POWERSHELL51_REAL_CMS_AND_INVENTORY_PASS'
+ return
+}
 Add-Type -AssemblyName System.Security.Cryptography.Pkcs
 foreach($file in @('tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1',
  'tools/v3-one-time-originalhost-boundary.ps1','tools/v3-one-time-originalhost-release.psm1')){
@@ -66,6 +82,18 @@ try {
  $escaped=[Text.Encoding]::UTF8.GetBytes('{"ki\u006ed":"x"}')
  $denied=$false;try{$null=Read-V3ReleaseJson $escaped}catch{$denied=$true}
  if(-not $denied){throw 'RELEASE_ESCAPED_KEY_ACCEPTED'};$checks++
+ if($env:OS -ceq 'Windows_NT' -and $env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted'){
+  $fixture=Join-Path $env:RUNNER_TEMP ('V3-Release-PS51-'+[guid]::NewGuid().ToString('N'))
+  $null=[IO.Directory]::CreateDirectory($fixture)
+  try {
+   [IO.File]::WriteAllBytes((Join-Path $fixture 'approval.json'),$valid.Payload)
+   [IO.File]::WriteAllBytes((Join-Path $fixture 'approval.cms'),$valid.Cms)
+   [IO.File]::WriteAllText((Join-Path $fixture 'context.json'),(@{pin=$pin}|ConvertTo-Json -Compress))
+   & (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') -NoProfile -File $PSCommandPath -FrameworkChild -FixtureDirectory $fixture
+   if($LASTEXITCODE -ne 0){throw 'RELEASE_WINDOWS_POWERSHELL51_FAILED'}
+   $checks++
+  }finally{[IO.Directory]::Delete($fixture,$true)}
+ }
  # A local file/hash/accepted flag cannot confer authority without the
  # original #99 decision. Mock HTTPS only in this disposable unit test.
  $authModule=Get-Module 'v3-one-time-release-authorization'

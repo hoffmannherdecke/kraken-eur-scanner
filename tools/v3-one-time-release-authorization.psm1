@@ -27,7 +27,14 @@ function Read-V3ReleaseJson([byte[]]$Bytes) {
 function Assert-V3ReleaseCms([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuthorityCertificateSha256) {
  if($ReviewedAuthorityCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
     $null -eq $Cms -or $Cms.Length -lt 32 -or $Cms.Length -gt 32768){throw 'V3_RELEASE_AUTHORITY_PIN_OR_CMS_HOLD'}
- Add-Type -AssemblyName System.Security.Cryptography.Pkcs
+ # Windows PowerShell 5.1 resolves SignedCms from System.Security; modern
+ # PowerShell uses the separate Pkcs assembly. Reuse the built-in framework.
+ if($null -eq ('System.Security.Cryptography.Pkcs.SignedCms' -as [type])){
+  Add-Type -AssemblyName System.Security -ErrorAction Stop
+ }
+ if($null -eq ('System.Security.Cryptography.Pkcs.SignedCms' -as [type])){
+  Add-Type -AssemblyName System.Security.Cryptography.Pkcs -ErrorAction Stop
+ }
  $signed=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new($Payload),$true)
  $signed.Decode($Cms)
  if(-not $signed.Detached -or $signed.SignerInfos.Count -ne 1){throw 'V3_RELEASE_SINGLE_DETACHED_SIGNER_REQUIRED'}
