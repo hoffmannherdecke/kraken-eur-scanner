@@ -33,7 +33,64 @@ Need (Test-Path -LiteralPath $source -PathType Container) 'reviewed source direc
 Need (Test-Path -LiteralPath $old -PathType Container) 'frozen original runtime absent'
 Need ((Hash (Join-Path $old $oldFile)) -ceq $oldSha) 'original candidate bytes differ'
 $head=(& git -C $source rev-parse HEAD 2>$null)
-Need ($LASTEXITCODE -eq 0 -and ([string]$head).Trim() -ceq $pin) 'source commit mismatch'
+Need ($LASTEXITCODE -eq 0 -and ([string]$head).Trim() -match '^[0-9a-f]{40}
+$top=(& git -C $source rev-parse --show-toplevel 2>$null)
+Need ($LASTEXITCODE -eq 0 -and [IO.Path]::GetFullPath(([string]$top).Trim()) -ieq $source) 'source must be checkout root'
+$dirty=@(& git -C $source status --porcelain --untracked-files=normal 2>$null | Where-Object { $_ })
+Need ($LASTEXITCODE -eq 0 -and $dirty.Count -eq 0) 'source checkout dirty'
+$newHash=Hash $sourceFile
+Need ($newHash -cne $oldSha) 'no PR666 candidate delta'
+$taskNames=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperLifecycle')
+$tasks=[ordered]@{}
+foreach($name in $taskNames){
+  $task=Get-ScheduledTask -TaskName $name -ErrorAction Stop
+  Need (@($task.Actions).Count -eq 1) ('unexpected task actions '+$name)
+  Need ([string]$task.Principal.UserId -in @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')) ('task principal drift '+$name)
+  $args=[string]$task.Actions[0].Arguments
+  Need ($args.Replace('/','\').Contains((Join-Path $old $oldFile))) ('task not bound to frozen candidate code: '+$name)
+  $tasks[$name]=[ordered]@{
+    original_action_sha256=([BitConverter]::ToString(
+      ([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes(
+        ([string]$task.Actions[0].Execute + [char]10 + $args + [char]10 + [string]$task.Actions[0].WorkingDirectory)
+      ))).Replace('-','').ToLowerInvariant()
+    state=[string]$task.State
+  }
+}
+# Unrelated WAIT and CloudSync are not altered or included as release inputs.
+$report=[ordered]@{
+  kind='V2R4_PR666_CANDIDATES_LIFECYCLE_INERT_STAGE_V1'
+  status='READ_ONLY_READY_NOT_STAGED'
+  commit=$pin
+  series_id=$series
+  predecessor_file_sha256=$oldSha.ToLowerInvariant()
+  successor_file_sha256=$newHash.ToLowerInvariant()
+  predecessor_runtime=$old
+  inert_runtime=$target
+  task_action_evidence=$tasks
+  tasks_mutated=$false
+  cloud_mutated=$false
+  series_mutated=$false
+  productive_install=$false
+  next='SEPARATE_GUARDED_TASK_SWITCH_APPROVAL_AND_IMPLEMENTATION'
+}
+Need (-not (Test-Path -LiteralPath $target)) 'target already exists; never overwrite or reuse'
+if(-not $Stage){$report|ConvertTo-Json -Depth 8;return}
+Need ($Confirm -ceq 'STAGE_PR666_INERT_ONLY') 'staging confirmation required'
+# Never copy private data, runtime control, tokens or mutable state into the new stage.
+# Only this one source file is new. It can be executed later with the original
+# --app-root and --trading-root, but cannot become active by staging alone.
+New-Item -ItemType Directory -Path $target -ErrorAction Stop|Out-Null
+try {
+  Copy-Item -LiteralPath $sourceFile -Destination $targetFile -ErrorAction Stop
+  Need ((Hash $targetFile) -ceq $newHash) 'stage hash readback failed'
+  $report.status='INERT_SINGLE_FILE_STAGED_NO_TASK_MUTATION'
+  [IO.File]::WriteAllText($manifest,($report|ConvertTo-Json -Depth 8)+[Environment]::NewLine,[Text.UTF8Encoding]::new($false))
+  Need ((Hash $targetFile) -ceq $newHash) 'post-manifest file changed'
+  # This directory is single-purpose and must never be used as an app root.
+  $report.manifest_sha256=(Hash $manifest).ToLowerInvariant()
+} catch {throw ('PR666_INERT_STAGE_INCOMPLETE_NO_LIVE_CHANGE: '+$_.Exception.Message)}
+$report|ConvertTo-Json -Depth 8
+) 'source HEAD missing'\n& git -C $source merge-base --is-ancestor $pin HEAD 2>$null\nNeed ($LASTEXITCODE -eq 0) 'PR666 reviewed commit not ancestor of checkout'\n& git -C $source diff --quiet $pin HEAD -- 'tools/v2r4-paper-local-runtime.py'\nNeed ($LASTEXITCODE -eq 0) 'PR666 candidate changed since reviewed commit'
 $top=(& git -C $source rev-parse --show-toplevel 2>$null)
 Need ($LASTEXITCODE -eq 0 -and [IO.Path]::GetFullPath(([string]$top).Trim()) -ieq $source) 'source must be checkout root'
 $dirty=@(& git -C $source status --porcelain --untracked-files=normal 2>$null | Where-Object { $_ })
