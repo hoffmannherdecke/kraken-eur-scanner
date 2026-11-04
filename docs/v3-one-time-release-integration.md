@@ -91,12 +91,11 @@ approval fields:
 Cloud bindings contain only `source_sha256`, equal to
 `86dfebe688eda78ba14000a63f534e3295af63dcf19c48e07aab26d75e76fbd6`.
 Host bindings are exactly `epoch_id`, `source_sha256`, `fence_sha256`,
-`caller_acl_sha256`, `reader_certificate_sha256`, `pr515_sha256`,
+`caller_acl_sha256`, `reader_certificate_sha256`, `reader_source_sha256`, `pr515_sha256`,
 `backup_manifest_sha256`, `successor_series_id`, `bundle_sha256`,
 `strategy_sha256`, `candidate_repo_sha`, `lifecycle_xml_sha256`,
 `cloudsync_xml_sha256`, `v3_writer_xml_sha256`, `install_readback_sha256`,
-and `policy=TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1`. These are original observed
-bindings, not synthetic development values. The host also requires the
+and `policy=TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1`. The Reader source pin is the already staged original Reader SHA256 `c81dbdca986da4fb5143bc1a315cb3b7dd548e0b6f338a02f0992767b6af2ba5`. The independent authority must accept the genuine Reader provenance and its separate key custody before signing these bindings; signing supplied third-party JSON is not such evidence. These are original observed bindings, not synthetic development values. The host also requires the
 installation readback's recorded release commit to match this exact release.
 
 ## Authorized execution interface

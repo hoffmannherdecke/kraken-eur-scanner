@@ -77,13 +77,14 @@ function Invoke-V3OneTimeOriginalhostRelease {
   -ReviewedAuthorityCertificateSha256 $ReviewedAuthorityCertificateSha256 -Scope ORIGINALHOST_ABORT_RESTORE `
   -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $hashes
  $a=$authorization.claims;$b=$a.bindings
- $fields=@('epoch_id','source_sha256','fence_sha256','caller_acl_sha256','reader_certificate_sha256',
+ $fields=@('epoch_id','source_sha256','fence_sha256','caller_acl_sha256','reader_certificate_sha256','reader_source_sha256',
   'pr515_sha256','backup_manifest_sha256','successor_series_id','bundle_sha256','strategy_sha256',
   'candidate_repo_sha','lifecycle_xml_sha256','cloudsync_xml_sha256','v3_writer_xml_sha256',
   'install_readback_sha256','policy')
  if(@($b.PSObject.Properties).Count -ne $fields.Count -or
     @($b.PSObject.Properties.Name|Where-Object {$_ -cnotin $fields}).Count -or
     [string]$b.policy -cne 'TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1' -or
+    [string]$b.reader_source_sha256 -cne 'c81dbdca986da4fb5143bc1a315cb3b7dd548e0b6f338a02f0992767b6af2ba5' -or
     [string]$b.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
     [string]$b.candidate_repo_sha -cnotmatch '^[a-f0-9]{40}$' -or
     [string]$b.successor_series_id -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$'){
@@ -157,9 +158,17 @@ function Invoke-V3OneTimeOriginalhostRelease {
   if([string]$result.status -cne 'ARMED_STOP_ABORT_RESTORE_AND_AFTERCARE_CONFIRMED'){
    throw 'V3_RELEASE_ORIGINALHOST_FINAL_ACK_NOT_CONFIRMED'
   }
-  return [pscustomobject]@{kind='V3_ONE_TIME_ORIGINALHOST_RELEASE_RECEIPT_V1';
+  $finalReceipt=[pscustomobject]@{kind='V3_ONE_TIME_ORIGINALHOST_RELEASE_RECEIPT_V1';
    release_id=$a.release_id;release_commit=$a.release_commit;approval_sha256=$authorization.approval_sha256;
    status='TERMINAL_ABORT_STOP_RESTORE_AFTERCARE_CONFIRMED';cas_or_paper_authorized=$false}
+  # Keep the durable attempt latch; add a separate CreateNew original result.
+  # A missing completion file never converts UNKNOWN into permission to retry.
+  $completion=[IO.File]::Open(($journalPath+'.completed.json'),[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::Read)
+  try {
+   $bytes=[Text.Encoding]::UTF8.GetBytes(($finalReceipt|ConvertTo-Json -Compress))
+   $completion.Write($bytes,0,$bytes.Length);$completion.Flush($true)
+  }finally{$completion.Dispose()}
+  return $finalReceipt
  }finally {
   if($null -ne $journal){$journal.Dispose()}
   # On interruption the durable Disabled tasks and ARMED fence remain. No
