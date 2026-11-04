@@ -424,6 +424,45 @@ if [[ "$(pg_root_db -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' |
    [[ "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT') or has_table_privilege('postgres','v3_cas_audit.epoch_v1','UPDATE')")" != 'f' ]]; then
  echo 'FAIL_STAGE4_PRIVILEGE_ESCROW_NOT_RESTORED_AFTER_DISPOSABLE_TRANSACTION' >&2; exit 1
 fi
+# New reviewed Stage4 release variant is tested ONLY in this disposable,
+# networkless PG17 database. Signed approval is verified by the parent operator,
+# never issued by this fixture. Test both missing-scope HOLD and a fully guarded
+# synthetic success path with a forced ROLLBACK before continuing.
+stage4_release="supabase/v3-cas-audit-stage4-original-epoch-open-release.sql"
+if pg -f - < "$stage4_release" >/dev/null 2>&1; then
+ echo 'FAIL_STAGE4_ONE_TIME_RELEASE_ACCEPTED_MISSING_SIGNED_SCOPE' >&2; exit 1
+fi
+python - "$stage4_release" <<'PY' | pg -f - >/dev/null
+import pathlib, sys
+src=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+assert src.count("DO $v3_stage4_preflight$")==1
+assert src.count("DO $v3_stage4_postflight$")==1
+assert src.count("COMMIT;\n-- Even an actual")==1
+src=src.replace("COMMIT;\n-- Even an actual","ROLLBACK;\n-- Even an actual",1)
+values={
+ "scope":"CLOUD_STAGE4_EPOCH_OPEN",
+ "release_commit":"0"*40,
+ "approval_sha256":"a"*64,
+ "runtime_release_commit":"ebb39488530d9c032e082ca7ab4ae8d3e1f0a719",
+ "successor_series_id":"PAPER-V3-20261104T133710Z",
+ "bundle_sha256":"443ae85e299828c4c2e3779d6e2fb80aeb9a0b7966b7f6923f91524c35fdfc67",
+ "strategy_sha256":"aaef6e75e91b2825f194393dbb7de57e26097fd22397629b898f8c69541b0f6a",
+ "fence_sha256":"36452e8fff4a9d7020eb39545dbd258fed880e00928a84a615c819e14b167e35",
+ "epoch_id":"V3CAS-AUDIT-"+"e"*32,
+ "source_sha256":"a"*64,
+ "caller_acl_sha256":"c"*64,
+ "expires_at":"2035-01-01T00:00:00Z",
+}
+for k,v in values.items():
+ assert all(c.isalnum() or c in "-_:." for c in v)
+ print(f"SELECT set_config('v3_stage4.{k}','{v}',false);")
+print(src)
+PY
+if [[ "$(pg_root_db -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ]] ||
+   [[ "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT') or pg_has_role('postgres','v3_cas_audit_table_owner','SET')")" != 'f' ]]; then
+ echo 'FAIL_STAGE4_ONE_TIME_RELEASE_ROLLBACK_OR_PRIVILEGE_ESCROW' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE4_ONE_TIME_RELEASE_SIGNED_SCOPE_NEGATIVE_AND_ROLLBACK_PASS'
 pg_root_db -c 'REVOKE SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 FROM postgres;' >/dev/null
 echo 'V3_PG17_STAGE4_ORIGINAL_EPOCH_PRIVILEGE_ESCROW_ROLLBACK_PASS'
 
