@@ -224,7 +224,16 @@ def run_candidates(args):
           if not cp.exists(): cp.write_text(json.dumps(c,indent=2,sort_keys=True)+'\n','utf-8')
           env=os.environ.copy(); env['OPENAI_API_KEY']=key; env.setdefault('OPENAI_MODEL','gpt-6-luna')
           if len(key)<20: raise RuntimeError('OpenAI API key missing/too short')
-          proc=subprocess.run([sys.executable,str(app/'paper_evaluator/evaluate.py'),str(cp),'--out',str(ddir)],cwd=str(app),env=env,text=True,capture_output=True,timeout=150)
+          try:
+            proc=subprocess.run([sys.executable,str(app/'paper_evaluator/evaluate.py'),str(cp),'--out',str(ddir)],cwd=str(app),env=env,text=True,capture_output=True,timeout=150)
+          except subprocess.TimeoutExpired:
+            # A single stalled evaluator must not abort the entire intake loop.
+            # Reuse the existing bounded retry/terminal accounting; never
+            # create a decision or mark an unevaluated candidate as evaluated.
+            attempts=int(state['attempts'].get(eid,0))+1; state['attempts'][eid]=attempts
+            counters['failures']+=1; errors.append(f'{eid}:EVAL_TIMEOUT_150S')
+            if attempts>=3: state['processed'][eid]={'status':'EVALUATION_FAILED_TERMINAL','at_utc':iso(),'pair':e.get('pair'),'attempts':attempts}
+            continue
           if proc.returncode!=0:
             attempts=int(state['attempts'].get(eid,0))+1; state['attempts'][eid]=attempts; counters['failures']+=1; errors.append(f'{eid}:EVAL_FAILED:{proc.stderr[-180:]}')
             if attempts>=3: state['processed'][eid]={'status':'EVALUATION_FAILED_TERMINAL','at_utc':iso(),'pair':e.get('pair'),'attempts':attempts}
