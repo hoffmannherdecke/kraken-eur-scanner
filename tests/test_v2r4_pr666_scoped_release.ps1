@@ -74,11 +74,11 @@ try {
             (Get-Content -LiteralPath $stderr -Raw -ErrorAction SilentlyContinue))
     }
   }
-  $single=Invoke-ModeFixture @('-Stage','-Confirm','STAGE_PR666_INERT_ONLY')
+  $single=Invoke-ModeFixture -modes @('-Stage','-Confirm','STAGE_PR666_INERT_ONLY')
   Assert ($single.ExitCode -ne 0) 'nonexistent root must fail without task mutation'
   Assert ($single.Text -match 'Trading root missing') 'single Stage must pass mode gate and hold on missing root'
   Assert ($single.Text -notmatch 'PropertyNotFoundStrict') 'Windows PowerShell 5.1 scalar Count regression'
-  $double=Invoke-ModeFixture @('-Stage','-Execute')
+  $double=Invoke-ModeFixture -modes @('-Stage','-Execute')
   Assert ($double.ExitCode -ne 0) 'conflicting switches must fail'
   Assert ($double.Text -match 'choose exactly one mode') 'conflicting mode must be blocked'
   Assert (-not (Test-Path -LiteralPath $missingRoot)) 'offline tests cannot create trading state'
