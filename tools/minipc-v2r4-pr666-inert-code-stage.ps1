@@ -206,6 +206,18 @@ if($Execute){
   Need ($Confirm -ceq 'EXECUTE_APPROVED_PR666_CANDIDATES_LIFECYCLE_ONLY') 'separate productive authorization absent'
   Check-Preflight
   $m=Verify-Stage
+  # Re-authenticate staged runtime against the reviewed PR666 Git tree,
+  # not solely a potentially self-consistent local manifest.
+  Need (Test-Path -LiteralPath $source -PathType Container) 'reviewed checkout absent'
+  $reviewHead=(& git -C $source rev-parse HEAD 2>$null)
+  Need ($LASTEXITCODE -eq 0 -and [string]$reviewHead -match '^[0-9a-f]{40}$') 'checkout head invalid'
+  & git -C $source merge-base --is-ancestor $pin HEAD 2>$null
+  Need ($LASTEXITCODE -eq 0) 'reviewed PR666 commit is not checkout ancestor'
+  & git -C $source diff --quiet $pin HEAD -- 'tools/v2r4-paper-local-runtime.py'
+  Need ($LASTEXITCODE -eq 0) 'reviewed PR666 candidate code drifted'
+  $dirty=@(& git -C $source status --porcelain --untracked-files=normal 2>$null | Where-Object {$_})
+  Need ($LASTEXITCODE -eq 0 -and $dirty.Count -eq 0) 'source checkout dirty'
+  Need ((Sha $stageFile) -ceq (Sha $sourceFile)) 'staged candidate differs from reviewed Git source'
   $actions=[ordered]@{}
   foreach($n in $names){
     $t=OriginalAction $n
