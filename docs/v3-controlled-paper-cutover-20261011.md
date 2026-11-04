@@ -537,3 +537,69 @@ Release-Owner (Issue #99 / bestehender 10:15-Work-Kontrollpfad):**
 Abwartewochen und keine Wiederholung der bereits erledigten 21/21-, 28h-,
 31/31-, PR326-/PR332-/PR341–348-Prüfungen.** Diese Ergänzung ist nur
 Dokumentations-/Kontext-Konsolidierung, keine Runtime-/Cloud-Änderung.
+
+### Runtime-Bytebindung – gezielte Quellintegration 04.11.2026 (kein Host-ACK)
+
+Die Ergänzung im vorhandenen nativen Launcher schließt die Lücke zwischen
+statischem Quellmanifest und ausführbarer Identität. Bestehende Source-/Staging-
+und Cloud-Abnahmen bleiben in ihrem quittierten Scope abgeschlossen. Die
+geänderte Launcherdatei erfordert später eine gezielte Versionsbindung; ein
+alter Stage erhält durch diesen Quellcommit keine neue Runtime-Abnahme.
+
+Der bestehende Launcher bietet `--runtime-identity-readonly`, ausschließlich
+mit `python.exe -I -B`, `--expected-source-sha <40hex>` und
+`--proposed-v3-series <PAPER-V3-YYYYMMDDTHHMMSSZ>`. Er muss aus dem exakt
+gebundenen inaktiven Stage aufgerufen werden. Kein Task wird erstellt oder
+geändert. Dieser Modus lädt die geprüften lokalen Pythonbytes in einem
+isolierten, gegen Netzwerk-, Prozess- und Dateischreibzugriffe gesperrten
+Messprozess. Er ignoriert `.pyc`, hält die kompilierten Codeobjekte fest und
+führt die lokalen Imports ausschließlich über diese Objekte aus. Abweichungen
+und unvollständige Imports brechen ohne Identitätsvorschlag ab.
+
+`code_fingerprint_sha256` ist SHA256 über UTF-8 JSON der ausgegebenen
+`code_identity`, mit `sort_keys=True`, `separators=(',', ':')`, `allow_nan=False`.
+Die Identität enthält den vollständigen Stage-Manifest-SHA, Repo-SHA,
+Interpreterdatei-SHA, Pythonversion/Cache-Tag, Optimierungsstufe 0 und die
+sortierten Tripel aus lokalem Pythonpfad, ursprünglichem Datei-SHA und
+`marshal.dumps`-SHA des tatsächlich zur Ausführung vorgehaltenen Codeobjekts.
+Absolute Stagepfade in Codeobjekten und die genaue Pythonfassung sind
+absichtlich Bestandteil der Bindung. Fremde native Bibliotheken und die
+Systeminstallation bleiben Gegenstand der vorhandenen Originalhost-Abnahme;
+die lokale Messung authentifiziert keine externen Bibliotheken.
+
+`strategy_fingerprint_sha256` ist derselbe kanonische JSON-SHA über
+`strategy_identity`: Revisionsname, obiger Codefingerprint und SHA256 der
+exakten festgehaltenen Policy-Bundle-UTF-8-Bytes. Diese beiden Werte sind
+konkrete **Messvorschläge** für die gleichnamigen Releasepacket-Felder, keine
+Selbstfreigabe oder automatische Promotion der bisherigen Source-Digests.
+
+Die API `load_native_runtime_snapshot` liefert das aus diesen Objekten geladene
+native Modul und den Vorschlag zurück. Ein später separat zugelassener
+Host-Bootstrap muss genau dessen bestehenden Windows-One-Shot-Dispatch mit
+den unabhängig authentifizierten Originalhost-/Cloud-Nachweisen verwenden.
+Der gemeinsame native Releasepfad verweigert gewöhnlich importierten Modulen
+und abweichenden Repo-/Bundle-/Strategie-/Serienpins den Dispatch. Bestehende
+Task-Action-/Launcher-/PID-/Geburtszeit-, 90s-, Fence-, Aftercare-, OS-Lock- und
+originale Cloud-Pin-Prüfungen bleiben wirksam. Die lesende CLI besitzt keinen
+Ausführungsschalter und kann nicht in eine Paperphase übergehen.
+
+Die zuständige unabhängige #99-Releaseautorität vergibt die konkrete Serie im
+bestehenden authentifizierten Originalhost-Releasebericht als
+`successor_series_assignment`: `release_owner` = dieses Issue als vollständige
+GitHub-URL, `decision` = `ISSUED_FOR_EXACT_RUNTIME_RELEASE`,
+`successor_series_id`, `repo_sha`, beide `*_fingerprint_sha256` sowie
+`independent_decision_reference` = zugehöriger #99-Originalentscheid-Kommentar.
+Der native Pfad prüft die exakte Zuordnung. Ein Vorschlag, fehlende Entscheidung,
+andere Runtime oder ein fremder Owner bricht vor dem Worker ab. Ein kopiertes
+JSON ist keine Authentifizierung; diese verbleibt unverändert beim vorhandenen
+unabhängigen Releaseprovider. Es gibt keine automatische Serienvergabe.
+
+**Phasen / Zirkelschluss:** Die Messung benötigt weder die sechs E2E noch eine
+aktive V3-Serie. Die sechs vorhandenen technischen Nachweise bleiben vor der
+Paperfreigabe Pflicht. `validate_experimental_paper_packet` verlangt ausdrücklich
+den physischen **Pre-CAS-Dry-Run**, verbietet einen vorweggenommenen Post-Cutover-
+ACK und akzeptiert für die Modell-/Cloud-Kette den vorhandenen gesonderten
+Canary-/Sandbox-Nachweisweg. FOLLOWUP-Proofs prüfen die reale Testkette inklusive
+Censor-/Gap-Logik; sie erfordern keine bereits aktivierte Nachfolgerserie.
+Post-CAS-Betriebs-ACKs werden weiterhin erst am tatsächlichen Dispatch geprüft.
+Keine dieser Bedingungen wird durch den Messvorschlag erfüllt oder gelockert.
