@@ -19,7 +19,7 @@ jobs:
       - name: Scope disposable Windows permission integration
         id: native_scope
         run: |
-          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(tools/minipc-v3-paper-cutover-operator-INACTIVE\.ps1|tests/test_v3_pr661_task_file_lease_windows\.ps1|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
+          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(tools/minipc-v3-paper-cutover-operator-INACTIVE\.ps1|tools/v3-one-time.*|tools/build_v3_one_time_release\.py|tests/test_v3_one_time.*|tests/test_v3_pr661_task_file_lease_windows\.ps1|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
             echo 'required=true' >> "$GITHUB_OUTPUT"
           else
             echo 'required=false' >> "$GITHUB_OUTPUT"
@@ -28,14 +28,17 @@ jobs:
         with:
           python-version: '3.13'
       - name: V3 CAS preinvoke ledger inert source and separate transaction tests
-        run: python -m unittest tests.test_v3_cas_preinvoke_ledger_inactive tests.test_v3_cas_preinvoke_signed_candidate_inactive tests.test_v3_prepared_fence_abort_source -v
+        run: python -m unittest tests.test_v3_cas_preinvoke_ledger_inactive tests.test_v3_cas_preinvoke_signed_candidate_inactive tests.test_v3_prepared_fence_abort_source tests.test_v3_one_time_release_contract -v
+      - name: V3 one-time release CMS admission and negative scope tests
+        shell: pwsh
+        run: ./tests/test_v3_one_time_release_authorization.ps1
       - name: V3 Paper Notebook one-time offline snapshots (no CAS or external service)
         shell: pwsh
         run: ./tests/test_v3_notebook_onetime_paper_witness.ps1
       - name: V3 CAS isolated real PostgreSQL 17 native ACL/transaction tests
         run: |
           # Avoid the Docker pull on unrelated project-wide architecture PRs.
-          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(supabase/v3-cas-preinvoke-ledger-INACTIVE\.sql|supabase/v3-cas-prepared-fence-abort-INACTIVE\.sql|tests/v3_cas_postgres_ephemeral_contract\.sh|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
+          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(supabase/v3-cas-preinvoke-ledger-INACTIVE\.sql|supabase/v3-cas-prepared-fence-abort-INACTIVE\.sql|supabase/v3-cas-prepared-fence-abort-release.*|tests/v3_cas_postgres_ephemeral_contract\.sh|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
             bash tests/v3_cas_postgres_ephemeral_contract.sh
           else
             echo 'V3_PG17_EPHEMERAL_UNCHANGED_SKIP'
@@ -581,9 +584,15 @@ jobs:
     needs: validate
     if: needs.validate.outputs.native_exclusion_required == 'true'
     runs-on: windows-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
+      - name: Release authorization on native Windows PowerShell 5.1
+        shell: pwsh
+        run: ./tests/test_v3_one_time_release_authorization.ps1
       - name: Disposable disabled task definition lease and recovery
         shell: pwsh
         run: ./tests/test_v3_pr661_task_file_lease_windows.ps1
+      - name: Same native owner with one-time release CMS admission
+        shell: pwsh
+        run: ./tests/test_v3_pr661_task_file_lease_windows.ps1 -ReleaseVariant

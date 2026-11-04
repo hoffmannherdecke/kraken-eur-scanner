@@ -1,12 +1,17 @@
 # Isolated real Windows kernel/Task Scheduler test. Never run on the Mini-PC.
 [CmdletBinding()]
-param()
+param([switch]$ReleaseVariant)
 $ErrorActionPreference='Stop'
 if($env:OS -cne 'Windows_NT' -or $env:GITHUB_ACTIONS -cne 'true' -or
    $env:RUNNER_ENVIRONMENT -cne 'github-hosted'){
  throw 'V3_FILE_LEASE_EPHEMERAL_HOSTED_WINDOWS_ONLY'
 }
 $source=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'
+$originalSource=$source
+if($ReleaseVariant){
+ $source=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/v3-one-time-originalhost-release.psm1'
+ Import-Module (Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/v3-one-time-release-authorization.psm1') -Force
+}
 $t=$null;$e=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile($source,[ref]$t,[ref]$e)
 if(@($e).Count){throw 'V3_FILE_LEASE_SOURCE_AST_INVALID'}
@@ -71,6 +76,43 @@ function New-IssuerTestInput {
   ReviewedIssuerReaderCertificateSha256=$testPin
   ReviewedIssuerEpochId='V3CAS-AUDIT-99999999999999999999999999999999'
   ReviewedIssuerSourceSha256=('a'*64);armedFenceSha=('b'*64);ReviewedIssuerCallerAclSha256=('c'*64)}
+}
+if($ReleaseVariant){
+ # Adapt only the external machine admission to the exact disposable scope.
+ # Use the new real CMS authorization boundary on each mutation; never accept
+ # production roots, registered production tasks or a free authorized flag.
+ $originalAst=[Management.Automation.Language.Parser]::ParseFile($originalSource,[ref]$null,[ref]$null)
+ $scope=@($originalAst.FindAll({param($n)
+  $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Test-V3Pr661HostedOperatorScope'
+ },$true))
+ . ([scriptblock]::Create($scope[0].Extent.Text.Replace('Test-V3Pr661HostedOperatorScope','Test-V3ReleaseOriginalhostScope')))
+ $releaseHashes=Get-V3OneTimeReleaseArtifactInventory (Split-Path $PSScriptRoot -Parent)
+ $releaseClaim=[ordered]@{
+  kind='V3_ONE_TIME_RELEASE_AUTHORIZATION_V1';release_id=('V3-ONETIME-'+('e'*32));scope='ORIGINALHOST_ABORT_RESTORE'
+  base_commit='5b1789e349b157d06d3109c5f0ff10d95154bf81';release_commit=('1'*40)
+  not_before_utc=[datetimeoffset]::UtcNow.AddSeconds(-5).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  expires_at_utc=[datetimeoffset]::UtcNow.AddMinutes(10).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  project_ref='nlgzjmqgwueojlyqmoru';computer_name='MINI-PC';trading_root='C:\Users\ADMIN\Trading'
+  artifacts=$releaseHashes;bindings=@{policy='TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1'}
+ }
+ $releasePayload=[Text.Encoding]::UTF8.GetBytes(($releaseClaim|ConvertTo-Json -Compress -Depth 5))
+ $releaseCms=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new($releasePayload),$true)
+ $releaseSigner=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+ $releaseSigner.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1');$releaseCms.ComputeSignature($releaseSigner)
+ $releasePhases=[Collections.Generic.List[string]]::new()
+ function Assert-V3ReleaseMutationBoundary([string]$Phase){
+  $null=Assert-V3OneTimeReleaseAuthorization -Payload $releasePayload -Cms ([byte[]]$releaseCms.Encode()) `
+   -ReviewedAuthorityCertificateSha256 $testPin -Scope ORIGINALHOST_ABORT_RESTORE `
+   -ExpectedReleaseCommit ('1'*40) -ExpectedArtifacts $releaseHashes
+  if(Get-Variable terminalPath -ErrorAction SilentlyContinue){
+   $v=Test-V3Pr515SignedPreparedAbortReadback -Payload ([IO.File]::ReadAllBytes($terminalPath)) `
+    -Cms ([IO.File]::ReadAllBytes($terminalCmsPath)) -ReviewedCertSha256 $testPin `
+    -ExpectedEpochId 'V3CAS-AUDIT-99999999999999999999999999999999' `
+    -ExpectedSourceSha256 ('a'*64) -ExpectedFenceSha256 $operatorFenceSha -ExpectedAclSha256 ('c'*64)
+   if($v.signed_abort_fields_and_pins_match -ne $true){throw 'V3_RELEASE_FRESH_TERMINAL_ABORT_REQUIRED_NO_REARM'}
+   $releasePhases.Add($Phase)
+  }
+ }
 }
 $suffix=[guid]::NewGuid().ToString('N')
 $name='PR661-CI-FileLease-'+$suffix
@@ -388,11 +430,32 @@ Start-Sleep -Seconds 120
  try{$null=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY @productionInput}
  catch{if($_.Exception.Message -notlike '*NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED*'){throw};$productionRejected=$true}
  if(-not $productionRejected){throw 'FAIL_FULL_OPERATOR_PRODUCTION_GATE_OPENED'}
+ if($ReleaseVariant){
+  $badTerminalDenied=$false
+  try{$null=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY @fullInput}
+  catch{if($_.Exception.Message -notlike '*FRESH_TERMINAL_ABORT_REQUIRED*'){throw};$badTerminalDenied=$true}
+  if(-not $badTerminalDenied -or @($fullTaskNames|Where-Object {
+     [string](Get-ScheduledTask -TaskName $_ -TaskPath '\').State -cne 'Running'}).Count){
+   throw 'FAIL_RELEASE_TERMINAL_BARRIER_DID_NOT_PRECEDE_STOP'
+  }
+  $earlyAbort=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$fullAbortBytes),$true)
+  $earlyAbort.ComputeSignature($fullSigner)
+  [IO.File]::WriteAllBytes($terminalCmsPath,[byte[]]$earlyAbort.Encode())
+  $earlyCollision=Join-Path $state ('v3-experimental-paper-old-intake-fence.aborted-'+$fullInput.ReviewedIssuerEpochId+'.json')
+  [IO.File]::WriteAllText($earlyCollision,'do not overwrite')
+  $heldResult=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY @fullInput
+  $completeSession=$heldResult.held_session
+  if($heldResult.status -cne 'HOLD_FENCE_AND_SESSION_NO_AUTOMATIC_REARM' -or
+     $heldResult.error_code -cne 'V3_PRECOMMIT_ARCHIVE_COLLISION_PRESERVE_PAIR_AND_FENCE'){
+   throw ('FAIL_RELEASE_HELD_COLLISION_PATH: '+$heldResult.status+' '+$heldResult.error_code)
+  }
+ }else{
  $heldResult=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY @fullInput
  $completeSession=$heldResult.held_session
  if($heldResult.status -cne 'HOLD_FENCE_AND_SESSION_NO_AUTOMATIC_REARM' -or
     $heldResult.error_code -cne 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED'){
   throw ('FAIL_FULL_OPERATOR_INVALID_ABORT_PATH: '+$heldResult.status+' '+$heldResult.error_code)
+ }
  }
  if(-not(Test-V3Pr661HeldIntakeDefinitionPair $completeSession.pair $fullTaskNames) -or -not(Test-Path $markerPath)){
   throw 'FAIL_FULL_OPERATOR_ERROR_LOST_PAIR_OR_FENCE'
@@ -432,6 +495,12 @@ Start-Sleep -Seconds 120
   if([string](Get-ScheduledTask -TaskName $n -TaskPath '\').State -cne 'Running'){throw 'FAIL_FULL_OPERATOR_INTAKE_NOT_RESTORED'}
  }
 
+ if($ReleaseVariant){
+  foreach($phase in @('STOP','RESTORE','ARCHIVE')){
+   if(-not $releasePhases.Contains($phase)){throw ('FAIL_RELEASE_SIGNATURE_PHASE_NOT_REACHED_'+$phase)}
+  }
+  Write-Output 'V3_ONE_TIME_RELEASE_SIGNED_TERMINAL_BEFORE_STOP_COMPLETE_NATIVE_RESTORE_ARCHIVE_PASS'
+ }
  [pscustomobject]@{
   kind='V3_PR661_HOSTED_DISABLED_TASK_FILE_LEASE_V1'
   complete_original_armed_abort_restore_and_aftercare=$true
