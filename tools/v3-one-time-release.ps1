@@ -2,7 +2,7 @@
 # Default is local inventory only. No implicit installation, STOP, CAS or Paper.
 [CmdletBinding()]
 param(
- [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore')][string]$Mode='Inventory',
+ [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','Stage4Epoch')][string]$Mode='Inventory',
  [string]$PackageRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$ApprovalJson='', [string]$ApprovalCms='', [string]$ExpectedReleaseCommit='',
  [string]$AuthorityAdmissionJson='', [string]$ExpectedAuthorityAdmissionSha256='',
@@ -107,6 +107,13 @@ function Get-V3ReleaseVerifiedReadback([string]$Sql,[string]$ReleaseSql,[Securit
 }
 
 $hashes=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $PackageRoot
+if($Mode -eq 'Stage4Epoch'){
+ foreach($path in @('supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql',
+  'supabase/v3-cas-audit-stage4-original-epoch-open-release.sql',
+  'supabase/v3-cas-audit-stage4-original-epoch-open-readback.sql')){
+  $hashes[$path]=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes -Path (Join-Path $PackageRoot $path) -MaxBytes 1048576)
+ }
+}
 $packageLease=Open-V3ReleasePackageReadLease -PackageRoot $PackageRoot -Inventory $hashes
 try {
 if($Mode -eq 'Inventory'){
@@ -115,7 +122,9 @@ if($Mode -eq 'Inventory'){
  return
 }
 Assert-V3OriginalInteractiveOwner
-$scope=if($Mode -eq 'OriginalhostAbortRestore'){'ORIGINALHOST_ABORT_RESTORE'}else{'CLOUD_ABORT_INSTALL'}
+$scope=if($Mode -eq 'OriginalhostAbortRestore'){'ORIGINALHOST_ABORT_RESTORE'}
+ elseif($Mode -eq 'Stage4Epoch'){'CLOUD_STAGE4_EPOCH_OPEN'}
+ else{'CLOUD_ABORT_INSTALL'}
 $approval=$null;$cms=$null;$authorityPin='';$authorized=$null
 if($Mode -ne 'ReadbackCloud'){
  # The independent admission record is supplied by the existing #99 authority,
@@ -141,6 +150,64 @@ if($Mode -eq 'OriginalhostAbortRestore'){
   -ExpectedReleaseCommit $ExpectedReleaseCommit -IssuerPrestopJson $IssuerPrestopJson -IssuerPrestopCms $IssuerPrestopCms `
   -TerminalAbortJson $TerminalAbortJson -TerminalAbortCms $TerminalAbortCms `
   -InstallReadbackJson $InstallReadbackJson -BackupDirectory $BackupDirectory|ConvertTo-Json -Depth 6
+ return
+}
+if($Mode -eq 'Stage4Epoch'){
+ # Existing release authority admission + detached CMS verification occurred
+ # above. This path never generates an EpochId or promotes old runtime hashes.
+ $a=$authorized.claims
+ $b=$a.bindings
+ $fields=@('epoch_id','source_sha256','fence_sha256','caller_acl_sha256',
+           'runtime_release_commit','successor_series_id','bundle_sha256','strategy_sha256')
+ if(@($b.PSObject.Properties).Count -ne $fields.Count -or
+    @($b.PSObject.Properties.Name|Where-Object {$_ -cnotin $fields}).Count -or
+    [string]$b.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+    [string]$b.source_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    [string]$b.caller_acl_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    [string]$b.fence_sha256 -cne '36452e8fff4a9d7020eb39545dbd258fed880e00928a84a615c819e14b167e35' -or
+    [string]$b.runtime_release_commit -cne 'ebb39488530d9c032e082ca7ab4ae8d3e1f0a719' -or
+    [string]$b.successor_series_id -cne 'PAPER-V3-20261104T133710Z' -or
+    [string]$b.bundle_sha256 -cne '443ae85e299828c4c2e3779d6e2fb80aeb9a0b7966b7f6923f91524c35fdfc67' -or
+    [string]$b.strategy_sha256 -cne 'aaef6e75e91b2825f194393dbb7de57e26097fd22397629b898f8c69541b0f6a'){
+  throw 'V3_STAGE4_EPOCH_INDEPENDENT_BINDINGS_HOLD'
+ }
+ $releaseSql=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes -Path (Join-Path $PackageRoot 'supabase/v3-cas-audit-stage4-original-epoch-open-release.sql') -MaxBytes 1048576))
+ $readbackSql=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes -Path (Join-Path $PackageRoot 'supabase/v3-cas-audit-stage4-original-epoch-open-readback.sql') -MaxBytes 1048576))
+ # A second independent reader/Notebook signature is REQUIRED later; this
+ # original admin postflight does not itself constitute independent custody.
+ $settings=@{
+  scope='CLOUD_STAGE4_EPOCH_OPEN';release_commit=[string]$a.release_commit
+  approval_sha256=$authorized.approval_sha256
+  epoch_id=[string]$b.epoch_id;source_sha256=[string]$b.source_sha256
+  fence_sha256=[string]$b.fence_sha256;caller_acl_sha256=[string]$b.caller_acl_sha256
+  runtime_release_commit=[string]$b.runtime_release_commit
+  successor_series_id=[string]$b.successor_series_id
+  bundle_sha256=[string]$b.bundle_sha256;strategy_sha256=[string]$b.strategy_sha256
+  expires_at=$authorized.expires_at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+ }
+ if($null -eq $PostgresPassword){$PostgresPassword=Read-Host 'Existing postgres password (not saved)' -AsSecureString}
+ $prefix=@(foreach($key in $settings.Keys){
+  "SELECT set_config('v3_stage4.$key','$($settings[$key])',false);"
+ }) -join "`n"
+ # Exactly one original transaction. Timeout/connection loss: UNKNOWN, NO retry.
+ $null=Invoke-V3ReleasePg -Sql ($prefix+"`n"+$releaseSql) -Password $PostgresPassword -Ca $CaFile
+ $original=Invoke-V3ReleasePg -Sql $readbackSql -Password $PostgresPassword -Ca $CaFile
+ $row=$original|ConvertFrom-Json -ErrorAction Stop
+ if([string]$row.kind -cne 'V3_STAGE4_EPOCH_COMMITTED_READBACK_V1' -or
+    [int]$row.epoch_count -ne 1 -or [string]$row.epoch_id -cne [string]$b.epoch_id -or
+    [string]$row.source_sha256 -cne [string]$b.source_sha256 -or
+    [string]$row.original_fence_sha256 -cne [string]$b.fence_sha256 -or
+    [string]$row.approved_caller_acl_sha256 -cne [string]$b.caller_acl_sha256 -or
+    [string]$row.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    [string]$row.expected_rpc -cne 'public.rotate_v2r4_to_v3_experimental_paper' -or
+    [int]$row.next_ordinal -ne 1 -or $row.sealed -ne $false -or
+    [int]$row.intent_count -ne 0 -or [int]$row.attempt_count -ne 0 -or
+    [int]$row.inhibit_count -ne 0 -or [int]$row.abort_count -ne 0 -or
+    [int]$row.predecessor_active -ne 1 -or
+    $row.postgres_temp_insert -ne $false -or $row.postgres_temp_set_owner -ne $false){
+  throw 'V3_STAGE4_EPOCH_COMMIT_READBACK_HOLD_NO_RETRY'
+ }
+ $original
  return
 }
 $releaseSql=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes -Path (Join-Path $PackageRoot 'supabase/v3-cas-prepared-fence-abort-release.sql')))

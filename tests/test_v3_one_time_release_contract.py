@@ -4,6 +4,7 @@ import re
 import unittest
 from pathlib import Path
 from tools.build_v3_one_time_release import build, OUTPUT
+from tests.test_v3_stage4_epoch_release_source import Stage4OneTimeEpochContract
 
 ROOT=Path(__file__).resolve().parents[1]
 
