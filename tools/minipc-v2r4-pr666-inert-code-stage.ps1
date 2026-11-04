@@ -107,6 +107,7 @@ function Quiet([int]$seconds=195){
   throw ('PR666_HOLD: old/new Candidate or evaluator child alive PID='+(@($children|ForEach-Object{$_.ProcessId}) -join ','))
 }
 function StopBounded([string]$name){
+  if([string](Task $name).State -ne 'Running'){return}
   Stop-ScheduledTask -TaskName $name -ErrorAction Stop
   $end=(Get-Date).AddSeconds(25)
   do {
@@ -216,14 +217,12 @@ if($Execute){
     wait_cloudsync_mutated=$false
   }
   Save $maintenance $record
-  $mutated=$false
   try{
     # Existing supervisor can rearm Candidates before a bounded swap; suspend ONLY
     # this supervisor task for the maintenance window. Other tasks are untouched.
     StopBounded $supervisor
     Disable-ScheduledTask -TaskName $supervisor | Out-Null
     foreach($n in $names){StopBounded $n;Disable-ScheduledTask -TaskName $n|Out-Null}
-    $mutated=$true
     Quiet
     Need ((Sha (Join-Path $old 'paper_runtime_control.json')) -ceq [string]$record.original_control_sha256) 'control changed'
     $null=Verify-Stage
@@ -256,7 +255,8 @@ if($Execute){
           $processes=@(ActiveChildren | Where-Object {([string]$_.CommandLine).Replace('\','/').Contains($stageFile.Replace('\','/'))})
           if([string]$hb.status -ceq 'HEALTHY' -and $hbAt -gt $started -and
              ($hbAt-[datetime]::UtcNow).TotalSeconds -le 5 -and
-             $processes.Count -gt 0 -and (Sha $stageFile) -ceq [string]$m.new_file_sha256){
+             $processes.Count -gt 0 -and
+             @($processes | Where-Object {([datetime]$_.CreationDate).ToUniversalTime() -le $hbAt}).Count -gt 0 -and (Sha $stageFile) -ceq [string]$m.new_file_sha256){
             $healthy=$true
           }
         }catch{}
