@@ -89,4 +89,53 @@ function Assert-V3OneTimeReleaseAuthorization {
                          expires_at=$times.expires_at_utc}
 }
 
-Export-ModuleMember -Function Get-V3ReleaseSha256,Read-V3ReleaseJson,Assert-V3ReleaseCms,Assert-V3OneTimeReleaseAuthorization
+function Read-V3ReleaseLocalBytes([string]$Path,[int]$MaxBytes=65536) {
+ if(-not [IO.Path]::IsPathRooted($Path) -or $Path.StartsWith('\\') -or $Path.StartsWith('//')){
+  throw 'V3_RELEASE_LOCAL_PATH_REQUIRED'
+ }
+ $full=[IO.Path]::GetFullPath($Path)
+ $walk=$full
+ while($walk){
+  $item=Get-Item -LiteralPath $walk -Force -ErrorAction Stop
+  if([bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'V3_RELEASE_REPARSE_PATH_HOLD'}
+  $walk=[IO.Path]::GetDirectoryName($walk)
+ }
+ $item=Get-Item -LiteralPath $full -Force -ErrorAction Stop
+ if($item.PSIsContainer -or $item.Length -lt 1 -or $item.Length -gt $MaxBytes){throw 'V3_RELEASE_FILE_SIZE_HOLD'}
+ return ,[IO.File]::ReadAllBytes($full)
+}
+
+function Get-V3OneTimeReleaseArtifactInventory([string]$PackageRoot) {
+ $paths=@('tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1',
+  'tools/v3-one-time-originalhost-release.psm1','tools/check-minipc-v3-physical-writer-readiness.ps1',
+  'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1',
+  'supabase/v3-cas-prepared-fence-abort-INACTIVE.sql',
+  'supabase/v3-cas-prepared-fence-abort-release.sql',
+  'supabase/v3-cas-prepared-fence-abort-release-readback.sql')
+ $out=@{}
+ foreach($path in $paths){
+  $out[$path]=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes -Path (Join-Path $PackageRoot $path) -MaxBytes 1048576)
+ }
+ return $out
+}
+
+function Assert-V3ReleaseAuthorityAdmission([byte[]]$Bytes,[string]$ExpectedSha256,[string]$ReleaseCommit) {
+ if($ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    (Get-V3ReleaseSha256 $Bytes) -cne $ExpectedSha256){throw 'V3_RELEASE_INDEPENDENT_ADMISSION_HASH_HOLD'}
+ $a=Read-V3ReleaseJson $Bytes
+ $fields=@('kind','certificate_sha256','release_commit','independent_key_custody_accepted','original_approval_url')
+ if(@($a.PSObject.Properties).Count -ne $fields.Count -or
+    @($a.PSObject.Properties.Name|Where-Object {$_ -cnotin $fields}).Count -or
+    [string]$a.kind -cne 'V3_INDEPENDENT_RELEASE_AUTHORITY_ADMISSION_V1' -or
+    [string]$a.certificate_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ReleaseCommit -cnotmatch '^[a-f0-9]{40}$' -or [string]$a.release_commit -cne $ReleaseCommit -or
+    $a.independent_key_custody_accepted -isnot [bool] -or $a.independent_key_custody_accepted -ne $true -or
+    [string]$a.original_approval_url -cnotmatch '^https://github\.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-[0-9]+$'){
+  throw 'V3_RELEASE_INDEPENDENT_AUTHORITY_NOT_ADMITTED'
+ }
+ # ExpectedSha256 is an independent trust input from the reviewed #99
+ # execution instruction, not a digest discovered from this untrusted file.
+ return [string]$a.certificate_sha256
+}
+
+Export-ModuleMember -Function Get-V3ReleaseSha256,Read-V3ReleaseJson,Assert-V3ReleaseCms,Assert-V3OneTimeReleaseAuthorization,Read-V3ReleaseLocalBytes,Get-V3OneTimeReleaseArtifactInventory,Assert-V3ReleaseAuthorityAdmission

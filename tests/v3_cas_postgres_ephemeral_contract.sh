@@ -1061,13 +1061,50 @@ PY
 # Production issuer enrollment is already proven; synthetic CI enables only
 # the disposable role, never credentials or network access.
 pg_root_db -c "ALTER ROLE v3_cas_inhibit_issuer_actor LOGIN CONNECTION LIMIT 1;" >/dev/null
-python - "$abort_sql" <<'PY' | pg -f - >/dev/null
-import pathlib,sys
-s=pathlib.Path(sys.argv[1]).read_text('utf-8')
-lock=" RAISE EXCEPTION 'V3_PREPARED_ABORT_SOURCE_INACTIVE_NO_PRODUCTION_INSTALL';"
-assert s.count(lock)==1
-print(s.replace(lock," NULL; -- ISOLATED disposable PG17 only",1))
-PY
+# Exact new release SQL, without rewriting any hardlock. Only this isolated
+# database receives synthetic session context. CMS admission is tested by PS.
+release_sql="supabase/v3-cas-prepared-fence-abort-release.sql"
+release_readback="supabase/v3-cas-prepared-fence-abort-release-readback.sql"
+release_context() {
+ cat <<'SQL'
+SELECT set_config('v3_release.scope','CLOUD_ABORT_INSTALL',false);
+SELECT set_config('v3_release.base_commit','5b1789e349b157d06d3109c5f0ff10d95154bf81',false);
+SELECT set_config('v3_release.source_sha256','86dfebe688eda78ba14000a63f534e3295af63dcf19c48e07aab26d75e76fbd6',false);
+SELECT set_config('v3_release.approval_sha256',repeat('a',64),false);
+SELECT set_config('v3_release.release_commit',repeat('b',40),false);
+SELECT set_config('v3_release.release_id','V3-ONETIME-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',false);
+SELECT set_config('v3_release.expires_at',to_char(clock_timestamp()+interval '5 minutes' AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"'),false);
+SQL
+}
+if pg -f - < "$release_sql" >/dev/null 2>&1; then
+ echo 'FAIL_RELEASE_SQL_ACCEPTED_MISSING_CONTEXT' >&2; exit 1
+fi
+for fault in expired wrong_source partial_failure; do
+ if {
+   release_context
+   if [[ "$fault" == expired ]]; then
+    printf "SELECT set_config('v3_release.expires_at','2000-01-01T00:00:00Z',false);\n"
+   elif [[ "$fault" == wrong_source ]]; then
+    printf "SELECT set_config('v3_release.source_sha256',repeat('0',64),false);\n"
+   fi
+   if [[ "$fault" == partial_failure ]]; then
+    # Inject a failure *after* DDL, but before COMMIT, in the disposable stream.
+    sed '/^COMMIT;$/i DO $failure$ BEGIN RAISE EXCEPTION '\''CI_PARTIAL_FAILURE'\''; END $failure$;' "$release_sql"
+   else cat "$release_sql"; fi
+  } | pg -f - >/dev/null 2>&1; then
+   echo "FAIL_RELEASE_SQL_ACCEPTED_$fault" >&2; exit 1
+ fi
+ if [[ "$(pg -Atc "SELECT to_regclass('v3_cas_audit.prepared_fence_abort_v1') IS NULL AND NOT pg_has_role('postgres','v3_cas_audit_table_owner','SET') AND NOT has_schema_privilege('v3_cas_audit_table_owner','v3_cas_audit','CREATE')")" != t ]]; then
+  echo "FAIL_RELEASE_ROLLBACK_OR_PRIVILEGE_RESTORE_$fault" >&2; exit 1
+ fi
+done
+{ release_context; cat "$release_sql"; } | pg -f - >/dev/null
+pg -f - < "$release_readback" > /dev/null
+if { release_context; cat "$release_sql"; } | pg -f - >/dev/null 2>&1; then
+ echo 'FAIL_RELEASE_SQL_ALLOWED_SECOND_INSTALL' >&2; exit 1
+fi
+pg -f - < "$release_readback" >/dev/null
+echo 'V3_ONE_TIME_RELEASE_PG17_INSTALL_NEGATIVES_ROLLBACK_READBACK_REPLAY_PASS'
 # Reuse the existing restricted public/private CURRENT Reader definer. It
 # supplies original public-series truth; do not introduce public table grants.
 t0_sql="supabase/v3-cas-t0-private-reader-witness-INACTIVE.sql"
