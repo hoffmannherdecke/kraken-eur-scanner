@@ -160,3 +160,90 @@ SQL; generator/boundary/test files are development inputs, not extra device
 services. Versioned staging preserves original files. Actual rollout blocks
 must be pinned to the final reviewed commit and admitted independent record;
 this candidate intentionally contains no fabricated runnable production block.
+
+## Interrupted Gate B: enabled-only reconciliation of the same attempt
+
+`-Mode OriginalhostReconcile` extends this operator for the observed partial
+state: both original intake definitions are disabled, each original instance
+and its pre-window Python process family still runs, and the exact ARMED fence
+and original attempt journal remain. It never calls STOP, Start, process kill,
+SQL, Gate A, CAS or the V3 writer. This is cancellation/reconciliation of a
+partial attempt, **not** proof that the intended STOP rehearsal succeeded.
+
+The original `ORIGINALHOST_ABORT_RESTORE` authorization cannot admit this mode.
+The existing independent #99 authority must admit the repaired release and sign
+`ORIGINALHOST_ABORT_RECONCILE`, with the **same** `release_id`. Keep all 18
+original bindings exactly; add only:
+
+- `journal_sha256`: exact unchanged existing attempt journal;
+- `original_approval_sha256`: original expired approval bytes;
+- `evidence_sha256`: independently reviewed, unmodified originalhost JSON;
+- `reconciliation_policy`: `ENABLED_ONLY_CONTINUING_ORIGINALS_NO_STOP_V1`.
+
+The new approval pins the repaired eight-artifact inventory. The historical
+approval/CMS is verified mathematically as original evidence, not renewed or
+used as live execution authority. Its old release commit remains separate from
+the repair release. `-ExistingApprovalJson`, `-ExistingApprovalCms` and
+`-ReconciliationEvidenceJson` must be local original files. Admission still
+requires the real independent GitHub decision for the exact repair commit.
+No execution approval is granted by this document or a source merge.
+
+Under the existing operator mutex, verify the journal, historical CMS, approved
+state evidence, exact original backup, protected task hashes and signed fresh
+terminal abort. Obtain real handles on the already disabled task definitions;
+these are newly authorized reconciliation handles, **not** reconstructed old
+STOP handles. Reread effective XML with the original disabled-only comparator,
+Enabled and Running separately, one actual Scheduler instance per task, and
+all matching Python PIDs/creation times/parents. Require IgnoreNew instance
+policy (including its Scheduler default); reject Parallel/Queue/StopExisting.
+Reject changed actions,
+principals, triggers, other settings, process identities, or duplicate PIDs.
+No XML is imported or overwritten. Before enabling either definition, persist
+`<original-journal>.reconciliation-attempt.json` with CreateNew and Flush(true).
+This is a durable extension of the same attempt, not another transaction ID.
+No code deletes either latch. Release handles only at the authorized enable
+boundary; use the same native Enable API owner as normal restore, without
+starting another process. Check both definitions and original instances after
+each enable. Any partial error is UNKNOWN, preserving the journal/latch and
+ARMED fence; no automatic re-disable, rearm, STOP or retry is performed.
+
+After both fresh HEALTHY intake heartbeats, recheck live authority, original
+bytes, process identities, protected tasks and a fresh signed terminal abort
+(maximum 90 seconds). Archive the exact fence using the existing exclusive
+same-handle, non-overwriting NTFS rename primitive. The generic marker-only
+hardlocks remain unchanged. Parent-directory/privileged-operator custody and
+independent Reader provenance remain conditions of the supervised window;
+these handles do not defeat an arbitrary malicious administrator.
+
+Require fresh post-archive Supervisor HEALTHY/NONE, CloudSync HEALTHY/
+ACTIVE_ORIGINAL for only the original series, continuing original processes,
+and another independently signed Cloud Reader observation made **after** the
+archive. Revalidate live authority and original bytes after waiting. Only then
+CreateNew the original journal's `.completed.json`, with the distinct status
+`TERMINAL_ABORT_PARTIAL_ATTEMPT_RECONCILED_AFTERCARE_CONFIRMED`, explicit
+`successful_stop_claimed=false`, and no CAS/Paper permission. Do not translate
+this receipt into `TERMINAL_ABORT_STOP_RESTORE_AFTERCARE_CONFIRMED`. A lost or
+partial completion, expired authority, archive collision or ambiguous rename
+requires independent read-only reconciliation; neither this mode nor a new
+release ID authorizes a blind replay. After a late failure the archive may
+already exist: preserve it and examine actual state instead of recreating a
+fence or relaunching tasks.
+
+Minimal deployment: retain the original source stage and original evidence.
+Create a separate inactive repaired stage; copy the five unchanged pinned
+artifacts and download only the three changed runtime artifacts (launcher,
+authorization module, generated native module) at the reviewed merge commit.
+Validate all eight SHA256 values, then run Inventory only. Never overwrite an
+active V2R4 release or the historical Gate-B source stage. Notebook needs only
+the specific independent release admission/signature and its existing required
+read-only Cloud Reader; no additional operational Notebook responsibilities.
+Physical staging and reconciliation remain separate specifically authorized
+steps after SOURCE/CI/MERGE_DONE.
+
+Validation reuses existing CI: the release authorization suite includes the
+reconciliation regressions (real historical/new CMS, changed originals,
+Enabled=false/Running=true, semantic XML/action and PID drift, expiry,
+partial Enable, repeated reconciliation, unknown health/rename/aftercare and
+preserved latches). The existing disposable Windows native test checks the
+shared Enable owner preserves a running instance. No production host action
+occurs in either test.
