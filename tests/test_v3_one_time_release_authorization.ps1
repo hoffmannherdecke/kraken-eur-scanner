@@ -129,6 +129,52 @@ try {
     $inventory.cloud_contacted -ne $false){throw 'RELEASE_DEFAULT_HAS_AUTHORITY'};$checks++
  Import-Module (Join-Path $root 'tools/v3-one-time-originalhost-release.psm1') -Force
  $module=Get-Module 'v3-one-time-originalhost-release'
+ Import-Module (Join-Path $root 'tools/v3-one-time-release-authorization.psm1') -Force
+ # Gate B must consume the genuine earlier installation without rewriting it
+ # to the newer host release. Exact independently signed pins remain mandatory.
+ $installFixture=Join-Path ([IO.Path]::GetTempPath()) ('v3-install-'+[guid]::NewGuid().ToString('N')+'.json')
+ try {
+  $installRecord=[ordered]@{kind='V3_ONE_TIME_ABORT_INSTALL_READBACK_V1';verified=$true;
+   installation=[ordered]@{kind='V3_ONE_TIME_ABORT_INSTALL_V1';release_commit=('2'*40);
+    source_sha256=$hashes['supabase/v3-cas-prepared-fence-abort-INACTIVE.sql'];
+    release_id=('V3-ONETIME-'+('b'*32));approval_sha256=('c'*64)}}
+  $installBytes=[Text.Encoding]::UTF8.GetBytes(($installRecord|ConvertTo-Json -Compress -Depth 5))
+  [IO.File]::WriteAllBytes($installFixture,$installBytes)
+  $installBindings=[pscustomobject]@{install_release_commit=('2'*40);install_readback_sha256=(Get-V3ReleaseSha256 $installBytes)}
+  $installSource=$hashes['supabase/v3-cas-prepared-fence-abort-INACTIVE.sql']
+  & $module {param($p,$b,$s) Assert-V3ReleaseInstalledAbortReadback -Path $p -Bindings $b -ExpectedSourceSha256 $s} $installFixture $installBindings $installSource
+  $checks++
+  foreach($failure in @('wrong_commit','missing_commit','wrong_hash','wrong_source','changed_bytes',
+    'unverified','string_verified','wrong_kind','wrong_install_kind','bad_install_id','bad_approval')){
+   $b=[pscustomobject]@{install_release_commit=('2'*40);install_readback_sha256=(Get-V3ReleaseSha256 $installBytes)}
+   $record=([Text.Encoding]::UTF8.GetString($installBytes))|ConvertFrom-Json
+   $sourcePin=$installSource
+   switch($failure){
+    wrong_commit {$b.install_release_commit=('1'*40)}
+    missing_commit {$b.install_release_commit=''}
+    wrong_hash {$b.install_readback_sha256=('0'*64)}
+    wrong_source {$sourcePin=('0'*64)}
+    changed_bytes {[IO.File]::WriteAllBytes($installFixture,([byte[]]($installBytes+32)))}
+    unverified {$record.verified=$false}
+    string_verified {$record.verified='true'}
+    wrong_kind {$record.kind='WRONG'}
+    wrong_install_kind {$record.installation.kind='WRONG'}
+    bad_install_id {$record.installation.release_id='WRONG'}
+    bad_approval {$record.installation.approval_sha256='WRONG'}
+   }
+   if($failure -in @('unverified','string_verified','wrong_kind','wrong_install_kind','bad_install_id','bad_approval')){
+    $altered=[Text.Encoding]::UTF8.GetBytes(($record|ConvertTo-Json -Compress -Depth 5))
+    [IO.File]::WriteAllBytes($installFixture,$altered)
+    $b.install_readback_sha256=Get-V3ReleaseSha256 $altered
+   }
+   $denied=$false
+   try{& $module {param($p,$b,$s) Assert-V3ReleaseInstalledAbortReadback -Path $p -Bindings $b -ExpectedSourceSha256 $s} $installFixture $b $sourcePin}catch{$denied=$true}
+   if(-not $denied){throw ('GATE_B_INSTALL_PROVENANCE_NEGATIVE_ACCEPTED_'+$failure)}
+   $checks++
+   [IO.File]::WriteAllBytes($installFixture,$installBytes)
+  }
+  Write-Output 'V3_GATE_B_DISTINCT_INSTALL_RELEASE_AND_EXACT_RECEIPT_NEGATIVES_PASS'
+ }finally{if([IO.File]::Exists($installFixture)){[IO.File]::Delete($installFixture)}}
  $scopeDenied=& $module {Test-V3ReleaseOriginalhostScope -Root 'C:\Users\ADMIN\Trading' -Tasks @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')}
  if($scopeDenied){throw 'RELEASE_MISSING_SESSION_ACCEPTED'};$checks++
  # An expired signed session cannot reach any generated native owner.

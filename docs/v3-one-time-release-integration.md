@@ -95,8 +95,26 @@ Host bindings are exactly `epoch_id`, `source_sha256`, `fence_sha256`,
 `backup_manifest_sha256`, `successor_series_id`, `bundle_sha256`,
 `strategy_sha256`, `candidate_repo_sha`, `lifecycle_xml_sha256`,
 `cloudsync_xml_sha256`, `v3_writer_xml_sha256`, `install_readback_sha256`,
-and `policy=TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1`. The Reader source pin is the already staged original Reader SHA256 `c81dbdca986da4fb5143bc1a315cb3b7dd548e0b6f338a02f0992767b6af2ba5`. The independent authority must accept the genuine Reader provenance and its separate key custody before signing these bindings; signing supplied third-party JSON is not such evidence. These are original observed bindings, not synthetic development values. The host also requires the
-installation readback's recorded release commit to match this exact release.
+`install_release_commit`, and `policy=TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1`.
+These are exactly eighteen bindings. The Reader source pin is the already
+staged original Reader SHA256 `c81dbdca986da4fb5143bc1a315cb3b7dd548e0b6f338a02f0992767b6af2ba5`.
+The independent authority must accept the genuine Reader provenance and its
+separate key custody before signing these bindings; signing supplied third-party
+JSON is not such evidence. These are original observed bindings, not synthetic
+development values.
+
+The installation commit is the immutable commit recorded by the completed
+Cloud installation, independently accepted in `install_release_commit`.
+It is separate from the current host execution `release_commit`. For the
+completed installation in #6627552137 it is
+`b019448331dfeb1052d543486a077ac2404651e4`; do not repeat installation or edit
+its record to make it match a later CLI. The exact original readback bytes are
+independently pinned by `install_readback_sha256`. Before the attempt journal
+and again at every STOP/restore/archive boundary the operator checks that digest,
+the original installation kind, commit, release/approval identities and the
+installed abort source hash against the reviewed package. A new host approval
+must explicitly accept both identities; an earlier seventeen-binding approval
+is rejected. Cloud DDL and its original catalog record remain unchanged.
 
 ## Authorized execution interface
 
