@@ -529,6 +529,9 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
    Assert-V3ReconciliationResumeReceipt -Claims $a -Receipt (Read-V3ReleaseLocalBytes ($journalPath+'.awaiting-post-archive-reader.json'))
    return Complete-V3ReleasePostArchive -Context $ctx -After $after
   }
+  if('post_archive_receipt_sha256' -cin @($b.PSObject.Properties.Name)){
+   throw 'V3_RECONCILE_CONTINUATION_PIN_WITHOUT_ATTEMPT_HOLD'
+  }
   if((Test-Path -LiteralPath $archive) -or
      (Test-Path -LiteralPath (Join-Path $script:V3ReleaseRoot 'State\v2r4-technical-cutover-maintenance.json'))){
    throw 'V3_RECONCILE_ARCHIVE_OR_FOREIGN_MAINTENANCE_HOLD'
