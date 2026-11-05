@@ -235,3 +235,34 @@ COMMIT;
 "@
 }
 Export-ModuleMember -Function Assert-V3GateAReceipt,Get-V3GateATransaction
+
+# Historical attempt authorization is evidence, never a renewed clock window.
+# A new live CMS can finalize only the exact same release and transaction.
+function Assert-V3ReconciliationContinuationAuthority(
+ [byte[]]$HistoricalPayload,[byte[]]$HistoricalCms,[string]$AuthorityPin,[object]$Current) {
+ Assert-V3ReleaseCms -Payload $HistoricalPayload -Cms $HistoricalCms -ReviewedAuthorityCertificateSha256 $AuthorityPin
+ $old=Read-V3ReleaseJson $HistoricalPayload
+ foreach($field in @('kind','scope','release_id','base_commit','release_commit','computer_name','trading_root','project_ref')){
+  if([string]$old.$field -cne [string]$Current.$field){throw 'V3_RECONCILE_CONTINUATION_AUTHORITY_DRIFT'}
+ }
+ foreach($group in @('bindings','artifacts')){
+  $left=@($old.$group.PSObject.Properties);$right=@($Current.$group.PSObject.Properties|Where-Object {$_.Name -cne 'post_archive_receipt_sha256'})
+  if($left.Count -ne $right.Count){throw 'V3_RECONCILE_CONTINUATION_BINDING_DRIFT'}
+  foreach($p in $left){
+   if([string]$p.Value -cne [string]$Current.$group.($p.Name)){throw 'V3_RECONCILE_CONTINUATION_BINDING_DRIFT'}
+  }
+ }
+}
+Export-ModuleMember -Function Assert-V3ReconciliationContinuationAuthority
+
+# A restarted process cannot trust a mutable local timestamp alone. The existing
+# independent authority must pin the persisted continuation receipt (which in
+# turn pins the pre-archive checkpoint and the original signed attempt).
+function Assert-V3ReconciliationResumeReceipt([object]$Claims,[byte[]]$Receipt) {
+ $pin=@($Claims.bindings.PSObject.Properties|Where-Object Name -CEQ 'post_archive_receipt_sha256')
+ if($pin.Count -ne 1 -or [string]$pin[0].Value -cnotmatch '^[a-f0-9]{64}$' -or
+    [string]$pin[0].Value -cne (Get-V3ReleaseSha256 $Receipt)){
+  throw ('V3_RECONCILE_SPECIFIC_CONTINUATION_AUTHORITY_REQUIRED receipt_sha256='+ (Get-V3ReleaseSha256 $Receipt))
+ }
+}
+Export-ModuleMember -Function Assert-V3ReconciliationResumeReceipt
