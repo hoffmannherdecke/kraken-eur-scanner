@@ -1216,7 +1216,7 @@ docker exec -u postgres "$container" sh -ec '
 '
 pg_root_db -c 'SELECT pg_reload_conf();' >/dev/null
 issuer_transaction() {
- docker exec -e PGPASSWORD='CI-ISSUER-NO-PRODUCTION-SECRET' "$container" \
+ docker exec --interactive -e PGPASSWORD='CI-ISSUER-NO-PRODUCTION-SECRET' "$container" \
   psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 \
   -U v3_cas_inhibit_issuer_actor -d postgres "$@"
 }
