@@ -9,7 +9,8 @@ if($e.Count){throw 'RECONCILE_AST_INVALID'}
 foreach($name in @('Assert-V3ReleaseReconciliationIdentity','Assert-V3ReleaseReconciliationOriginals',
  'Complete-V3ReleaseExistingAttempt','Enable-V3ReleaseIntakeDefinition','Read-V3ReleaseContinuingIntakes',
  'Read-V3ReleaseReconciliationHeartbeat','Wait-V3ReleaseReconciliationHealth','Wait-V3ReleaseReconciliationTerminal',
- 'Test-V3Pr515DisabledOnlyXmlDifference')){
+ 'Test-V3Pr515DisabledOnlyXmlDifference','Write-V3ReleaseImmutableReceipt','Write-V3ReleaseArchiveCheckpoint',
+ 'Assert-V3ReleasePostArchiveBoundary','Get-V3ReleasePostArchiveBoundary','Complete-V3ReleasePostArchive')){
  $defs=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true))
  if($defs.Count -ne 1){throw ('RECONCILE_HELPER_MISSING_'+$name)}
  . ([scriptblock]::Create($defs[0].Extent.Text))
@@ -131,6 +132,43 @@ try{
  $originalContext.authority_pin=$pin
  [IO.File]::AppendAllText($evidencePath,' ')
  Deny {Assert-V3ReleaseReconciliationOriginals $originalContext} 'EVIDENCE_BYTE_DRIFT'
+ # Exercise the REAL signed Reader verifier through the real polling helper.
+ $readerModule=Import-Module (Join-Path $root 'tools/v3-one-time-originalhost-release.psm1') -Force -PassThru
+ Import-Module (Join-Path $root 'tools/v3-one-time-release-authorization.psm1') -Force
+ function Test-V3Pr515SignedPreparedAbortReadback {
+  param($Payload,$Cms,$ReviewedCertSha256,$ExpectedEpochId,$ExpectedSourceSha256,$ExpectedFenceSha256,$ExpectedAclSha256)
+  return (& $readerModule {param($p,$c,$pin,$epoch,$source,$fence,$acl)
+   Test-V3Pr515SignedPreparedAbortReadback $p $c $pin $epoch $source $fence $acl
+  } $Payload $Cms $ReviewedCertSha256 $ExpectedEpochId $ExpectedSourceSha256 $ExpectedFenceSha256 $ExpectedAclSha256)
+ }
+ function Start-Sleep {param($Seconds) throw 'TEST_BOUNDED_READER_OBSERVATION_ENDED'}
+ $readerClaim=Clone $claim;$readerClaim.bindings.reader_certificate_sha256=$pin
+ $readerContext=[pscustomobject]@{authorization=[pscustomobject]@{claims=$readerClaim;expires_at=[datetimeoffset]::UtcNow.AddMinutes(10)}
+  abort_json=(Join-Path $temp 'reader.json');abort_cms=(Join-Path $temp 'reader.cms')}
+ foreach($readerCase in @('timely','before_archive','wrong_epoch','invalid_cms','missing','stale')){
+  $record=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1'
+   epoch_id=$bindings.epoch_id;source_sha256=$bindings.source_sha256;prepared_fence_sha256=$bindings.fence_sha256
+   caller_acl_sha256=$bindings.caller_acl_sha256;issuer_actor='v3_cas_inhibit_issuer_actor';receipt_sha256=('d'*64)
+   state='ABORT_RECORDED_NOT_RELEASED';created_at_utc=[datetimeoffset]::UtcNow.AddHours(-1).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+   observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+   cloud_observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+   cloud_active_series_count=1;cloud_original_active_series_count=1;cloud_cas_rpc_count=0;cloud_executor_can_login=$false}
+  if($readerCase -ceq 'wrong_epoch'){$record.epoch_id='V3CAS-AUDIT-'+('f'*32)}
+  if($readerCase -ceq 'stale'){
+   $record.observed_at_utc=[datetimeoffset]::UtcNow.AddMinutes(-3).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+   $record.cloud_observed_at_utc=$record.observed_at_utc
+  }
+  $signedReader=Sign $record
+  [IO.File]::WriteAllBytes($readerContext.abort_json,$signedReader.Payload)
+  [IO.File]::WriteAllBytes($readerContext.abort_cms,$signedReader.Cms)
+  if($readerCase -ceq 'invalid_cms'){[IO.File]::WriteAllBytes($readerContext.abort_cms,[byte[]](1,2,3))}
+  if($readerCase -ceq 'missing'){[IO.File]::Delete($readerContext.abort_json)}
+  $archiveBoundary=[datetimeoffset]::UtcNow.AddSeconds(-5)
+  if($readerCase -ceq 'before_archive'){$archiveBoundary=[datetimeoffset]::UtcNow.AddSeconds(1)}
+  if($readerCase -ceq 'timely'){
+   $null=Wait-V3ReleaseReconciliationTerminal $readerContext $archiveBoundary;Check $true 'REAL_CMS_POST_ARCHIVE_TIMELY'
+  }else{Deny {Wait-V3ReleaseReconciliationTerminal $readerContext $archiveBoundary} ('REAL_CMS_READER_'+$readerCase)}
+ }
  # Actual timestamp/freshness helper: unhealthy, stale and future observations
  # cannot become aftercare success. No clock extension from an expired session.
  $heartbeat=Join-Path $temp 'heartbeat.json'
@@ -198,6 +236,7 @@ try{
  $null=[IO.Directory]::CreateDirectory((Join-Path $temp 'State'))
  function Read-V3ReleaseContinuingIntakes {param($Context,$EnabledNames=@())
   foreach($n in $Context.tasks){if($script:state[$n] -ne ($n -cin $EnabledNames)){throw 'TEST_STATE_MISMATCH'}}
+  if($script:scenario -ceq 'process_drift'){throw 'PROCESS_DRIFT'}
   return ,@([pscustomobject]@{name=$names[0];instance_id='one'},[pscustomobject]@{name=$names[1];instance_id='two'})
  }
  function Test-V3Pr661HeldIntakeDefinitionPair {param($Pair,$TaskNames) return $true}
@@ -230,13 +269,27 @@ try{
  function Assert-V3ReleaseReconciliationOriginals {param($Context)
   if((Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($Context.journal_path))) -cne $Context.authorization.claims.bindings.journal_sha256){throw 'JOURNAL_CHANGED'}
  }
- function Assert-V3ReleaseProtectedTasks {param($Bindings)}
- function Wait-V3ReleaseReconciliationTerminal {param($Context,$After) return [pscustomobject]@{payload=[byte[]](1,2);cms=[byte[]](3,4)}}
+ function Assert-V3ReleaseProtectedTasks {param($Bindings)
+  if($script:scenario -ceq 'task_drift'){throw 'TASK_DRIFT'}
+ }
+ function Test-V3ReleaseOriginalhostScope {param($Root,$Tasks)
+  return ([datetimeoffset]::UtcNow -lt $script:V3ReleaseContext.authorization.expires_at)
+ }
+ function Assert-V3ReleaseAuthorityAdmission {param($Bytes,$ExpectedSha256,$ReleaseCommit) return $pin}
+ function Assert-V3ReleaseInstalledAbortReadback {param($Path,$Bindings,$ExpectedSourceSha256)}
+ function Wait-V3ReleaseReconciliationTerminal {param($Context,$After)
+  if($script:scenario -ceq 'reader_missing'){throw 'READER_MISSING'}
+  return [pscustomobject]@{payload=[byte[]](1,2);cms=[byte[]](3,4)}}
  function Test-V3Pr515SignedPreparedAbortReadback {param($Payload,$Cms,$ReviewedCertSha256,$ExpectedEpochId,$ExpectedSourceSha256,$ExpectedFenceSha256,$ExpectedAclSha256)
   return [pscustomobject]@{signed_abort_fields_and_pins_match=($script:scenario -cne 'final_reader_unknown')}
  }
+ $script:immutableWriter=${function:Write-V3ReleaseImmutableReceipt}
+ function Write-V3ReleaseImmutableReceipt {param($Path,$Value)
+  if($script:scenario -ceq 'awaiting_persist_crash' -and $Path.EndsWith('.awaiting-post-archive-reader.json')){throw 'SIMULATED_CRASH_BEFORE_AWAITING_PERSIST'}
+  & $script:immutableWriter $Path $Value
+ }
  $script:archiveLeaf='v3-experimental-paper-old-intake-fence.aborted-'+$bindings.epoch_id+'.json'
- foreach($scenario in @('success','second_enable_unknown','expiry_after_first','health_unknown','archive_unknown_before','archive_unknown_after','aftercare_unknown','final_reader_unknown','expired_initial')){
+ foreach($scenario in @('success','second_enable_unknown','expiry_after_first','health_unknown','archive_unknown_before','archive_unknown_after','aftercare_unknown','final_reader_unknown','reader_missing','awaiting_persist_crash','expired_initial')){
   $script:scenario=$scenario;$script:enables=0;$script:archives=0
   $case=Join-Path $temp $scenario;$null=[IO.Directory]::CreateDirectory($case)
   $script:V3ReleaseRoot=$case;$null=[IO.Directory]::CreateDirectory((Join-Path $case 'State'))
@@ -244,8 +297,11 @@ try{
   $journalSha=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath))
   $fence=Join-Path $case 'State/v3-experimental-paper-old-intake-fence.json';[IO.File]::WriteAllText($fence,'original fence bytes')
   $c=Clone $claim;$c.bindings.journal_sha256=$journalSha;$c.bindings.fence_sha256=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($fence))
-  $ctx=[pscustomobject]@{authorization=[pscustomobject]@{claims=$c;expires_at=[datetimeoffset]::UtcNow.AddMinutes(10);approval_sha256=('f'*64)}
-   tasks=$names;payload=[byte[]](1);cms=[byte[]](2);authority_pin=$pin;package_root=$root;journal_path=$journalPath
+  $caseSigned=Sign $c
+  $ctx=[pscustomobject]@{authorization=[pscustomobject]@{claims=$c;expires_at=[datetimeoffset]::UtcNow.AddMinutes(10);approval_sha256=(Get-V3ReleaseSha256 $caseSigned.Payload)}
+   tasks=$names;payload=$caseSigned.Payload;cms=$caseSigned.Cms;authority_pin=$pin;package_root=$root;journal_path=$journalPath
+   admission_bytes=[byte[]](1);admission_sha256=('0'*64);catalog_readback='fixture'
+   continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()
    enabled_names=@();instance_snapshot=@([pscustomobject]@{name=$names[0];instance_id='one'},[pscustomobject]@{name=$names[1];instance_id='two'})}
   if($scenario -ceq 'expired_initial'){$ctx.authorization.expires_at=[datetimeoffset]::UtcNow.AddSeconds(-1)}
   $script:V3ReleaseContext=$ctx
@@ -272,10 +328,61 @@ try{
     Check ($script:enables -eq $before) 'REPLAY_NO_ENABLE'
    }
    $archived=Test-Path (Join-Path $case ('State/'+$script:archiveLeaf))
-   if($scenario -cin @('success','archive_unknown_after','aftercare_unknown','final_reader_unknown')){
+   if($scenario -cin @('success','archive_unknown_after','aftercare_unknown','final_reader_unknown','reader_missing','awaiting_persist_crash')){
     Check ($archived -and -not(Test-Path $fence)) 'ARCHIVE_PRESERVED_ON_LATE_UNKNOWN'
    }else{Check ((Test-Path $fence) -and -not $archived) 'ARMED_PRESERVED_BEFORE_ARCHIVE'}
-  }finally{$stream.Dispose()}
+   if($scenario -cin @('archive_unknown_after','aftercare_unknown','final_reader_unknown','reader_missing','awaiting_persist_crash')){
+    $beforeEnable=$script:enables;$beforeArchive=$script:archives
+    $attemptSha=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath+'.reconciliation-attempt.json'))
+    $script:scenario='success'
+    # A new process context must recover the original instances from durable
+    # evidence, never accept a caller's current snapshot as the old one.
+    $ctx.instance_snapshot=$null;$ctx.enabled_names=@()
+    $after=Get-V3ReleasePostArchiveBoundary $ctx
+    Check (Test-Path ($journalPath+'.awaiting-post-archive-reader.json')) 'DURABLE_AWAITING_STATE'
+    $awaiting=Read-V3ReleaseJson ([IO.File]::ReadAllBytes($journalPath+'.awaiting-post-archive-reader.json'))
+    Check ($awaiting.state -ceq 'AWAITING_POST_ARCHIVE_READER') 'AWAITING_STATE_NAME'
+    # Preserve every byte of the checkpoint across repeated failed calls.
+    $checkpointSha=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath+'.pre-archive.json'))
+    $savedPayload=$ctx.payload;$savedCms=$ctx.cms;$savedClaim=$ctx.authorization.claims
+    foreach($drift in @('epoch_id','journal_sha256','source_sha256')){
+     $changed=Clone $savedClaim;$changed.bindings.$drift=('0'*64)
+     $ctx.authorization.claims=$changed
+     Deny {Get-V3ReleasePostArchiveBoundary $ctx} ('RESUME_BINDING_DRIFT_'+$drift)
+    }
+    $ctx.authorization.claims=$savedClaim
+    $changed=Clone $savedClaim;$changed.release_commit=('0'*40);$ctx.authorization.claims=$changed
+    Deny {Get-V3ReleasePostArchiveBoundary $ctx} 'RESUME_RELEASE_DRIFT';$ctx.authorization.claims=$savedClaim
+    foreach($drift in @('task_drift','process_drift')){
+     $script:scenario=$drift;Deny {Get-V3ReleasePostArchiveBoundary $ctx} ('RESUME_'+$drift)
+    }
+    $script:scenario='success'
+    $ctx.authorization.expires_at=[datetimeoffset]::UtcNow.AddSeconds(-1)
+    Deny {Get-V3ReleasePostArchiveBoundary $ctx} 'RESUME_EXPIRED_AUTHORITY'
+    $ctx.authorization.expires_at=[datetimeoffset]::UtcNow.AddMinutes(10)
+    # A genuinely new signed authority window retains all release and epoch pins.
+    $renewed=Clone $savedClaim;$renewed.not_before_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    $renewed|Out-Null
+    $renewed.bindings|Add-Member -NotePropertyName post_archive_receipt_sha256 -NotePropertyValue (Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath+'.awaiting-post-archive-reader.json')))
+    $renewed.expires_at_utc=[datetimeoffset]::UtcNow.AddMinutes(10).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    $newSigned=Sign $renewed;$ctx.payload=$newSigned.Payload;$ctx.cms=$newSigned.Cms;$ctx.authorization.claims=$renewed
+    $ctx.authorization.approval_sha256=Get-V3ReleaseSha256 $newSigned.Payload
+    $after=Get-V3ReleasePostArchiveBoundary $ctx
+    $awaitBytes=[IO.File]::ReadAllBytes($journalPath+'.awaiting-post-archive-reader.json')
+    Assert-V3ReconciliationResumeReceipt $renewed $awaitBytes;Check $true 'EXACT_CONTINUATION_RECEIPT_AUTHORITY'
+    Deny {Assert-V3ReconciliationResumeReceipt $savedClaim $awaitBytes} 'UNPINNED_OLD_AUTHORITY_NO_RESUME'
+    Deny {Assert-V3ReconciliationResumeReceipt $renewed ([Text.Encoding]::UTF8.GetBytes('{}'))} 'MODIFIED_CONTINUATION_RECEIPT'
+    $result=Complete-V3ReleasePostArchive $ctx $after
+    Check ($result.original_processes_continued -eq $true) 'RESTART_FINALIZED_SAME_ORIGINAL_TRANSACTION'
+    Check ($script:enables -eq $beforeEnable -and $script:archives -eq $beforeArchive) 'RESUME_NO_NATIVE_MUTATION'
+    Check ((Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath+'.reconciliation-attempt.json'))) -ceq $attemptSha) 'RESUME_ATTEMPT_UNCHANGED'
+    Check ((Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath+'.pre-archive.json'))) -ceq $checkpointSha) 'RESUME_CHECKPOINT_UNCHANGED'
+    Deny {Complete-V3ReleasePostArchive $ctx $after} 'RESUME_COMPLETION_NO_REPLAY'
+   }elseif($scenario -cne 'success'){
+    Deny {Get-V3ReleasePostArchiveBoundary $ctx} 'PRE_ARCHIVE_RESTART_HOLD_NO_ENABLE'
+   }
+
+  }finally{foreach($leaseStream in $ctx.continuation_leases){$leaseStream.Dispose()};$stream.Dispose()}
  }
  Write-Output ('V3_EXISTING_GATE_B_RECONCILIATION_OFFLINE_PASS='+$checks)
 }finally{[IO.Directory]::Delete($temp,$true);$cert.Dispose();$rsa.Dispose()}

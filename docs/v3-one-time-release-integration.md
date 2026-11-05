@@ -223,11 +223,10 @@ CreateNew the original journal's `.completed.json`, with the distinct status
 `TERMINAL_ABORT_PARTIAL_ATTEMPT_RECONCILED_AFTERCARE_CONFIRMED`, explicit
 `successful_stop_claimed=false`, and no CAS/Paper permission. Do not translate
 this receipt into `TERMINAL_ABORT_STOP_RESTORE_AFTERCARE_CONFIRMED`. A lost or
-partial completion, expired authority, archive collision or ambiguous rename
-requires independent read-only reconciliation; neither this mode nor a new
-release ID authorizes a blind replay. After a late failure the archive may
-already exist: preserve it and examine actual state instead of recreating a
-fence or relaunching tasks.
+partial completion or expired authority never authorizes replay. The following
+post-archive continuation is the only permitted restarted completion path.
+Before archive, any interrupted Enable, heartbeat or rename without a proven
+archive remains HOLD; no re-enable or recreated fence is permitted.
 
 Minimal deployment: retain the original source stage and original evidence.
 Create a separate inactive repaired stage; copy the five unchanged pinned
@@ -247,3 +246,73 @@ partial Enable, repeated reconciliation, unknown health/rename/aftercare and
 preserved latches). The existing disposable Windows native test checks the
 shared Enable owner preserves a running instance. No production host action
 occurs in either test.
+
+### Post-archive continuation of the original transaction
+
+After both definitions are enabled and the exact original processes and native
+instances are confirmed, persist `.pre-archive.json` atomically before rename.
+It retains the attempt-latch digest, original reconciliation approval/CMS and
+instance identities. The journal, historical evidence and attempt marker are
+never changed. After exact archive readback (source absent, archive hash exact)
+create `.awaiting-post-archive-reader.json` in state
+`AWAITING_POST_ARCHIVE_READER`. Failed/absent/stale CMS or expired authority
+leaves this state intact. No Reader trigger, notebook service or scheduler is
+introduced. Notebook use stays an occasional independent read/sign action.
+
+If the process died after rename but before that receipt was persisted, the
+same operator reconstructs it only from the unchanged pre-archive checkpoint,
+signed original authorization, attempt latch, original task/process identities,
+protected tasks, installed catalog evidence and exact archive. It records the
+current verified archive-observation time as a conservative **upper bound** on
+the rename time. NTFS modification/creation times are not proof of rename time.
+The independently signed Reader observation must be later than that bound.
+An interrupted operation still holding ARMED cannot use this reconstruction.
+
+A later `OriginalhostReconcile` invocation takes the existing mutex, package
+and original-evidence leases and goes directly to finalization. It never
+acquires disabled-task mutation handles, enables a task, archives again, STOPs,
+restores, or resets a latch. All original 22 reconciliation bindings remain
+unchanged. The existing independent authority signs the same scope, release ID,
+repair commit and artifacts, adding `post_archive_receipt_sha256`: exact SHA256
+of `.awaiting-post-archive-reader.json`. This binds the stored time and its
+checkpoint chain across process restarts. An old unpinned authorization cannot
+finalize a restarted process, even if its clock window is still open. Expired
+CMS needs a new valid specific window. A receipt reconstructed after a crash
+must be independently reviewed and pinned before completion; a HOLD reports its
+digest without performing a second reconciliation attempt.
+
+Finalization revalidates admission, live authorization, package, original
+journal/evidence, historical CMS, checkpoint chain, installed catalog,
+protected tasks, exact archive, original intake definitions/processes/instances,
+fresh Supervisor and CloudSync aftercare and fresh independent Reader CMS with
+all unchanged Epoch/Source/Fence/ACL and Cloud/CAS guards. Persistent proof files
+and the archive are held read-only during finalization. Completion is atomically
+published without overwrite; a second call after completion is HOLD.
+
+Physical sequence after a separately approved merge:
+
+1. Preserve the historical Gate-B stage, journal, evidence, backup and all latches.
+   Reuse the PR672 inactive stage as the verified source of the six unchanged
+   inventory files; create one adjacent inactive repair stage and replace only
+   authorization and generated-originalhost modules with exact merge bytes.
+   Verify all eight inventory hashes and use the existing Inventory mode only.
+2. Admit the new commit through the existing independent #99 decision. Prepare
+   the existing `OriginalhostReconcile` argument set with unchanged original
+   paths/bindings; issue a short-lived execution CMS only at its point of use.
+   Production execution remains a separate specific gate.
+3. Once the operator has durably reached AWAITING (or reconstructed it under a
+   valid authority and returned HOLD), read its exact receipt SHA256. Use the
+   existing Notebook Reader to produce fresh original JSON/CMS after the bound;
+   sign the same transaction with the additional receipt digest and a live
+   window. Transfer through the existing path. Invoke the same operator with
+   the unchanged journal/evidence/backup and new exact Reader/CMS files.
+   This invocation performs only finalization. Gate B remains PENDING until
+   its original physical completion receipt and independent readback are proven.
+
+Regression coverage runs through the existing authorization test entry on Linux
+and disposable Windows: real timely/stale/pre-archive/wrong-Epoch/invalid/missing
+Reader CMS, expired/new authority, interrupted Enable, unknown rename before or
+after mutation, interruption before awaiting persistence, restarted process
+context, exact receipt pin, release/Epoch/journal/task/process drift, duplicate
+completion, unchanged original journal/checkpoint/latch and zero native mutation
+on continuation. No production reconciliation is performed by CI.
