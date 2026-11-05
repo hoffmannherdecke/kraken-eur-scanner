@@ -2,13 +2,14 @@
 # Default is local inventory only. No implicit installation, STOP, CAS or Paper.
 [CmdletBinding()]
 param(
- [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','Stage4Epoch')][string]$Mode='Inventory',
+ [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','Stage4Epoch','GateAAbort','GateAReadback')][string]$Mode='Inventory',
  [string]$PackageRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$ApprovalJson='', [string]$ApprovalCms='', [string]$ExpectedReleaseCommit='',
  [string]$AuthorityAdmissionJson='', [string]$ExpectedAuthorityAdmissionSha256='',
  [Security.SecureString]$PostgresPassword,
  [string]$CaFile='', [string]$IssuerPrestopJson='', [string]$IssuerPrestopCms='',
  [string]$TerminalAbortJson='', [string]$TerminalAbortCms='',
+ [string]$IssuerReceiptJson='', [string]$IssuerReceiptCms='',
  [string]$InstallReadbackJson='', [string]$BackupDirectory=''
 )
 Set-StrictMode -Version Latest
@@ -23,7 +24,8 @@ function Assert-V3OriginalInteractiveOwner {
   throw 'V3_RELEASE_EXISTING_ADMIN_OPERATOR_REQUIRED'
  }
 }
-function Invoke-V3ReleasePg([string]$Sql,[Security.SecureString]$Password,[string]$Ca) {
+function Invoke-V3ReleasePg([string]$Sql,[Security.SecureString]$Password,[string]$Ca,
+ [ValidateSet('postgres','v3_cas_inhibit_issuer_actor')][string]$Actor='postgres') {
  $exe='C:\Program Files\PostgreSQL\17\bin\psql.exe'
  $null=Read-V3ReleaseLocalBytes -Path $exe -MaxBytes 67108864
  $caRoot='system'
@@ -39,7 +41,7 @@ function Invoke-V3ReleasePg([string]$Sql,[Security.SecureString]$Password,[strin
  $start.EnvironmentVariables['PGHOST']='aws-1-eu-west-1.pooler.supabase.com'
  $start.EnvironmentVariables['PGPORT']='5432'
  $start.EnvironmentVariables['PGDATABASE']='postgres'
- $start.EnvironmentVariables['PGUSER']='postgres.nlgzjmqgwueojlyqmoru'
+ $start.EnvironmentVariables['PGUSER']=$Actor+'.nlgzjmqgwueojlyqmoru'
  $start.EnvironmentVariables['PGSSLMODE']='verify-full'
  $start.EnvironmentVariables['PGSSLROOTCERT']=$caRoot
  $start.EnvironmentVariables['PGCONNECT_TIMEOUT']='10'
@@ -64,7 +66,16 @@ function Invoke-V3ReleasePg([string]$Sql,[Security.SecureString]$Password,[strin
   $start.EnvironmentVariables.Remove('PGPASSWORD');$proc.Dispose()
  }
 }
-function Get-V3ReleaseVerifiedReadback([string]$Sql,[string]$ReleaseSql,[Security.SecureString]$Password,[string]$Ca) {
+function Invoke-V3GateAOnce([string]$LatchPath,[byte[]]$Receipt,[string]$Sql,
+ [Security.SecureString]$Password,[string]$Ca) {
+ # Persist before any network dispatch. An error, timeout or lost result never
+ # removes this latch and can only be resolved by the independent reader.
+ $stream=[IO.File]::Open($LatchPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+ try{$stream.Write($Receipt,0,$Receipt.Length);$stream.Flush($true)}finally{$stream.Dispose()}
+ $null=Invoke-V3ReleasePg -Sql $Sql -Password $Password -Ca $Ca -Actor v3_cas_inhibit_issuer_actor
+}
+function Get-V3ReleaseVerifiedReadback([string]$Sql,[string]$ReleaseSql,[Security.SecureString]$Password,[string]$Ca,
+ [ValidateSet('postgres','v3_cas_inhibit_issuer_actor')][string]$Actor='postgres') {
  $wire=Invoke-V3ReleasePg -Sql $Sql -Password $Password -Ca $Ca
  $readback=$wire|ConvertFrom-Json -ErrorAction Stop
  if([string]$readback.kind -cne 'V3_ONE_TIME_ABORT_INSTALL_READBACK_V1' -or $readback.verified -ne $true){
@@ -121,9 +132,13 @@ if($Mode -eq 'Inventory'){
    production_authorized=$false;cloud_contacted=$false;host_mutated=$false}|ConvertTo-Json -Depth 5
  return
 }
-Assert-V3OriginalInteractiveOwner
+if($Mode -in @('GateAAbort','GateAReadback')){
+ if($env:OS -cne 'Windows_NT' -or $env:COMPUTERNAME -ceq 'MINI-PC' -or
+    $env:GITHUB_ACTIONS -eq 'true' -or -not [Environment]::UserInteractive){throw 'V3_GATE_A_INDEPENDENT_NOTEBOOK_REQUIRED'}
+}else{Assert-V3OriginalInteractiveOwner}
 $scope=if($Mode -eq 'OriginalhostAbortRestore'){'ORIGINALHOST_ABORT_RESTORE'}
  elseif($Mode -eq 'Stage4Epoch'){'CLOUD_STAGE4_EPOCH_OPEN'}
+ elseif($Mode -in @('GateAAbort','GateAReadback')){'CLOUD_PREPARED_FENCE_ABORT'}
  else{'CLOUD_ABORT_INSTALL'}
 $approval=$null;$cms=$null;$authorityPin='';$authorized=$null
 if($Mode -ne 'ReadbackCloud'){
@@ -150,6 +165,73 @@ if($Mode -eq 'OriginalhostAbortRestore'){
   -ExpectedReleaseCommit $ExpectedReleaseCommit -IssuerPrestopJson $IssuerPrestopJson -IssuerPrestopCms $IssuerPrestopCms `
   -TerminalAbortJson $TerminalAbortJson -TerminalAbortCms $TerminalAbortCms `
   -InstallReadbackJson $InstallReadbackJson -BackupDirectory $BackupDirectory|ConvertTo-Json -Depth 6
+ return
+}
+if($Mode -in @('GateAAbort','GateAReadback')){
+ $b=$authorized.claims.bindings
+ $receipt=Read-V3ReleaseLocalBytes -Path $IssuerReceiptJson -MaxBytes 4096
+ $receiptCms=Read-V3ReleaseLocalBytes -Path $IssuerReceiptCms -MaxBytes 32768
+ $null=Assert-V3GateAReceipt -Bindings $b -Payload $receipt -Cms $receiptCms
+ Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+ $native=Get-Module 'v3-one-time-originalhost-release'
+ # The native module imports the shared authorization module with -Force.
+ Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Force
+ if($Mode -eq 'GateAReadback'){
+  $terminal=Read-V3ReleaseLocalBytes -Path $TerminalAbortJson -MaxBytes 4096
+  $terminalCms=Read-V3ReleaseLocalBytes -Path $TerminalAbortCms -MaxBytes 32768
+  $review=& $native {param($p,$c,$b)
+   Test-V3Pr515SignedPreparedAbortReadback -Payload $p -Cms $c -ReviewedCertSha256 $b.reader_certificate_sha256 `
+    -ExpectedEpochId $b.epoch_id -ExpectedSourceSha256 $b.source_sha256 `
+    -ExpectedFenceSha256 $b.fence_sha256 -ExpectedAclSha256 $b.caller_acl_sha256
+  } $terminal $terminalCms $b
+  $row=Read-V3ReleaseJson $terminal
+  if($review.signed_abort_fields_and_pins_match -ne $true -or
+     [string]$row.receipt_sha256 -cne [string]$b.receipt_sha256){throw 'V3_GATE_A_INDEPENDENT_READBACK_HOLD_NO_RETRY'}
+  [pscustomobject]@{kind='V3_GATE_A_SIGNED_TERMINAL_ABORT_VERIFIED_V1';
+   terminal_abort_json=$TerminalAbortJson;terminal_abort_cms=$TerminalAbortCms;
+   terminal_abort_sha256=(Get-V3ReleaseSha256 $terminal);receipt_sha256=$b.receipt_sha256;
+   stop_cas_paper_authorized=$false}|ConvertTo-Json -Compress
+  return
+ }
+ # Fresh independently authenticated custody is distinct from the durable
+ # original receipt. Never reserialize/reconstruct original receipt bytes.
+ $fresh=Read-V3ReleaseLocalBytes -Path $IssuerPrestopJson -MaxBytes 4096
+ $freshCms=Read-V3ReleaseLocalBytes -Path $IssuerPrestopCms -MaxBytes 32768
+ $review=& $native {param($p,$c,$b)
+  Test-V3Pr661SignedIssuerPrestopReceipt -Payload $p -Cms $c -ReviewedCertSha256 $b.reader_certificate_sha256 `
+   -ExpectedEpochId $b.epoch_id -ExpectedSourceSha256 $b.source_sha256 `
+   -ExpectedFenceSha256 $b.fence_sha256 -ExpectedAclSha256 $b.caller_acl_sha256
+ } $fresh $freshCms $b
+ if($review.signed_cloud_row_matches_pre_stop_inhibit -ne $true){throw 'V3_GATE_A_FRESH_ISSUER_READER_HOLD'}
+ Add-Type -AssemblyName System.Security
+ $issuerRoot=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer'
+ $sealed=Read-V3ReleaseLocalBytes -Path (Join-Path $issuerRoot 'issuer-currentuser.dpapi')
+ $raw=$null;$issuerPassword=$null
+ try{
+  $raw=[Security.Cryptography.ProtectedData]::Unprotect($sealed,
+   [Text.Encoding]::ASCII.GetBytes('V3_CAS_INDEPENDENT_ISSUER_NOTEBOOK_V1'),
+   [Security.Cryptography.DataProtectionScope]::CurrentUser)
+  $secret=[Text.Encoding]::ASCII.GetString($raw)
+  if($secret -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_GATE_A_EXISTING_ISSUER_SECRET_HOLD'}
+  $issuerPassword=ConvertTo-SecureString $secret -AsPlainText -Force
+ }finally{if($null -ne $raw){[Array]::Clear($raw,0,$raw.Length)};$secret=$null}
+ try{
+  # Durable create-new attempt latch before dispatch. No delete/reset/retry path;
+  # database UNIQUE(epoch_id/receipt_sha256) is the cross-host final barrier.
+  $m=[regex]::Match([Text.Encoding]::UTF8.GetString($fresh),'"observed_at_utc"\s*:\s*"(?<t>[^"\\]+)"')
+  $freshUntil=[datetimeoffset]::ParseExact($m.Groups['t'].Value,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+   [Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal).AddSeconds(30)
+  $deadline=$authorized.expires_at
+  if($freshUntil -lt $deadline){$deadline=$freshUntil}
+  $sql=Get-V3GateATransaction -Bindings $b -ExpiresAt $deadline
+  Invoke-V3GateAOnce -LatchPath (Join-Path $issuerRoot ($b.epoch_id+'-terminal-abort-attempted')) `
+   -Receipt $receipt -Sql $sql -Password $issuerPassword -Ca $CaFile
+ }finally{if($null -ne $issuerPassword){$issuerPassword.Dispose()}}
+ # psql success is not an independent signed terminal readback. Use the
+ # existing PreparedAbortSignedCurrent reader; never synthesize its JSON/CMS.
+ [pscustomobject]@{kind='V3_GATE_A_COMMIT_RETURNED_READER_REQUIRED_V1';
+  receipt_sha256=$b.receipt_sha256;independent_reader_mode='PreparedAbortSignedCurrent';
+  retry_authorized=$false;stop_cas_paper_authorized=$false}|ConvertTo-Json -Compress
  return
 }
 if($Mode -eq 'Stage4Epoch'){

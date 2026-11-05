@@ -51,7 +51,7 @@ function Assert-V3ReleaseCms([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuth
 
 function Assert-V3OneTimeReleaseAuthorization {
  param([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuthorityCertificateSha256,
-       [ValidateSet('CLOUD_ABORT_INSTALL','ORIGINALHOST_ABORT_RESTORE','CLOUD_STAGE4_EPOCH_OPEN')][string]$Scope,
+       [ValidateSet('CLOUD_ABORT_INSTALL','ORIGINALHOST_ABORT_RESTORE','CLOUD_STAGE4_EPOCH_OPEN','CLOUD_PREPARED_FENCE_ABORT')][string]$Scope,
        [string]$ExpectedReleaseCommit,[hashtable]$ExpectedArtifacts,
        [datetimeoffset]$Now=[datetimeoffset]::UtcNow)
  Assert-V3ReleaseCms $Payload $Cms $ReviewedAuthorityCertificateSha256
@@ -184,3 +184,54 @@ function Open-V3ReleasePackageReadLease([string]$PackageRoot,[hashtable]$Invento
 }
 
 Export-ModuleMember -Function Get-V3ReleaseSha256,Read-V3ReleaseJson,Assert-V3ReleaseCms,Assert-V3OneTimeReleaseAuthorization,Read-V3ReleaseLocalBytes,Get-V3OneTimeReleaseArtifactInventory,Assert-V3ReleaseAuthorityAdmission,Open-V3ReleasePackageReadLease
+
+# Existing signed issuer-prestop reader receipt is the only accepted source.
+# Its original exact UTF-8 bytes are durable evidence; freshness is separately
+# enforced by the existing 30-second prestop reader before dispatch.
+function Assert-V3GateAReceipt([object]$Bindings,[byte[]]$Payload,[byte[]]$Cms) {
+ $fields=@('epoch_id','source_sha256','fence_sha256','caller_acl_sha256','receipt_sha256','reader_certificate_sha256')
+ if($null -eq $Bindings -or @($Bindings.PSObject.Properties).Count -ne $fields.Count -or
+    @($Bindings.PSObject.Properties.Name|Where-Object {$_ -cnotin $fields}).Count -or
+    [string]$Bindings.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$'){throw 'V3_GATE_A_BINDINGS_HOLD'}
+ foreach($field in $fields|Where-Object {$_ -ne 'epoch_id'}){
+  if([string]$Bindings.$field -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_GATE_A_HASH_BINDING_HOLD'}
+ }
+ Assert-V3ReleaseCms -Payload $Payload -Cms $Cms -ReviewedAuthorityCertificateSha256 $Bindings.reader_certificate_sha256
+ $r=Read-V3ReleaseJson $Payload
+ if((Get-V3ReleaseSha256 $Payload) -cne [string]$Bindings.receipt_sha256 -or
+    [string]$r.kind -cne 'V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1' -or
+    [string]$r.epoch_id -cne [string]$Bindings.epoch_id -or
+    [string]$r.source_sha256 -cne [string]$Bindings.source_sha256 -or
+    [string]$r.original_fence_sha256 -cne [string]$Bindings.fence_sha256 -or
+    [string]$r.caller_acl_sha256 -cne [string]$Bindings.caller_acl_sha256 -or
+    [string]$r.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
+    [string]$r.actor -cne 'v3_cas_audit_reader_actor' -or
+    [string]$r.requested_role -cne 'v3_cas_audit_reader' -or
+    $r.unknown_count -ne 0 -or
+    [string]$r.state -cne 'INHIBITED' -or $r.native_stop_done -ne $false -or
+    $r.cas_or_paper_authorized -ne $false){throw 'V3_GATE_A_ORIGINAL_RECEIPT_HOLD'}
+ return Get-V3ReleaseSha256 $Payload
+}
+function Get-V3GateATransaction([object]$Bindings,[datetimeoffset]$ExpiresAt) {
+ # No caller SQL or unvalidated interpolation; only typed immutable identities.
+ if([string]$Bindings.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$'){throw 'V3_GATE_A_SQL_EPOCH_HOLD'}
+ foreach($field in @('source_sha256','fence_sha256','caller_acl_sha256','receipt_sha256')){
+  if([string]$Bindings.$field -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_GATE_A_SQL_HASH_HOLD'}
+ }
+ $expires=$ExpiresAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+ return @"
+BEGIN;
+SET LOCAL statement_timeout='15s';
+SET LOCAL lock_timeout='5s';
+DO `$gate_a`$
+BEGIN
+ IF session_user <> 'v3_cas_inhibit_issuer_actor' OR clock_timestamp() >= '$expires'::timestamptz
+ THEN RAISE EXCEPTION 'V3_GATE_A_ACTOR_OR_AUTHORIZATION_EXPIRED'; END IF;
+END `$gate_a`$;
+SELECT v3_cas_audit.record_prepared_fence_abort_v1('$($Bindings.epoch_id)',
+ '$($Bindings.source_sha256)','$($Bindings.fence_sha256)',
+ '$($Bindings.caller_acl_sha256)','$($Bindings.receipt_sha256)');
+COMMIT;
+"@
+}
+Export-ModuleMember -Function Assert-V3GateAReceipt,Get-V3GateATransaction

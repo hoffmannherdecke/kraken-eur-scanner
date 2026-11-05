@@ -52,4 +52,19 @@ class ReleaseContract(unittest.TestCase):
         for field in ('function_bodies','policies','function_acl','installation'):
             self.assertIn("'"+field+"'",sql)
 
+class GateAContract(unittest.TestCase):
+    def test_dispatch_is_issuer_only_and_readback_separate(self):
+        s=(ROOT/'tools/v3-one-time-release.ps1').read_text()
+        part=s[s.index("if($Mode -in @('GateAAbort','GateAReadback')){",s.index('$approval=$null')):s.index("if($Mode -eq 'Stage4Epoch'){\n # Existing")]
+        self.assertEqual(part.count('Invoke-V3GateAOnce -LatchPath'),1)
+        once=s[s.index('function Invoke-V3GateAOnce'):s.index('function Get-V3ReleaseVerifiedReadback')]
+        self.assertIn('-Actor v3_cas_inhibit_issuer_actor',once)
+        self.assertIn('[IO.FileMode]::CreateNew',once)
+        self.assertLess(once.index('[IO.FileMode]::CreateNew'),once.index('Invoke-V3ReleasePg -Sql $Sql'))
+        self.assertIn('Test-V3Pr515SignedPreparedAbortReadback',part)
+        self.assertIn('PreparedAbortSignedCurrent',part)
+        self.assertIn('V3_GATE_A_FRESH_ISSUER_READER_HOLD',part)
+        self.assertNotIn('catch',part)  # no retry/second transaction on UNKNOWN
+        self.assertNotRegex(part,r'(Disable|Stop|Start|Enable)-ScheduledTask|SET ROLE|ALTER ROLE')
+
 if __name__=='__main__':unittest.main()
