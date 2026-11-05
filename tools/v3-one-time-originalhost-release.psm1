@@ -3536,7 +3536,7 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   foreach($lease in $HeldPair.leases){$lease.readonly_definition_handle.Dispose()}
   $tasks=$TaskNames
  foreach($name in $tasks){
-  Enable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
+  Enable-V3ReleaseIntakeDefinition -TaskName $name
  }
  foreach($name in $tasks){
   Start-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
@@ -4110,6 +4110,8 @@ function Assert-V3ReleaseMutationBoundary([ValidateSet('STOP','RESTORE','ARCHIVE
  $ctx=$script:V3ReleaseContext
  $a=$ctx.authorization.claims
  $b=$a.bindings
+ $reconcile=([string]$a.scope -ceq 'ORIGINALHOST_ABORT_RECONCILE')
+ if($reconcile -and $Phase -eq 'STOP'){throw 'V3_RECONCILE_STOP_FORBIDDEN'}
  if(-not(Test-V3ReleaseOriginalhostScope -Root $script:V3ReleaseRoot -Tasks $ctx.tasks)){
   throw 'V3_RELEASE_ORIGINALHOST_AUTHORIZATION_NOT_LIVE'
  }
@@ -4120,8 +4122,17 @@ function Assert-V3ReleaseMutationBoundary([ValidateSet('STOP','RESTORE','ARCHIVE
  if($currentPin -cne $ctx.authority_pin){throw 'V3_RELEASE_AUTHORITY_ADMISSION_CHANGED'}
  $hashes=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $ctx.package_root
  $null=Assert-V3OneTimeReleaseAuthorization -Payload $ctx.payload -Cms $ctx.cms `
-  -ReviewedAuthorityCertificateSha256 $ctx.authority_pin -Scope ORIGINALHOST_ABORT_RESTORE `
+  -ReviewedAuthorityCertificateSha256 $ctx.authority_pin -Scope ([string]$a.scope) `
   -ExpectedReleaseCommit ([string]$a.release_commit) -ExpectedArtifacts $hashes
+ if($reconcile){
+  Assert-V3ReleaseReconciliationOriginals -Context $ctx
+  if($null -ne $ctx.instance_snapshot){
+   $current=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $ctx.enabled_names
+   if(($current|ConvertTo-Json -Compress) -cne ($ctx.instance_snapshot|ConvertTo-Json -Compress)){
+    throw 'V3_RECONCILE_RUNNING_INSTANCE_REPLACED'
+   }
+  }
+ }
  $terminalPayload=Read-V3ReleaseLocalBytes -Path $ctx.abort_json -MaxBytes 4096
  $terminalCms=Read-V3ReleaseLocalBytes -Path $ctx.abort_cms -MaxBytes 32768
  $abort=Test-V3Pr515SignedPreparedAbortReadback -Payload $terminalPayload -Cms $terminalCms `
@@ -4134,16 +4145,7 @@ function Assert-V3ReleaseMutationBoundary([ValidateSet('STOP','RESTORE','ARCHIVE
  # The independent approval must bind the installed original catalog readback.
  Assert-V3ReleaseInstalledAbortReadback -Path $ctx.catalog_readback -Bindings $b `
   -ExpectedSourceSha256 $hashes['supabase/v3-cas-prepared-fence-abort-INACTIVE.sql']
- foreach($row in @(
-  @('CryptoMiniPC-V2R4PaperLifecycle','lifecycle_xml_sha256'),
-  @('CryptoMiniPC-V2R4PaperCloudSync','cloudsync_xml_sha256'),
-  @('CryptoMiniPC-V3PaperSingleWriter','v3_writer_xml_sha256'))){
-  $task=Get-ScheduledTask -TaskName $row[0] -TaskPath '\' -ErrorAction Stop
-  $xml=[string](Export-ScheduledTask -TaskName $row[0] -TaskPath '\' -ErrorAction Stop)
-  $hash=Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($xml))
-  $expectedState=if($row[0] -ceq 'CryptoMiniPC-V3PaperSingleWriter'){'Disabled'}else{'Running'}
-  if($hash -cne [string]$b.($row[1]) -or [string]$task.State -cne $expectedState){throw 'V3_RELEASE_PROTECTED_TASK_DRIFT'}
- }
+ Assert-V3ReleaseProtectedTasks -Bindings $b
  $fence=Join-Path $script:V3ReleaseRoot 'State\v3-experimental-paper-old-intake-fence.json'
  if((Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne [string]$b.fence_sha256){
   throw 'V3_RELEASE_ARMED_FENCE_DRIFT'
@@ -4275,4 +4277,423 @@ function Invoke-V3OneTimeOriginalhostRelease {
  }
 }
 
-Export-ModuleMember -Function Invoke-V3OneTimeOriginalhostRelease
+# One native Enable owner, also used by the original STOP/restore path.
+# Calling this helper cannot invent context or choose a third task.
+function Enable-V3ReleaseIntakeDefinition([string]$TaskName) {
+ Assert-V3ReleaseMutationBoundary -Phase RESTORE
+ if($null -eq $script:V3ReleaseContext -or
+    $TaskName -cnotin $script:V3ReleaseContext.tasks){throw 'V3_RELEASE_ENABLE_TASK_SCOPE_HOLD'}
+ $name=$TaskName
+ Enable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
+}
+
+# Pure identity join. Expiry of the OLD approval is deliberately not renewed:
+# it is historical evidence; the separate reconciliation CMS must be live.
+function Assert-V3ReleaseReconciliationIdentity(
+ [object]$Claims,[object]$Original,[object]$Journal,[object]$Evidence) {
+ $b=$Claims.bindings
+ $extra=@('journal_sha256','original_approval_sha256','evidence_sha256','reconciliation_policy')
+ if([string]$Claims.scope -cne 'ORIGINALHOST_ABORT_RECONCILE' -or
+    [string]$b.reconciliation_policy -cne 'ENABLED_ONLY_CONTINUING_ORIGINALS_NO_STOP_V1' -or
+    [string]$Original.kind -cne 'V3_ONE_TIME_RELEASE_AUTHORIZATION_V1' -or
+    [string]$Original.scope -cne 'ORIGINALHOST_ABORT_RESTORE' -or
+    [string]$Original.release_commit -cnotmatch '^[a-f0-9]{40}$' -or
+    [string]$Original.release_commit -ceq [string]$Claims.release_commit -or
+    [string]$Original.base_commit -cne [string]$Claims.base_commit -or
+    [string]$Original.computer_name -cne [string]$Claims.computer_name -or
+    [string]$Original.trading_root -cne [string]$Claims.trading_root -or
+    [string]$Original.project_ref -cne [string]$Claims.project_ref -or
+    [string]$Original.release_id -cne [string]$Claims.release_id -or
+    [string]$Journal.kind -cne 'V3_ONE_TIME_ORIGINALHOST_ATTEMPT_V1' -or
+    [string]$Journal.state -cne 'ATTEMPTED_RECONCILIATION_REQUIRED_UNTIL_FINAL_ACK' -or
+    [string]$Journal.release_id -cne [string]$Claims.release_id -or
+    [string]$Journal.approval_sha256 -cne [string]$b.original_approval_sha256 -or
+    [string]$Journal.epoch_id -cne [string]$b.epoch_id -or
+    @($Original.bindings.PSObject.Properties).Count -ne 18 -or
+    @($b.PSObject.Properties).Count -ne 22){throw 'V3_RECONCILE_IDENTITY_OR_BINDINGS_HOLD'}
+ foreach($field in $extra){
+  if($field -like '*sha256' -and [string]$b.$field -cnotmatch '^[a-f0-9]{64}$'){
+   throw 'V3_RECONCILE_HASH_BINDINGS_HOLD'
+  }
+ }
+ foreach($p in $Original.bindings.PSObject.Properties){
+  if($p.Name -cin $extra -or [string]$b.($p.Name) -cne [string]$p.Value -or
+     [string]$Evidence.approved_bindings.($p.Name) -cne [string]$p.Value){
+   throw 'V3_RECONCILE_ORIGINAL_BINDING_DRIFT'
+  }
+ }
+ if([string]$b.policy -cne 'TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1' -or
+    [string]$b.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+    [string]$Evidence.kind -cne 'V3_GATE_B_EXISTING_ATTEMPT_READONLY_RECONCILIATION_V1' -or
+    [string]$Evidence.release_id -cne [string]$Claims.release_id -or
+    $Evidence.native_mutations_performed -ne $false -or $Evidence.gate_b_completed -ne $false -or
+    [string]$Evidence.journal.sha256 -cne [string]$b.journal_sha256 -or
+    [string]$Evidence.journal.approval_sha256 -cne [string]$b.original_approval_sha256 -or
+    $Evidence.journal.completion_present -ne $false -or $Evidence.archive_present -ne $false -or
+    $Evidence.fence.present -ne $true -or [string]$Evidence.fence.phase -cne 'ARMED' -or
+    [string]$Evidence.fence.sha256 -cne [string]$b.fence_sha256 -or
+    $Evidence.original_approval.cms_valid -ne $true -or
+    [string]$Evidence.original_approval.release_commit -cne [string]$Original.release_commit){
+  throw 'V3_RECONCILE_ORIGINAL_EVIDENCE_HOLD'
+ }
+ $fields=@('epoch_id','source_sha256','fence_sha256','caller_acl_sha256','reader_certificate_sha256','reader_source_sha256',
+  'pr515_sha256','backup_manifest_sha256','successor_series_id','bundle_sha256','strategy_sha256',
+  'candidate_repo_sha','lifecycle_xml_sha256','cloudsync_xml_sha256','v3_writer_xml_sha256',
+  'install_readback_sha256','install_release_commit','policy')
+ if(@($Original.bindings.PSObject.Properties.Name|Where-Object {$_ -cnotin $fields}).Count -or
+    @($Original.artifacts.PSObject.Properties).Count -ne 8 -or
+    @($Evidence.approved_artifacts.PSObject.Properties).Count -ne 8){throw 'V3_RECONCILE_ORIGINAL_SCOPE_DRIFT'}
+ foreach($p in $Original.artifacts.PSObject.Properties){
+  if([string]$p.Value -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$Evidence.approved_artifacts.($p.Name) -cne [string]$p.Value){throw 'V3_RECONCILE_ORIGINAL_ARTIFACT_DRIFT'}
+ }
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ foreach($name in $names){
+  $rows=@($Evidence.tasks|Where-Object {[string]$_.name -ceq $name})
+  if($rows.Count -ne 1){throw 'V3_RECONCILE_EVIDENCE_TASK_SCOPE_HOLD'}
+  $row=$rows[0]
+  if($row.enabled -ne $false -or [string]$row.state -cne 'Running' -or
+     [int]$row.running_instances -ne 1 -or
+     [string]$row.effective_config.classification -cne 'ONLY_ENABLED_FIELD_DIFFERS' -or
+     $row.effective_config.original_disabled_only_contract_matches -ne $true -or
+     @($row.current_matching_processes).Count -lt 1 -or
+     @($row.current_matching_processes|Where-Object {$_.created_before_window -ne $true}).Count){
+   throw 'V3_RECONCILE_NOT_CONTINUING_ORIGINAL_TASKS'
+  }
+  $pids=@($row.current_matching_processes|ForEach-Object {[int]$_.pid})
+  if(@($pids|Select-Object -Unique).Count -ne $pids.Count -or @($pids|Where-Object {$_ -le 0}).Count){
+   throw 'V3_RECONCILE_PROCESS_SCOPE_HOLD'
+  }
+  foreach($p in $row.current_matching_processes){
+   if(([datetimeoffset]$p.created_at_utc) -ge ([datetimeoffset]$Original.not_before_utc)){
+    throw 'V3_RECONCILE_PROCESS_NOT_OLDER_THAN_ORIGINAL_WINDOW'
+   }
+  }
+ }
+}
+
+function Assert-V3ReleaseReconciliationOriginals([object]$Context) {
+ $b=$Context.authorization.claims.bindings
+ foreach($entry in @(
+   @($Context.journal_path,[string]$b.journal_sha256),
+   @($Context.original_approval_path,[string]$b.original_approval_sha256),
+   @($Context.evidence_path,[string]$b.evidence_sha256))){
+  $bytes=Read-V3ReleaseLocalBytes -Path $entry[0]
+  if((Get-V3ReleaseSha256 $bytes) -cne $entry[1]){throw 'V3_RECONCILE_ORIGINAL_BYTES_CHANGED'}
+ }
+ if(Test-Path -LiteralPath ($Context.journal_path+'.completed.json')){
+  throw 'V3_RECONCILE_ALREADY_COMPLETED_NO_REPLAY'
+ }
+ $journal=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $Context.journal_path)
+ $oldBytes=Read-V3ReleaseLocalBytes $Context.original_approval_path
+ Assert-V3ReleaseCms -Payload $oldBytes -Cms (Read-V3ReleaseLocalBytes $Context.original_cms_path -MaxBytes 32768) `
+  -ReviewedAuthorityCertificateSha256 $Context.authority_pin
+ $old=Read-V3ReleaseJson $oldBytes
+ # Evidence is hash-pinned by the independently signed decision, never an
+ # unsigned caller authorized=true flag. Its nested repeated names are valid.
+ $evidence=[Text.UTF8Encoding]::new($false,$true).GetString(
+  (Read-V3ReleaseLocalBytes $Context.evidence_path))|ConvertFrom-Json -ErrorAction Stop
+ Assert-V3ReleaseReconciliationIdentity -Claims $Context.authorization.claims -Original $old `
+  -Journal $journal -Evidence $evidence
+}
+
+# Local live state is separate from the independently approved historical
+# evidence. Running is NOT the same field as Enabled. No Stop/Start/kill here.
+function Read-V3ReleaseContinuingIntakes([object]$Context,[string[]]$EnabledNames=@()) {
+ $b=$Context.authorization.claims.bindings
+ $manifestBytes=Read-V3ReleaseLocalBytes (Join-Path $Context.backup_root 'backup-manifest.json')
+ if((Get-V3ReleaseSha256 $manifestBytes) -cne [string]$b.backup_manifest_sha256){throw 'V3_RECONCILE_BACKUP_DRIFT'}
+ $manifest=[Text.Encoding]::UTF8.GetString($manifestBytes)|ConvertFrom-Json -ErrorAction Stop
+ if(-not(Test-V3Pr515CurrentOriginalBackupManifest $manifest) -or
+    [string]$manifest.backup_directory -cne $Context.backup_root){throw 'V3_RECONCILE_BACKUP_SCOPE_HOLD'}
+ $service=New-Object -ComObject 'Schedule.Service';$service.Connect()
+ $processes=@(Get-CimInstance -Query "SELECT ProcessId,ParentProcessId,Name,CreationDate,CommandLine FROM Win32_Process WHERE Name='python.exe' OR Name='pythonw.exe'" -ErrorAction Stop)
+ $snapshot=@()
+ foreach($name in $Context.tasks){
+  $row=@($Context.evidence.tasks|Where-Object {[string]$_.name -ceq $name})[0]
+  $record=@($manifest.task_records|Where-Object {[string]$_.task_name -ceq $name})[0]
+  $savedBytes=Read-V3ReleaseLocalBytes (Join-Path $Context.backup_root $record.xml_file) -MaxBytes 131072
+  if((Get-V3ReleaseSha256 $savedBytes) -cne [string]$record.xml_sha256 -or
+     [string]$record.xml_sha256 -cne [string]$row.saved_xml_sha256){throw 'V3_RECONCILE_BACKUP_XML_DRIFT'}
+  $saved=[Text.UTF8Encoding]::new($false,$true).GetString($savedBytes)
+  $savedDocument=[xml]$saved
+  $policies=@($savedDocument.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="MultipleInstancesPolicy"]'))
+  # Scheduler's default is IgnoreNew. Parallel, Queue and StopExisting cannot
+  # guarantee that enabling preserves the sole original instance.
+  if($policies.Count -gt 1 -or ($policies.Count -eq 1 -and $policies[0].InnerText -cne 'IgnoreNew')){
+   throw 'V3_RECONCILE_TASK_MULTIPLE_INSTANCE_POLICY_HOLD'
+  }
+  $live=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  $native=$service.GetFolder('\').GetTask($name)
+  $shouldEnable=($name -cin $EnabledNames)
+  if([bool]$native.Enabled -ne $shouldEnable -or
+     [string](Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop).State -cne 'Running' -or
+     @($native.GetInstances(0)).Count -ne 1){throw 'V3_RECONCILE_LIVE_TASK_STATE_DRIFT'}
+  # Enabling must reproduce the original effective definition. Serialize both
+  # XML documents uniformly; do not overwrite a task XML to force byte equality.
+  if($shouldEnable){
+   $old=[xml]$saved;$new=[xml]$live
+   $path='/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="Enabled"]'
+   foreach($doc in @($old,$new)){
+    foreach($node in @($doc.SelectNodes($path))){
+     if($node.InnerText.Trim() -cnotin @('true','1')){throw 'V3_RECONCILE_ENABLED_XML_HOLD'}
+     [void]$node.ParentNode.RemoveChild($node)
+    }
+   }
+   if($old.OuterXml -cne $new.OuterXml){throw 'V3_RECONCILE_ENABLED_DEFINITION_DRIFT'}
+  }elseif(-not(Test-V3Pr515DisabledOnlyXmlDifference -Saved $saved -Disabled $live) -or
+     (Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($live))) -cne [string]$row.current_xml_sha256){
+   throw 'V3_RECONCILE_DISABLED_DEFINITION_DRIFT'
+  }
+  $args=([string](Get-ScheduledTask -TaskName $name -TaskPath '\').Actions[0].Arguments).Replace('\','/')
+  if($args.Length -le 10){throw 'V3_RECONCILE_PROCESS_ACTION_HOLD'}
+  $matches=@($processes|Where-Object {
+   ([string]$_.CommandLine).Replace('\','/').IndexOf($args,[StringComparison]::OrdinalIgnoreCase) -ge 0
+  })
+  $expected=@($row.current_matching_processes)
+  if($matches.Count -ne $expected.Count){throw 'V3_RECONCILE_PROCESS_COUNT_DRIFT'}
+  foreach($p in $expected){
+   $current=@($matches|Where-Object {[int]$_.ProcessId -eq [int]$p.pid})
+   if($current.Count -ne 1 -or
+      $current[0].CreationDate.ToUniversalTime().Ticks -ne ([datetimeoffset]$p.created_at_utc).UtcDateTime.Ticks -or
+      [int]$current[0].ParentProcessId -ne [int]$p.parent_pid){throw 'V3_RECONCILE_ORIGINAL_PROCESS_IDENTITY_DRIFT'}
+  }
+  $instance=@($native.GetInstances(0))[0]
+  if([string]$instance.InstanceGuid -cnotmatch '^\{?[a-fA-F0-9]{8}-(?:[a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}\}?$'){
+   throw 'V3_RECONCILE_INSTANCE_IDENTITY_UNKNOWN'
+  }
+  $snapshot+=@([pscustomobject]@{name=$name;instance_id=[string]$instance.InstanceGuid})
+ }
+ return ,$snapshot
+}
+
+function Read-V3ReleaseReconciliationHeartbeat([string]$Path,[datetimeoffset]$After) {
+ $bytes=Read-V3ReleaseLocalBytes $Path
+ $wire=[Text.UTF8Encoding]::new($false,$true).GetString($bytes)
+ $m=[regex]::Matches($wire,'"checked_at_utc"\s*:\s*"(?<t>[^"\\]+)"')
+ if($m.Count -ne 1 -or $m[0].Groups['t'].Value -cnotmatch
+    '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|\+00:00)$'){
+  throw 'V3_RECONCILE_HEARTBEAT_TIME_HOLD'
+ }
+ $at=[datetimeoffset]::Parse($m[0].Groups['t'].Value,[Globalization.CultureInfo]::InvariantCulture)
+ $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
+ if($at -le $After -or $age -lt -5 -or $age -gt 90){throw 'V3_RECONCILE_HEARTBEAT_STALE_HOLD'}
+ $value=$wire|ConvertFrom-Json -ErrorAction Stop
+ if([string]$value.status -cne 'HEALTHY'){throw 'V3_RECONCILE_HEARTBEAT_UNHEALTHY'}
+ return $value
+}
+
+function Wait-V3ReleaseReconciliationHealth([object]$Context,[datetimeoffset]$After,[switch]$AfterArchive) {
+ for($i=0;$i -lt 45;$i++){
+  if([datetimeoffset]::UtcNow -ge $Context.authorization.expires_at){throw 'V3_RECONCILE_SESSION_EXPIRED_NO_RETRY'}
+  try{
+   $snapshot=Read-V3ReleaseContinuingIntakes -Context $Context -EnabledNames $Context.tasks
+   if(($snapshot|ConvertTo-Json -Compress) -cne ($Context.instance_snapshot|ConvertTo-Json -Compress)){
+    throw 'V3_RECONCILE_RUNNING_INSTANCE_REPLACED'
+   }
+   foreach($leaf in @('v2r4-paper-candidate-runtime-heartbeat.json','v2r4-paper-wait-runtime-heartbeat.json')){
+    $null=Read-V3ReleaseReconciliationHeartbeat (Join-Path $script:V3ReleaseRoot ('State\'+$leaf)) $After
+   }
+   if($AfterArchive){
+    $sup=Read-V3ReleaseReconciliationHeartbeat (Join-Path $script:V3ReleaseRoot 'State\minipc-runtime-supervisor.json') $After
+    $cloud=Read-V3ReleaseReconciliationHeartbeat (Join-Path $script:V3ReleaseRoot 'State\v2r4-paper-cloud-sync-heartbeat.json') $After
+    if([string]$sup.v3_paper_old_intake_fence.mode -cne 'NONE' -or
+       [string]$cloud.v3_fence_cloud_sync_lane -cne 'ACTIVE_ORIGINAL' -or
+       [string]$cloud.series_id -cne 'PAPER-V2R4-20261009T110135Z'){throw 'V3_RECONCILE_AFTERCARE_NOT_ORIGINAL'}
+   }
+   return
+  }catch{
+   # UNKNOWN is never success. Bounded observation only, no mutating retry.
+   if($_.Exception.Message -notlike 'V3_RECONCILE_HEARTBEAT*' -and
+      $_.Exception.Message -cne 'V3_RECONCILE_AFTERCARE_NOT_ORIGINAL'){throw}
+  }
+  Start-Sleep -Seconds 4
+ }
+ throw 'V3_RECONCILE_HEALTH_UNKNOWN_NO_RETRY'
+}
+
+function Invoke-V3OneTimeOriginalhostReconciliation {
+ [CmdletBinding()]
+ param([string]$PackageRoot,[byte[]]$Approval,[byte[]]$ApprovalCms,
+  [byte[]]$AuthorityAdmission,[string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit,
+  [string]$ExistingApprovalJson,[string]$ExistingApprovalCms,[string]$ReconciliationEvidenceJson,
+  [string]$TerminalAbortJson,[string]$TerminalAbortCms,[string]$InstallReadbackJson,[string]$BackupDirectory)
+ if($null -ne $script:V3ReleaseContext){throw 'V3_RELEASE_SESSION_ALREADY_OWNED'}
+ $pin=Assert-V3ReleaseAuthorityAdmission $AuthorityAdmission $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
+ $inventory=Get-V3OneTimeReleaseArtifactInventory $PackageRoot
+ $authorization=Assert-V3OneTimeReleaseAuthorization -Payload $Approval -Cms $ApprovalCms `
+  -ReviewedAuthorityCertificateSha256 $pin -Scope ORIGINALHOST_ABORT_RECONCILE `
+  -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $inventory
+ $a=$authorization.claims;$b=$a.bindings
+ $script:V3ReleaseRoot='C:\Users\ADMIN\Trading'
+ $journalPath=Join-Path $script:V3ReleaseRoot ('State\v3-one-time-'+[string]$a.release_id+'.json')
+ $ctx=[pscustomobject]@{authorization=$authorization;payload=$Approval;cms=$ApprovalCms;authority_pin=$pin
+  admission_bytes=$AuthorityAdmission;admission_sha256=$ExpectedAuthorityAdmissionSha256;package_root=$PackageRoot
+  tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  abort_json=$TerminalAbortJson;abort_cms=$TerminalAbortCms;catalog_readback=$InstallReadbackJson;stop_attempted=$true
+  journal_path=$journalPath;original_approval_path=$ExistingApprovalJson;original_cms_path=$ExistingApprovalCms
+  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@()}
+ $script:V3ReleaseContext=$ctx
+ $mutex=$null;$held=$false;$packageLease=$null;$originalLease=$null;$pair=$null
+ try{
+  if(-not(Test-V3ReleaseOriginalhostScope -Root $script:V3ReleaseRoot -Tasks $ctx.tasks)){
+   throw 'V3_RECONCILE_INTERACTIVE_ORIGINALHOST_ONLY'
+  }
+  $who=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+  if(-not $who.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'V3_RECONCILE_ADMIN_REQUIRED'}
+  $mutex=[Threading.Mutex]::new($false,'Global\V3Pr661OriginalhostOneShotOperator')
+  try{$held=$mutex.WaitOne(0,$false)}catch [Threading.AbandonedMutexException]{
+   $held=$true;throw 'V3_RECONCILE_ABANDONED_MUTEX_HOLD'
+  }
+  if(-not $held){throw 'V3_RECONCILE_CONCURRENT_OPERATOR_HOLD'}
+  $packageLease=Open-V3ReleasePackageReadLease -PackageRoot $PackageRoot -Inventory $inventory
+  Assert-V3ReleaseReconciliationOriginals $ctx
+  $ctx.evidence=[Text.UTF8Encoding]::new($false,$true).GetString(
+   (Read-V3ReleaseLocalBytes $ReconciliationEvidenceJson))|ConvertFrom-Json -ErrorAction Stop
+  # Real immutable handles are acquired anew under a NEW, specific authority;
+  # they are never presented as the interrupted STOP session's original pair.
+  $originalInventory=@{}
+  foreach($p in @($journalPath,$ExistingApprovalJson,$ExistingApprovalCms,$ReconciliationEvidenceJson)){
+   $originalInventory[$p]=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $p)
+  }
+  # Hold the actual existing evidence files, without rewriting their bytes.
+  $originalLease=[Collections.Generic.List[IO.FileStream]]::new()
+  foreach($p in $originalInventory.Keys){
+   $stream=[IO.File]::Open($p,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+   $originalLease.Add($stream)
+   if((Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $p)) -cne $originalInventory[$p]){throw 'V3_RECONCILE_ORIGINAL_LEASE_RACE'}
+  }
+  Assert-V3ReleaseReconciliationOriginals $ctx
+  $fence=Join-Path $script:V3ReleaseRoot 'State\v3-experimental-paper-old-intake-fence.json'
+  $archive=Join-Path $script:V3ReleaseRoot ('State\v3-experimental-paper-old-intake-fence.aborted-'+[string]$b.epoch_id+'.json')
+  if((Test-Path -LiteralPath $archive) -or
+     (Test-Path -LiteralPath (Join-Path $script:V3ReleaseRoot 'State\v2r4-technical-cutover-maintenance.json'))){
+   throw 'V3_RECONCILE_ARCHIVE_OR_FOREIGN_MAINTENANCE_HOLD'
+  }
+  $null=Get-V3Pr515ArmedOnlyRecoveryReadback -Root $script:V3ReleaseRoot -ExpectedFenceSha256 $b.fence_sha256
+  Assert-V3ReleaseMutationBoundary -Phase RESTORE
+  $pair=Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY -TaskNames $ctx.tasks
+  if(-not(Test-V3Pr661HeldIntakeDefinitionPair -Pair $pair -TaskNames $ctx.tasks)){throw 'V3_RECONCILE_REAL_PAIR_REQUIRED'}
+  $ctx.instance_snapshot=Read-V3ReleaseContinuingIntakes $ctx
+  return Complete-V3ReleaseExistingAttempt -Context $ctx -HeldPair $pair
+ }finally{
+  if($null -ne $pair){foreach($lease in $pair.leases){$lease.readonly_definition_handle.Dispose()}}
+  foreach($stream in $originalLease){$stream.Dispose()}
+  foreach($stream in $packageLease){$stream.Dispose()}
+  if($held){$mutex.ReleaseMutex()};if($null -ne $mutex){$mutex.Dispose()}
+  $script:V3ReleaseContext=$null
+ }
+}
+
+function Assert-V3ReleaseProtectedTasks([object]$Bindings) {
+ $b=$Bindings
+ foreach($row in @(
+  @('CryptoMiniPC-V2R4PaperLifecycle','lifecycle_xml_sha256'),
+  @('CryptoMiniPC-V2R4PaperCloudSync','cloudsync_xml_sha256'),
+  @('CryptoMiniPC-V3PaperSingleWriter','v3_writer_xml_sha256'))){
+  $task=Get-ScheduledTask -TaskName $row[0] -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $row[0] -TaskPath '\' -ErrorAction Stop)
+  $hash=Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($xml))
+  $expectedState=if($row[0] -ceq 'CryptoMiniPC-V3PaperSingleWriter'){'Disabled'}else{'Running'}
+  if($hash -cne [string]$b.($row[1]) -or [string]$task.State -cne $expectedState){throw 'V3_RELEASE_PROTECTED_TASK_DRIFT'}
+ }
+}
+
+function Wait-V3ReleaseReconciliationTerminal([object]$Context,[datetimeoffset]$After) {
+ $b=$Context.authorization.claims.bindings
+ for($i=0;$i -lt 45;$i++){
+  if([datetimeoffset]::UtcNow -ge $Context.authorization.expires_at){throw 'V3_RECONCILE_SESSION_EXPIRED_NO_RETRY'}
+  $payload=Read-V3ReleaseLocalBytes $Context.abort_json -MaxBytes 4096
+  $cms=Read-V3ReleaseLocalBytes $Context.abort_cms -MaxBytes 32768
+  $review=Test-V3Pr515SignedPreparedAbortReadback -Payload $payload -Cms $cms `
+   -ReviewedCertSha256 $b.reader_certificate_sha256 -ExpectedEpochId $b.epoch_id `
+   -ExpectedSourceSha256 $b.source_sha256 -ExpectedFenceSha256 $b.fence_sha256 -ExpectedAclSha256 $b.caller_acl_sha256
+  $m=[regex]::Match([Text.Encoding]::UTF8.GetString($payload),'"observed_at_utc"\s*:\s*"(?<t>[^"\\]+)"')
+  if($review.signed_abort_fields_and_pins_match -eq $true -and $m.Success -and
+     [datetimeoffset]::Parse($m.Groups['t'].Value,[Globalization.CultureInfo]::InvariantCulture) -gt $After){
+   return [pscustomobject]@{payload=$payload;cms=$cms}
+  }
+  Start-Sleep -Seconds 2
+ }
+ throw 'V3_RECONCILE_POST_ARCHIVE_READER_UNKNOWN_NO_RETRY'
+}
+
+# Private continuation of the SAME owner. Separated for regression coverage,
+# not exported, and cannot run without the real authorized context/pair.
+function Complete-V3ReleaseExistingAttempt([object]$Context,[object]$HeldPair) {
+ $ctx=$Context;$pair=$HeldPair;$authorization=$ctx.authorization
+ $a=$authorization.claims;$b=$a.bindings
+ $Approval=$ctx.payload;$ApprovalCms=$ctx.cms;$pin=$ctx.authority_pin
+ $ExpectedReleaseCommit=[string]$a.release_commit;$PackageRoot=$ctx.package_root
+ $journalPath=$ctx.journal_path
+ $fence=Join-Path $script:V3ReleaseRoot 'State\v3-experimental-paper-old-intake-fence.json'
+ $archive=Join-Path $script:V3ReleaseRoot ('State\v3-experimental-paper-old-intake-fence.aborted-'+[string]$b.epoch_id+'.json')
+ $latch=$null
+ try{
+  Assert-V3ReleaseMutationBoundary -Phase RESTORE
+  if(-not(Test-V3Pr661HeldIntakeDefinitionPair -Pair $pair -TaskNames $ctx.tasks)){
+   throw 'V3_RECONCILE_REAL_PAIR_REQUIRED'
+  }
+  # This is a one-way extension of the EXISTING journal, not another STOP
+  # transaction. CreateNew persists BEFORE Enable. No code removes this latch.
+  $latchPath=$journalPath+'.reconciliation-attempt.json'
+  $latch=[IO.File]::Open($latchPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::Read)
+  $record=[Text.Encoding]::UTF8.GetBytes((@{kind='V3_EXISTING_GATE_B_RECONCILIATION_ATTEMPT_V1'
+   release_id=$a.release_id;journal_sha256=$b.journal_sha256;approval_sha256=$authorization.approval_sha256
+   state='RECONCILIATION_ATTEMPTED_UNKNOWN_UNTIL_FINAL_ACK';stop_requested=$false}|ConvertTo-Json -Compress))
+  $latch.Write($record,0,$record.Length);$latch.Flush($true)
+  Assert-V3ReleaseMutationBoundary -Phase RESTORE
+  $null=Read-V3ReleaseContinuingIntakes $ctx
+  foreach($lease in $pair.leases){$lease.readonly_definition_handle.Dispose()}
+  $enabled=@();$enabledAt=[datetimeoffset]::UtcNow
+  foreach($name in $ctx.tasks){
+   $null=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $enabled
+   Enable-V3ReleaseIntakeDefinition -TaskName $name
+   $enabled+=@($name);$ctx.enabled_names=@($enabled)
+   $null=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $enabled
+  }
+  Wait-V3ReleaseReconciliationHealth -Context $ctx -After $enabledAt
+  # The existing same-handle, non-overwriting NTFS archive primitive performs
+  # the final signed boundary again. Generic marker-only hardlocks stay intact.
+  $archived=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source $fence -Archive $archive `
+   -ExpectedSha256 $b.fence_sha256 -IsolatedRoot $script:V3ReleaseRoot -IsolatedTaskNames $ctx.tasks
+  if([string]$archived.status -cne 'ATOMIC_FILE_RENAME_CONFIRMED_NO_CAS_OR_PAPER_RELEASE'){
+   throw 'V3_RECONCILE_ARCHIVE_UNKNOWN_NO_RETRY'
+  }
+  $archivedAt=[datetimeoffset]::UtcNow
+  Wait-V3ReleaseReconciliationHealth -Context $ctx -After $archivedAt -AfterArchive
+  # One final fresh independent Cloud Reader is still required. After archive
+  # the shared RESTORE boundary expects ARMED, so validate originals/authority/
+  # signed terminal explicitly without pretending the fence is still present.
+  $post=Wait-V3ReleaseReconciliationTerminal -Context $ctx -After $archivedAt
+  $null=Assert-V3OneTimeReleaseAuthorization -Payload $Approval -Cms $ApprovalCms `
+   -ReviewedAuthorityCertificateSha256 $pin -Scope ORIGINALHOST_ABORT_RECONCILE `
+   -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts (Get-V3OneTimeReleaseArtifactInventory $PackageRoot)
+  Assert-V3ReleaseReconciliationOriginals $ctx
+  Assert-V3ReleaseProtectedTasks -Bindings $b
+  $finalInstances=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $ctx.tasks
+  if(($finalInstances|ConvertTo-Json -Compress) -cne ($ctx.instance_snapshot|ConvertTo-Json -Compress)){
+   throw 'V3_RECONCILE_RUNNING_INSTANCE_REPLACED'
+  }
+  $terminal=Test-V3Pr515SignedPreparedAbortReadback -Payload $post.payload `
+   -Cms $post.cms -ReviewedCertSha256 $b.reader_certificate_sha256 `
+   -ExpectedEpochId $b.epoch_id -ExpectedSourceSha256 $b.source_sha256 -ExpectedFenceSha256 $b.fence_sha256 `
+   -ExpectedAclSha256 $b.caller_acl_sha256
+  if($terminal.signed_abort_fields_and_pins_match -ne $true -or (Test-Path -LiteralPath $fence) -or
+     (Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $archive)) -cne [string]$b.fence_sha256){
+   throw 'V3_RECONCILE_FINAL_READBACK_UNKNOWN_NO_RETRY'
+  }
+  $receipt=[pscustomobject]@{kind='V3_ONE_TIME_ORIGINALHOST_RECONCILIATION_RECEIPT_V1'
+   release_id=$a.release_id;release_commit=$a.release_commit;journal_sha256=$b.journal_sha256
+   original_approval_sha256=$b.original_approval_sha256;approval_sha256=$authorization.approval_sha256
+   status='TERMINAL_ABORT_PARTIAL_ATTEMPT_RECONCILED_AFTERCARE_CONFIRMED'
+   stop_requested_here=$false;successful_stop_claimed=$false;new_process_started_here=$false
+   original_processes_continued=$true;cas_or_paper_authorized=$false}
+  $completion=[IO.File]::Open(($journalPath+'.completed.json'),[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::Read)
+  try{$bytes=[Text.Encoding]::UTF8.GetBytes(($receipt|ConvertTo-Json -Compress));$completion.Write($bytes,0,$bytes.Length);$completion.Flush($true)}
+  finally{$completion.Dispose()}
+  return $receipt
+ }finally{if($null -ne $latch){$latch.Dispose()}}
+}
+
+Export-ModuleMember -Function Invoke-V3OneTimeOriginalhostRelease,Invoke-V3OneTimeOriginalhostReconciliation

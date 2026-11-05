@@ -2,7 +2,7 @@
 # Default is local inventory only. No implicit installation, STOP, CAS or Paper.
 [CmdletBinding()]
 param(
- [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','Stage4Epoch','GateAAbort','GateAReadback')][string]$Mode='Inventory',
+ [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','GateAAbort','GateAReadback')][string]$Mode='Inventory',
  [string]$PackageRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$ApprovalJson='', [string]$ApprovalCms='', [string]$ExpectedReleaseCommit='',
  [string]$AuthorityAdmissionJson='', [string]$ExpectedAuthorityAdmissionSha256='',
@@ -10,7 +10,8 @@ param(
  [string]$CaFile='', [string]$IssuerPrestopJson='', [string]$IssuerPrestopCms='',
  [string]$TerminalAbortJson='', [string]$TerminalAbortCms='',
  [string]$IssuerReceiptJson='', [string]$IssuerReceiptCms='',
- [string]$InstallReadbackJson='', [string]$BackupDirectory=''
+ [string]$InstallReadbackJson='', [string]$BackupDirectory='',
+ [string]$ExistingApprovalJson='', [string]$ExistingApprovalCms='', [string]$ReconciliationEvidenceJson=''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -137,6 +138,7 @@ if($Mode -in @('GateAAbort','GateAReadback')){
     $env:GITHUB_ACTIONS -eq 'true' -or -not [Environment]::UserInteractive){throw 'V3_GATE_A_INDEPENDENT_NOTEBOOK_REQUIRED'}
 }else{Assert-V3OriginalInteractiveOwner}
 $scope=if($Mode -eq 'OriginalhostAbortRestore'){'ORIGINALHOST_ABORT_RESTORE'}
+ elseif($Mode -eq 'OriginalhostReconcile'){'ORIGINALHOST_ABORT_RECONCILE'}
  elseif($Mode -eq 'Stage4Epoch'){'CLOUD_STAGE4_EPOCH_OPEN'}
  elseif($Mode -in @('GateAAbort','GateAReadback')){'CLOUD_PREPARED_FENCE_ABORT'}
  else{'CLOUD_ABORT_INSTALL'}
@@ -146,17 +148,27 @@ if($Mode -ne 'ReadbackCloud'){
  # with its exact digest in the reviewed execution instruction. Never create
  # it, auto-enroll the candidate Notebook certificate, or accept a free pin.
  $admissionBytes=Read-V3ReleaseLocalBytes -Path $AuthorityAdmissionJson
- if($Mode -ne 'OriginalhostAbortRestore'){
+ if($Mode -notin @('OriginalhostAbortRestore','OriginalhostReconcile')){
   $authorityPin=Assert-V3ReleaseAuthorityAdmission -Bytes $admissionBytes `
    -ExpectedSha256 $ExpectedAuthorityAdmissionSha256 -ReleaseCommit $ExpectedReleaseCommit
  }
  $approval=Read-V3ReleaseLocalBytes -Path $ApprovalJson
  $cms=Read-V3ReleaseLocalBytes -Path $ApprovalCms -MaxBytes 32768
- if($Mode -ne 'OriginalhostAbortRestore'){
+ if($Mode -notin @('OriginalhostAbortRestore','OriginalhostReconcile')){
   $authorized=Assert-V3OneTimeReleaseAuthorization -Payload $approval -Cms $cms `
    -ReviewedAuthorityCertificateSha256 $authorityPin -Scope $scope `
    -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $hashes
  }
+}
+if($Mode -eq 'OriginalhostReconcile'){
+ Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+ Invoke-V3OneTimeOriginalhostReconciliation -PackageRoot $PackageRoot -Approval $approval -ApprovalCms $cms `
+  -AuthorityAdmission $admissionBytes -ExpectedAuthorityAdmissionSha256 $ExpectedAuthorityAdmissionSha256 `
+  -ExpectedReleaseCommit $ExpectedReleaseCommit -ExistingApprovalJson $ExistingApprovalJson `
+  -ExistingApprovalCms $ExistingApprovalCms -ReconciliationEvidenceJson $ReconciliationEvidenceJson `
+  -TerminalAbortJson $TerminalAbortJson -TerminalAbortCms $TerminalAbortCms `
+  -InstallReadbackJson $InstallReadbackJson -BackupDirectory $BackupDirectory|ConvertTo-Json -Depth 6
+ return
 }
 if($Mode -eq 'OriginalhostAbortRestore'){
  Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force

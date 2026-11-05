@@ -45,6 +45,11 @@ foreach($functionName in @('Test-V3IndependentOriginalHostCmsSignature','Test-V3
  . ([scriptblock]::Create($f[0].Extent.Text))
 }
 if($ReleaseVariant){
+ $enable=@($ast.FindAll({param($n)
+  $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Enable-V3ReleaseIntakeDefinition'
+ },$true))
+ if($enable.Count -ne 1){throw 'V3_RELEASE_SHARED_ENABLE_OWNER_MISSING'}
+ . ([scriptblock]::Create($enable[0].Extent.Text))
  $f=@($ast.FindAll({param($n)
   $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Test-V3ReleaseSignedTerminalPrestopReceipt'
  },$true))
@@ -133,6 +138,7 @@ if($ReleaseVariant){
 $suffix=[guid]::NewGuid().ToString('N')
 $name='PR661-CI-FileLease-'+$suffix
 $secondName='PR661-CI-FileLease-'+[guid]::NewGuid().ToString('N')
+if($ReleaseVariant){$script:V3ReleaseContext=[pscustomobject]@{tasks=@($name,$secondName)}}
 $probeName='PR661-CI-FileLeaseProbe-'+$suffix
 $temp=Join-Path $env:RUNNER_TEMP $probeName
 $null=[IO.Directory]::CreateDirectory($temp)
@@ -195,7 +201,18 @@ try{
  }
  $testWrite=[IO.File]::Open((Join-Path (Join-Path $env:SystemRoot 'System32\Tasks') $name),'Open','Write','ReadWrite')
  $testWrite.Dispose()
- $task.Enabled=$true
+ if($ReleaseVariant){
+  $instanceBefore=[string]@($folder.GetTask($name).GetInstances(0))[0].InstanceGuid
+  if([string](Get-ScheduledTask -TaskName $name -TaskPath '\').State -cne 'Running'){
+   throw 'FAIL_RECONCILIATION_FIXTURE_NOT_DISABLED_AND_RUNNING'
+  }
+  Enable-V3ReleaseIntakeDefinition -TaskName $name
+  $instanceAfter=[string]@($folder.GetTask($name).GetInstances(0))[0].InstanceGuid
+  if(-not $folder.GetTask($name).Enabled -or $runningProcess.HasExited -or $instanceBefore -cne $instanceAfter){
+   throw 'FAIL_ENABLED_ONLY_RECONCILIATION_RESTARTED_OR_STOPPED_ORIGINAL'
+  }
+  Write-Output 'V3_GATE_B_NATIVE_ENABLED_ONLY_PRESERVED_RUNNING_INSTANCE_PASS'
+ }else{$task.Enabled=$true}
  $issuerInput=New-IssuerTestInput
  $actualStop=Invoke-V3Pr661IssuerBoundIntakeStopSOURCE_ONLY -tasks @($name,$secondName) `
   -protected @() -native @([pscustomobject]@{arguments=('-NoProfile -File "'+$workerScript+'"')}) `
@@ -447,6 +464,8 @@ Start-Sleep -Seconds 120
  catch{if($_.Exception.Message -notlike '*NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED*'){throw};$productionRejected=$true}
  if(-not $productionRejected){throw 'FAIL_FULL_OPERATOR_PRODUCTION_GATE_OPENED'}
  if($ReleaseVariant){
+  # The full restore above uses a different disposable pair.
+  $script:V3ReleaseContext.tasks=@($fullTaskNames)
   $badTerminalDenied=$false
   try{$null=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY @fullInput}
   catch{if($_.Exception.Message -notlike '*FRESH_TERMINAL_ABORT_REQUIRED*'){throw};$badTerminalDenied=$true}

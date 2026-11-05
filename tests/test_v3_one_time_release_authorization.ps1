@@ -286,3 +286,6 @@ try{
 Write-Output 'V3_GATE_A_EXACT_BYTES_REAL_CMS_NEGATIVE_TESTS_PASS'
 
 }finally{$cert.Dispose();$rsa.Dispose()}
+
+# Reuse this existing Linux/Windows CI entry; no new workflow or runtime task.
+& (Join-Path $PSScriptRoot 'test_v3_one_time_reconciliation.ps1')

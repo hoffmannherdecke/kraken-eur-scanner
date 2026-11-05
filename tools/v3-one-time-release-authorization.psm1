@@ -51,7 +51,7 @@ function Assert-V3ReleaseCms([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuth
 
 function Assert-V3OneTimeReleaseAuthorization {
  param([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuthorityCertificateSha256,
-       [ValidateSet('CLOUD_ABORT_INSTALL','ORIGINALHOST_ABORT_RESTORE','CLOUD_STAGE4_EPOCH_OPEN','CLOUD_PREPARED_FENCE_ABORT')][string]$Scope,
+       [ValidateSet('CLOUD_ABORT_INSTALL','ORIGINALHOST_ABORT_RESTORE','ORIGINALHOST_ABORT_RECONCILE','CLOUD_STAGE4_EPOCH_OPEN','CLOUD_PREPARED_FENCE_ABORT')][string]$Scope,
        [string]$ExpectedReleaseCommit,[hashtable]$ExpectedArtifacts,
        [datetimeoffset]$Now=[datetimeoffset]::UtcNow)
  Assert-V3ReleaseCms $Payload $Cms $ReviewedAuthorityCertificateSha256
