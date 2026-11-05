@@ -31,13 +31,24 @@ on that aborted epoch. No V3 writer is enabled. A future Paper cutover retains
 its separate existing Stage4/Stage5/CAS/Single-Writer gates.
 
 The release consumes the existing separately authenticated and CMS-signed
-Notebook prestop and terminal Reader outputs. It does not sign third-party
+Notebook terminal Reader output. It does not sign third-party
 JSON, invent continuity assertions, grant Notebook paper-series privileges,
 or create a replacement issuer. An absent, mismatched, expired or unadmitted
 signer cannot enter production. The authority's scope covers the controlled
 privileged operator window; as in PR661, kernel handles do not claim immunity
 to forced handle closure or arbitrary administrator actions outside that
 window. Such interference requires HOLD and independent reconciliation.
+
+Gate B obtains fresh `PreparedAbortSignedCurrent` output from the unchanged
+Notebook Reader. Pass those exact signed terminal bytes as `IssuerPrestopJson`
+and `IssuerPrestopCms`, as well as the current local `TerminalAbortJson` and
+`TerminalAbortCms`. The dedicated generated Gate-B adapter verifies the terminal
+CMS and all existing epoch/source/fence/ACL and Cloud-boundary fields, then
+enforces the existing maximum 30-second prestop age, rechecked after leases.
+It does not serialize a replacement issuer receipt. The pre-abort issuer RPC
+and its zero-abort guard remain unchanged for Gate A; that RPC cannot provide
+a post-abort Gate-B observation. Preserve Gate A's archived original files;
+refresh observations into separate Gate-B files immediately before use.
 
 Read-only package file leases prevent replacement of verified runtime bytes during execution. STOP, restore and atomic archive recheck scoped authorization, package bytes,
 fresh signed terminal proof, exact ARMED fence, protected task XML and V3

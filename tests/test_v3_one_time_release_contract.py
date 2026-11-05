@@ -64,6 +64,17 @@ class ReleaseContract(unittest.TestCase):
         self.assertLess(invoke.index('Assert-V3ReleaseMutationBoundary -Phase RESTORE'),
                         invoke.index('$journal=[IO.File]::Open'))
 
+    def test_gate_b_uses_terminal_reader_without_changing_gate_a_or_cloud(self):
+        s=OUTPUT.read_text()
+        self.assertEqual(s.count('=Test-V3ReleaseSignedTerminalPrestopReceipt'),6)
+        helper=s[s.index('function Test-V3ReleaseSignedTerminalPrestopReceipt'):s.index('function Assert-V3ReleaseInstalledAbortReadback')]
+        self.assertIn('Test-V3Pr515SignedPreparedAbortReadback',helper)
+        self.assertIn('$age -le 30',helper)
+        self.assertNotIn('ConvertTo-Json',helper)
+        self.assertIn('function Test-V3Pr661SignedIssuerPrestopReceipt(',s)
+        launcher=(ROOT/'tools/v3-one-time-release.ps1').read_text()
+        self.assertIn('Test-V3Pr661SignedIssuerPrestopReceipt -Payload $p -Cms $c',launcher)
+
 class GateAContract(unittest.TestCase):
     def test_dispatch_is_issuer_only_and_readback_separate(self):
         s=(ROOT/'tools/v3-one-time-release.ps1').read_text()

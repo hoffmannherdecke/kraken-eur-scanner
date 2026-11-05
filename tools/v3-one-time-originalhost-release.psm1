@@ -149,7 +149,7 @@ function Test-V3Pr661HeldIssuerAndNativeReviewSOURCE_ONLY(
   }
   if(-not $held){throw 'V3_PR661_CONCURRENT_OPERATOR_HOLD'}
   $out.held_cooperating_operator_mutex=$true
-  $signed=Test-V3Pr661SignedIssuerPrestopReceipt -Payload $IssuerPayload `
+  $signed=Test-V3ReleaseSignedTerminalPrestopReceipt -Payload $IssuerPayload `
    -Cms $IssuerCms -ReviewedCertSha256 $IssuerCertSha256 `
    -ExpectedEpochId $ExpectedEpochId -ExpectedSourceSha256 $ExpectedSourceSha256 `
    -ExpectedFenceSha256 $ExpectedFenceSha256 -ExpectedAclSha256 $ExpectedAclSha256
@@ -227,7 +227,7 @@ function Invoke-V3Pr661ScopedNativeStopSOURCE_ONLY(
    $held=$true;throw 'V3_PR661_ABANDONED_MUTEX_HOLD'
   }
   if(-not $held){throw 'V3_PR661_CONCURRENT_OPERATOR_HOLD'}
-  $signed=Test-V3Pr661SignedIssuerPrestopReceipt -Payload $IssuerPayload `
+  $signed=Test-V3ReleaseSignedTerminalPrestopReceipt -Payload $IssuerPayload `
     -Cms $IssuerCms -ReviewedCertSha256 $IssuerCertSha256 `
     -ExpectedEpochId $ExpectedEpochId -ExpectedSourceSha256 $ExpectedSourceSha256 `
     -ExpectedFenceSha256 $ExpectedFenceSha256 -ExpectedAclSha256 $ExpectedAclSha256
@@ -2237,7 +2237,7 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   if(-not $scopeValid){
    throw 'V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD'
   }
-  $before=Test-V3Pr661SignedIssuerPrestopReceipt `
+  $before=Test-V3ReleaseSignedTerminalPrestopReceipt `
    -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
    -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
    -ExpectedEpochId $ReviewedIssuerEpochId -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
@@ -2273,7 +2273,7 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  try{
   $heldIntakePair=Open-V3Pr661DisabledIntakeLeasePairSOURCE_ONLY -TaskNames $tasks
   # Time spent disabling/acquiring is not allowed to extend CMS freshness.
-  $issuerAfterLease=Test-V3Pr661SignedIssuerPrestopReceipt `
+  $issuerAfterLease=Test-V3ReleaseSignedTerminalPrestopReceipt `
    -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
    -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
    -ExpectedEpochId $ReviewedIssuerEpochId -ExpectedSourceSha256 $ReviewedIssuerSourceSha256 `
@@ -2712,7 +2712,7 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  # acquire authority from a mutex or a locally asserted success boolean.
  # A separately approved and source-pinned one-shot Phase B must still prove
  # continuous Cloud/UNKNOWN custody and privileged scheduler/PID exclusion.
- $issuerReview=Test-V3Pr661SignedIssuerPrestopReceipt `
+ $issuerReview=Test-V3ReleaseSignedTerminalPrestopReceipt `
    -Payload $IndependentIssuerReaderJson -Cms $IndependentIssuerReaderCms `
    -ReviewedCertSha256 $ReviewedIssuerReaderCertificateSha256 `
    -ExpectedEpochId $ReviewedIssuerEpochId `
@@ -4044,6 +4044,33 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
 
 # Build input for the separately reviewable release variant, never dot-source
 # this fragment on a host. Public entry is the generated module's ONE owner.
+function Test-V3ReleaseSignedTerminalPrestopReceipt(
+ [byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedCertSha256,
+ [string]$ExpectedEpochId,[string]$ExpectedSourceSha256,
+ [string]$ExpectedFenceSha256,[string]$ExpectedAclSha256) {
+ # Gate B follows the terminal abort. The original issuer-prestop RPC rightly
+ # rejects that state; never rerun it or relax its pre-abort Cloud contract.
+ # Reuse actual signed PreparedAbortSignedCurrent bytes, with the stricter
+ # existing 30-second STOP deadline. This adapter does not mint a receipt.
+ $out=[ordered]@{signed_cloud_row_matches_pre_stop_inhibit=$false;
+  continuous_cloud_cas_unknown_custody_proven=$false;
+  originalhost_scheduler_exclusion_proven=$false;native_stop_or_restore_authorized=$false}
+ $terminal=Test-V3Pr515SignedPreparedAbortReadback -Payload $Payload -Cms $Cms `
+  -ReviewedCertSha256 $ReviewedCertSha256 -ExpectedEpochId $ExpectedEpochId `
+  -ExpectedSourceSha256 $ExpectedSourceSha256 -ExpectedFenceSha256 $ExpectedFenceSha256 `
+  -ExpectedAclSha256 $ExpectedAclSha256
+ if($terminal.signed_abort_fields_and_pins_match -ne $true){return [pscustomobject]$out}
+ try {
+  $wire=[Text.UTF8Encoding]::new($false,$true).GetString($Payload)
+  $m=[regex]::Match($wire,'"observed_at_utc"\s*:\s*"(?<t>[^"\\]+)"')
+  $at=[datetimeoffset]::ParseExact($m.Groups['t'].Value,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+   [Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal)
+  $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
+  if($age -ge -5 -and $age -le 30){$out.signed_cloud_row_matches_pre_stop_inhibit=$true}
+ }catch{}
+ return [pscustomobject]$out
+}
+
 function Assert-V3ReleaseInstalledAbortReadback([string]$Path,[object]$Bindings,[string]$ExpectedSourceSha256) {
  # Installation and host execution have separate immutable release identities.
  # The independent host approval pins BOTH the original receipt bytes and its
@@ -4183,7 +4210,7 @@ function Invoke-V3OneTimeOriginalhostRelease {
   # XML bytes and PR515 source. No new backup or routine baseline test.
   $prestop=Read-V3ReleaseLocalBytes -Path $IssuerPrestopJson -MaxBytes 4096
   $prestopCmsBytes=Read-V3ReleaseLocalBytes -Path $IssuerPrestopCms -MaxBytes 32768
-  $issuer=Test-V3Pr661SignedIssuerPrestopReceipt -Payload $prestop -Cms $prestopCmsBytes `
+  $issuer=Test-V3ReleaseSignedTerminalPrestopReceipt -Payload $prestop -Cms $prestopCmsBytes `
    -ReviewedCertSha256 ([string]$b.reader_certificate_sha256) -ExpectedEpochId ([string]$b.epoch_id) `
    -ExpectedSourceSha256 ([string]$b.source_sha256) -ExpectedFenceSha256 ([string]$b.fence_sha256) `
    -ExpectedAclSha256 ([string]$b.caller_acl_sha256)

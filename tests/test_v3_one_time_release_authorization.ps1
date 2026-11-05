@@ -175,6 +175,46 @@ try {
   }
   Write-Output 'V3_GATE_B_DISTINCT_INSTALL_RELEASE_AND_EXACT_RECEIPT_NEGATIVES_PASS'
  }finally{if([IO.File]::Exists($installFixture)){[IO.File]::Delete($installFixture)}}
+ $terminalRecord=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1';
+  epoch_id=('V3CAS-AUDIT-'+('a'*32));source_sha256=('a'*64);prepared_fence_sha256=('b'*64);
+  caller_acl_sha256=('c'*64);issuer_actor='v3_cas_inhibit_issuer_actor';receipt_sha256=('d'*64);
+  state='ABORT_RECORDED_NOT_RELEASED';
+  created_at_utc=$now.AddMinutes(-5).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'");
+  observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'");
+  cloud_active_series_count=1;cloud_original_active_series_count=1;cloud_cas_rpc_count=0;
+  cloud_executor_can_login=$false;cloud_observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")}
+ foreach($failure in @('valid','stale_45_seconds','future','wrong_epoch','wrong_source','wrong_fence',
+   'wrong_acl','cas_present','executor_login','wrong_state','bad_signature','wrong_signer')){
+  $record=[ordered]@{};foreach($k in $terminalRecord.Keys){$record[$k]=$terminalRecord[$k]}
+  switch($failure){
+   stale_45_seconds {$record.observed_at_utc=[datetimeoffset]::UtcNow.AddSeconds(-45).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'");$record.cloud_observed_at_utc=$record.observed_at_utc}
+   future {$record.observed_at_utc=[datetimeoffset]::UtcNow.AddSeconds(20).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'");$record.cloud_observed_at_utc=$record.observed_at_utc}
+   wrong_epoch {$record.epoch_id=('V3CAS-AUDIT-'+('e'*32))}
+   wrong_source {$record.source_sha256=('e'*64)}
+   wrong_fence {$record.prepared_fence_sha256=('e'*64)}
+   wrong_acl {$record.caller_acl_sha256=('e'*64)}
+   cas_present {$record.cloud_cas_rpc_count=1}
+   executor_login {$record.cloud_executor_can_login=$true}
+   wrong_state {$record.state='INHIBITED'}
+  }
+  $payload=[Text.Encoding]::UTF8.GetBytes(($record|ConvertTo-Json -Compress))
+  $sig=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new($payload),$true)
+  $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+  $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1');$sig.ComputeSignature($signer)
+  $sigBytes=[byte[]]$sig.Encode();$expectedPin=$pin
+  if($failure -ceq 'bad_signature'){$sigBytes=[byte[]](1,2,3)}
+  if($failure -ceq 'wrong_signer'){$expectedPin=('0'*64)}
+  $review=& $module {param($p,$c,$pin)
+   Test-V3ReleaseSignedTerminalPrestopReceipt -Payload $p -Cms $c -ReviewedCertSha256 $pin `
+    -ExpectedEpochId ('V3CAS-AUDIT-'+('a'*32)) -ExpectedSourceSha256 ('a'*64) `
+    -ExpectedFenceSha256 ('b'*64) -ExpectedAclSha256 ('c'*64)
+  } $payload $sigBytes $expectedPin
+  if($review.signed_cloud_row_matches_pre_stop_inhibit -ne ($failure -ceq 'valid')){
+   throw ('GATE_B_TERMINAL_PRESTOP_REVIEW_FAILED_'+$failure)
+  }
+  $checks++
+ }
+ Write-Output 'V3_GATE_B_SIGNED_TERMINAL_PRESTOP_30_SECOND_AND_PIN_NEGATIVES_PASS'
  $scopeDenied=& $module {Test-V3ReleaseOriginalhostScope -Root 'C:\Users\ADMIN\Trading' -Tasks @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')}
  if($scopeDenied){throw 'RELEASE_MISSING_SESSION_ACCEPTED'};$checks++
  # An expired signed session cannot reach any generated native owner.
