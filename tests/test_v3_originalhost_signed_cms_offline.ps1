@@ -217,6 +217,23 @@ try {
    if($actual.signed_abort_fields_and_pins_match -ne $true -or $actual.marker_only_cancel_authorized -ne $false){
     throw 'V3_REAL_READER_TERMINAL_ABORT_PUBLIC_CLOUD_JOIN_FAILED_OR_FALSE_RELEASE'
    }
+   # Feed the actual post-abort database Reader bytes to Gate B's dedicated
+   # prestop adapter, rather than the pre-abort RPC which must reject here.
+   $boundary=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/v3-one-time-originalhost-boundary.ps1'
+   $bAst=[Management.Automation.Language.Parser]::ParseFile($boundary,[ref]$null,[ref]$null)
+   $f=@($bAst.FindAll({param($n)
+    $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Test-V3ReleaseSignedTerminalPrestopReceipt'
+   },$true))
+   if($f.Count -ne 1){throw 'V3_GATE_B_TERMINAL_ADAPTER_MISSING'}
+   . ([scriptblock]::Create($f[0].Extent.Text))
+   $b=Test-V3ReleaseSignedTerminalPrestopReceipt -Payload ([Text.Encoding]::UTF8.GetBytes($wire)) `
+    -Cms (Sign-ReaderMock $wire $cert) -ReviewedCertSha256 $pin `
+    -ExpectedEpochId 'V3CAS-AUDIT-99999999999999999999999999999999' `
+    -ExpectedSourceSha256 ('a'*64) -ExpectedFenceSha256 ('b'*64) -ExpectedAclSha256 ('c'*64)
+   if($b.signed_cloud_row_matches_pre_stop_inhibit -ne $true -or $b.native_stop_or_restore_authorized -ne $false){
+    throw 'V3_GATE_B_REAL_POSTABORT_READER_PRESTOP_FAILED'
+   }
+   Write-Output 'V3_GATE_B_REAL_PG17_POSTABORT_READER_CMS_PRESTOP_PASS'
   }
   Write-Output 'V3_DURABLE_TERMINAL_ABORT_FRESH_READ_REAL_CMS_POSITIVE_NEGATIVES_PASS'
   # Behavioral check of the ACTUAL existing verifier. An optional fixture

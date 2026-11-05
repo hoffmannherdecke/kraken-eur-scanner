@@ -129,6 +129,92 @@ try {
     $inventory.cloud_contacted -ne $false){throw 'RELEASE_DEFAULT_HAS_AUTHORITY'};$checks++
  Import-Module (Join-Path $root 'tools/v3-one-time-originalhost-release.psm1') -Force
  $module=Get-Module 'v3-one-time-originalhost-release'
+ Import-Module (Join-Path $root 'tools/v3-one-time-release-authorization.psm1') -Force
+ # Gate B must consume the genuine earlier installation without rewriting it
+ # to the newer host release. Exact independently signed pins remain mandatory.
+ $installFixture=Join-Path ([IO.Path]::GetTempPath()) ('v3-install-'+[guid]::NewGuid().ToString('N')+'.json')
+ try {
+  $installRecord=[ordered]@{kind='V3_ONE_TIME_ABORT_INSTALL_READBACK_V1';verified=$true;
+   installation=[ordered]@{kind='V3_ONE_TIME_ABORT_INSTALL_V1';release_commit=('2'*40);
+    source_sha256=$hashes['supabase/v3-cas-prepared-fence-abort-INACTIVE.sql'];
+    release_id=('V3-ONETIME-'+('b'*32));approval_sha256=('c'*64)}}
+  $installBytes=[Text.Encoding]::UTF8.GetBytes(($installRecord|ConvertTo-Json -Compress -Depth 5))
+  [IO.File]::WriteAllBytes($installFixture,$installBytes)
+  $installBindings=[pscustomobject]@{install_release_commit=('2'*40);install_readback_sha256=(Get-V3ReleaseSha256 $installBytes)}
+  $installSource=$hashes['supabase/v3-cas-prepared-fence-abort-INACTIVE.sql']
+  & $module {param($p,$b,$s) Assert-V3ReleaseInstalledAbortReadback -Path $p -Bindings $b -ExpectedSourceSha256 $s} $installFixture $installBindings $installSource
+  $checks++
+  foreach($failure in @('wrong_commit','missing_commit','wrong_hash','wrong_source','changed_bytes',
+    'unverified','string_verified','wrong_kind','wrong_install_kind','bad_install_id','bad_approval')){
+   $b=[pscustomobject]@{install_release_commit=('2'*40);install_readback_sha256=(Get-V3ReleaseSha256 $installBytes)}
+   $record=([Text.Encoding]::UTF8.GetString($installBytes))|ConvertFrom-Json
+   $sourcePin=$installSource
+   switch($failure){
+    wrong_commit {$b.install_release_commit=('1'*40)}
+    missing_commit {$b.install_release_commit=''}
+    wrong_hash {$b.install_readback_sha256=('0'*64)}
+    wrong_source {$sourcePin=('0'*64)}
+    changed_bytes {[IO.File]::WriteAllBytes($installFixture,([byte[]]($installBytes+32)))}
+    unverified {$record.verified=$false}
+    string_verified {$record.verified='true'}
+    wrong_kind {$record.kind='WRONG'}
+    wrong_install_kind {$record.installation.kind='WRONG'}
+    bad_install_id {$record.installation.release_id='WRONG'}
+    bad_approval {$record.installation.approval_sha256='WRONG'}
+   }
+   if($failure -in @('unverified','string_verified','wrong_kind','wrong_install_kind','bad_install_id','bad_approval')){
+    $altered=[Text.Encoding]::UTF8.GetBytes(($record|ConvertTo-Json -Compress -Depth 5))
+    [IO.File]::WriteAllBytes($installFixture,$altered)
+    $b.install_readback_sha256=Get-V3ReleaseSha256 $altered
+   }
+   $denied=$false
+   try{& $module {param($p,$b,$s) Assert-V3ReleaseInstalledAbortReadback -Path $p -Bindings $b -ExpectedSourceSha256 $s} $installFixture $b $sourcePin}catch{$denied=$true}
+   if(-not $denied){throw ('GATE_B_INSTALL_PROVENANCE_NEGATIVE_ACCEPTED_'+$failure)}
+   $checks++
+   [IO.File]::WriteAllBytes($installFixture,$installBytes)
+  }
+  Write-Output 'V3_GATE_B_DISTINCT_INSTALL_RELEASE_AND_EXACT_RECEIPT_NEGATIVES_PASS'
+ }finally{if([IO.File]::Exists($installFixture)){[IO.File]::Delete($installFixture)}}
+ $terminalRecord=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1';
+  epoch_id=('V3CAS-AUDIT-'+('a'*32));source_sha256=('a'*64);prepared_fence_sha256=('b'*64);
+  caller_acl_sha256=('c'*64);issuer_actor='v3_cas_inhibit_issuer_actor';receipt_sha256=('d'*64);
+  state='ABORT_RECORDED_NOT_RELEASED';
+  created_at_utc=$now.AddMinutes(-5).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'");
+  observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'");
+  cloud_active_series_count=1;cloud_original_active_series_count=1;cloud_cas_rpc_count=0;
+  cloud_executor_can_login=$false;cloud_observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")}
+ foreach($failure in @('valid','stale_45_seconds','future','wrong_epoch','wrong_source','wrong_fence',
+   'wrong_acl','cas_present','executor_login','wrong_state','bad_signature','wrong_signer')){
+  $record=[ordered]@{};foreach($k in $terminalRecord.Keys){$record[$k]=$terminalRecord[$k]}
+  switch($failure){
+   stale_45_seconds {$record.observed_at_utc=[datetimeoffset]::UtcNow.AddSeconds(-45).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'");$record.cloud_observed_at_utc=$record.observed_at_utc}
+   future {$record.observed_at_utc=[datetimeoffset]::UtcNow.AddSeconds(20).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'");$record.cloud_observed_at_utc=$record.observed_at_utc}
+   wrong_epoch {$record.epoch_id=('V3CAS-AUDIT-'+('e'*32))}
+   wrong_source {$record.source_sha256=('e'*64)}
+   wrong_fence {$record.prepared_fence_sha256=('e'*64)}
+   wrong_acl {$record.caller_acl_sha256=('e'*64)}
+   cas_present {$record.cloud_cas_rpc_count=1}
+   executor_login {$record.cloud_executor_can_login=$true}
+   wrong_state {$record.state='INHIBITED'}
+  }
+  $payload=[Text.Encoding]::UTF8.GetBytes(($record|ConvertTo-Json -Compress))
+  $sig=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new($payload),$true)
+  $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+  $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1');$sig.ComputeSignature($signer)
+  $sigBytes=[byte[]]$sig.Encode();$expectedPin=$pin
+  if($failure -ceq 'bad_signature'){$sigBytes=[byte[]](1,2,3)}
+  if($failure -ceq 'wrong_signer'){$expectedPin=('0'*64)}
+  $review=& $module {param($p,$c,$pin)
+   Test-V3ReleaseSignedTerminalPrestopReceipt -Payload $p -Cms $c -ReviewedCertSha256 $pin `
+    -ExpectedEpochId ('V3CAS-AUDIT-'+('a'*32)) -ExpectedSourceSha256 ('a'*64) `
+    -ExpectedFenceSha256 ('b'*64) -ExpectedAclSha256 ('c'*64)
+  } $payload $sigBytes $expectedPin
+  if($review.signed_cloud_row_matches_pre_stop_inhibit -ne ($failure -ceq 'valid')){
+   throw ('GATE_B_TERMINAL_PRESTOP_REVIEW_FAILED_'+$failure)
+  }
+  $checks++
+ }
+ Write-Output 'V3_GATE_B_SIGNED_TERMINAL_PRESTOP_30_SECOND_AND_PIN_NEGATIVES_PASS'
  $scopeDenied=& $module {Test-V3ReleaseOriginalhostScope -Root 'C:\Users\ADMIN\Trading' -Tasks @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')}
  if($scopeDenied){throw 'RELEASE_MISSING_SESSION_ACCEPTED'};$checks++
  # An expired signed session cannot reach any generated native owner.

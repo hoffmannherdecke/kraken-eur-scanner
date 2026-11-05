@@ -44,6 +44,13 @@ foreach($functionName in @('Test-V3IndependentOriginalHostCmsSignature','Test-V3
  if($f.Count -ne 1){throw 'V3_NATIVE_INTEGRATION_ORIGINAL_FUNCTION_MISSING'}
  . ([scriptblock]::Create($f[0].Extent.Text))
 }
+if($ReleaseVariant){
+ $f=@($ast.FindAll({param($n)
+  $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Test-V3ReleaseSignedTerminalPrestopReceipt'
+ },$true))
+ if($f.Count -ne 1){throw 'V3_RELEASE_TERMINAL_PRESTOP_VERIFIER_MISSING'}
+ . ([scriptblock]::Create($f[0].Extent.Text))
+}
 Add-Type -AssemblyName System.Security.Cryptography.Pkcs
 $rsa=[Security.Cryptography.RSA]::Create(2048)
 $request=[Security.Cryptography.X509Certificates.CertificateRequest]::new(
@@ -54,7 +61,7 @@ $hash=[Security.Cryptography.SHA256]::Create()
 try{$testPin=([BitConverter]::ToString($hash.ComputeHash($cert.RawData))).Replace('-','').ToLowerInvariant()}
 finally{$hash.Dispose()}
 function New-IssuerTestInput {
- $wire=([ordered]@{
+ $data=[ordered]@{
   cloud_active_series_count=1;cloud_original_active_series_count=1
   cloud_cas_rpc_count=0;cloud_executor_can_login=$false
   cloud_observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
@@ -66,7 +73,16 @@ function New-IssuerTestInput {
   issuer_actor='v3_cas_inhibit_issuer_actor'
   inhibit_started_at_utc=[datetimeoffset]::UtcNow.AddSeconds(-5).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
   state='INHIBITED';native_stop_done=$false;unknown_count=0;cas_or_paper_authorized=$false
- }|ConvertTo-Json -Compress)
+ }
+ if($ReleaseVariant){
+  $data=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1';
+   epoch_id=$data.epoch_id;source_sha256=$data.source_sha256;prepared_fence_sha256=$data.original_fence_sha256;
+   caller_acl_sha256=$data.caller_acl_sha256;issuer_actor=$data.issuer_actor;receipt_sha256=('d'*64);
+   state='ABORT_RECORDED_NOT_RELEASED';created_at_utc=$data.inhibit_started_at_utc;
+   observed_at_utc=$data.observed_at_utc;cloud_active_series_count=1;cloud_original_active_series_count=1;
+   cloud_cas_rpc_count=0;cloud_executor_can_login=$false;cloud_observed_at_utc=$data.cloud_observed_at_utc}
+ }
+ $wire=$data|ConvertTo-Json -Compress
  $bytes=[Text.Encoding]::UTF8.GetBytes($wire)
  $cms=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$bytes),$true)
  $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)

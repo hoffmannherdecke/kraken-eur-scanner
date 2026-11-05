@@ -31,13 +31,24 @@ on that aborted epoch. No V3 writer is enabled. A future Paper cutover retains
 its separate existing Stage4/Stage5/CAS/Single-Writer gates.
 
 The release consumes the existing separately authenticated and CMS-signed
-Notebook prestop and terminal Reader outputs. It does not sign third-party
+Notebook terminal Reader output. It does not sign third-party
 JSON, invent continuity assertions, grant Notebook paper-series privileges,
 or create a replacement issuer. An absent, mismatched, expired or unadmitted
 signer cannot enter production. The authority's scope covers the controlled
 privileged operator window; as in PR661, kernel handles do not claim immunity
 to forced handle closure or arbitrary administrator actions outside that
 window. Such interference requires HOLD and independent reconciliation.
+
+Gate B obtains fresh `PreparedAbortSignedCurrent` output from the unchanged
+Notebook Reader. Pass those exact signed terminal bytes as `IssuerPrestopJson`
+and `IssuerPrestopCms`, as well as the current local `TerminalAbortJson` and
+`TerminalAbortCms`. The dedicated generated Gate-B adapter verifies the terminal
+CMS and all existing epoch/source/fence/ACL and Cloud-boundary fields, then
+enforces the existing maximum 30-second prestop age, rechecked after leases.
+It does not serialize a replacement issuer receipt. The pre-abort issuer RPC
+and its zero-abort guard remain unchanged for Gate A; that RPC cannot provide
+a post-abort Gate-B observation. Preserve Gate A's archived original files;
+refresh observations into separate Gate-B files immediately before use.
 
 Read-only package file leases prevent replacement of verified runtime bytes during execution. STOP, restore and atomic archive recheck scoped authorization, package bytes,
 fresh signed terminal proof, exact ARMED fence, protected task XML and V3
@@ -95,8 +106,26 @@ Host bindings are exactly `epoch_id`, `source_sha256`, `fence_sha256`,
 `backup_manifest_sha256`, `successor_series_id`, `bundle_sha256`,
 `strategy_sha256`, `candidate_repo_sha`, `lifecycle_xml_sha256`,
 `cloudsync_xml_sha256`, `v3_writer_xml_sha256`, `install_readback_sha256`,
-and `policy=TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1`. The Reader source pin is the already staged original Reader SHA256 `c81dbdca986da4fb5143bc1a315cb3b7dd548e0b6f338a02f0992767b6af2ba5`. The independent authority must accept the genuine Reader provenance and its separate key custody before signing these bindings; signing supplied third-party JSON is not such evidence. These are original observed bindings, not synthetic development values. The host also requires the
-installation readback's recorded release commit to match this exact release.
+`install_release_commit`, and `policy=TERMINAL_ABORT_BEFORE_STOP_NO_CAS_V1`.
+These are exactly eighteen bindings. The Reader source pin is the already
+staged original Reader SHA256 `c81dbdca986da4fb5143bc1a315cb3b7dd548e0b6f338a02f0992767b6af2ba5`.
+The independent authority must accept the genuine Reader provenance and its
+separate key custody before signing these bindings; signing supplied third-party
+JSON is not such evidence. These are original observed bindings, not synthetic
+development values.
+
+The installation commit is the immutable commit recorded by the completed
+Cloud installation, independently accepted in `install_release_commit`.
+It is separate from the current host execution `release_commit`. For the
+completed installation in #6627552137 it is
+`b019448331dfeb1052d543486a077ac2404651e4`; do not repeat installation or edit
+its record to make it match a later CLI. The exact original readback bytes are
+independently pinned by `install_readback_sha256`. Before the attempt journal
+and again at every STOP/restore/archive boundary the operator checks that digest,
+the original installation kind, commit, release/approval identities and the
+installed abort source hash against the reviewed package. A new host approval
+must explicitly accept both identities; an earlier seventeen-binding approval
+is rejected. Cloud DDL and its original catalog record remain unchanged.
 
 ## Authorized execution interface
 
