@@ -1281,7 +1281,26 @@ if ! grep -Fq 'V3_ISSUER_PRESTOP_SOURCE_OR_STATE_HOLD' "$transition_tmp/stopped.
  echo 'FAIL_POSTSTOP_CONFIRM_DID_NOT_REACH_READER_GUARD' >&2; exit 1
 fi
 # Independent issuer now commits the terminal abort in its OWN new session.
-issuer_transaction -c "BEGIN; SELECT v3_cas_audit.record_prepared_fence_abort_v1('V3CAS-AUDIT-99999999999999999999999999999999',repeat('a',64),repeat('b',64),repeat('c',64),repeat('d',64)); COMMIT;" >/dev/null
+# Execute the exact release SQL builder, including session identity and expiry.
+pwsh -NoProfile -NonInteractive -Command '
+ Import-Module ./tools/v3-one-time-release-authorization.psm1 -Force
+ $b=[pscustomobject]@{epoch_id=("V3CAS-AUDIT-"+("9"*32));source_sha256=("a"*64);fence_sha256=("b"*64);caller_acl_sha256=("c"*64);receipt_sha256=("d"*64)}
+ Get-V3GateATransaction -Bindings $b -ExpiresAt ([datetimeoffset]::UtcNow.AddMinutes(5))
+' >"$transition_tmp/gate-a.sql"
+# Wrong existing epoch identities roll back and cannot create a terminal row.
+sed "s/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/" "$transition_tmp/gate-a.sql" >"$transition_tmp/gate-a-wrong.sql"
+if issuer_transaction <"$transition_tmp/gate-a-wrong.sql" >"$transition_tmp/wrong.out" 2>"$transition_tmp/wrong.err"; then
+ echo 'FAIL_GATE_A_WRONG_IDENTITY_ACCEPTED' >&2; exit 1
+fi
+grep -Fq V3_PREPARED_ABORT_EPOCH_HOLD "$transition_tmp/wrong.err"
+# Discard dispatch output deliberately: only the separate reader below resolves
+# the committed state, never a second call to the effectful function.
+issuer_transaction <"$transition_tmp/gate-a.sql" >/dev/null
+if issuer_transaction <"$transition_tmp/gate-a.sql" >"$transition_tmp/duplicate.out" 2>"$transition_tmp/duplicate.err"; then
+ echo 'FAIL_GATE_A_DUPLICATE_COMMIT_ACCEPTED' >&2; exit 1
+fi
+grep -Eq 'duplicate key|unique constraint' "$transition_tmp/duplicate.err"
+
 if committed_issuer_reader >"$transition_tmp/aborted.json" 2>"$transition_tmp/aborted.err"; then
  echo 'FAIL_READER_ACCEPTED_ABORTED_EPOCH_AS_LIVE_PRESTOP' >&2; exit 1
 fi

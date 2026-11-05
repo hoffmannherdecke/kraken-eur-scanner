@@ -139,4 +139,64 @@ try {
  if($expired){throw 'RELEASE_EXPIRED_SESSION_ACCEPTED'};$checks++
  [pscustomobject]@{kind='V3_ONE_TIME_RELEASE_AUTHORIZATION_TEST_V1';checks_passed=$checks;
   production_credentials_used=$false;originalhost_mutated=$false;production_authorized=$false}|ConvertTo-Json -Compress
+# Gate A: real detached CMS over exact original receipt bytes, no Cloud access.
+Import-Module (Join-Path $root 'tools/v3-one-time-release-authorization.psm1') -Force
+$gate=[pscustomobject]@{epoch_id=('V3CAS-AUDIT-'+('a'*32));source_sha256=('a'*64);
+ fence_sha256=('b'*64);caller_acl_sha256=('c'*64);receipt_sha256=('d'*64);reader_certificate_sha256=$pin}
+$original=[ordered]@{actor='v3_cas_audit_reader_actor';requested_role='v3_cas_audit_reader';unknown_count=0;kind='V3_CAS_ISSUER_COMMITTED_PRESTOP_READER_V1';epoch_id=$gate.epoch_id;
+ source_sha256=$gate.source_sha256;original_fence_sha256=$gate.fence_sha256;
+ caller_acl_sha256=$gate.caller_acl_sha256;issuer_actor='v3_cas_inhibit_issuer_actor';
+ state='INHIBITED';native_stop_done=$false;cas_or_paper_authorized=$false}
+$bytes=[Text.Encoding]::UTF8.GetBytes(($original|ConvertTo-Json -Compress))
+$signed=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new($bytes),$true)
+$signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+$signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+$signed.ComputeSignature($signer)
+$cmsBytes=$signed.Encode()
+$gate.receipt_sha256=Get-V3ReleaseSha256 $bytes
+$null=Assert-V3GateAReceipt -Bindings $gate -Payload $bytes -Cms $cmsBytes
+function Expect-GateAHold([scriptblock]$Action){
+ $held=$false;try{& $Action}catch{$held=$true};if(-not $held){throw 'GATE_A_NEGATIVE_ACCEPTED'}
+}
+$changed=[byte[]]$bytes.Clone();$changed[0]=0xff
+Expect-GateAHold {Assert-V3GateAReceipt -Bindings $gate -Payload $changed -Cms $cmsBytes}
+$gate.source_sha256='e'*64
+Expect-GateAHold {Assert-V3GateAReceipt -Bindings $gate -Payload $bytes -Cms $cmsBytes}
+$gate.source_sha256='a'*64
+$gate.reader_certificate_sha256='e'*64
+Expect-GateAHold {Assert-V3GateAReceipt -Bindings $gate -Payload $bytes -Cms $cmsBytes}
+$gate.reader_certificate_sha256=$pin
+$broken=[byte[]]$cmsBytes.Clone();$broken[$broken.Length-1]=$broken[$broken.Length-1] -bxor 1
+Expect-GateAHold {Assert-V3GateAReceipt -Bindings $gate -Payload $bytes -Cms $broken}
+$gate.receipt_sha256='e'*64
+Expect-GateAHold {Assert-V3GateAReceipt -Bindings $gate -Payload $bytes -Cms $cmsBytes}
+$gate.receipt_sha256=Get-V3ReleaseSha256 $bytes
+$sql=Get-V3GateATransaction -Bindings $gate -ExpiresAt ([datetimeoffset]::UtcNow.AddMinutes(5))
+if(([regex]::Matches($sql,'SELECT v3_cas_audit.record_prepared_fence_abort_v1\(')).Count -ne 1 -or
+ $sql -notmatch 'session_user' -or $sql -notmatch 'clock_timestamp' -or $sql -match 'SET ROLE|ALTER ROLE|begin_executor_inhibit'){
+ throw 'GATE_A_SINGLE_ISSUER_TRANSACTION_CONTRACT'
+}
+$gate.epoch_id="bad');COMMIT;--"
+Expect-GateAHold {Get-V3GateATransaction -Bindings $gate -ExpiresAt ([datetimeoffset]::UtcNow.AddMinutes(5))}
+# Execute the actual launcher attempt boundary in a disposable directory.
+# Replace only the PG transport, forcing an ambiguous result after dispatch.
+$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'tools/v3-one-time-release.ps1'),[ref]$null,[ref]$null)
+$fn=$ast.Find({param($a) $a -is [Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Invoke-V3GateAOnce'},$true)
+. ([scriptblock]::Create($fn.Extent.Text))
+$script:dispatches=0
+function Invoke-V3ReleasePg {param($Sql,$Password,$Ca,$Actor)
+ if($Actor -cne 'v3_cas_inhibit_issuer_actor'){throw 'WRONG_ACTOR'}
+ $script:dispatches++;throw 'V3_RELEASE_PG_TIMEOUT_OUTCOME_UNKNOWN_NO_RETRY'
+}
+$temp=Join-Path ([IO.Path]::GetTempPath()) ('gate-a-test-'+[guid]::NewGuid().ToString('N'))
+$null=[IO.Directory]::CreateDirectory($temp)
+try{
+ $latch=Join-Path $temp 'attempt'
+ Expect-GateAHold {Invoke-V3GateAOnce -LatchPath $latch -Receipt $bytes -Sql $sql}
+ if($script:dispatches -ne 1 -or -not [IO.File]::Exists($latch)){throw 'UNKNOWN_LOST_LATCH_OR_RETRIED'}
+ Expect-GateAHold {Invoke-V3GateAOnce -LatchPath $latch -Receipt $bytes -Sql $sql}
+ if($script:dispatches -ne 1){throw 'DUPLICATE_NETWORK_DISPATCH'}
+}finally{[IO.Directory]::Delete($temp,$true)}
+Write-Output 'V3_GATE_A_EXACT_BYTES_REAL_CMS_NEGATIVE_TESTS_PASS'
+
 }finally{$cert.Dispose();$rsa.Dispose()}
