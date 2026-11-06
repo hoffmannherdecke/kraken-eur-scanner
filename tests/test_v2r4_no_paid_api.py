@@ -23,7 +23,7 @@ class V2R4NoPaidAPIRegression(unittest.TestCase):
                 self.assertEqual(decision["watch_conditions"], [])
                 self.assertIsNone(decision["stop_eur"])
                 self.assertIsNone(decision["stage2_trigger_eur"])
-                self.assertIn("PAID_MODEL_DISABLED", decision["reason_codes"][0])
+                self.assertIn("RULE_SOURCE_AUTHORITY_MISSING", decision["reason_codes"][0])
                 self.assertIsNone(meta["response_id"])
                 self.assertEqual(meta["attempt"], 0)
 
