@@ -84,6 +84,7 @@ try{
  function Assert-V3OneTimeReleaseAuthorization {return $script:authorization}
  function Read-V3PaperIndependentReceipt {return $script:receipt}
  function Read-V3PaperPinnedJson {return $script:plan}
+ function Assert-V3PaperRuntimeSpec {}
  function Open-V3PaperIntakePair {return $null}
  function Assert-V3PaperTaskPins {}
  function Assert-V3PaperProcesses {}
@@ -116,7 +117,7 @@ try{
  $script:effects=@()
  $res=Invoke-V3OneTimePaperRelease -Mode PaperStop @common
  Need ($res.kind -ceq 'V3_PAPER_STOP_QUIESCED_LOCAL_ACK') 'STOP_POSITIVE_MISSING'
- Need (($script:effects -join ',') -ceq 'disable,stop,disable,stop,fence') 'STOP_SCOPE_OR_ORDER'
+ Need (($script:effects -join ',') -ceq 'disable,disable,stop,stop,fence') 'STOP_SCOPE_OR_ORDER'
  Reject {Invoke-V3OneTimePaperRelease -Mode PaperStop @common} 'already exists'
  function Assert-V3PaperFence {return @{phase='QUIESCED'}}
  $request.Remove('extra');$request.expected_old_series_id='PAPER-V2R4-20261009T110135Z'

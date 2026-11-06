@@ -148,7 +148,8 @@ try {
        $relative -cne 'tools/paper_series_transition_guard.py' -and
        $relative -cne 'tools/minipc-runtime-supervisor.ps1' -and
        $relative -cne 'tools/check-minipc-v3-physical-writer-readiness.ps1' -and
-       $relative -cne 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'){
+       $relative -cne 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1' -and
+       $relative -cnotin @('tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1','tools/v3-one-time-paper-release.ps1','tools/v3-one-time-originalhost-release.psm1','supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql','supabase/v3-cas-prepared-fence-abort-INACTIVE.sql','supabase/v3-cas-prepared-fence-abort-release.sql','supabase/v3-cas-prepared-fence-abort-release-readback.sql')){
       throw ('Unreviewed staged path '+$relative)
     }
     $dest=Join-Path $expectedDir $relative

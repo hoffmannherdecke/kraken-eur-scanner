@@ -148,7 +148,7 @@ Require ($manifest.kind -ceq 'V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1' -and
   $manifest.v3_paper_activated -eq $false -and
   $manifest.task_changes -eq $false -and
   ($candidateMode -or @($manifest.source_manifest).Count -eq $stageFiles)) 'exact reviewed stage file count required'
-$allow=@(& git -C $source ls-tree -r --name-only $stageSha -- paper_evaluator market_data paper_context.py 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' 'supabase/functions/v3-paper-evidence-relay/index.ts' 'tools/minipc-runtime-supervisor.ps1' 'tools/check-minipc-v3-physical-writer-readiness.ps1' 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1' 'tools/v3_experimental_paper_technical_gate.py' 'tools/paper_series_transition_guard.py' 2>$null)
+$allow=@(& git -C $source ls-tree -r --name-only $stageSha -- paper_evaluator market_data paper_context.py 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' 'supabase/functions/v3-paper-evidence-relay/index.ts' 'tools/minipc-runtime-supervisor.ps1' 'tools/check-minipc-v3-physical-writer-readiness.ps1' 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1' 'tools/v3_experimental_paper_technical_gate.py' 'tools/paper_series_transition_guard.py' 'tools/v3-one-time-release.ps1' 'tools/v3-one-time-release-authorization.psm1' 'tools/v3-one-time-paper-release.ps1' 'tools/v3-one-time-originalhost-release.psm1' 'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql' 'supabase/v3-cas-prepared-fence-abort-INACTIVE.sql' 'supabase/v3-cas-prepared-fence-abort-release.sql' 'supabase/v3-cas-prepared-fence-abort-release-readback.sql' 2>$null)
 Require ($LASTEXITCODE -eq 0) 'trusted source tree cannot be read'
 $allow=@($allow|Where-Object {
   $_ -match '^(paper_evaluator|market_data)/[A-Za-z0-9_]+\.py$' -or
@@ -157,7 +157,8 @@ $allow=@($allow|Where-Object {
   $_ -eq 'supabase/functions/v3-paper-evidence-relay/index.ts' -or
   ($candidateMode -and $_ -in @('tools/v3_experimental_paper_technical_gate.py',
                                'tools/paper_series_transition_guard.py')) -or
-  $_ -in @('tools/minipc-runtime-supervisor.ps1',
+  $_ -in @('tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1','tools/v3-one-time-paper-release.ps1','tools/v3-one-time-originalhost-release.psm1','supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql','supabase/v3-cas-prepared-fence-abort-INACTIVE.sql','supabase/v3-cas-prepared-fence-abort-release.sql','supabase/v3-cas-prepared-fence-abort-release-readback.sql',
+          'tools/minipc-runtime-supervisor.ps1',
           'tools/check-minipc-v3-physical-writer-readiness.ps1',
           'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1')
 }|Sort-Object -Unique)

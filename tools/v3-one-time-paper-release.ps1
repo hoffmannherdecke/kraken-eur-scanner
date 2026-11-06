@@ -17,6 +17,16 @@ function Read-V3PaperPinnedJson([string]$Path,[string]$Sha) {
  if($Sha -cnotmatch '^[a-f0-9]{64}$' -or (Get-V3ReleaseSha256 $bytes) -cne $Sha){throw 'V3_PAPER_PINNED_BYTES_HOLD'}
  return ([Text.UTF8Encoding]::new($false,$true).GetString($bytes)|ConvertFrom-Json -ErrorAction Stop)
 }
+function Assert-V3PaperRuntimeSpec([object]$Spec,[object]$Plan) {
+ if([string]$Spec.kind -cne 'V3_NATIVE_RELEASE_RUNTIME_SPEC_V1' -or
+    [string]$Spec.series_id -cne [string]$Plan.series_id -or
+    [string]$Spec.repo_sha -cne [string]$Plan.repo_sha -or
+    [string]$Spec.bundle_sha256 -cne [string]$Plan.bundle_sha256 -or
+    [string]$Spec.strategy_sha256 -cne [string]$Plan.strategy_sha256 -or
+    [string]$Spec.phase -cnotin @('FIRST_SCANNER_MODEL_P4','FOLLOWUP_6H24H72H','CLOUD_RECEIPT_ACK')){
+  throw 'V3_PAPER_RUNTIME_SPEC_BINDING_HOLD'
+ }
+}
 function Write-V3PaperReceipt([string]$Path,[object]$Value) {
  $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($Value|ConvertTo-Json -Depth 24 -Compress))
  $f=[IO.File]::Open($Path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::Read)
@@ -205,6 +215,7 @@ function Invoke-V3OneTimePaperRelease {
   if($Mode -eq 'PaperHostReadback'){
    $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
    $plan=Read-V3PaperPinnedJson $spec.paper_plan $b.plan_sha256;$ctx.plan=$plan
+   Assert-V3PaperRuntimeSpec $spec $plan
    if([string]$receipt.kind -cne 'V3_NATIVE_ONE_OWNER_POST_CAS_ORIGINALHOST_READBACK_V1' -or
       [string]$receipt.release_repo_sha -cne $ExpectedReleaseCommit){throw 'V3_PAPER_HOST_RECEIPT_KIND_HOLD'}
    Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
@@ -275,7 +286,8 @@ function Invoke-V3OneTimePaperRelease {
       [IO.File]::Exists($ctx.fence) -or [IO.File]::Exists($casLatch)){
     throw 'V3_PAPER_PREPARE_EXISTING_FENCE_OR_UNSAFE_READER_HOLD'
    }
-   $null=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
+   $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
+   Assert-V3PaperRuntimeSpec $spec $plan
    $r=$plan.runtime_bootstrap
    $pairs=[ordered]@{'runtime-spec'=$RuntimeSpecJson;'approval-json'=$r.approval_json;
     'approval-cms'=$r.approval_cms;'admission-json'=$r.admission_json;
@@ -302,6 +314,11 @@ function Invoke-V3OneTimePaperRelease {
    if([string](Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter').State -cne 'Disabled'){
     throw 'V3_PAPER_PREPARE_DISABLED_ACK_REQUIRED'
    }
+   $taskXml=Export-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter'
+   $xmlPath=$base+'.v3-disabled.xml'
+   $xmlBytes=[Text.Encoding]::UTF8.GetBytes($taskXml)
+   $xmlFile=[IO.File]::Open($xmlPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::Read)
+   try{$xmlFile.Write($xmlBytes,0,$xmlBytes.Length);$xmlFile.Flush($true)}finally{$xmlFile.Dispose()}
    $native=Get-Module v3-one-time-originalhost-release
    $marker=& $native {param($sid,$sha,$bundle,$strategy) New-V3Pr515PreparedArmedMarker $sid $sha $bundle $strategy} $plan.series_id $ctx.commit $plan.bundle_sha256 $plan.strategy_sha256
    Write-V3PaperReceipt $ctx.fence $marker
@@ -312,7 +329,7 @@ function Invoke-V3OneTimePaperRelease {
    }
    Set-Acl $ctx.fence $acl
    return @{kind='V3_PAPER_DISABLED_BOOTSTRAP_AND_ARMED_FENCE_PREPARED';writer_started=$false;
-    v3_xml_sha256=(Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes((Export-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter'))))}
+    v3_xml_path=$xmlPath;v3_xml_sha256=(Get-V3ReleaseSha256 $xmlBytes)}
   }
   $f=Assert-V3PaperFence $ctx @('ARMED','QUIESCED','CLOUD_COMMITTED')
   if($Mode -eq 'PaperStop'){
@@ -321,14 +338,28 @@ function Invoke-V3OneTimePaperRelease {
    }
    Assert-V3PaperProcesses $plan
    Write-V3PaperReceipt ($base+'.stop.attempted.json') @{approval_sha256=$auth.approval_sha256}
-   foreach($name in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
+   $intakes=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+   foreach($name in $intakes){
     Assert-V3PaperDeadline $ctx
     Disable-ScheduledTask -TaskName $name -TaskPath '\'|Out-Null
+   }
+   $intakePair=Open-V3PaperIntakePair
+   Assert-V3PaperTaskPins $plan -AllowDisabledIntake
+   foreach($name in $intakes){
+    Assert-V3PaperDeadline $ctx
     Stop-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
    }
-   # No broad process kill. Scheduler owns termination; unknown descendants
-   # preserve the fence and require current signed reconciliation.
-   Assert-V3PaperProcesses $plan -Absent
+   # Wait only for the already requested scheduler stop; never redispatch it.
+   # Orphan/replacement processes keep the fence and eventually HOLD.
+   $stopDeadline=[datetimeoffset]::UtcNow.AddSeconds(30)
+   do{
+    Assert-V3PaperDeadline $ctx
+    $quiet=$false
+    try{Assert-V3PaperProcesses $plan -Absent;$quiet=$true}catch{
+     if([datetimeoffset]::UtcNow -ge $stopDeadline){throw}
+     Start-Sleep -Milliseconds 500
+    }
+   }while(-not $quiet)
    Assert-V3PaperTaskPins $plan -AllowDisabledIntake
    Set-V3PaperFence $ctx 'QUIESCED'
    Write-V3PaperReceipt ($base+'.stop.completed.json') @{state='QUIESCED';approval_sha256=$auth.approval_sha256}
@@ -382,7 +413,8 @@ function Invoke-V3OneTimePaperRelease {
       [string]$receipt.successor_series_id -cne [string]$plan.series_id -or
       [string]$receipt.repo_sha -cne $ctx.commit -or [string]$receipt.bundle_sha256 -cne [string]$plan.bundle_sha256 -or
       [string]$receipt.strategy_sha256 -cne [string]$plan.strategy_sha256){throw 'V3_PAPER_COMMITTED_INDEPENDENT_READER_REQUIRED'}
-   $null=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
+   $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
+   Assert-V3PaperRuntimeSpec $spec $plan
    # The pre-reviewed existing disabled V3 definition must already contain
    # the exact -I -B retained-snapshot action. No task installation here.
    $v3=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter'
