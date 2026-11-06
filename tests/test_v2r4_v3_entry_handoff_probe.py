@@ -60,15 +60,12 @@ class V3EntryInputHandoffTests(unittest.TestCase):
                     external,{"strategy_revision":"INACTIVE-V3-INPUT-PROBE"},
                     {"series_id":"INACTIVE-MOCK-SERIES"})
         self.assertEqual(decision["decision"],"REJECT")
-        self.assertEqual(info["response_id"],"OFFLINE_TEST_NO_REAL_MODEL")
-        self.assertEqual(len(captured),1)
-        prompt=captured[0]["input"]
-        self.assertIn("candidate_entry_evidence",prompt)
-        self.assertIn("atr14_eur",prompt)
-        self.assertIn("known_at_utc",prompt)
-        self.assertIn("volume_ratio_prior_5",prompt)
-        self.assertIn("major_market_regime",prompt)
-        self.assertNotIn("BUY_SCOUT_ONLY",prompt)
+        # A complete future-V3 input must not accidentally re-enable paid V2R4.
+        self.assertIsNone(info["response_id"])
+        self.assertEqual(captured, [])
+        self.assertIn("atr14_eur",json.dumps(external))
+        self.assertIn("volume_ratio_prior_5",json.dumps(external))
+        self.assertIn("known_at_utc",json.dumps(external))
 
     def test_mock_buy_plan_is_contract_only_not_promotion_evidence(self):
         # Validated raw format is a capability smoke, not model prediction.
