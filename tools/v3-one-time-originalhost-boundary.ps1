@@ -586,8 +586,7 @@ function Assert-V3ReleaseProtectedTasks([object]$Bindings) {
 # A single immutable JSON envelope carries both signed Reader byte arrays.
 function Assert-V3GateBCoordPaths([object]$Ctx) {
  $nonce=[string]$Ctx.coordinated_nonce
- if($nonce -cnotmatch '^[a-f0-9]{32}$'
- -or
+ if($nonce -cnotmatch '^[a-f0-9]{32}$' -or
     [string]$Ctx.coordinated_request -cne ('D:\V3-GateB-PR675\coordinated-'+$nonce+'\post-request.json') -or
     [string]$Ctx.coordinated_envelope -cne ('D:\V3-GateB-PR675\coordinated-'+$nonce+'\post-envelope.json')){
   throw 'V3_GATEB_COORDINATED_SCOPE_HOLD'
