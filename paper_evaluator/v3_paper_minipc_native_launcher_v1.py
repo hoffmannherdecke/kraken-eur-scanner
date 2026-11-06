@@ -211,6 +211,7 @@ from tools.v3_experimental_paper_technical_gate import (
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import read_active_paper_series
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+    released_paper_first_scanner_rule_once,
     released_paper_first_scanner_model_once,
     released_paper_followup_tick_once,
     released_paper_cloud_ack_once,
@@ -335,20 +336,31 @@ def dispatch_one_owned_paper_phase(*, phase: str,
         common["clock_now"] = clock_now
 
     if phase == "FIRST_SCANNER_MODEL_P4":
+        # Preserve the original release-pinned three-phase packet identity.
+        # No approval and no model key means free-rule P4 by default, never
+        # a silent paid API request or an unreviewed fourth writer phase.
         if (not isinstance(candidate, dict)
                 or not isinstance(preflight, dict)
-                or not isinstance(approval, dict)
-                or not isinstance(model_key, str)
                 or relay_token is not None or cloud_post is not None
                 or source_fetch is not None or source_ticker is not None):
-            raise ValueError("first Scanner demands exact independent one-shot model approval")
+            raise ValueError("first Scanner must use original PIT/release-bound inputs")
+        paid=(approval is not None or model_key is not None or
+              model_client is not None)
+        if paid and (not isinstance(approval,dict)
+                     or not isinstance(model_key,str)):
+            raise ValueError("partial paid-model inputs forbidden")
         params = dict(common, preflight=preflight, candidate=candidate,
-                      capture_dir=capture_dir, model_reservations=model_reservations,
-                      approval=approval, model_key=model_key)
+                      capture_dir=capture_dir, model_reservations=model_reservations)
         if source_capture is not None: params["capture"] = source_capture
         if source_acquire is not None: params["acquire"] = source_acquire
-        if model_client is not None: params["model_client"] = model_client
         if existing_context is not None: params["existing_context"] = existing_context
+        if not paid:
+            return released_paper_first_scanner_rule_once(**params)
+        # Delegate to the ORIGINAL separately budgeted native owner. It
+        # already validates the complete approval BEFORE source/journal
+        # mutation; do not add a second duplicate authorization protocol.
+        params.update(approval=approval,model_key=model_key)
+        if model_client is not None: params["model_client"] = model_client
         return released_paper_first_scanner_model_once(**params)
 
     if phase == "FOLLOWUP_6H24H72H":
