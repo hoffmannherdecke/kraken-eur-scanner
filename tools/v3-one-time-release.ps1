@@ -11,7 +11,8 @@ param(
  [string]$TerminalAbortJson='', [string]$TerminalAbortCms='',
  [string]$IssuerReceiptJson='', [string]$IssuerReceiptCms='',
  [string]$InstallReadbackJson='', [string]$BackupDirectory='',
- [string]$ExistingApprovalJson='', [string]$ExistingApprovalCms='', [string]$ReconciliationEvidenceJson=''
+ [string]$ExistingApprovalJson='', [string]$ExistingApprovalCms='', [string]$ReconciliationEvidenceJson='',
+ [string]$InterruptedApprovalJson='', [string]$InterruptedApprovalCms=''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -166,6 +167,7 @@ if($Mode -eq 'OriginalhostReconcile'){
   -AuthorityAdmission $admissionBytes -ExpectedAuthorityAdmissionSha256 $ExpectedAuthorityAdmissionSha256 `
   -ExpectedReleaseCommit $ExpectedReleaseCommit -ExistingApprovalJson $ExistingApprovalJson `
   -ExistingApprovalCms $ExistingApprovalCms -ReconciliationEvidenceJson $ReconciliationEvidenceJson `
+  -InterruptedApprovalJson $InterruptedApprovalJson -InterruptedApprovalCms $InterruptedApprovalCms `
   -TerminalAbortJson $TerminalAbortJson -TerminalAbortCms $TerminalAbortCms `
   -InstallReadbackJson $InstallReadbackJson -BackupDirectory $BackupDirectory|ConvertTo-Json -Depth 6
  return
