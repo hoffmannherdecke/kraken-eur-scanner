@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-"""Original V3 Paper one-shot owner dispatch -- SOURCE ONLY, NOT INSTALLED.
+"""Original V3 Paper native one-shot dispatcher and authenticated Windows entry.
 
-The ONE future native Windows Task will call this module after a separately
-verified physical task/source/PID/old-aftercare release gate. All three phases
-delegate to EXISTING release-pinned OS-native-lock functions; this module does
-not create a task, second scanner/Cloud worker, Cloud CAS, loop or model permit.
-
-The CLI deliberately offers only a pure source-only readiness description.
-A CLI execution mode requires a future separately authorized host bootstrap
-that independently verifies native Task/PID, old V2R4 no-rearm, six real E2E
-proofs and active Cloud release. This source file does NOT create that proof.
+The released entry requires exact independent admission and retained stage
+bytes. All three phases retain the existing native lock and Cloud release
+checks; the first scanner defaults to the free rule route. Read-only modes
+remain inert. Source/CI completion never attests physical activation.
 """
 from __future__ import annotations
 
@@ -204,6 +199,46 @@ def _runtime_identity_readonly_bootstrap() -> int:
 
 if __name__ == "__main__" and "--runtime-identity-readonly" in sys.argv:
     raise SystemExit(_runtime_identity_readonly_bootstrap())
+
+
+def _released_windows_bootstrap() -> int:
+    """Task entry: compile retained stage bytes before importing project code."""
+    parser = argparse.ArgumentParser(description="Authorized V3 Paper native one-shot")
+    parser.add_argument("--released-one-shot", action="store_true", required=True)
+    for flag in ("runtime-spec", "approval-json", "approval-cms", "admission-json",
+                 "admission-sha256", "expected-source-sha", "host-receipt", "host-cms"):
+        parser.add_argument("--" + flag, required=True)
+    args = parser.parse_args()
+    if sys.platform != "win32":
+        raise ValueError("released one-shot requires original Windows")
+    spec = _bounded_release_json(Path(args.runtime_spec))
+    native, _ = load_native_runtime_snapshot(
+        repo_sha=args.expected_source_sha, proposed_series_id=spec["series_id"])
+    return native.run_authenticated_windows_spec(args=args, spec=spec)
+
+
+def _bounded_release_json(path: Path) -> dict[str, Any]:
+    if (not path.is_absolute() or path.is_symlink() or not path.is_file()
+            or any(p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+                   for p in path.parents)
+            or not 1 <= path.stat().st_size <= 65536):
+        raise ValueError("bounded local original release JSON required")
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate release JSON field")
+            result[key] = value
+        return result
+    value = json.loads(path.read_bytes(), object_pairs_hook=unique,
+                       parse_constant=lambda _: (_ for _ in ()).throw(ValueError("nonfinite JSON")))
+    if not isinstance(value, dict):
+        raise ValueError("release JSON object required")
+    return value
+
+
+if __name__ == "__main__" and "--released-one-shot" in sys.argv:
+    raise SystemExit(_released_windows_bootstrap())
 
 from tools.v3_experimental_paper_technical_gate import (
     assess_v3_native_source_import_closure, validate_experimental_paper_packet,
@@ -1024,10 +1059,9 @@ def dispatch_from_original_windows_one_shot(*,
     authenticated post-CAS Task/fence/maintenance/six-proof readback callback;
     its provenance cannot be manufactured by this Python adapter.
 
-    Intentionally NOT bound to CLI until the external physical release-owner
-    evidence source and disabled Windows Task action have been accepted in the
-    user-approved maintenance/final release. No caller-made JSON, environment
-    boolean, temporary signature or Task hint becomes that provider here.
+    The isolated released CLI binds the authenticated original operator
+    provider. Independent signed evidence and actual Windows observations
+    remain mandatory; a caller-made JSON or Task hint is not authority.
     This function registers no Tasks and performs no CAS, model or order itself.
     """
     # Never permit the local Windows diagnostic to stand in for external
@@ -1224,6 +1258,58 @@ def preflight_native_windows_one_shot(*,
         "real_money_actions": False,
     }
 
+
+
+def authenticated_originalhost_release_provider(*, args) -> dict[str, Any]:
+    """Authenticate original independent bytes with the existing CMS/owner gate.
+
+    No report flags are created here. The independent receipt must describe
+    this actual PID/birth and be refreshed by its original issuer; the native
+    dispatcher separately correlates it with Windows and locked Cloud reads.
+    """
+    command = [str(ORIGINALHOST_POWERSHELL), "-NoProfile", "-NonInteractive",
+               "-ExecutionPolicy", "Bypass", "-File",
+               str(Path(__file__).absolute().parents[1] / "tools/v3-one-time-release.ps1"),
+               "-Mode", "PaperHostReadback", "-RuntimeSpecJson", args.runtime_spec,
+               "-ApprovalJson", args.approval_json, "-ApprovalCms", args.approval_cms,
+               "-AuthorityAdmissionJson", args.admission_json,
+               "-ExpectedAuthorityAdmissionSha256", args.admission_sha256,
+               "-ExpectedReleaseCommit", args.expected_source_sha,
+               "-HostReceiptJson", args.host_receipt, "-HostReceiptCms", args.host_cms]
+    result = subprocess.run(command, capture_output=True, text=True, timeout=60, check=False)
+    if result.returncode or not 1 <= len(result.stdout) <= 65536:
+        raise ValueError("authenticated originalhost release readback HOLD")
+    report = json.loads(result.stdout)
+    if not isinstance(report, dict):
+        raise ValueError("authenticated originalhost report missing")
+    return report
+
+
+def run_authenticated_windows_spec(*, args, spec: dict[str, Any]) -> int:
+    required = {"kind", "series_id", "repo_sha", "bundle_sha256", "strategy_sha256",
+                "phase", "journal", "capture_dir", "model_reservations", "ack_file",
+                "release_root", "release_packet", "candidate", "preflight", "paper_plan"}
+    if (set(spec) != required or spec["kind"] != "V3_NATIVE_RELEASE_RUNTIME_SPEC_V1"
+            or spec["repo_sha"] != args.expected_source_sha or spec["phase"] not in PHASES):
+        raise ValueError("exact native runtime spec required")
+    params = {k: spec[k] for k in ("series_id", "repo_sha", "bundle_sha256", "strategy_sha256", "phase")}
+    for key in ("journal", "capture_dir", "model_reservations", "ack_file"):
+        params[key] = Path(spec[key])
+    params["candidate"] = _bounded_release_json(Path(spec["candidate"])) if spec["candidate"] else None
+    params["preflight"] = _bounded_release_json(Path(spec["preflight"])) if spec["preflight"] else None
+    packet = _bounded_release_json(Path(spec["release_packet"]))
+    # Existing dedicated relay secret; no environment/argv token, paid model
+    # key, caller transport or arbitrary module/function selection.
+    secret = Path(ORIGINALHOST_TRADING_ROOT) / "Secrets" / "v3-paper-relay-token.txt"
+    if secret.is_symlink() or not 24 <= secret.stat().st_size <= 514:
+        raise ValueError("existing dedicated V3 relay credential unavailable")
+    token = secret.read_text(encoding="utf-8").strip()
+    result = dispatch_from_original_windows_one_shot(
+        originalhost_release_readback=lambda: authenticated_originalhost_release_provider(args=args),
+        release_root=Path(spec["release_root"]), release_packet=packet,
+        original_cloud_relay_token=token, **params)
+    print(json.dumps(result, sort_keys=True))
+    return 0
 
 def main() -> int:
     parser = argparse.ArgumentParser(
