@@ -54,6 +54,16 @@ def _reject(code, summary):
     return _decision("REJECT", "NONE", code, summary)
 
 
+def fetch_rule_evidence(altname, pair, *, loader):
+    """Reuse the tested read-only closed-candle adapter as public evidence.
+
+    Importing this data-only helper never invokes V3 writer/model/release code.
+    It is not a decision and carries no automatic permission to trade.
+    """
+    from paper_evaluator.successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
+    return fetch_public_entry_evidence(altname, pair, loader=loader)
+
+
 def assess(candidate, ticker, context, spec, control, *, decision_at_utc=None):
     """Return executable V2R4-compatible decision using closed public data.
 
