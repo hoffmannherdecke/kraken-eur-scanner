@@ -82,7 +82,11 @@ def assess(candidate, ticker, context, spec, control, *, decision_at_utc=None):
         event_at = _utc(candidate["event_time_utc"])
         age = (now - event_at).total_seconds()
         triggered = candidate.get("v2r4_fresh_recheck_context") or {}
+        if not isinstance(triggered, dict):
+            return _reject("RULE_RECHECK_RECEIPT_INVALID", "WAIT continuation has invalid context.")
         receipt = triggered.get("trigger_receipt") or {}
+        if not isinstance(receipt, dict):
+            return _reject("RULE_RECHECK_RECEIPT_INVALID", "WAIT continuation has invalid receipt.")
         fresh_recheck = False
         if triggered.get("kind") == "V2R4_TRIGGERED_FRESH_PAPER_RECHECK":
             try:
