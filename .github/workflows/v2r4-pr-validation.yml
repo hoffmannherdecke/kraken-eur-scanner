@@ -12,6 +12,8 @@ name: V2R4 PR validation
       - 'paper_evaluator/evaluate.py'
       - 'paper_evaluator/v3_paper_minipc_one_candidate_v1.py'
       - 'paper_evaluator/v3_paper_minipc_selective_tick_v1.py'
+      - 'paper_evaluator/v3_paper_minipc_native_launcher_v1.py'
+      - 'tests/test_v3_free_native_dispatch_v1.py'
       - 'paper_evaluator/v3_experimental_paper_journal_v1.py'
       - 'tests/test_v3_native_free_rule_release_v1.py'
       - 'paper_context.py'
@@ -140,7 +142,7 @@ jobs:
       - name: PR677 V3 native no-paid rule and immutable P4 journal regression
         run: |
           # Isolated no-network source tests only, no CAS, runtime, budget or Paper activation.
-          python -m unittest tests.test_v3_native_free_rule_release_v1 tests.test_v3_free_rule_p4_v1 tests.test_v3_paper_minipc_one_candidate_v1 -v
+          python -m unittest tests.test_v3_free_native_dispatch_v1 tests.test_v3_native_free_rule_release_v1 tests.test_v3_free_rule_p4_v1 tests.test_v3_paper_minipc_one_candidate_v1 -v
 
       - name: V3 PRE-CAS offline host BUY and REJECT original journal witness regression
         run: |
