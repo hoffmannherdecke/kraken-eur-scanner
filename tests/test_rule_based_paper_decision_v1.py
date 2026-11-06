@@ -87,6 +87,27 @@ class FreeRuleTests(unittest.TestCase):
                 self.assertEqual(d["decision"],"REJECT")
                 self.assertIsNone(d["stop_eur"])
 
+    def test_wait_recheck_requires_fresh_matching_receipt(self):
+        args=list(fixture())
+        args[0]=dict(args[0], candidate_id="20261106-193000-BTC-EUR-r12",
+                     event_time_utc=iso(-1800))
+        receipt={
+            "kind":"V2R4_PAPER_WAIT_TRIGGER_RECEIPT",
+            "candidate_id":args[0]["candidate_id"],"pair":"BTC/EUR",
+            "paper_only":True,"matched":True,"expired":False,
+            "real_money_actions_enabled":False,
+            "next_action":"FRESH_PAPER_RECHECK_ONLY",
+            "observed_at_utc":iso(-10),
+        }
+        args[0]["v2r4_fresh_recheck_context"]={
+            "kind":"V2R4_TRIGGERED_FRESH_PAPER_RECHECK",
+            "trigger_receipt":receipt}
+        d=assess(*args,decision_at_utc=iso(0))
+        self.assertEqual(d["decision"],"BUY_SCOUT")
+        bad=copy.deepcopy(args)
+        bad[0]["v2r4_fresh_recheck_context"]["trigger_receipt"]["observed_at_utc"]=iso(-500)
+        self.assertEqual(assess(*bad,decision_at_utc=iso(0))["decision"],"REJECT")
+
     def test_normal_entrypoint_cannot_send_paid_api(self):
         args=list(fixture())
         # The production evaluator accepts evidence already validated by the
