@@ -615,7 +615,7 @@ function Write-V3ReleaseArchiveCheckpoint([object]$Context) {
  $latch=Read-V3ReleaseJson $latchBytes
  if([string]$latch.release_id -cne [string]$a.release_id -or
     [string]$latch.journal_sha256 -cne [string]$b.journal_sha256 -or
-    [string]($latch.approval_sha256 -cne [string]$ctx.authorization.approval_sha256 -and
+    ($latch.approval_sha256 -cne [string]$ctx.authorization.approval_sha256 -and
      ($null -eq $ctx.interrupted_approval_bytes -or
       $latch.approval_sha256 -cne (Get-V3ReleaseSha256 $ctx.interrupted_approval_bytes))) -or
     $latch.stop_requested -ne $false){throw 'V3_RECONCILE_ATTEMPT_DRIFT'}
