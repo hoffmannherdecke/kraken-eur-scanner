@@ -4541,6 +4541,10 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   journal_path=$journalPath;original_approval_path=$ExistingApprovalJson;original_cms_path=$ExistingApprovalCms
   evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();interrupted_approval_bytes=$null;interrupted_cms_bytes=$null;continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()
   coordinated_request=$CoordinatedPostArchiveRequestPath;coordinated_envelope=$CoordinatedPostArchiveEnvelopePath;coordinated_nonce=$CoordinatedHandoffNonce}
+ $coordFields=@($CoordinatedPostArchiveRequestPath,$CoordinatedPostArchiveEnvelopePath,$CoordinatedHandoffNonce)
+ $coordCount=@($coordFields|Where-Object {-not [string]::IsNullOrEmpty($_)}).Count
+ if($coordCount -notin @(0,3)){throw 'V3_GATEB_COORDINATED_PARTIAL_INPUT_HOLD'}
+ if($coordCount -eq 3){Assert-V3GateBCoordPaths $ctx}
  $script:V3ReleaseContext=$ctx
  $mutex=$null;$held=$false;$packageLease=$null;$originalLease=$null;$pair=$null
  try{
