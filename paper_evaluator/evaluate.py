@@ -243,7 +243,10 @@ def call_evaluator(candidate,current,external,spec,control):
     through the existing public rate budget. Missing data fail closed.
     V3 callers may supply already-bound closed evidence to avoid refetches.
     """
-    from .rule_based_paper_decision_v1 import assess
+    try:
+        from .rule_based_paper_decision_v1 import assess
+    except ImportError:  # original Windows direct script execution
+        from rule_based_paper_decision_v1 import assess
     context = dict(external or {})
     meta = context.get("kraken_pair_metadata") or {}
     candidate_complete = (
@@ -257,7 +260,10 @@ def call_evaluator(candidate,current,external,spec,control):
     if (candidate_complete and quote_ok and meta.get("available") is True
             and meta.get("status") == "online"
             and "candidate_entry_evidence" not in context):
-        from .successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
+        try:
+            from .successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
+        except ImportError:
+            from successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
         def public_ohlc(symbol, interval):
             query = urllib.parse.urlencode({"pair": symbol, "interval": interval})
             return http_json("https://api.kraken.com/0/public/OHLC?" + query,
