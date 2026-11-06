@@ -4292,7 +4292,7 @@ function Enable-V3ReleaseIntakeDefinition([string]$TaskName) {
 function Assert-V3ReleaseReconciliationIdentity(
  [object]$Claims,[object]$Original,[object]$Journal,[object]$Evidence) {
  $b=$Claims.bindings
- $extra=@('journal_sha256','original_approval_sha256','evidence_sha256','reconciliation_policy','post_archive_receipt_sha256')
+ $extra=@('journal_sha256','original_approval_sha256','evidence_sha256','reconciliation_policy','post_archive_receipt_sha256','pre_archive_attempt_sha256')
  if([string]$Claims.scope -cne 'ORIGINALHOST_ABORT_RECONCILE' -or
     [string]$b.reconciliation_policy -cne 'ENABLED_ONLY_CONTINUING_ORIGINALS_NO_STOP_V1' -or
     [string]$Original.kind -cne 'V3_ONE_TIME_RELEASE_AUTHORIZATION_V1' -or
@@ -4310,9 +4310,9 @@ function Assert-V3ReleaseReconciliationIdentity(
     [string]$Journal.approval_sha256 -cne [string]$b.original_approval_sha256 -or
     [string]$Journal.epoch_id -cne [string]$b.epoch_id -or
     @($Original.bindings.PSObject.Properties).Count -ne 18 -or
-    (@($b.PSObject.Properties).Count -ne 22 -and @($b.PSObject.Properties).Count -ne 23)){throw 'V3_RECONCILE_IDENTITY_OR_BINDINGS_HOLD'}
+    (@($b.PSObject.Properties).Count -ne (22+@(@('post_archive_receipt_sha256','pre_archive_attempt_sha256')|Where-Object {$_ -cin @($b.PSObject.Properties.Name)}).Count))){throw 'V3_RECONCILE_IDENTITY_OR_BINDINGS_HOLD'}
  foreach($field in $extra){
-  if($field -ceq 'post_archive_receipt_sha256' -and $field -cnotin @($b.PSObject.Properties.Name)){continue}
+  if($field -cin @('post_archive_receipt_sha256','pre_archive_attempt_sha256') -and $field -cnotin @($b.PSObject.Properties.Name)){continue}
   if($field -like '*sha256' -and [string]$b.$field -cnotmatch '^[a-f0-9]{64}$'){
    throw 'V3_RECONCILE_HASH_BINDINGS_HOLD'
   }
@@ -4521,6 +4521,7 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
  param([string]$PackageRoot,[byte[]]$Approval,[byte[]]$ApprovalCms,
   [byte[]]$AuthorityAdmission,[string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit,
   [string]$ExistingApprovalJson,[string]$ExistingApprovalCms,[string]$ReconciliationEvidenceJson,
+  [string]$InterruptedApprovalJson,[string]$InterruptedApprovalCms,
   [string]$TerminalAbortJson,[string]$TerminalAbortCms,[string]$InstallReadbackJson,[string]$BackupDirectory)
  if($null -ne $script:V3ReleaseContext){throw 'V3_RELEASE_SESSION_ALREADY_OWNED'}
  $pin=Assert-V3ReleaseAuthorityAdmission $AuthorityAdmission $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
@@ -4536,7 +4537,7 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
   abort_json=$TerminalAbortJson;abort_cms=$TerminalAbortCms;catalog_readback=$InstallReadbackJson;stop_attempted=$true
   journal_path=$journalPath;original_approval_path=$ExistingApprovalJson;original_cms_path=$ExistingApprovalCms
-  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()}
+  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();interrupted_approval_bytes=$null;interrupted_cms_bytes=$null;continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()}
  $script:V3ReleaseContext=$ctx
  $mutex=$null;$held=$false;$packageLease=$null;$originalLease=$null;$pair=$null
  try{
@@ -4571,6 +4572,12 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   $fence=Join-Path $script:V3ReleaseRoot 'State\v3-experimental-paper-old-intake-fence.json'
   $archive=Join-Path $script:V3ReleaseRoot ('State\v3-experimental-paper-old-intake-fence.aborted-'+[string]$b.epoch_id+'.json')
   if(Test-Path -LiteralPath ($journalPath+'.reconciliation-attempt.json')){
+   if((Test-Path -LiteralPath $fence) -and -not(Test-Path -LiteralPath $archive)){
+    if(Test-Path -LiteralPath ($journalPath+'.awaiting-post-archive-reader.json')){
+     throw 'V3_RECONCILE_PRE_ARCHIVE_AWAITING_CONFLICT_HOLD'
+    }
+    return Complete-V3ReleasePreArchiveInterrupted -Context $ctx -InterruptedApprovalJson $InterruptedApprovalJson -InterruptedApprovalCms $InterruptedApprovalCms
+   }
    $after=Get-V3ReleasePostArchiveBoundary -Context $ctx
    Assert-V3ReconciliationResumeReceipt -Claims $a -Receipt (Read-V3ReleaseLocalBytes ($journalPath+'.awaiting-post-archive-reader.json'))
    return Complete-V3ReleasePostArchive -Context $ctx -After $after
@@ -4652,7 +4659,9 @@ function Write-V3ReleaseArchiveCheckpoint([object]$Context) {
  $latch=Read-V3ReleaseJson $latchBytes
  if([string]$latch.release_id -cne [string]$a.release_id -or
     [string]$latch.journal_sha256 -cne [string]$b.journal_sha256 -or
-    [string]$latch.approval_sha256 -cne [string]$ctx.authorization.approval_sha256 -or
+    ($latch.approval_sha256 -cne [string]$ctx.authorization.approval_sha256 -and
+     ($null -eq $ctx.interrupted_approval_bytes -or
+      $latch.approval_sha256 -cne (Get-V3ReleaseSha256 $ctx.interrupted_approval_bytes))) -or
     $latch.stop_requested -ne $false){throw 'V3_RECONCILE_ATTEMPT_DRIFT'}
  $record=[ordered]@{kind='V3_RECONCILIATION_PRE_ARCHIVE_V1';release_id=$a.release_id
   release_commit=$a.release_commit;journal_sha256=$b.journal_sha256
@@ -4660,6 +4669,11 @@ function Write-V3ReleaseArchiveCheckpoint([object]$Context) {
   approval_base64=[Convert]::ToBase64String($ctx.payload);cms_base64=[Convert]::ToBase64String($ctx.cms)
   instances_base64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($live|ConvertTo-Json -Compress)))
   state='TASKS_ENABLED_ORIGINAL_INSTANCES_CONFIRMED'}
+ if('interrupted_approval_bytes' -cin @($ctx.PSObject.Properties.Name) -and $null -ne $ctx.interrupted_approval_bytes){
+  $record.interrupted_approval_sha256=Get-V3ReleaseSha256 $ctx.interrupted_approval_bytes
+  $record.interrupted_approval_base64=[Convert]::ToBase64String($ctx.interrupted_approval_bytes)
+  $record.interrupted_cms_base64=[Convert]::ToBase64String($ctx.interrupted_cms_bytes)
+ }
  Write-V3ReleaseImmutableReceipt -Path ($ctx.journal_path+'.pre-archive.json') -Value $record
 }
 
@@ -4701,8 +4715,18 @@ function Assert-V3ReleasePostArchiveBoundary([object]$Context) {
     [string]$latch.state -cne 'RECONCILIATION_ATTEMPTED_UNKNOWN_UNTIL_FINAL_ACK' -or
     [string]$latch.release_id -cne [string]$a.release_id -or
     [string]$latch.journal_sha256 -cne [string]$b.journal_sha256 -or
-    [string]$latch.approval_sha256 -cne (Get-V3ReleaseSha256 $historical) -or $latch.stop_requested -ne $false){
+    ($latch.approval_sha256 -cne (Get-V3ReleaseSha256 $historical) -and
+     $latch.approval_sha256 -cne [string]$checkpoint.interrupted_approval_sha256) -or
+    $latch.stop_requested -ne $false){
   throw 'V3_RECONCILE_POST_ARCHIVE_ATTEMPT_DRIFT'
+ }
+ if('interrupted_approval_sha256' -cin @($checkpoint.PSObject.Properties.Name)){
+  $priorPayload=[Convert]::FromBase64String($checkpoint.interrupted_approval_base64)
+  $priorCms=[Convert]::FromBase64String($checkpoint.interrupted_cms_base64)
+  Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $priorPayload -InterruptedCms $priorCms -Attempt (Read-V3ReleaseLocalBytes ($ctx.journal_path+'.reconciliation-attempt.json')) -AuthorityPin $pin -Current $a
+  if([string]$checkpoint.interrupted_approval_sha256 -cne (Get-V3ReleaseSha256 $priorPayload)){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_INTERRUPTED_PROOF_DRIFT'
+  }
  }
  $saved=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($checkpoint.instances_base64))
  $live=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $ctx.tasks
@@ -4739,6 +4763,79 @@ function Get-V3ReleasePostArchiveBoundary([object]$Context) {
     -not [datetimeoffset]::TryParse([string]$receipt.archive_observed_by_utc,[ref]$after) -or
     $after -gt [datetimeoffset]::UtcNow){throw 'V3_RECONCILE_AWAITING_RECEIPT_DRIFT'}
  return $after
+}
+
+# Resume only the pre-archive HOLD of an already durable attempt.
+# Do not create a second attempt marker, re-enable tasks or fabricate health.
+function Complete-V3ReleasePreArchiveInterrupted([object]$Context,
+ [string]$InterruptedApprovalJson,[string]$InterruptedApprovalCms) {
+ $ctx=$Context;$a=$ctx.authorization.claims;$b=$a.bindings
+ $journalPath=$ctx.journal_path
+ $fence=Join-Path $script:V3ReleaseRoot 'State\v3-experimental-paper-old-intake-fence.json'
+ $archive=Join-Path $script:V3ReleaseRoot ('State\v3-experimental-paper-old-intake-fence.aborted-'+[string]$b.epoch_id+'.json')
+ $checkpointPath=$journalPath+'.pre-archive.json'
+ $latchBytes=Read-V3ReleaseLocalBytes ($journalPath+'.reconciliation-attempt.json')
+ $interrupted=Read-V3ReleaseLocalBytes $InterruptedApprovalJson
+ $interruptedCms=Read-V3ReleaseLocalBytes $InterruptedApprovalCms -MaxBytes 32768
+ Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $interrupted -InterruptedCms $interruptedCms -Attempt $latchBytes -AuthorityPin $ctx.authority_pin -Current $a
+ if((Test-Path -LiteralPath $archive) -or -not(Test-Path -LiteralPath $fence) -or
+    (Test-Path -LiteralPath ($journalPath+'.awaiting-post-archive-reader.json')) -or
+    (Test-Path -LiteralPath ($journalPath+'.completed.json'))){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_STATE_CONFLICT_HOLD'
+ }
+ if(Test-Path -LiteralPath (Join-Path $script:V3ReleaseRoot 'State\v2r4-technical-cutover-maintenance.json')){
+  throw 'V3_RECONCILE_FOREIGN_MAINTENANCE_HOLD'
+ }
+ $null=Get-V3Pr515ArmedOnlyRecoveryReadback -Root $script:V3ReleaseRoot -ExpectedFenceSha256 $b.fence_sha256
+ $ctx.enabled_names=@($ctx.tasks)
+ $ctx.instance_snapshot=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $ctx.tasks
+ if(Test-Path -LiteralPath $checkpointPath){
+  $checkpoint=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $checkpointPath)
+  if([string]$checkpoint.kind -cne 'V3_RECONCILIATION_PRE_ARCHIVE_V1' -or
+     [string]$checkpoint.state -cne 'TASKS_ENABLED_ORIGINAL_INSTANCES_CONFIRMED' -or
+     [string]$checkpoint.release_id -cne [string]$a.release_id -or
+     [string]$checkpoint.attempt_sha256 -cne (Get-V3ReleaseSha256 $latchBytes) -or
+     [string]$checkpoint.interrupted_approval_sha256 -cne (Get-V3ReleaseSha256 $interrupted)){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_CHECKPOINT_HOLD'
+  }
+  $checkpointOld=[Convert]::FromBase64String($checkpoint.interrupted_approval_base64)
+  $checkpointCms=[Convert]::FromBase64String($checkpoint.interrupted_cms_base64)
+  if((Get-V3ReleaseSha256 $checkpointOld) -cne (Get-V3ReleaseSha256 $interrupted) -or
+     (Get-V3ReleaseSha256 $checkpointCms) -cne (Get-V3ReleaseSha256 $interruptedCms)){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_HISTORICAL_PROOF_DRIFT'
+  }
+  Assert-V3ReconciliationContinuationAuthority -HistoricalPayload ([Convert]::FromBase64String($checkpoint.approval_base64)) -HistoricalCms ([Convert]::FromBase64String($checkpoint.cms_base64)) -AuthorityPin $ctx.authority_pin -Current $a
+  $saved=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($checkpoint.instances_base64))
+  if(($ctx.instance_snapshot|ConvertTo-Json -Compress) -cne $saved){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_INSTANCE_REPLACED'
+  }
+ }else{
+  # For an interrupted recovery the authorizing new session must see a real
+  # fresh healthy heartbeat after it starts, not an earlier stale receipt.
+  $healthAfter=[datetimeoffset]::UtcNow
+  Wait-V3ReleaseReconciliationHealth -Context $ctx -After $healthAfter
+  $ctx.interrupted_approval_bytes=$interrupted
+  $ctx.interrupted_cms_bytes=$interruptedCms
+  Write-V3ReleaseArchiveCheckpoint -Context $ctx
+ }
+ # A crash after checkpoint but before archive is recoverable only while
+ # the original fence is present and the original instance snapshot matches.
+ $healthAfter=[datetimeoffset]::UtcNow
+ Wait-V3ReleaseReconciliationHealth -Context $ctx -After $healthAfter
+ Assert-V3ReleaseMutationBoundary -Phase ARCHIVE
+ $live=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $ctx.tasks
+ if(($live|ConvertTo-Json -Compress) -cne ($ctx.instance_snapshot|ConvertTo-Json -Compress)){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_INSTANCE_REPLACED'
+ }
+ if((Test-Path -LiteralPath $archive) -or -not(Test-Path -LiteralPath $fence)){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_ARCHIVE_CONFLICT_HOLD'
+ }
+ $archived=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source $fence -Archive $archive -ExpectedSha256 $b.fence_sha256 -IsolatedRoot $script:V3ReleaseRoot -IsolatedTaskNames $ctx.tasks
+ if([string]$archived.status -cne 'ATOMIC_FILE_RENAME_CONFIRMED_NO_CAS_OR_PAPER_RELEASE'){
+  throw 'V3_RECONCILE_ARCHIVE_UNKNOWN_NO_RETRY'
+ }
+ $after=Get-V3ReleasePostArchiveBoundary -Context $ctx
+ return Complete-V3ReleasePostArchive -Context $ctx -After $after
 }
 
 # Private continuation of the SAME owner. Separated for regression coverage,
