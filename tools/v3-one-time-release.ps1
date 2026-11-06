@@ -12,7 +12,9 @@ param(
  [string]$IssuerReceiptJson='', [string]$IssuerReceiptCms='',
  [string]$InstallReadbackJson='', [string]$BackupDirectory='',
  [string]$ExistingApprovalJson='', [string]$ExistingApprovalCms='', [string]$ReconciliationEvidenceJson='',
- [string]$InterruptedApprovalJson='', [string]$InterruptedApprovalCms=''
+ [string]$InterruptedApprovalJson='', [string]$InterruptedApprovalCms='',
+ [string]$CoordinatedPostArchiveRequestPath='', [string]$CoordinatedPostArchiveEnvelopePath='',
+ [string]$CoordinatedHandoffNonce=''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -169,7 +171,10 @@ if($Mode -eq 'OriginalhostReconcile'){
   -ExistingApprovalCms $ExistingApprovalCms -ReconciliationEvidenceJson $ReconciliationEvidenceJson `
   -InterruptedApprovalJson $InterruptedApprovalJson -InterruptedApprovalCms $InterruptedApprovalCms `
   -TerminalAbortJson $TerminalAbortJson -TerminalAbortCms $TerminalAbortCms `
-  -InstallReadbackJson $InstallReadbackJson -BackupDirectory $BackupDirectory|ConvertTo-Json -Depth 6
+  -InstallReadbackJson $InstallReadbackJson -BackupDirectory $BackupDirectory `
+  -CoordinatedPostArchiveRequestPath $CoordinatedPostArchiveRequestPath `
+  -CoordinatedPostArchiveEnvelopePath $CoordinatedPostArchiveEnvelopePath `
+  -CoordinatedHandoffNonce $CoordinatedHandoffNonce|ConvertTo-Json -Depth 6
  return
 }
 if($Mode -eq 'OriginalhostAbortRestore'){
