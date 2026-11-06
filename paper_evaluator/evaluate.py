@@ -237,6 +237,32 @@ def parse_json_text(text):
     return json.loads(text)
 
 def call_evaluator(candidate,current,external,spec,control):
+    """Cost-free V2R4 decision until a separately released rule engine exists.
+
+    Key presence, environment flags and available credit cannot authorize a
+    paid model call or a synthetic BUY. Preserve a terminal, auditable paper
+    decision without external OpenAI network traffic.
+    """
+    return {
+        "decision": "REJECT",
+        "setup_lane": "NONE",
+        "summary": "Paid model evaluation disabled; no authorized deterministic BUY rule yet.",
+        "reason_codes": ["PAID_MODEL_DISABLED_NO_RULE_BASED_BUY_AUTHORITY"],
+        "missing_triggers": [],
+        "stop_eur": None,
+        "ttl_minutes": 0,
+        "expected_remaining_move_pct": None,
+        "risk_reward_after_costs": None,
+        "stage2_trigger_eur": None,
+        "stage2_ttl_minutes": 0,
+        "watch_conditions": [],
+    }, {"response_id": None, "model": None, "attempt": 0,
+        "source": "rule_based_fail_closed_no_paid_api"}
+
+
+def _retired_paid_model_evaluator(candidate,current,external,spec,control):
+    """Historical model prompt retained for audit; never a production entrypoint."""
+    raise RuntimeError("PAID_MODEL_RETIRED_UNTIL_SEPARATE_BUDGETED_SHADOW_RELEASE")
     api_key=os.environ["OPENAI_API_KEY"]
     prompt=f"""You are the PAPER strategy evaluator for Kraken Spot EUR.
 This is PAPER ONLY. Never place, request, or imply a real order.
