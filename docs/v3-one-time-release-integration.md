@@ -316,3 +316,43 @@ after mutation, interruption before awaiting persistence, restarted process
 context, exact receipt pin, release/Epoch/journal/task/process drift, duplicate
 completion, unchanged original journal/checkpoint/latch and zero native mutation
 on continuation. No production reconciliation is performed by CI.
+
+## Gate-B process-filter correction (06 November 2026)
+
+The PR673 `Read-V3ReleaseContinuingIntakes` filter assigned task arguments to
+PowerShell's automatic `$args` variable. Inside the `Where-Object` scriptblock,
+that variable is an empty argument array: `IndexOf` receives an empty string
+and matches every Python command line. A shared CIM snapshot containing the
+four original processes can therefore produce a per-task count drift even
+when an independent check using the actual task arguments finds both original
+launcher/worker pairs. This is a source defect, not a release parameter error
+or evidence that CIM lost processes. The previous one-process/same-arguments
+fixture concealed it.
+
+The boundary fragment now captures `$taskArguments`; the generator reproduces
+the release module. Query, snapshot timing, exact count, PID, parent PID,
+creation time, task instance, XML, journal, fence, epoch and authorization
+checks are unchanged. There is no second CIM query or automatic retry. A
+transient incomplete snapshot remains HOLD; a later independent observation
+cannot retroactively authorize the failed call. Any real additional matching
+process or changed identity still fails closed.
+
+Regression uses distinct Candidates/WAIT arguments, two original PIDs per task
+and an unrelated Python process. It covers incomplete/transient snapshots,
+extra processes, PID replacement/reuse, parent changes, absent command lines,
+the real reader before Enable/archive, durable attempt preservation and replay
+denial. The enhanced fixture fails with the original PR673 module.
+
+Source/CI/merge and physical deployment remain separate. After merge, stage a
+new pinned **inactive** package at the existing Mini-PC Staging location; do
+not overwrite PR673, the frozen V2R4 runtime, original approvals/evidence,
+journal, attempt sidecars or fence. Verify the new eight-file inventory against
+the merged source. A source-stage PASS is not a reconciliation or completion
+ACK. Existing PR673 admission and execution decisions are commit/artifact-bound
+and cannot silently authorize changed release bytes. The existing #99 release
+procedure must bind the repaired release before a future execution. No Notebook
+CMS or reconciliation is part of this source repair. Since the latest failed
+attempt's aftermath is not yet independently confirmed, preserve UNKNOWN for
+that live state until the existing targeted originalhost readback establishes
+which continuation branch, if any, is permitted. Never clear a latch or replay
+because a source repair merged.

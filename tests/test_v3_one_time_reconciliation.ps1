@@ -18,6 +18,10 @@ foreach($name in @('Assert-V3ReleaseReconciliationIdentity','Assert-V3ReleaseRec
 $checks=0
 function Check([bool]$Ok,[string]$Label){if(-not $Ok){throw ('RECONCILE_TEST_FAILED_'+$Label)};$script:checks++}
 function Deny([scriptblock]$Action,[string]$Label){$denied=$false;try{& $Action|Out-Null}catch{$denied=$true};Check $denied $Label}
+function DenyWith([scriptblock]$Action,[string]$ErrorId,[string]$Label){
+ $actual='';try{& $Action|Out-Null}catch{$actual=$_.Exception.Message}
+ Check ($actual -ceq $ErrorId) ($Label+'_EXACT_ERROR')
+}
 function Clone($Value){return ($Value|ConvertTo-Json -Depth 15 -Compress|ConvertFrom-Json)}
 $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
 $bindings=[ordered]@{epoch_id=('V3CAS-AUDIT-'+('a'*32));source_sha256=('a'*64);fence_sha256=('b'*64)
@@ -199,6 +203,11 @@ try{
   $records+=@([pscustomobject]@{task_name=$name;xml_file=$leaf;xml_sha256=$sha})
   $row=@($e.tasks|Where-Object name -CEQ $name)[0];$row.saved_xml_sha256=$sha
   $row.current_xml_sha256=Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($disabled))
+  # Distinct task arguments and two original PIDs each model launcher/worker
+  # pairs. An unrelated Python process must never match either task.
+  $row.current_matching_processes=@(foreach($pidValue in $(if($name -ceq $names[0]){@(42,43)}else{@(44,45)})){
+   [pscustomobject]@{pid=$pidValue;parent_pid=1;created_at_utc='2026-11-04T18:39:06.1900610Z';created_before_window=$true}
+  })
   $script:state[$name]=$false;$script:xml[$name]=$disabled
  }
  [IO.File]::WriteAllText((Join-Path $backup 'backup-manifest.json'),(@{backup_directory=$backup;task_records=$records}|ConvertTo-Json -Depth 6))
@@ -216,27 +225,66 @@ try{
    };return $folder
   };return $svc
  }
- function Get-CimInstance {param($Query,$ErrorAction) return @([pscustomobject]@{ProcessId=42;ParentProcessId=$script:parent
-  CreationDate=[datetime]::Parse('2026-11-04T18:39:06.1900610Z').ToUniversalTime();CommandLine='python.exe fixture-runtime.py'})}
+ $script:cimMode='stable';$script:cimCalls=0
+ function Get-CimInstance {param($Query,$ErrorAction)
+  $script:cimCalls++
+  Check ($Query -ceq "SELECT ProcessId,ParentProcessId,Name,CreationDate,CommandLine FROM Win32_Process WHERE Name='python.exe' OR Name='pythonw.exe'") 'ORIGINAL_CIM_QUERY'
+  $rows=@(foreach($pidValue in @(42,43,44,45,99)){
+   $taskArgument=if($pidValue -in @(42,43)){'fixture-candidates-runtime.py'}elseif($pidValue -in @(44,45)){'fixture-wait-runtime.py'}else{'unrelated-runtime.py'}
+   [pscustomobject]@{ProcessId=$pidValue;ParentProcessId=$script:parent
+    CreationDate=[datetime]::Parse('2026-11-04T18:39:06.1900610Z').ToUniversalTime()
+    CommandLine=('python.exe '+$taskArgument)}
+  })
+  if($script:cimMode -in @('missing','transient') -and ($script:cimMode -ceq 'missing' -or $script:cimCalls -eq 1)){
+   return @($rows|Where-Object ProcessId -NE 42)
+  }
+  if($script:cimMode -ceq 'extra'){
+   $extra=Clone $rows[0];$extra.ProcessId=100;return @($rows)+@($extra)
+  }
+  if($script:cimMode -ceq 'replaced'){$rows[0].ProcessId=100}
+  if($script:cimMode -ceq 'reused_pid'){$rows[0].CreationDate=$rows[0].CreationDate.AddTicks(10)}
+  if($script:cimMode -ceq 'null_command'){$rows[0].CommandLine=$null}
+  return $rows
+ }
  function Get-ScheduledTask {param($TaskName,$TaskPath,$ErrorAction)
-  return [pscustomobject]@{State='Running';Actions=@([pscustomobject]@{Arguments='fixture-runtime.py'})}
+  $taskArgument=if($TaskName -ceq $names[0]){'fixture-candidates-runtime.py'}else{'fixture-wait-runtime.py'}
+  return [pscustomobject]@{State='Running';Actions=@([pscustomobject]@{Arguments=$taskArgument})}
  }
  function Export-ScheduledTask {param($TaskName,$TaskPath,$ErrorAction) return $script:xml[$TaskName]}
  $script:parent=1
  $null=Read-V3ReleaseContinuingIntakes $liveCtx;Check $true 'ENABLED_FALSE_RUNNING_TRUE_ACCEPTED'
+ Check ($script:cimCalls -eq 1) 'STABLE_FOUR_ORIGINALS_ONE_SNAPSHOT_WITH_UNRELATED_PYTHON'
+ foreach($mode in @('missing','extra','replaced','reused_pid','null_command','transient')){
+  $script:cimMode=$mode;$script:cimCalls=0
+  $errorId=if($mode -in @('replaced','reused_pid')){'V3_RECONCILE_ORIGINAL_PROCESS_IDENTITY_DRIFT'}else{'V3_RECONCILE_PROCESS_COUNT_DRIFT'}
+  DenyWith {Read-V3ReleaseContinuingIntakes $liveCtx} $errorId $mode
+  Check ($script:cimCalls -eq 1) ($mode+'_NO_HIDDEN_CIM_RETRY')
+  if($mode -ceq 'transient'){
+   # The next independent read sees the originals, but the failed call stays
+   # HOLD. No snapshot union, process substitution or reconciliation replay.
+   $null=Read-V3ReleaseContinuingIntakes $liveCtx
+   Check ($script:cimCalls -eq 2) 'TRANSIENT_LATER_READ_IS_SEPARATE'
+  }
+ }
+ $script:cimMode='stable'
  $script:parent=2;Deny {Read-V3ReleaseContinuingIntakes $liveCtx} 'PROCESS_IDENTITY_CHANGED';$script:parent=1
  $script:xml[$names[0]]=$disabled.Replace('python.exe','foreign.exe')
  Deny {Read-V3ReleaseContinuingIntakes $liveCtx} 'ACTION_DRIFT_NO_XML_OVERWRITE';$script:xml[$names[0]]=$disabled
  $script:state[$names[0]]=$true;$script:xml[$names[0]]=$enabled
  $null=Read-V3ReleaseContinuingIntakes -Context $liveCtx -EnabledNames @($names[0]);Check $true 'PARTIALLY_ENABLED_LIVE_READBACK'
  Deny {Read-V3ReleaseContinuingIntakes $liveCtx} 'UNEXPECTED_ENABLED_STATE'
+ $script:realContinuingReader=${function:Read-V3ReleaseContinuingIntakes}
  # After the read-only adapter tests, simulate only OS/native boundaries in
  # the REAL completion orchestration. Actual durable latch and result I/O run.
  $script:V3ReleaseRoot=$temp
  $null=[IO.Directory]::CreateDirectory((Join-Path $temp 'State'))
  function Read-V3ReleaseContinuingIntakes {param($Context,$EnabledNames=@())
   foreach($n in $Context.tasks){if($script:state[$n] -ne ($n -cin $EnabledNames)){throw 'TEST_STATE_MISMATCH'}}
-  if($script:scenario -ceq 'process_drift'){throw 'PROCESS_DRIFT'}
+  if($script:scenario -ceq 'process_drift'){
+   foreach($n in $names){$script:xml[$n]=$disabled}
+   $script:cimMode='extra'
+   return (& $script:realContinuingReader $liveCtx)
+  }
   return ,@([pscustomobject]@{name=$names[0];instance_id='one'},[pscustomobject]@{name=$names[1];instance_id='two'})
  }
  function Test-V3Pr661HeldIntakeDefinitionPair {param($Pair,$TaskNames) return $true}
@@ -289,7 +337,7 @@ try{
   & $script:immutableWriter $Path $Value
  }
  $script:archiveLeaf='v3-experimental-paper-old-intake-fence.aborted-'+$bindings.epoch_id+'.json'
- foreach($scenario in @('success','second_enable_unknown','expiry_after_first','health_unknown','archive_unknown_before','archive_unknown_after','aftercare_unknown','final_reader_unknown','reader_missing','awaiting_persist_crash','expired_initial')){
+ foreach($scenario in @('success','process_drift','second_enable_unknown','expiry_after_first','health_unknown','archive_unknown_before','archive_unknown_after','aftercare_unknown','final_reader_unknown','reader_missing','awaiting_persist_crash','expired_initial')){
   $script:scenario=$scenario;$script:enables=0;$script:archives=0
   $case=Join-Path $temp $scenario;$null=[IO.Directory]::CreateDirectory($case)
   $script:V3ReleaseRoot=$case;$null=[IO.Directory]::CreateDirectory((Join-Path $case 'State'))
@@ -315,7 +363,11 @@ try{
       $result.new_process_started_here -eq $false -and $result.original_processes_continued -eq $true) 'TRUTHFUL_PARTIAL_COMPLETION'
     Check ($script:enables -eq 2 -and $script:archives -eq 1 -and (Test-Path ($journalPath+'.completed.json'))) 'SINGLE_COMPLETION'
    }else{
-    Deny {Complete-V3ReleaseExistingAttempt $ctx $pair} $scenario
+    if($scenario -ceq 'process_drift'){
+     DenyWith {Complete-V3ReleaseExistingAttempt $ctx $pair} 'V3_RECONCILE_PROCESS_COUNT_DRIFT' 'REAL_READER_BEFORE_ENABLE'
+     Check ($script:enables -eq 0 -and $script:archives -eq 0) 'COUNT_DRIFT_NO_NATIVE_MUTATION'
+     Check ((Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($fence))) -ceq $c.bindings.fence_sha256) 'COUNT_DRIFT_FENCE_PRESERVED'
+    }else{Deny {Complete-V3ReleaseExistingAttempt $ctx $pair} $scenario}
     Check (-not(Test-Path ($journalPath+'.completed.json'))) 'UNKNOWN_NEVER_COMPLETES'
    }
    Check ((Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath))) -ceq $journalSha) 'JOURNAL_PRESERVED'
