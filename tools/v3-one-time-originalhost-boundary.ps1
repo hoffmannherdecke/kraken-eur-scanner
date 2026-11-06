@@ -478,7 +478,9 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   [byte[]]$AuthorityAdmission,[string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit,
   [string]$ExistingApprovalJson,[string]$ExistingApprovalCms,[string]$ReconciliationEvidenceJson,
   [string]$InterruptedApprovalJson,[string]$InterruptedApprovalCms,
-  [string]$TerminalAbortJson,[string]$TerminalAbortCms,[string]$InstallReadbackJson,[string]$BackupDirectory)
+  [string]$TerminalAbortJson,[string]$TerminalAbortCms,[string]$InstallReadbackJson,[string]$BackupDirectory,
+  [string]$CoordinatedPostArchiveRequestPath='', [string]$CoordinatedPostArchiveEnvelopePath='',
+  [string]$CoordinatedHandoffNonce='')
  if($null -ne $script:V3ReleaseContext){throw 'V3_RELEASE_SESSION_ALREADY_OWNED'}
  $pin=Assert-V3ReleaseAuthorityAdmission $AuthorityAdmission $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
  $inventory=Get-V3OneTimeReleaseArtifactInventory $PackageRoot
@@ -493,7 +495,12 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
   abort_json=$TerminalAbortJson;abort_cms=$TerminalAbortCms;catalog_readback=$InstallReadbackJson;stop_attempted=$true
   journal_path=$journalPath;original_approval_path=$ExistingApprovalJson;original_cms_path=$ExistingApprovalCms
-  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();interrupted_approval_bytes=$null;interrupted_cms_bytes=$null;continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()}
+  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();interrupted_approval_bytes=$null;interrupted_cms_bytes=$null;continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()
+  coordinated_request=$CoordinatedPostArchiveRequestPath;coordinated_envelope=$CoordinatedPostArchiveEnvelopePath;coordinated_nonce=$CoordinatedHandoffNonce}
+ $coordFields=@($CoordinatedPostArchiveRequestPath,$CoordinatedPostArchiveEnvelopePath,$CoordinatedHandoffNonce)
+ $coordCount=@($coordFields|Where-Object {-not [string]::IsNullOrEmpty($_)}).Count
+ if($coordCount -notin @(0,3)){throw 'V3_GATEB_COORDINATED_PARTIAL_INPUT_HOLD'}
+ if($coordCount -eq 3){Assert-V3GateBCoordPaths $ctx}
  $script:V3ReleaseContext=$ctx
  $mutex=$null;$held=$false;$packageLease=$null;$originalLease=$null;$pair=$null
  try{
@@ -575,7 +582,11 @@ function Assert-V3ReleaseProtectedTasks([object]$Bindings) {
  }
 }
 
-function Wait-V3ReleaseReconciliationTerminal([object]$Context,[datetimeoffset]$After) {
+# Optional transport for the SAME PR675 originalhost release owner.
+# A single immutable JSON envelope carries both signed Reader byte arrays.
+function Assert-V3GateBCoordPaths([object]$Ctx) {
+ $nonce=[string]$Ctx.coordinated_nonce
+ if($nonce -cnotmatch '^[a-f0-9]{32}
  $b=$Context.authorization.claims.bindings
  for($i=0;$i -lt 45;$i++){
   if([datetimeoffset]::UtcNow -ge $Context.authorization.expires_at){throw 'V3_RECONCILE_SESSION_EXPIRED_NO_RETRY'}
@@ -853,6 +864,7 @@ function Complete-V3ReleasePostArchive([object]$Context,[datetimeoffset]$After) 
   $archive=Join-Path $script:V3ReleaseRoot ('State\v3-experimental-paper-old-intake-fence.aborted-'+[string]$b.epoch_id+'.json')
   Assert-V3ReleasePostArchiveBoundary -Context $ctx
   Wait-V3ReleaseReconciliationHealth -Context $ctx -After $After -AfterArchive
+  Publish-V3GateBCoordRequest -Ctx $ctx -After $After
   # One final fresh independent Cloud Reader is still required. After archive
   # the shared RESTORE boundary expects ARMED, so validate originals/authority/
   # signed terminal explicitly without pretending the fence is still present.
