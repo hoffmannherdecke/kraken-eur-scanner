@@ -7,7 +7,7 @@ $t=$null;$e=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'tools/v3-one-time-originalhost-release.psm1'),[ref]$t,[ref]$e)
 if($e.Count){throw 'RECONCILE_AST_INVALID'}
 foreach($name in @('Assert-V3ReleaseReconciliationIdentity','Assert-V3ReleaseReconciliationOriginals',
- 'Complete-V3ReleaseExistingAttempt','Enable-V3ReleaseIntakeDefinition','Read-V3ReleaseContinuingIntakes',
+ 'Complete-V3ReleaseExistingAttempt','Complete-V3ReleasePreArchiveInterrupted','Enable-V3ReleaseIntakeDefinition','Read-V3ReleaseContinuingIntakes',
  'Read-V3ReleaseReconciliationHeartbeat','Wait-V3ReleaseReconciliationHealth','Wait-V3ReleaseReconciliationTerminal',
  'Test-V3Pr515DisabledOnlyXmlDifference','Write-V3ReleaseImmutableReceipt','Write-V3ReleaseArchiveCheckpoint',
  'Assert-V3ReleasePostArchiveBoundary','Get-V3ReleasePostArchiveBoundary','Complete-V3ReleasePostArchive')){
@@ -279,6 +279,7 @@ try{
  $script:V3ReleaseRoot=$temp
  $null=[IO.Directory]::CreateDirectory((Join-Path $temp 'State'))
  function Read-V3ReleaseContinuingIntakes {param($Context,$EnabledNames=@())
+  if($script:scenario -ceq 'resume_identity_unknown'){throw 'V3_RECONCILE_ORIGINAL_PROCESS_IDENTITY_DRIFT'}
   foreach($n in $Context.tasks){if($script:state[$n] -ne ($n -cin $EnabledNames)){throw 'TEST_STATE_MISMATCH'}}
   if($script:scenario -ceq 'process_drift'){
    foreach($n in $names){$script:xml[$n]=$disabled}
@@ -436,5 +437,66 @@ try{
 
   }finally{foreach($leaseStream in $ctx.continuation_leases){$leaseStream.Dispose()};$stream.Dispose()}
  }
+ # Recover a real persisted attempt in PRE-ARCHIVE HOLD. No task Enable and
+ # no second attempt marker: prior CMS must sign the actual latch hash.
+ $script:scenario='success';$script:enables=0;$script:archives=0
+ $case=Join-Path $temp 'pre_archive_resume';$null=[IO.Directory]::CreateDirectory($case)
+ $script:V3ReleaseRoot=$case;$null=[IO.Directory]::CreateDirectory((Join-Path $case 'State'))
+ $journalPath=Join-Path $case 'attempt.json';[IO.File]::WriteAllText($journalPath,'immutable journal')
+ $journalSha=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath))
+ $fence=Join-Path $case 'State/v3-experimental-paper-old-intake-fence.json'
+ [IO.File]::WriteAllText($fence,'original fence bytes')
+ $oldClaim=Clone $claim;$oldClaim.bindings.journal_sha256=$journalSha
+ $oldClaim.bindings.fence_sha256=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($fence))
+ $oldSigned=Sign $oldClaim
+ $latch=[ordered]@{kind='V3_EXISTING_GATE_B_RECONCILIATION_ATTEMPT_V1'
+  release_id=$oldClaim.release_id;journal_sha256=$journalSha
+  approval_sha256=(Get-V3ReleaseSha256 $oldSigned.Payload)
+  state='RECONCILIATION_ATTEMPTED_UNKNOWN_UNTIL_FINAL_ACK';stop_requested=$false}
+ $latchPath=$journalPath+'.reconciliation-attempt.json'
+ [IO.File]::WriteAllText($latchPath,($latch|ConvertTo-Json -Compress))
+ $latchSha=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($latchPath))
+ $newClaim=Clone $oldClaim;$newClaim.release_commit=('3'*40)
+ foreach($artifact in @('tools/v3-one-time-originalhost-release.psm1','tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1')){
+  $newClaim.artifacts.$artifact=('e'*64)
+ }
+ $newClaim.bindings|Add-Member -NotePropertyName pre_archive_attempt_sha256 -NotePropertyValue $latchSha
+ $newSigned=Sign $newClaim
+ $oldJson=Join-Path $case 'prior.json';$oldCms=Join-Path $case 'prior.cms'
+ [IO.File]::WriteAllBytes($oldJson,$oldSigned.Payload)
+ [IO.File]::WriteAllBytes($oldCms,$oldSigned.Cms)
+ $ctx=[pscustomobject]@{authorization=[pscustomobject]@{claims=$newClaim
+   expires_at=[datetimeoffset]::UtcNow.AddMinutes(10)
+   approval_sha256=(Get-V3ReleaseSha256 $newSigned.Payload)}
+  tasks=$names;payload=$newSigned.Payload;cms=$newSigned.Cms;authority_pin=$pin
+  package_root=$root;journal_path=$journalPath
+  admission_bytes=[byte[]](1);admission_sha256=('0'*64);catalog_readback='fixture'
+  enabled_names=@();instance_snapshot=$null;interrupted_approval_bytes=$null;interrupted_cms_bytes=$null
+  continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()}
+ $script:V3ReleaseContext=$ctx
+ foreach($n in $names){$script:state[$n]=$true}
+ function Get-V3Pr515ArmedOnlyRecoveryReadback {param($Root,$ExpectedFenceSha256) return $null}
+ Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $oldSigned.Payload -InterruptedCms $oldSigned.Cms -Attempt ([IO.File]::ReadAllBytes($latchPath)) -AuthorityPin $pin -Current $newClaim
+ Check $true 'SIGNED_PREARCHIVE_ATTEMPT_PIN_OK'
+ $bad=Clone $newClaim;$bad.bindings.pre_archive_attempt_sha256=('0'*64)
+ Deny {Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $oldSigned.Payload -InterruptedCms $oldSigned.Cms -Attempt ([IO.File]::ReadAllBytes($latchPath)) -AuthorityPin $pin -Current $bad} 'WRONG_ATTEMPT_PIN_DENIED'
+ $script:scenario='resume_identity_unknown'
+ Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'ORIGINAL_PROCESS_MISMATCH_HOLD'
+ Check ($script:enables -eq 0 -and $script:archives -eq 0) 'PROCESS_HOLD_NO_MUTATION'
+ $script:scenario='health_unknown'
+ Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'DEGRADED_HEALTH_HOLD'
+ Check (-not(Test-Path ($journalPath+'.pre-archive.json'))) 'UNHEALTHY_NEVER_CHECKPOINTS'
+ $script:scenario='archive_unknown_before'
+ Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'INTERRUPTED_ARCHIVE'
+ Check (Test-Path ($journalPath+'.pre-archive.json')) 'CHECKPOINT_DURABLE_ON_ARCHIVE_FAILURE'
+ $checkpointSha=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath+'.pre-archive.json'))
+ $script:scenario='success'
+ $result=Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms
+ Check ($result.original_processes_continued -eq $true -and $script:enables -eq 0 -and $script:archives -eq 2) 'RECOVER_WITHOUT_TASK_REENABLE'
+ Check ((Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($latchPath)) -ceq $latchSha) -and
+   (Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($journalPath+'.pre-archive.json')) -ceq $checkpointSha)) 'DURABLE_ORIGINALS_UNCHANGED'
+ Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'REPLAY_AFTER_ARCHIVE_DENIED'
+ Check ($script:enables -eq 0 -and $script:archives -eq 2) 'NO_DOUBLE_ENABLE_OR_ARCHIVE'
+ foreach($leaseStream in $ctx.continuation_leases){$leaseStream.Dispose()}
  Write-Output ('V3_EXISTING_GATE_B_RECONCILIATION_OFFLINE_PASS='+$checks)
 }finally{[IO.Directory]::Delete($temp,$true);$cert.Dispose();$rsa.Dispose()}
