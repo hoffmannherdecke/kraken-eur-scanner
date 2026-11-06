@@ -4753,6 +4753,79 @@ function Get-V3ReleasePostArchiveBoundary([object]$Context) {
  return $after
 }
 
+# Resume only the pre-archive HOLD of an already durable attempt.
+# Do not create a second attempt marker, re-enable tasks or fabricate health.
+function Complete-V3ReleasePreArchiveInterrupted([object]$Context,
+ [string]$InterruptedApprovalJson,[string]$InterruptedApprovalCms) {
+ $ctx=$Context;$a=$ctx.authorization.claims;$b=$a.bindings
+ $journalPath=$ctx.journal_path
+ $fence=Join-Path $script:V3ReleaseRoot 'State\v3-experimental-paper-old-intake-fence.json'
+ $archive=Join-Path $script:V3ReleaseRoot ('State\v3-experimental-paper-old-intake-fence.aborted-'+[string]$b.epoch_id+'.json')
+ $checkpointPath=$journalPath+'.pre-archive.json'
+ $latchBytes=Read-V3ReleaseLocalBytes ($journalPath+'.reconciliation-attempt.json')
+ $interrupted=Read-V3ReleaseLocalBytes $InterruptedApprovalJson
+ $interruptedCms=Read-V3ReleaseLocalBytes $InterruptedApprovalCms -MaxBytes 32768
+ Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $interrupted -InterruptedCms $interruptedCms -Attempt $latchBytes -AuthorityPin $ctx.authority_pin -Current $a
+ if((Test-Path -LiteralPath $archive) -or -not(Test-Path -LiteralPath $fence) -or
+    (Test-Path -LiteralPath ($journalPath+'.awaiting-post-archive-reader.json')) -or
+    (Test-Path -LiteralPath ($journalPath+'.completed.json'))){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_STATE_CONFLICT_HOLD'
+ }
+ if(Test-Path -LiteralPath (Join-Path $script:V3ReleaseRoot 'State\v2r4-technical-cutover-maintenance.json')){
+  throw 'V3_RECONCILE_FOREIGN_MAINTENANCE_HOLD'
+ }
+ $null=Get-V3Pr515ArmedOnlyRecoveryReadback -Root $script:V3ReleaseRoot -ExpectedFenceSha256 $b.fence_sha256
+ $ctx.enabled_names=@($ctx.tasks)
+ $ctx.instance_snapshot=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $ctx.tasks
+ if(Test-Path -LiteralPath $checkpointPath){
+  $checkpoint=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $checkpointPath)
+  if([string]$checkpoint.kind -cne 'V3_RECONCILIATION_PRE_ARCHIVE_V1' -or
+     [string]$checkpoint.state -cne 'TASKS_ENABLED_ORIGINAL_INSTANCES_CONFIRMED' -or
+     [string]$checkpoint.release_id -cne [string]$a.release_id -or
+     [string]$checkpoint.attempt_sha256 -cne (Get-V3ReleaseSha256 $latchBytes) -or
+     [string]$checkpoint.interrupted_approval_sha256 -cne (Get-V3ReleaseSha256 $interrupted)){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_CHECKPOINT_HOLD'
+  }
+  $checkpointOld=[Convert]::FromBase64String($checkpoint.interrupted_approval_base64)
+  $checkpointCms=[Convert]::FromBase64String($checkpoint.interrupted_cms_base64)
+  if((Get-V3ReleaseSha256 $checkpointOld) -cne (Get-V3ReleaseSha256 $interrupted) -or
+     (Get-V3ReleaseSha256 $checkpointCms) -cne (Get-V3ReleaseSha256 $interruptedCms)){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_HISTORICAL_PROOF_DRIFT'
+  }
+  Assert-V3ReconciliationContinuationAuthority -HistoricalPayload ([Convert]::FromBase64String($checkpoint.approval_base64)) -HistoricalCms ([Convert]::FromBase64String($checkpoint.cms_base64)) -AuthorityPin $ctx.authority_pin -Current $a
+  $saved=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($checkpoint.instances_base64))
+  if(($ctx.instance_snapshot|ConvertTo-Json -Compress) -cne $saved){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_INSTANCE_REPLACED'
+  }
+ }else{
+  # For an interrupted recovery the authorizing new session must see a real
+  # fresh healthy heartbeat after it starts, not an earlier stale receipt.
+  $healthAfter=[datetimeoffset]::UtcNow
+  Wait-V3ReleaseReconciliationHealth -Context $ctx -After $healthAfter
+  $ctx.interrupted_approval_bytes=$interrupted
+  $ctx.interrupted_cms_bytes=$interruptedCms
+  Write-V3ReleaseArchiveCheckpoint -Context $ctx
+ }
+ # A crash after checkpoint but before archive is recoverable only while
+ # the original fence is present and the original instance snapshot matches.
+ $healthAfter=[datetimeoffset]::UtcNow
+ Wait-V3ReleaseReconciliationHealth -Context $ctx -After $healthAfter
+ Assert-V3ReleaseMutationBoundary -Phase ARCHIVE
+ $live=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $ctx.tasks
+ if(($live|ConvertTo-Json -Compress) -cne ($ctx.instance_snapshot|ConvertTo-Json -Compress)){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_INSTANCE_REPLACED'
+ }
+ if((Test-Path -LiteralPath $archive) -or -not(Test-Path -LiteralPath $fence)){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_ARCHIVE_CONFLICT_HOLD'
+ }
+ $archived=Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY -Source $fence -Archive $archive -ExpectedSha256 $b.fence_sha256 -IsolatedRoot $script:V3ReleaseRoot -IsolatedTaskNames $ctx.tasks
+ if([string]$archived.status -cne 'ATOMIC_FILE_RENAME_CONFIRMED_NO_CAS_OR_PAPER_RELEASE'){
+  throw 'V3_RECONCILE_ARCHIVE_UNKNOWN_NO_RETRY'
+ }
+ $after=Get-V3ReleasePostArchiveBoundary -Context $ctx
+ return Complete-V3ReleasePostArchive -Context $ctx -After $after
+}
+
 # Private continuation of the SAME owner. Separated for regression coverage,
 # not exported, and cannot run without the real authorized context/pair.
 function Complete-V3ReleaseExistingAttempt([object]$Context,[object]$HeldPair) {
