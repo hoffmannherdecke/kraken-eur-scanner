@@ -4292,7 +4292,7 @@ function Enable-V3ReleaseIntakeDefinition([string]$TaskName) {
 function Assert-V3ReleaseReconciliationIdentity(
  [object]$Claims,[object]$Original,[object]$Journal,[object]$Evidence) {
  $b=$Claims.bindings
- $extra=@('journal_sha256','original_approval_sha256','evidence_sha256','reconciliation_policy','post_archive_receipt_sha256')
+ $extra=@('journal_sha256','original_approval_sha256','evidence_sha256','reconciliation_policy','post_archive_receipt_sha256','pre_archive_attempt_sha256')
  if([string]$Claims.scope -cne 'ORIGINALHOST_ABORT_RECONCILE' -or
     [string]$b.reconciliation_policy -cne 'ENABLED_ONLY_CONTINUING_ORIGINALS_NO_STOP_V1' -or
     [string]$Original.kind -cne 'V3_ONE_TIME_RELEASE_AUTHORIZATION_V1' -or
@@ -4310,9 +4310,9 @@ function Assert-V3ReleaseReconciliationIdentity(
     [string]$Journal.approval_sha256 -cne [string]$b.original_approval_sha256 -or
     [string]$Journal.epoch_id -cne [string]$b.epoch_id -or
     @($Original.bindings.PSObject.Properties).Count -ne 18 -or
-    (@($b.PSObject.Properties).Count -ne 22 -and @($b.PSObject.Properties).Count -ne 23)){throw 'V3_RECONCILE_IDENTITY_OR_BINDINGS_HOLD'}
+    (@($b.PSObject.Properties).Count -ne (22+@(@('post_archive_receipt_sha256','pre_archive_attempt_sha256')|Where-Object {$_ -cin @($b.PSObject.Properties.Name)}).Count))){throw 'V3_RECONCILE_IDENTITY_OR_BINDINGS_HOLD'}
  foreach($field in $extra){
-  if($field -ceq 'post_archive_receipt_sha256' -and $field -cnotin @($b.PSObject.Properties.Name)){continue}
+  if($field -cin @('post_archive_receipt_sha256','pre_archive_attempt_sha256') -and $field -cnotin @($b.PSObject.Properties.Name)){continue}
   if($field -like '*sha256' -and [string]$b.$field -cnotmatch '^[a-f0-9]{64}$'){
    throw 'V3_RECONCILE_HASH_BINDINGS_HOLD'
   }
@@ -4521,6 +4521,7 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
  param([string]$PackageRoot,[byte[]]$Approval,[byte[]]$ApprovalCms,
   [byte[]]$AuthorityAdmission,[string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit,
   [string]$ExistingApprovalJson,[string]$ExistingApprovalCms,[string]$ReconciliationEvidenceJson,
+  [string]$InterruptedApprovalJson,[string]$InterruptedApprovalCms,
   [string]$TerminalAbortJson,[string]$TerminalAbortCms,[string]$InstallReadbackJson,[string]$BackupDirectory)
  if($null -ne $script:V3ReleaseContext){throw 'V3_RELEASE_SESSION_ALREADY_OWNED'}
  $pin=Assert-V3ReleaseAuthorityAdmission $AuthorityAdmission $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
@@ -4536,7 +4537,7 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
   abort_json=$TerminalAbortJson;abort_cms=$TerminalAbortCms;catalog_readback=$InstallReadbackJson;stop_attempted=$true
   journal_path=$journalPath;original_approval_path=$ExistingApprovalJson;original_cms_path=$ExistingApprovalCms
-  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()}
+  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();interrupted_approval_bytes=$null;interrupted_cms_bytes=$null;continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()}
  $script:V3ReleaseContext=$ctx
  $mutex=$null;$held=$false;$packageLease=$null;$originalLease=$null;$pair=$null
  try{
@@ -4571,6 +4572,12 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   $fence=Join-Path $script:V3ReleaseRoot 'State\v3-experimental-paper-old-intake-fence.json'
   $archive=Join-Path $script:V3ReleaseRoot ('State\v3-experimental-paper-old-intake-fence.aborted-'+[string]$b.epoch_id+'.json')
   if(Test-Path -LiteralPath ($journalPath+'.reconciliation-attempt.json')){
+   if((Test-Path -LiteralPath $fence) -and -not(Test-Path -LiteralPath $archive)){
+    if(Test-Path -LiteralPath ($journalPath+'.awaiting-post-archive-reader.json')){
+     throw 'V3_RECONCILE_PRE_ARCHIVE_AWAITING_CONFLICT_HOLD'
+    }
+    return Complete-V3ReleasePreArchiveInterrupted -Context $ctx -InterruptedApprovalJson $InterruptedApprovalJson -InterruptedApprovalCms $InterruptedApprovalCms
+   }
    $after=Get-V3ReleasePostArchiveBoundary -Context $ctx
    Assert-V3ReconciliationResumeReceipt -Claims $a -Receipt (Read-V3ReleaseLocalBytes ($journalPath+'.awaiting-post-archive-reader.json'))
    return Complete-V3ReleasePostArchive -Context $ctx -After $after
@@ -4660,6 +4667,11 @@ function Write-V3ReleaseArchiveCheckpoint([object]$Context) {
   approval_base64=[Convert]::ToBase64String($ctx.payload);cms_base64=[Convert]::ToBase64String($ctx.cms)
   instances_base64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($live|ConvertTo-Json -Compress)))
   state='TASKS_ENABLED_ORIGINAL_INSTANCES_CONFIRMED'}
+ if($null -ne $ctx.interrupted_approval_bytes){
+  $record.interrupted_approval_sha256=Get-V3ReleaseSha256 $ctx.interrupted_approval_bytes
+  $record.interrupted_approval_base64=[Convert]::ToBase64String($ctx.interrupted_approval_bytes)
+  $record.interrupted_cms_base64=[Convert]::ToBase64String($ctx.interrupted_cms_bytes)
+ }
  Write-V3ReleaseImmutableReceipt -Path ($ctx.journal_path+'.pre-archive.json') -Value $record
 }
 
