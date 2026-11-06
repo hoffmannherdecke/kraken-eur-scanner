@@ -437,6 +437,7 @@ try{
 
   }finally{foreach($leaseStream in $ctx.continuation_leases){$leaseStream.Dispose()};$stream.Dispose()}
  }
+ Write-Output 'PR675_FIXTURE_START'
  # Recover a real persisted attempt in PRE-ARCHIVE HOLD. No task Enable and
  # no second attempt marker: prior CMS must sign the actual latch hash.
  $script:scenario='success';$script:enables=0;$script:archives=0
@@ -448,6 +449,7 @@ try{
  [IO.File]::WriteAllText($fence,'original fence bytes')
  $oldClaim=Clone $claim;$oldClaim.bindings.journal_sha256=$journalSha
  $oldClaim.bindings.fence_sha256=Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($fence))
+ Write-Output 'PR675_PRIOR_SIGNED'
  $oldSigned=Sign $oldClaim
  $latch=[ordered]@{kind='V3_EXISTING_GATE_B_RECONCILIATION_ATTEMPT_V1'
   release_id=$oldClaim.release_id;journal_sha256=$journalSha
@@ -461,6 +463,7 @@ try{
   $newClaim.artifacts.$artifact=('e'*64)
  }
  $newClaim.bindings|Add-Member -NotePropertyName pre_archive_attempt_sha256 -NotePropertyValue $latchSha
+ Write-Output 'PR675_NEW_SIGNED'
  $newSigned=Sign $newClaim
  $oldJson=Join-Path $case 'prior.json';$oldCms=Join-Path $case 'prior.cms'
  [IO.File]::WriteAllBytes($oldJson,$oldSigned.Payload)
@@ -476,16 +479,19 @@ try{
  $script:V3ReleaseContext=$ctx
  foreach($n in $names){$script:state[$n]=$true}
  function Get-V3Pr515ArmedOnlyRecoveryReadback {param($Root,$ExpectedFenceSha256) return $null}
+ Write-Output 'PR675_BEFORE_AUTH_GUARD'
  Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $oldSigned.Payload -InterruptedCms $oldSigned.Cms -Attempt ([IO.File]::ReadAllBytes($latchPath)) -AuthorityPin $pin -Current $newClaim
  Check $true 'SIGNED_PREARCHIVE_ATTEMPT_PIN_OK'
  $bad=Clone $newClaim;$bad.bindings.pre_archive_attempt_sha256=('0'*64)
  Deny {Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $oldSigned.Payload -InterruptedCms $oldSigned.Cms -Attempt ([IO.File]::ReadAllBytes($latchPath)) -AuthorityPin $pin -Current $bad} 'WRONG_ATTEMPT_PIN_DENIED'
+ Write-Output 'PR675_AUTH_GUARD_DONE'
  $script:scenario='resume_identity_unknown'
  Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'ORIGINAL_PROCESS_MISMATCH_HOLD'
  Check ($script:enables -eq 0 -and $script:archives -eq 0) 'PROCESS_HOLD_NO_MUTATION'
  $script:scenario='health_unknown'
  Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'DEGRADED_HEALTH_HOLD'
  Check (-not(Test-Path ($journalPath+'.pre-archive.json'))) 'UNHEALTHY_NEVER_CHECKPOINTS'
+ Write-Output 'PR675_HEALTH_GUARD_DONE'
  $script:scenario='archive_unknown_before'
  Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'INTERRUPTED_ARCHIVE'
  Check (Test-Path ($journalPath+'.pre-archive.json')) 'CHECKPOINT_DURABLE_ON_ARCHIVE_FAILURE'
