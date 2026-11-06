@@ -264,8 +264,10 @@ function Assert-V3ReconciliationPreArchiveAttemptAuthority(
  }
  $prior=@($old.bindings.PSObject.Properties)
  $current=@($Current.bindings.PSObject.Properties)
- if($prior.Count -ne 22 -or $current.Count -ne 23 -or
-    @($current|Where-Object {$_.Name -cnotin (@($prior.Name)+@('pre_archive_attempt_sha256'))}).Count){
+ if($prior.Count -ne 22 -or $current.Count -notin @(23,24) -or
+    @($current|Where-Object {$_.Name -cnotin (@($prior.Name)+@('pre_archive_attempt_sha256','post_archive_receipt_sha256'))}).Count -or
+    @($current|Where-Object {$_.Name -ceq 'pre_archive_attempt_sha256'}).Count -ne 1 -or
+    ($current.Count -eq 24 -and @($current|Where-Object {$_.Name -ceq 'post_archive_receipt_sha256'}).Count -ne 1)){
   throw 'V3_RECONCILE_PRE_ARCHIVE_BINDINGS_HOLD'
  }
  foreach($p in $prior){
@@ -275,14 +277,14 @@ function Assert-V3ReconciliationPreArchiveAttemptAuthority(
  }
  $priorArtifacts=@($old.artifacts.PSObject.Properties)
  $newArtifacts=@($Current.artifacts.PSObject.Properties)
- $repairPath='tools/v3-one-time-originalhost-release.psm1'
+ $repairPaths=@('tools/v3-one-time-originalhost-release.psm1','tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1')
  if($priorArtifacts.Count -ne 8 -or $newArtifacts.Count -ne 8 -or
     @($priorArtifacts|Where-Object {$_.Name -cnotin @($newArtifacts.Name)}).Count){
   throw 'V3_RECONCILE_PRE_ARCHIVE_ARTIFACTS_HOLD'
  }
  foreach($p in $priorArtifacts){
   $next=[string]$Current.artifacts.($p.Name)
-  if($p.Name -ceq $repairPath){
+  if($p.Name -cin $repairPaths){
    if($next -ceq [string]$p.Value){throw 'V3_RECONCILE_PRE_ARCHIVE_NO_REPAIR_HOLD'}
   }elseif($next -cne [string]$p.Value){
    throw 'V3_RECONCILE_PRE_ARCHIVE_ARTIFACT_DRIFT'
