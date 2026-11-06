@@ -118,6 +118,7 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                   approval:dict|None=None,model_key:str|None=None,
                   existing_context:dict|None=None,allow_model:bool=False,
                   admit_staged_scanner_no_model:bool=False,
+                  admit_staged_scanner_one_free_rule:bool=False,
                   admit_staged_scanner_one_approved_model:bool=False,
                   admit_reentry_child_one_approved_model:bool=False,
                   reentry_original_candidate:dict|None=None,
@@ -167,9 +168,20 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     # zero-model continuation remains distinct from an explicitly authorized
     # ONE MODEL continuation; both require the same immutable staged Scanner
     # receipts and may never substitute an owner-source identity.
-    if admit_staged_scanner_no_model and admit_staged_scanner_one_approved_model:
-        raise ValueError("two staged V3 continuation modes cannot be combined")
-    staged=admit_staged_scanner_no_model or admit_staged_scanner_one_approved_model
+    if sum(bool(x) for x in (
+            admit_staged_scanner_no_model,
+            admit_staged_scanner_one_approved_model,
+            admit_staged_scanner_one_free_rule))>1:
+        raise ValueError("staged V3 continuation modes are mutually exclusive")
+    if admit_staged_scanner_one_free_rule and (
+            allow_model or approval is not None or model_key is not None
+            or model_client is not None
+            or _released_model_capability is not _RELEASED_MODEL_NATIVE_OWNER
+            or candidate.get("entry_origin")!="SCANNER"):
+        raise ValueError("free Paper rule requires the existing released OS owner and zero model inputs")
+    staged=(admit_staged_scanner_no_model or
+            admit_staged_scanner_one_approved_model or
+            admit_staged_scanner_one_free_rule)
     if admit_staged_scanner_no_model and (
             allow_model or approval is not None or model_key is not None
             or candidate.get("entry_origin")!="SCANNER"):
@@ -428,6 +440,59 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
         return {"status":"NO_ELIGIBLE_INITIAL_V3_MODEL_REVIEW",
                 "review_status":eligibility["status"],"paper_only":True}
     # Preflight is NON-WRITING except audit receipts, no charge and no model.
+    if admit_staged_scanner_one_free_rule:
+        from paper_evaluator.v3_full_entry_decision_candidate_v1 import (
+            validate_free_rule_based_entry)
+        validated = validate_free_rule_based_entry(
+            eligibility, decision_candidate, coin, quote, meta,
+            decision_at_utc=requested_at, slippage_pct_each_side=0.08)
+        # This explicit no-paid branch is confined to the original native
+        # lock + active Cloud release owner. It cannot mint a fill on source
+        # errors, or create a new model budget reservation.
+        receipt("MODEL_REQUEST","SKIP",{
+            "source_status":"FREE_RULE_V3_P4_NO_MODEL",
+            "model_http_attempts_reserved":0,
+            "source_known_at_utc":coin.get("known_at_utc")})
+        receipt("P4_VALIDATION",
+            validated["decision"] if validated["decision"] in
+            ("BUY_SCOUT","WAIT","REJECT") else "UNKNOWN",{
+            "p4_status":validated["status"],
+            "p4_decision":validated["decision"],
+            "p4_completed_at_utc":clock(),
+            "rule_based_primary":True,
+            "model_http_requests":0,
+            "p4_reason_codes":(validated.get("reason_codes") or [])[:8],
+            "ask_eur":quote["ask"],
+            "validated_stop_eur":validated.get("stop_eur"),
+            "validated_stage2_eur":validated.get("stage2_trigger_eur"),
+            "total_cost_pct":validated.get("total_round_trip_cost_pct"),
+        })
+        if validated["decision"]=="WAIT":
+            # Derive the only WAIT grammar from the same validated free P4
+            # payload, never a model request or string description.
+            receipt("WAIT_WATCH","WAIT",{
+                "raw_wait_ttl_minutes":validated.get("ttl_minutes"),
+                "raw_watch_conditions":validated.get("watch_conditions")})
+        if validated["decision"]=="BUY_SCOUT":
+            receipt("PAPER_FILL","PAPER_FILLED",{
+                "paper_entry_ask_eur":validated["execution_ask_eur"],
+                "paper_entry_qty":round(50/validated["execution_ask_eur"],10),
+                "paper_entry_fee_eur":round(50*0.006,6),
+                "validated_stop_eur":validated["stop_eur"],
+                "validated_stage2_eur":validated["stage2_trigger_eur"],
+                "stage2_ttl_minutes":validated["stage2_ttl_minutes"],
+                "total_cost_pct":validated["total_round_trip_cost_pct"],
+                "source_status":"ASSUMED_VIRTUAL_PAPER_ASK_NOT_REAL_EXCHANGE_FILL"})
+            for h in (6,24,72):
+                receipt(f"FOLLOWUP_{h}H","PENDING",{
+                    "followup_source":"KRAKEN_1M_PENDING"})
+        return {"status":"V3_FREE_RULE_P4_RECORDED_NO_PAPER_ACTIVATION",
+                "p4_status":validated["status"],"p4_decision":validated["decision"],
+                "candidate_id":cid,"series_id":series_id,
+                "model_http_attempts_reserved":0,"model_called":False,
+                "model_http_requests":0,"paper_only":True,
+                "orders":False,"real_money_actions":False,
+                "has_actual_trade_writer":False}
     if not allow_model:
         # Existing V3 preflight remains non-writing except its original
         # receipts, but now evaluates the cost-free primary/P4 in memory.
