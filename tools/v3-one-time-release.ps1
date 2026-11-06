@@ -2,7 +2,7 @@
 # Default is local inventory only. No implicit installation, STOP, CAS or Paper.
 [CmdletBinding()]
 param(
- [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')][string]$Mode='Inventory',
+ [ValidateSet('Inventory','PaperInventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')][string]$Mode='Inventory',
  [string]$PackageRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$ApprovalJson='', [string]$ApprovalCms='', [string]$ExpectedReleaseCommit='',
  [string]$AuthorityAdmissionJson='', [string]$ExpectedAuthorityAdmissionSha256='',
@@ -121,6 +121,14 @@ function Get-V3ReleaseVerifiedReadback([string]$Sql,[string]$ReleaseSql,[Securit
      [string]$acl.grantee -cnotin @('v3_cas_audit_table_owner',$allowed)){throw 'V3_RELEASE_FUNCTION_ACL_DRIFT'}
  }
  return $wire
+}
+
+if($Mode -eq 'PaperInventory'){
+ . (Join-Path $PSScriptRoot 'v3-one-time-paper-release.ps1')
+ [pscustomobject]@{kind='V3_PAPER_RELEASE_ARTIFACT_INVENTORY_V1';
+  artifacts=(Get-V3PaperReleaseInventory $PackageRoot);production_authorized=$false;
+  cloud_contacted=$false;host_mutated=$false}|ConvertTo-Json -Depth 5
+ return
 }
 
 if($Mode -in @('PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')){

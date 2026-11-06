@@ -37,6 +37,11 @@ transport. No raw caller SQL is executed.
 
 ## Exact inputs
 
+`-Mode PaperInventory` returns the complete eleven-file artifact inventory
+from original bytes, without Windows actions or Cloud contact. Use this
+inventory for the new scopes; the historical default Inventory remains
+unchanged for its older scopes.
+
 Common operator inputs are `PackageRoot`, `ExpectedReleaseCommit`,
 `AuthorityAdmissionJson`, `ExpectedAuthorityAdmissionSha256`, `ApprovalJson`,
 `ApprovalCms`, `PaperPlanJson`, `HostReceiptJson` and `HostReceiptCms`.

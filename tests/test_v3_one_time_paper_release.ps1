@@ -15,6 +15,10 @@ foreach($file in @('tools/v3-one-time-paper-release.ps1','tools/v3-one-time-rele
  $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root $file),[ref]$t,[ref]$e)
  Need ($e.Count -eq 0) 'PAPER_PARSE_FAILURE'
 }
+$inventoryWire=& (Join-Path $root 'tools/v3-one-time-release.ps1') -Mode PaperInventory -PackageRoot $root
+$inventory=$inventoryWire|ConvertFrom-Json
+Need ($inventory.production_authorized -eq $false -and $inventory.cloud_contacted -eq $false -and
+ $inventory.host_mutated -eq $false -and @($inventory.artifacts.PSObject.Properties).Count -eq 11) 'PRODUCTIVE_INVENTORY_NOT_INERT_OR_INCOMPLETE'
 # Real ephemeral CMS signature, pin and freshness tests; no mock verifier.
 $rsa=[Security.Cryptography.RSA]::Create(2048)
 $req=[Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=OFFLINE-NOT-RELEASE-AUTHORITY',$rsa,
