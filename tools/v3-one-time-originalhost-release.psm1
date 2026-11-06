@@ -4447,10 +4447,12 @@ function Read-V3ReleaseContinuingIntakes([object]$Context,[string[]]$EnabledName
      (Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($live))) -cne [string]$row.current_xml_sha256){
    throw 'V3_RECONCILE_DISABLED_DEFINITION_DRIFT'
   }
-  $args=([string](Get-ScheduledTask -TaskName $name -TaskPath '\').Actions[0].Arguments).Replace('\','/')
-  if($args.Length -le 10){throw 'V3_RECONCILE_PROCESS_ACTION_HOLD'}
+  # $args is automatic and empty inside Where-Object's scriptblock scope.
+  # Capture the actual task arguments under an ordinary lexical variable.
+  $taskArguments=([string](Get-ScheduledTask -TaskName $name -TaskPath '\').Actions[0].Arguments).Replace('\','/')
+  if($taskArguments.Length -le 10){throw 'V3_RECONCILE_PROCESS_ACTION_HOLD'}
   $matches=@($processes|Where-Object {
-   ([string]$_.CommandLine).Replace('\','/').IndexOf($args,[StringComparison]::OrdinalIgnoreCase) -ge 0
+   ([string]$_.CommandLine).Replace('\','/').IndexOf($taskArguments,[StringComparison]::OrdinalIgnoreCase) -ge 0
   })
   $expected=@($row.current_matching_processes)
   if($matches.Count -ne $expected.Count){throw 'V3_RECONCILE_PROCESS_COUNT_DRIFT'}
