@@ -137,6 +137,16 @@ if($commit -cnotmatch '^[a-f0-9]{40}$' -or
    [string]$config.release_id -cne $releaseId -or [string]$config.mode -cne 'OriginalhostReconcile'){
  throw 'GATEB_DISPATCH_IDENTITY_HOLD'
 }
+# A repaired release has NEW signed bytes: keep the prior unsigned template
+# immutable and allow a new leaf in a separately reviewed release config.
+$templateLeaf='pr675-approval-unsigned-template.json'
+if('approval_template_leaf' -cin @($config.PSObject.Properties.Name)){
+ $templateLeaf=[string]$config.approval_template_leaf
+}
+if($templateLeaf -cnotmatch '^pr67[0-9]-approval-unsigned-template[.]json$'){
+ throw 'GATEB_TEMPLATE_LEAF_SCOPE_HOLD'
+}
+$templateFile=Join-Path $ShareRoot $templateLeaf
 
 if($Role -ceq 'MiniPc'){
  if($env:COMPUTERNAME -cne 'MINI-PC' -or -not [Environment]::UserInteractive){throw 'GATEB_ORIGINALHOST_INTERACTIVE_REQUIRED'}
@@ -154,7 +164,7 @@ if($Role -ceq 'MiniPc'){
   if(-not(Test-Path -LiteralPath $p -PathType Leaf)){throw 'GATEB_REQUIRED_ORIGINAL_PATH_MISSING'}
  }
  if(-not(Test-Path -LiteralPath ([string]$config.backup_directory) -PathType Container)){throw 'GATEB_ORIGINAL_BACKUP_MISSING'}
- $template=Read-Json (Join-Path $ShareRoot 'pr675-approval-unsigned-template.json')
+ $template=Read-Json $templateFile
  if([string]$template.release_commit -cne $commit -or
     [string]$template.bindings.pre_archive_attempt_sha256 -cne $attemptPin){
   throw 'GATEB_UNSIGNED_TEMPLATE_WRONG_RELEASE_HOLD'
@@ -273,7 +283,7 @@ if($Role -ceq 'MiniPc'){
  if($ShareRoot -cne '\\192.168.178.179\Mistral_450\V3-GateB-PR675'){throw 'GATEB_NOTEBOOK_SHARE_SCOPE_HOLD'}
  if(-not $ReaderScript){$ReaderScript='C:\Users\burns\Documents\V3-GateA-PR670-INACTIVE\tools\v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1'}
  if(-not $CaFile){$CaFile='C:\Users\burns\Downloads\prod-ca-2021.crt'}
- $template=Read-Json (Join-Path $ShareRoot 'pr675-approval-unsigned-template.json')
+ $template=Read-Json $templateFile
  if([string]$template.release_commit -cne $commit -or [string]$template.release_id -cne $releaseId -or
     [string]$template.bindings.pre_archive_attempt_sha256 -cne $attemptPin){throw 'GATEB_NOTEBOOK_TEMPLATE_IDENTITY_HOLD'}
  # Existing independently pinned Reader source is checked before a short-lived
