@@ -4669,7 +4669,7 @@ function Write-V3ReleaseArchiveCheckpoint([object]$Context) {
   approval_base64=[Convert]::ToBase64String($ctx.payload);cms_base64=[Convert]::ToBase64String($ctx.cms)
   instances_base64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($live|ConvertTo-Json -Compress)))
   state='TASKS_ENABLED_ORIGINAL_INSTANCES_CONFIRMED'}
- if($null -ne $ctx.interrupted_approval_bytes){
+ if('interrupted_approval_bytes' -cin @($ctx.PSObject.Properties.Name) -and $null -ne $ctx.interrupted_approval_bytes){
   $record.interrupted_approval_sha256=Get-V3ReleaseSha256 $ctx.interrupted_approval_bytes
   $record.interrupted_approval_base64=[Convert]::ToBase64String($ctx.interrupted_approval_bytes)
   $record.interrupted_cms_base64=[Convert]::ToBase64String($ctx.interrupted_cms_bytes)
