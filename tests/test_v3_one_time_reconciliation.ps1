@@ -513,7 +513,7 @@ try{
  $requestPath=Join-Path $coord 'post-request.json'
  $envelopePath=Join-Path $coord 'post-envelope.json'
  $time=[datetimeoffset]::UtcNow.AddSeconds(-8)
- $example=[Text.Encoding]::UTF8.GetBytes(('{"observed_at_utc":"'+[datetimeoffset]::UtcNow.ToString('o')+'"}'))
+ $example=[Text.Encoding]::UTF8.GetBytes(('{"observed_at_utc":"'+[datetimeoffset]::UtcNow.ToString('o')+'","kind":"V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1","test_fixture_padding":"'+('x'*80)+'"}'))
  $expectedCms=[byte[]]@(1..64)
  $claims=Clone $newClaim;$claims.release_commit=('e'*40)
  $c=[pscustomobject]@{authorization=[pscustomobject]@{claims=$claims;expires_at=[datetimeoffset]::UtcNow.AddMinutes(2);approval_sha256=('c'*64)}
