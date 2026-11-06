@@ -802,6 +802,103 @@ def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
 
 
 
+def released_paper_first_scanner_rule_once(*,preflight:dict[str,Any],
+        candidate:dict[str,Any],series_id:str,journal:Path,
+        capture_dir:Path,model_reservations:Path,
+        expected_repo_sha:str,expected_bundle_sha256:str,
+        expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        clock_now:Callable[[],str]=utc_now,
+        capture:Callable=capture_public_1m,
+        acquire:Callable|None=None,
+        existing_context:dict[str,Any]|None=None)->dict[str,Any]:
+    """Single released Scanner -> free rule P4 via existing locked OS owner.
+
+    No budget, OpenAI key, model client, alternate Task or extra writer.
+    Cloud/host release authority and original input witnesses are mandatory.
+    This method does NOT itself make a Cloud CAS or authorize a live startup.
+    """
+    from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+        stage_and_witness_first_minute,
+    )
+    if (not isinstance(preflight,dict) or not isinstance(candidate,dict)
+            or preflight.get("series_id")!=series_id
+            or preflight.get("selected_candidates")!=[candidate]
+            or candidate.get("entry_origin")!="SCANNER"
+            or candidate.get("kind")!="CANONICAL_CANDIDATE_HANDOFF_V1"
+            or candidate.get("action")!="REVIEW_ONLY_NOT_ORDER"
+            or candidate.get("deferred_recheck") is True
+            or not isinstance(preflight.get("ingress"),dict)
+            or preflight["ingress"].get("capacity_deferred_originals")!=[]
+            or len(preflight.get("prospective_first_1m_capture_enrollment",[]))!=1
+            or len(preflight.get("review_preflights",[]))!=1
+            or preflight["review_preflights"][0].get("candidate_id")!=candidate.get("candidate_id")
+            or preflight["review_preflights"][0].get("eligible_for_full_model_review") is not True
+            or preflight.get("paper_writer_active") is not False
+            or preflight.get("model_http_authorized") is not False):
+        raise ValueError("exact one original Scanner/PIT no-paid candidate required")
+    if (not journal.is_dir() or journal.is_symlink()
+            or not capture_dir.is_dir() or capture_dir.is_symlink()
+            or not model_reservations.is_dir() or model_reservations.is_symlink()
+            or len({journal.resolve(),capture_dir.resolve(),
+                    model_reservations.resolve()})!=3):
+        raise ValueError("three independent existing V3 evidence roots required")
+    with _one_canary_owner(journal):
+        _require_released_paper_cloud(
+            series_id=series_id,expected_repo_sha=expected_repo_sha,
+            expected_bundle_sha256=expected_bundle_sha256,
+            expected_strategy_sha256=expected_strategy_sha256,
+            read_active_series=read_active_series,clock_now=clock_now)
+        if candidate_receipts(journal,series_id,candidate["candidate_id"]):
+            return {"status":"FIRST_SCANNER_ALREADY_JOURNALED_NO_RULE_REPLAY",
+                    "model_http_calls":0,"orders":False,"paper_writer_active":False}
+        enrollment=stage_and_witness_first_minute(
+            preflight=preflight,journal_directory=journal,
+            capture_directory=capture_dir,observed_at_utc=clock_now(),
+            capture=capture)
+        result=one_candidate(
+            candidate=candidate,series_id=series_id,
+            local_receipts=journal,model_reservations=model_reservations,
+            allow_model=False,admit_staged_scanner_one_free_rule=True,
+            acquire=acquire,clock=clock_now,existing_context=existing_context,
+            _released_model_capability=_RELEASED_MODEL_NATIVE_OWNER)
+        proof={"paper_entry_receipt_verified_local":False,
+               "paper_entry_status":"NO_VERIFIED_FINAL_P4_HOLD",
+               "paper_entry_receipt_sha256":None,
+               "independent_cloud_paper_fill_ack":False}
+        if result.get("status")=="V3_FREE_RULE_P4_RECORDED_NO_PAPER_ACTIVATION":
+            try:
+                proof=_verify_first_native_model_paper_journal(
+                    candidate=candidate,series_id=series_id,
+                    journal=journal,model_reservations=model_reservations,
+                    approval=None,free_rule=True)
+                if proof["p4_decision"]!=result.get("p4_decision"):
+                    raise ValueError("rule worker result differs from immutable P4")
+            except (OSError,ValueError,KeyError,TypeError,OverflowError):
+                return {"status":"FIRST_SCANNER_RULE_OR_LEDGER_INCOMPLETE_HOLD",
+                        "series_id":series_id,"candidate_id":candidate["candidate_id"],
+                        "model_result":result,"model_http_attempts_reserved":0,
+                        "paper_entry_receipt_verified_local":False,
+                        "independent_cloud_paper_fill_ack":False,
+                        "requires_original_owner_reconciliation":True,
+                        "paper_writer_active":False,"orders":False,
+                        "real_money_actions":False,"v2r4_changed":False}
+        return {
+            "status":("FIRST_SCANNER_FREE_RULE_P4_DURABLE_WAIT_FOR_FOLLOWUP"
+                      if result.get("p4_decision") in
+                      ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+                      else "FIRST_SCANNER_RULE_OR_SOURCE_INCOMPLETE_HOLD"),
+            "series_id":series_id,"candidate_id":candidate["candidate_id"],
+            "rule_result":result,
+            "first_minute_witness_status":enrollment["enrollment"][0]["status"],
+            "source_capture_calls":enrollment["source_capture_calls"],
+            "model_http_attempts_reserved":0,"model_http_calls":0,
+            "cloud_ack_verified":False,"paper_writer_active":False,
+            "orders":False,"real_money_actions":False,
+            "new_schedules":0,"v2r4_changed":False,**proof,
+        }
+
+
 def released_paper_positive_catalyst_model_once(*,
         candidate:dict[str,Any],series_id:str,journal:Path,
         model_reservations:Path,expected_repo_sha:str,
