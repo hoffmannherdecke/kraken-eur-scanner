@@ -236,6 +236,61 @@ COMMIT;
 }
 Export-ModuleMember -Function Assert-V3GateAReceipt,Get-V3GateATransaction
 
+# Cross-release recovery is permitted only for the exact signed, durable
+# pre-archive attempt. The new authority must explicitly bind its immutable
+# latch SHA; an arbitrary new release signature is never sufficient.
+function Assert-V3ReconciliationPreArchiveAttemptAuthority(
+ [byte[]]$InterruptedPayload,[byte[]]$InterruptedCms,[byte[]]$Attempt,
+ [string]$AuthorityPin,[object]$Current) {
+ Assert-V3ReleaseCms -Payload $InterruptedPayload -Cms $InterruptedCms -ReviewedAuthorityCertificateSha256 $AuthorityPin
+ $old=Read-V3ReleaseJson $InterruptedPayload
+ $latch=Read-V3ReleaseJson $Attempt
+ $attemptSha=Get-V3ReleaseSha256 $Attempt
+ if([string]$Current.bindings.pre_archive_attempt_sha256 -cne $attemptSha -or
+    [string]$latch.kind -cne 'V3_EXISTING_GATE_B_RECONCILIATION_ATTEMPT_V1' -or
+    [string]$latch.state -cne 'RECONCILIATION_ATTEMPTED_UNKNOWN_UNTIL_FINAL_ACK' -or
+    $latch.stop_requested -ne $false -or
+    [string]$latch.approval_sha256 -cne (Get-V3ReleaseSha256 $InterruptedPayload) -or
+    [string]$old.release_commit -ceq [string]$Current.release_commit -or
+    [string]$old.scope -cne 'ORIGINALHOST_ABORT_RECONCILE'){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_ATTEMPT_AUTHORITY_HOLD'
+ }
+ foreach($field in @('kind','scope','release_id','base_commit','computer_name','trading_root','project_ref')){
+  if([string]$old.$field -cne [string]$Current.$field){throw 'V3_RECONCILE_PRE_ARCHIVE_IDENTITY_HOLD'}
+ }
+ if([string]$latch.release_id -cne [string]$Current.release_id -or
+    [string]$latch.journal_sha256 -cne [string]$Current.bindings.journal_sha256){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_LATCH_HOLD'
+ }
+ $prior=@($old.bindings.PSObject.Properties)
+ $current=@($Current.bindings.PSObject.Properties)
+ if($prior.Count -ne 22 -or $current.Count -ne 23 -or
+    @($current|Where-Object {$_.Name -cnotin (@($prior.Name)+@('pre_archive_attempt_sha256'))}).Count){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_BINDINGS_HOLD'
+ }
+ foreach($p in $prior){
+  if([string]$Current.bindings.($p.Name) -cne [string]$p.Value){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_BINDINGS_HOLD'
+  }
+ }
+ $priorArtifacts=@($old.artifacts.PSObject.Properties)
+ $newArtifacts=@($Current.artifacts.PSObject.Properties)
+ $repairPath='tools/v3-one-time-originalhost-release.psm1'
+ if($priorArtifacts.Count -ne 8 -or $newArtifacts.Count -ne 8 -or
+    @($priorArtifacts|Where-Object {$_.Name -cnotin @($newArtifacts.Name)}).Count){
+  throw 'V3_RECONCILE_PRE_ARCHIVE_ARTIFACTS_HOLD'
+ }
+ foreach($p in $priorArtifacts){
+  $next=[string]$Current.artifacts.($p.Name)
+  if($p.Name -ceq $repairPath){
+   if($next -ceq [string]$p.Value){throw 'V3_RECONCILE_PRE_ARCHIVE_NO_REPAIR_HOLD'}
+  }elseif($next -cne [string]$p.Value){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_ARTIFACT_DRIFT'
+  }
+ }
+}
+Export-ModuleMember -Function Assert-V3ReconciliationPreArchiveAttemptAuthority
+
 # Historical attempt authorization is evidence, never a renewed clock window.
 # A new live CMS can finalize only the exact same release and transaction.
 function Assert-V3ReconciliationContinuationAuthority(
