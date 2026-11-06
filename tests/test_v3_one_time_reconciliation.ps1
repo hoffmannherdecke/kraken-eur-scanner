@@ -556,6 +556,44 @@ try{
  [IO.File]::Delete($envelopePath)
  [IO.File]::WriteAllText(($envelopePath+'.pending-interrupted'),($envelope|ConvertTo-Json -Compress))
  Deny {Read-V3GateBCoordEnvelope -Ctx $c -After $time} 'COORDINATED_UNCOMMITTED_TEMP_NEVER_ACCEPTED'
+
+ # Reuse the existing offline gate for the nonmutating two-device adapter:
+ # parse the actual script and invoke only isolated pure/filesystem functions.
+ $parseTokens=$null;$parseErrors=$null
+ $handoffFile=Join-Path $root 'tools/v3-one-time-gateb-coordination.ps1'
+ $astHandoff=[Management.Automation.Language.Parser]::ParseFile($handoffFile,[ref]$parseTokens,[ref]$parseErrors)
+ Check (@($parseErrors).Count -eq 0) 'COORDINATOR_AST_VALID'
+ foreach($functionName in @('Digest','Write-Once','Wait-For','Assert-Activation')){
+  $node=@($astHandoff.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $functionName},$true))
+  Check ($node.Count -eq 1) ('COORDINATOR_HELPER_'+$functionName)
+  . ([scriptblock]::Create($node[0].Extent.Text))
+ }
+ $testBytes=[Text.Encoding]::UTF8.GetBytes('ONLY ONE COMMITTED BUNDLE. NO STREAMING PARTIAL PAIRS.')
+ $target=Join-Path $coord 'first-envelope.json'
+ Write-Once -Path $target -Bytes $testBytes
+ Check ((Digest ([IO.File]::ReadAllBytes($target))) -ceq (Digest $testBytes)) 'COORDINATOR_SINGLE_FILE_BYTE_READBACK'
+ Deny {Write-Once -Path $target -Bytes ([byte[]](1,2,3))} 'COORDINATOR_NO_OVERWRITE'
+ $incomplete=Join-Path $coord 'incomplete-envelope.json'
+ [IO.File]::WriteAllBytes(($incomplete+'.pending-aborted'),$testBytes)
+ Deny {Wait-For -Path $incomplete -Directory $coord -Seconds 0} 'COORDINATOR_PENDING_NOT_COMPLETE'
+ $script:releaseId='V3-ONETIME-b90062541c1d4783a70ee814fa44ffed'
+ $script:attemptPin='353f51399f5b8c755db0d204570ab0c3d43ecfb542c79866bec86e54dbd05b47'
+ $template=[pscustomobject]@{release_commit=('a'*40)}
+ $activation=[pscustomobject]@{
+  kind='V3_GATEB_COORDINATED_ACTIVATION_V1';release_id=$script:releaseId
+  release_commit=$template.release_commit;attempt_sha256=$script:attemptPin
+  nonce=('a'*32);created_at_utc=[datetimeoffset]::UtcNow.ToString('o')}
+ Assert-Activation -Value $activation -Template $template
+ Check $true 'COORDINATOR_BOUNDED_PRE_SIGN_TRIGGER'
+ foreach($wrong in @('nonce','release','attempt','expired')){
+  $v=Clone $activation
+  if($wrong -ceq 'nonce'){$v.nonce='invalid'}
+  if($wrong -ceq 'release'){$v.release_commit=('b'*40)}
+  if($wrong -ceq 'attempt'){$v.attempt_sha256=('0'*64)}
+  if($wrong -ceq 'expired'){$v.created_at_utc='2020-01-01T00:00:00Z'}
+  Deny {Assert-Activation -Value $v -Template $template} ('COORDINATOR_ACTIVATION_REJECT_'+$wrong)
+ }
+ Write-Output 'V3_GATEB_COORDINATOR_ATOMIC_AND_PRE_SIGN_NEGATIVES_PASS'
  Write-Output 'V3_GATEB_ATOMIC_READER_ENVELOPE_NEGATIVE_PASS'
  Write-Output ('V3_EXISTING_GATE_B_RECONCILIATION_OFFLINE_PASS='+$checks)
 }finally{[IO.Directory]::Delete($temp,$true);$cert.Dispose();$rsa.Dispose()}
