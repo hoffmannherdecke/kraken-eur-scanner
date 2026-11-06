@@ -137,8 +137,8 @@ def run_recheck(
     if control.get("enabled") is not True or control.get("real_money_actions_enabled") is not False:
         raise ValueError("V2R4 control safety flags invalid")
 
-    load_api_key(api_key_file)
-
+    # A local key file must never turn on paid evaluation by itself.
+    # Keep api_key_file only for backwards-compatible CLI/task arguments.
     started = utcnow()
     ticker = kraken_ticker(candidate["altname"])
     external = enrich_derivatives_delta(
