@@ -159,6 +159,30 @@ if($Role -ceq 'MiniPc'){
     [string]$template.bindings.pre_archive_attempt_sha256 -cne $attemptPin){
   throw 'GATEB_UNSIGNED_TEMPLATE_WRONG_RELEASE_HOLD'
  }
+ # Time-independent authority, local inventory and original-attempt gates must
+ # finish BEFORE Notebook produces any short-lived certificate or Reader row.
+ $authModule=Join-Path $package 'tools\v3-one-time-release-authorization.psm1'
+ Import-Module $authModule -Force
+ $authority=Assert-V3ReleaseAuthorityAdmission -Bytes ([IO.File]::ReadAllBytes([string]$config.admission)) -ExpectedSha256 ([string]$config.admission_sha256) -ReleaseCommit $commit
+ if([string]$authority -cne $releaseAuthorityCert){throw 'GATEB_PRE_SIGN_AUTHORITY_PIN_HOLD'}
+ $inventory=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $package
+ if(@($template.artifacts.PSObject.Properties).Count -ne $inventory.Count){throw 'GATEB_PRE_SIGN_ARTIFACT_SET_HOLD'}
+ foreach($name in $inventory.Keys){
+  if([string]$template.artifacts.$name -cne [string]$inventory[$name]){
+   throw 'GATEB_PRE_SIGN_RELEASE_ARTIFACT_PIN_HOLD'
+  }
+ }
+ $original='C:\Users\ADMIN\Trading\State\v3-one-time-'+$releaseId+'.json'
+ if(-not(Test-Path -LiteralPath ($original+'.reconciliation-attempt.json') -PathType Leaf) -or
+    (Get-FileHash -LiteralPath ($original+'.reconciliation-attempt.json') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $attemptPin -or
+    (Test-Path -LiteralPath ($original+'.completed.json')) -or
+    (Test-Path -LiteralPath ($original+'.awaiting-post-archive-reader.json'))){
+  throw 'GATEB_PRE_SIGN_ORIGINAL_ATTEMPT_STATE_HOLD'
+ }
+ $fence='C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'
+ if(-not(Test-Path -LiteralPath $fence -PathType Leaf)){
+  throw 'GATEB_PRE_SIGN_ARMED_FENCE_MISSING_HOLD'
+ }
  # Prepare all original inputs before allowing a Notebook signer to begin.
  $nonce=[guid]::NewGuid().ToString('N')
  $session=Join-Path $ShareRoot ('coordinated-'+$nonce)
@@ -252,6 +276,12 @@ if($Role -ceq 'MiniPc'){
  $template=Read-Json (Join-Path $ShareRoot 'pr675-approval-unsigned-template.json')
  if([string]$template.release_commit -cne $commit -or [string]$template.release_id -cne $releaseId -or
     [string]$template.bindings.pre_archive_attempt_sha256 -cne $attemptPin){throw 'GATEB_NOTEBOOK_TEMPLATE_IDENTITY_HOLD'}
+ # Existing independently pinned Reader source is checked before a short-lived
+ # CMS is signed. A different Notebook source cannot silently replace it.
+ if(-not(Test-Path -LiteralPath $ReaderScript -PathType Leaf) -or
+    (Get-FileHash -LiteralPath $ReaderScript -Algorithm SHA256).Hash.ToLowerInvariant() -cne [string]$template.bindings.reader_source_sha256){
+  throw 'GATEB_NOTEBOOK_READER_SOURCE_PIN_HOLD'
+ }
  $cert=Find-Signer $releaseAuthorityCert
  $activationPath=Join-Path $ShareRoot 'coordinated-active.json'
  Write-Host 'PR675_COORDINATED_NOTEBOOK_WAITING_FOR_MINIPC_READY'
