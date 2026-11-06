@@ -479,6 +479,8 @@ try{
  $script:V3ReleaseContext=$ctx
  foreach($n in $names){$script:state[$n]=$true}
  function Get-V3Pr515ArmedOnlyRecoveryReadback {param($Root,$ExpectedFenceSha256) return $null}
+ Write-Output ('PR675_OLD_KEYS='+((Read-V3ReleaseJson $oldSigned.Payload).PSObject.Properties.Name -join ','))
+ Write-Output ('PR675_NEW_KEYS='+($newClaim.PSObject.Properties.Name -join ','))
  Write-Output 'PR675_BEFORE_AUTH_GUARD'
  Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $oldSigned.Payload -InterruptedCms $oldSigned.Cms -Attempt ([IO.File]::ReadAllBytes($latchPath)) -AuthorityPin $pin -Current $newClaim
  Check $true 'SIGNED_PREARCHIVE_ATTEMPT_PIN_OK'
