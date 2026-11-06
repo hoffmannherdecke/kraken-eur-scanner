@@ -193,10 +193,13 @@ if($Role -ceq 'MiniPc'){
   }
   Check-Cms $a $ac $releaseAuthorityCert
   Check-Terminal $t $tc $approval.bindings ([datetimeoffset]::MinValue)
-  $localDir=Join-Path 'C:\Users\ADMIN\Trading\Staging' ('V3-GateB-Coord-'+$nonce)
-  [IO.Directory]::CreateDirectory($localDir)|Out-Null
-  $ap=Join-Path $localDir 'approval.json';$acp=Join-Path $localDir 'approval.cms'
-  $tp=Join-Path $localDir 'terminal.json';$tcp=Join-Path $localDir 'terminal.cms'
+  # The existing Originalhost release contract accepts direct Trading-root
+  # terminal proofs; use unique immutable names, never a mutable shared pair.
+  $localDir='C:\Users\ADMIN\Trading'
+  $ap=Join-Path $localDir ('pr676-'+$nonce+'-approval.json')
+  $acp=Join-Path $localDir ('pr676-'+$nonce+'-approval.cms')
+  $tp=Join-Path $localDir ('pr676-'+$nonce+'-terminal.json')
+  $tcp=Join-Path $localDir ('pr676-'+$nonce+'-terminal.cms')
   Write-Once $ap $a;Write-Once $acp $ac;Write-Once $tp $t;Write-Once $tcp $tc
   $params=@{
    Mode='OriginalhostReconcile';PackageRoot=$package;ExpectedReleaseCommit=$commit
