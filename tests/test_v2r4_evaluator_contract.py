@@ -76,7 +76,8 @@ class V2R4EvaluatorContractTests(unittest.TestCase):
                     {"series_id": "PAPER-V2R4-TEST"},
                 )
         self.assertEqual(out["decision"], "REJECT")
-        self.assertEqual(meta["response_id"], "resp_test")
+        self.assertIsNone(meta["response_id"])  # default mode must ignore mock paid transport
+        self.assertEqual(meta["attempt"], 0)
 
     def test_fail_safe_buy_with_invalid_stage2_is_rejected_not_wait(self):
         d = {

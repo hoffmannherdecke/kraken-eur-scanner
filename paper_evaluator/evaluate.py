@@ -237,6 +237,48 @@ def parse_json_text(text):
     return json.loads(text)
 
 def call_evaluator(candidate,current,external,spec,control):
+    """Deterministic V2R4 evaluation; the existing key never enables an LLM.
+
+    Eligible canonical handoffs consume up to three public Kraken OHLC reads
+    through the existing public rate budget. Missing data fail closed.
+    V3 callers may supply already-bound closed evidence to avoid refetches.
+    """
+    try:
+        from .rule_based_paper_decision_v1 import assess, fetch_rule_evidence
+    except ImportError:  # original Windows direct script execution
+        from rule_based_paper_decision_v1 import assess, fetch_rule_evidence
+    context = dict(external or {})
+    meta = context.get("kraken_pair_metadata") or {}
+    candidate_complete = (
+        candidate.get("action") == "REVIEW_ONLY_NOT_ORDER"
+        and candidate.get("candidate_id") and candidate.get("event_time_utc")
+        and str(candidate.get("pair", "")).endswith("/EUR")
+        and str(candidate.get("altname", "")).isalnum()
+    )
+    quote_ok = (isinstance(current.get("spread_pct"), (int, float))
+                and 0 <= current["spread_pct"] <= 0.35)
+    if (candidate_complete and quote_ok and meta.get("available") is True
+            and meta.get("status") == "online"
+            and "candidate_entry_evidence" not in context):
+        def public_ohlc(symbol, interval):
+            query = urllib.parse.urlencode({"pair": symbol, "interval": interval})
+            return http_json("https://api.kraken.com/0/public/OHLC?" + query,
+                             headers={"User-Agent": "paper-evaluator-rules/1.0"},
+                             timeout=9)
+        context["candidate_entry_evidence"] = fetch_rule_evidence(
+            candidate["altname"], candidate["pair"], loader=public_ohlc)
+    # Persist the same canonical closed public inputs in the original
+    # decision_context audit record, not merely a non-reproducible decision.
+    if isinstance(external, dict) and context.get("candidate_entry_evidence"):
+        external["candidate_entry_evidence"] = context["candidate_entry_evidence"]
+    decision = assess(candidate, current, context, spec, control)
+    return decision, {"response_id": None, "model": None, "attempt": 0,
+                      "source": "public_kraken_deterministic_rules_v1"}
+
+
+def _retired_paid_model_evaluator(candidate,current,external,spec,control):
+    """Historical model prompt retained for audit; never a production entrypoint."""
+    raise RuntimeError("PAID_MODEL_RETIRED_UNTIL_SEPARATE_BUDGETED_SHADOW_RELEASE")
     api_key=os.environ["OPENAI_API_KEY"]
     prompt=f"""You are the PAPER strategy evaluator for Kraken Spot EUR.
 This is PAPER ONLY. Never place, request, or imply a real order.

@@ -429,9 +429,23 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                 "review_status":eligibility["status"],"paper_only":True}
     # Preflight is NON-WRITING except audit receipts, no charge and no model.
     if not allow_model:
+        # Existing V3 preflight remains non-writing except its original
+        # receipts, but now evaluates the cost-free primary/P4 in memory.
+        # No Paper fill, CAS, model permit or new journal phase is implied.
+        from paper_evaluator.v3_full_entry_decision_candidate_v1 import (
+            validate_free_rule_based_entry)
+        rule_preview = validate_free_rule_based_entry(
+            eligibility, decision_candidate, coin, quote, meta,
+            decision_at_utc=requested_at, slippage_pct_each_side=0.08)
         receipt("MODEL_REQUEST","SKIP",{"source_status":"PREFLIGHT_NO_MODEL"})
         return {"status":"V3_PAPER_REAL_KRAKEN_PIT_PREFLIGHT_PASS_MODEL_NOT_CALLED",
-                "paper_only":True,"model_called":False}
+                "paper_only":True,"model_called":False,
+                "rule_based_primary":True,
+                "rule_based_decision":rule_preview.get("decision"),
+                "rule_based_p4_status":rule_preview.get("status"),
+                "model_http_requests":0,
+                "paper_writer_started":False,
+                "orders":False,"real_money_actions":False}
     if approval is None or not model_key or len(model_key)<20:
         receipt("MODEL_REQUEST","UNKNOWN",
                 {"phase_failure_stage":"NEW_USER_APPROVED_API_BUDGET_OR_KEY_MISSING"})

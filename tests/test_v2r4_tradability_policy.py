@@ -7,7 +7,7 @@ from paper_evaluator import evaluate
 class V2R4TradabilityPolicyTests(unittest.TestCase):
     def test_no_static_pair_blacklist_remains(self):
         self.assertFalse(hasattr(evaluate, "BLOCKED"))
-        source = inspect.getsource(evaluate.call_evaluator)
+        source = inspect.getsource(evaluate._retired_paid_model_evaluator)
         self.assertNotIn("QNT/EUR", source)
         self.assertNotIn("DUSK/EUR", source)
         self.assertNotIn("TION/EUR", source)
