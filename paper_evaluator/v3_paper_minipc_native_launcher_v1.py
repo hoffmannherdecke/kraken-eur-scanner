@@ -356,9 +356,9 @@ def dispatch_one_owned_paper_phase(*, phase: str,
         if existing_context is not None: params["existing_context"] = existing_context
         if not paid:
             return released_paper_first_scanner_rule_once(**params)
-        # Original separately approved one-shot model mode stays gated.
-        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import preflight_budget
-        preflight_budget(approval,series_id)
+        # Delegate to the ORIGINAL separately budgeted native owner. It
+        # already validates the complete approval BEFORE source/journal
+        # mutation; do not add a second duplicate authorization protocol.
         params.update(approval=approval,model_key=model_key)
         if model_client is not None: params["model_client"] = model_client
         return released_paper_first_scanner_model_once(**params)
