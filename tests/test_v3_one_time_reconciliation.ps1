@@ -10,7 +10,8 @@ foreach($name in @('Assert-V3ReleaseReconciliationIdentity','Assert-V3ReleaseRec
  'Complete-V3ReleaseExistingAttempt','Complete-V3ReleasePreArchiveInterrupted','Enable-V3ReleaseIntakeDefinition','Read-V3ReleaseContinuingIntakes',
  'Read-V3ReleaseReconciliationHeartbeat','Wait-V3ReleaseReconciliationHealth','Wait-V3ReleaseReconciliationTerminal',
  'Test-V3Pr515DisabledOnlyXmlDifference','Write-V3ReleaseImmutableReceipt','Write-V3ReleaseArchiveCheckpoint',
- 'Assert-V3ReleasePostArchiveBoundary','Get-V3ReleasePostArchiveBoundary','Complete-V3ReleasePostArchive')){
+ 'Assert-V3ReleasePostArchiveBoundary','Get-V3ReleasePostArchiveBoundary','Complete-V3ReleasePostArchive',
+ 'Assert-V3GateBCoordPaths','Publish-V3GateBCoordRequest','Read-V3GateBCoordEnvelope')){
  $defs=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true))
  if($defs.Count -ne 1){throw ('RECONCILE_HELPER_MISSING_'+$name)}
  . ([scriptblock]::Create($defs[0].Extent.Text))
@@ -506,5 +507,55 @@ try{
  Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'REPLAY_AFTER_ARCHIVE_DENIED'
  Check ($script:enables -eq 0 -and $script:archives -eq 2) 'NO_DOUBLE_ENABLE_OR_ARCHIVE'
  foreach($leaseStream in $ctx.continuation_leases){$leaseStream.Dispose()}
+ # Offline bounded coordinated Reader package tests. Test-only mocks,
+ # never opened against live Cloud/Notebook/Originalhost.
+ $coord=Join-Path $temp 'atomic-pair';[IO.Directory]::CreateDirectory($coord)|Out-Null
+ $requestPath=Join-Path $coord 'post-request.json'
+ $envelopePath=Join-Path $coord 'post-envelope.json'
+ $time=[datetimeoffset]::UtcNow.AddSeconds(-8)
+ $example=[Text.Encoding]::UTF8.GetBytes(('{"observed_at_utc":"'+[datetimeoffset]::UtcNow.ToString('o')+'"}'))
+ $expectedCms=[byte[]]@(1..64)
+ $claims=Clone $newClaim;$claims.release_commit=('e'*40)
+ $c=[pscustomobject]@{authorization=[pscustomobject]@{claims=$claims;expires_at=[datetimeoffset]::UtcNow.AddMinutes(2);approval_sha256=('c'*64)}
+   coordinated_request=$requestPath;coordinated_envelope=$envelopePath;coordinated_nonce=('a'*32)
+   journal_path=(Join-Path $coord 'original.json')}
+ [IO.File]::WriteAllText(($c.journal_path+'.awaiting-post-archive-reader.json'),(@{state='AWAITING_POST_ARCHIVE_READER';archive_observed_by_utc=$time.ToString('o')}|ConvertTo-Json -Compress))
+ [IO.File]::WriteAllText(($c.journal_path+'.reconciliation-attempt.json'),'{"immutable":true}')
+ function Assert-V3GateBCoordPaths {param($Ctx)}
+ function Test-V3Pr515SignedPreparedAbortReadback {
+  param($Payload,$Cms,$ReviewedCertSha256,$ExpectedEpochId,$ExpectedSourceSha256,$ExpectedFenceSha256,$ExpectedAclSha256)
+  return [pscustomobject]@{signed_abort_fields_and_pins_match=((Get-V3ReleaseSha256 $Cms) -ceq (Get-V3ReleaseSha256 $expectedCms))}
+ }
+ $script:scenario='success'
+ Publish-V3GateBCoordRequest -Ctx $c -After $time
+ Check (Test-Path $requestPath) 'COORDINATED_ARCHIVE_TRIGGER_PERSISTED'
+ Deny {Publish-V3GateBCoordRequest -Ctx $c -After $time} 'COORDINATED_NO_DUPLICATE_TRIGGER'
+ $envelope=[ordered]@{kind='V3_GATEB_COORDINATED_POST_ARCHIVE_ENVELOPE_V1'
+  release_id=$claims.release_id;release_commit=$claims.release_commit;epoch_id=$claims.bindings.epoch_id
+  nonce=('a'*32);request_sha256=(Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($requestPath)))
+  reader_json_base64=[Convert]::ToBase64String($example)
+  reader_cms_base64=[Convert]::ToBase64String($expectedCms)}
+ function Put-Envelope($Value){[IO.File]::WriteAllText($envelopePath,($Value|ConvertTo-Json -Compress))}
+ Put-Envelope $envelope
+ $accepted=Read-V3GateBCoordEnvelope -Ctx $c -After $time
+ Check ((Get-V3ReleaseSha256 $accepted.payload) -ceq (Get-V3ReleaseSha256 $example)) 'COORDINATED_ATOMIC_PAIR_ACCEPTED'
+ foreach($case in @('nonce','commit','epoch','request','missing_cms','bad_cms','stale')){
+  $bad=Clone $envelope
+  switch($case){
+   nonce {$bad.nonce=('b'*32)}
+   commit {$bad.release_commit=('f'*40)}
+   epoch {$bad.epoch_id=('V3CAS-AUDIT-'+('0'*32))}
+   request {$bad.request_sha256=('0'*64)}
+   missing_cms {$bad.PSObject.Properties.Remove('reader_cms_base64')}
+   bad_cms {$bad.reader_cms_base64=[Convert]::ToBase64String([byte[]]@(2..65))}
+   stale {$bad.reader_json_base64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('{"observed_at_utc":"2020-01-01T00:00:00Z"}'))}
+  }
+  Put-Envelope $bad
+  Deny {Read-V3GateBCoordEnvelope -Ctx $c -After $time} ('COORDINATED_REJECT_'+$case)
+ }
+ [IO.File]::Delete($envelopePath)
+ [IO.File]::WriteAllText(($envelopePath+'.pending-interrupted'),($envelope|ConvertTo-Json -Compress))
+ Deny {Read-V3GateBCoordEnvelope -Ctx $c -After $time} 'COORDINATED_UNCOMMITTED_TEMP_NEVER_ACCEPTED'
+ Write-Output 'V3_GATEB_ATOMIC_READER_ENVELOPE_NEGATIVE_PASS'
  Write-Output ('V3_EXISTING_GATE_B_RECONCILIATION_OFFLINE_PASS='+$checks)
 }finally{[IO.Directory]::Delete($temp,$true);$cert.Dispose();$rsa.Dispose()}
