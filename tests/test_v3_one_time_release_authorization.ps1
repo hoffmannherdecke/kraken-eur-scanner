@@ -21,7 +21,8 @@ if($FrameworkChild){
 }
 Add-Type -AssemblyName System.Security.Cryptography.Pkcs
 foreach($file in @('tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1',
- 'tools/v3-one-time-originalhost-boundary.ps1','tools/v3-one-time-originalhost-release.psm1')){
+ 'tools/v3-one-time-originalhost-boundary.ps1','tools/v3-one-time-originalhost-release.psm1',
+ 'tools/v3-one-time-gateb-coordination.ps1')){
  $t=$null;$e=$null
  $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root $file),[ref]$t,[ref]$e)
  if(@($e).Count){$e|ForEach-Object {Write-Output $_.Message};throw 'RELEASE_PARSE_FAILED'}

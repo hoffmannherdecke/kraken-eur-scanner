@@ -4522,7 +4522,9 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   [byte[]]$AuthorityAdmission,[string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit,
   [string]$ExistingApprovalJson,[string]$ExistingApprovalCms,[string]$ReconciliationEvidenceJson,
   [string]$InterruptedApprovalJson,[string]$InterruptedApprovalCms,
-  [string]$TerminalAbortJson,[string]$TerminalAbortCms,[string]$InstallReadbackJson,[string]$BackupDirectory)
+  [string]$TerminalAbortJson,[string]$TerminalAbortCms,[string]$InstallReadbackJson,[string]$BackupDirectory,
+  [string]$CoordinatedPostArchiveRequestPath='', [string]$CoordinatedPostArchiveEnvelopePath='',
+  [string]$CoordinatedHandoffNonce='')
  if($null -ne $script:V3ReleaseContext){throw 'V3_RELEASE_SESSION_ALREADY_OWNED'}
  $pin=Assert-V3ReleaseAuthorityAdmission $AuthorityAdmission $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
  $inventory=Get-V3OneTimeReleaseArtifactInventory $PackageRoot
@@ -4537,7 +4539,12 @@ function Invoke-V3OneTimeOriginalhostReconciliation {
   tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
   abort_json=$TerminalAbortJson;abort_cms=$TerminalAbortCms;catalog_readback=$InstallReadbackJson;stop_attempted=$true
   journal_path=$journalPath;original_approval_path=$ExistingApprovalJson;original_cms_path=$ExistingApprovalCms
-  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();interrupted_approval_bytes=$null;interrupted_cms_bytes=$null;continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()}
+  evidence_path=$ReconciliationEvidenceJson;backup_root=$BackupDirectory;evidence=$null;instance_snapshot=$null;enabled_names=@();interrupted_approval_bytes=$null;interrupted_cms_bytes=$null;continuation_leases=[Collections.Generic.List[IO.FileStream]]::new()
+  coordinated_request=$CoordinatedPostArchiveRequestPath;coordinated_envelope=$CoordinatedPostArchiveEnvelopePath;coordinated_nonce=$CoordinatedHandoffNonce}
+ $coordFields=@($CoordinatedPostArchiveRequestPath,$CoordinatedPostArchiveEnvelopePath,$CoordinatedHandoffNonce)
+ $coordCount=@($coordFields|Where-Object {-not [string]::IsNullOrEmpty($_)}).Count
+ if($coordCount -notin @(0,3)){throw 'V3_GATEB_COORDINATED_PARTIAL_INPUT_HOLD'}
+ if($coordCount -eq 3){Assert-V3GateBCoordPaths $ctx}
  $script:V3ReleaseContext=$ctx
  $mutex=$null;$held=$false;$packageLease=$null;$originalLease=$null;$pair=$null
  try{
@@ -4619,10 +4626,97 @@ function Assert-V3ReleaseProtectedTasks([object]$Bindings) {
  }
 }
 
+# Optional transport for the SAME PR675 originalhost release owner.
+# A single immutable JSON envelope carries both signed Reader byte arrays.
+function Assert-V3GateBCoordPaths([object]$Ctx) {
+ $nonce=[string]$Ctx.coordinated_nonce
+ if($nonce -cnotmatch '^[a-f0-9]{32}$' -or
+    [string]$Ctx.coordinated_request -cne ('D:\V3-GateB-PR675\coordinated-'+$nonce+'\post-request.json') -or
+    [string]$Ctx.coordinated_envelope -cne ('D:\V3-GateB-PR675\coordinated-'+$nonce+'\post-envelope.json')){
+  throw 'V3_GATEB_COORDINATED_SCOPE_HOLD'
+ }
+}
+function Publish-V3GateBCoordRequest([object]$Ctx,[datetimeoffset]$After) {
+ if('coordinated_request' -cnotin @($Ctx.PSObject.Properties.Name)){return}
+ if([string]::IsNullOrEmpty([string]$Ctx.coordinated_request)){return}
+ Assert-V3GateBCoordPaths $Ctx
+ $await=$Ctx.journal_path+'.awaiting-post-archive-reader.json'
+ $awaitBytes=Read-V3ReleaseLocalBytes $await
+ $receipt=Read-V3ReleaseJson $awaitBytes
+ # Use the persisted JSON UTC literal, not ConvertFrom-Json DateTime display
+ # formatting (which may drop subsecond precision on PowerShell 7).
+ $wire=[Text.UTF8Encoding]::new($false,$true).GetString($awaitBytes)
+ $timestamp=[regex]::Match($wire,'"archive_observed_by_utc"\s*:\s*"(?<t>[^"\\]+)"')
+ if(-not $timestamp.Success){throw 'V3_GATEB_COORDINATED_ARCHIVE_TIME_HOLD'}
+ $archived=[datetimeoffset]::Parse($timestamp.Groups['t'].Value,[Globalization.CultureInfo]::InvariantCulture)
+ if([string]$receipt.state -cne 'AWAITING_POST_ARCHIVE_READER' -or
+    [Math]::Abs(($archived-$After).TotalSeconds) -gt 1){
+  throw 'V3_GATEB_COORDINATED_ARCHIVE_HOLD'
+ }
+ if(Test-Path -LiteralPath $Ctx.coordinated_request){throw 'V3_GATEB_COORDINATED_REQUEST_EXISTS_HOLD'}
+ $a=$Ctx.authorization.claims
+ $request=[ordered]@{
+  kind='V3_GATEB_COORDINATED_POST_ARCHIVE_REQUEST_V1'
+  release_id=[string]$a.release_id
+  release_commit=[string]$a.release_commit
+  epoch_id=[string]$a.bindings.epoch_id
+  nonce=[string]$Ctx.coordinated_nonce
+  approval_sha256=[string]$Ctx.authorization.approval_sha256
+  attempt_sha256=(Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes ($Ctx.journal_path+'.reconciliation-attempt.json')))
+  receipt_sha256=(Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $await))
+  archive_observed_by_utc=[string]$timestamp.Groups['t'].Value
+ }
+ Write-V3ReleaseImmutableReceipt -Path $Ctx.coordinated_request -Value $request
+}
+function Read-V3GateBCoordEnvelope([object]$Ctx,[datetimeoffset]$After) {
+ Assert-V3GateBCoordPaths $Ctx
+ $v=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $Ctx.coordinated_envelope -MaxBytes 65536)
+ $a=$Ctx.authorization.claims
+ $fields=@('kind','release_id','release_commit','epoch_id','nonce','request_sha256','reader_json_base64','reader_cms_base64')
+ if(@($v.PSObject.Properties).Count -ne $fields.Count -or
+    @($v.PSObject.Properties.Name|Where-Object {$_ -cnotin $fields}).Count -or
+    [string]$v.kind -cne 'V3_GATEB_COORDINATED_POST_ARCHIVE_ENVELOPE_V1' -or
+    [string]$v.release_id -cne [string]$a.release_id -or
+    [string]$v.release_commit -cne [string]$a.release_commit -or
+    [string]$v.epoch_id -cne [string]$a.bindings.epoch_id -or
+    [string]$v.nonce -cne [string]$Ctx.coordinated_nonce -or
+    [string]$v.request_sha256 -cne (Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $Ctx.coordinated_request))){
+  throw 'V3_GATEB_COORDINATED_ENVELOPE_IDENTITY_HOLD'
+ }
+ try{
+  $payload=[Convert]::FromBase64String([string]$v.reader_json_base64)
+  $cms=[Convert]::FromBase64String([string]$v.reader_cms_base64)
+ }catch{throw 'V3_GATEB_COORDINATED_ENVELOPE_ENCODING_HOLD'}
+ if($payload.Length -lt 100 -or $payload.Length -gt 4096 -or $cms.Length -lt 32 -or $cms.Length -gt 32768){
+  throw 'V3_GATEB_COORDINATED_ENVELOPE_SIZE_HOLD'
+ }
+ $b=$a.bindings
+ $verify=@{Payload=$payload;Cms=$cms;ReviewedCertSha256=$b.reader_certificate_sha256;ExpectedEpochId=$b.epoch_id;ExpectedSourceSha256=$b.source_sha256;ExpectedFenceSha256=$b.fence_sha256;ExpectedAclSha256=$b.caller_acl_sha256}
+ $review=Test-V3Pr515SignedPreparedAbortReadback @verify
+ $match=[regex]::Match([Text.Encoding]::UTF8.GetString($payload),'"observed_at_utc"\s*:\s*"(?<t>[^"\\]+)"')
+ if($review.signed_abort_fields_and_pins_match -ne $true -or -not $match.Success){
+  throw 'V3_GATEB_COORDINATED_ENVELOPE_CMS_HOLD'
+ }
+ $time=[datetimeoffset]::Parse($match.Groups['t'].Value,[Globalization.CultureInfo]::InvariantCulture)
+ $req=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $Ctx.coordinated_request)
+ $archiveTime=[datetimeoffset]$req.archive_observed_by_utc
+ $age=([datetimeoffset]::UtcNow-$time).TotalSeconds
+ if($time -le $After -or $time -le $archiveTime -or $age -lt -5 -or $age -gt 60){
+  throw 'V3_GATEB_COORDINATED_ENVELOPE_STALE_HOLD'
+ }
+ return [pscustomobject]@{payload=$payload;cms=$cms}
+}
+
 function Wait-V3ReleaseReconciliationTerminal([object]$Context,[datetimeoffset]$After) {
  $b=$Context.authorization.claims.bindings
  for($i=0;$i -lt 45;$i++){
   if([datetimeoffset]::UtcNow -ge $Context.authorization.expires_at){throw 'V3_RECONCILE_SESSION_EXPIRED_NO_RETRY'}
+  if('coordinated_envelope' -cin @($Context.PSObject.Properties.Name) -and
+     -not [string]::IsNullOrEmpty([string]$Context.coordinated_envelope)){
+   if(Test-Path -LiteralPath $Context.coordinated_envelope){return Read-V3GateBCoordEnvelope -Ctx $Context -After $After}
+   Start-Sleep -Seconds 2
+   continue
+  }
   $payload=Read-V3ReleaseLocalBytes $Context.abort_json -MaxBytes 4096
   $cms=Read-V3ReleaseLocalBytes $Context.abort_cms -MaxBytes 32768
   $review=Test-V3Pr515SignedPreparedAbortReadback -Payload $payload -Cms $cms `
@@ -4897,6 +4991,7 @@ function Complete-V3ReleasePostArchive([object]$Context,[datetimeoffset]$After) 
   $archive=Join-Path $script:V3ReleaseRoot ('State\v3-experimental-paper-old-intake-fence.aborted-'+[string]$b.epoch_id+'.json')
   Assert-V3ReleasePostArchiveBoundary -Context $ctx
   Wait-V3ReleaseReconciliationHealth -Context $ctx -After $After -AfterArchive
+  Publish-V3GateBCoordRequest -Ctx $ctx -After $After
   # One final fresh independent Cloud Reader is still required. After archive
   # the shared RESTORE boundary expects ARMED, so validate originals/authority/
   # signed terminal explicitly without pretending the fence is still present.

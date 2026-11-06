@@ -10,7 +10,8 @@ foreach($name in @('Assert-V3ReleaseReconciliationIdentity','Assert-V3ReleaseRec
  'Complete-V3ReleaseExistingAttempt','Complete-V3ReleasePreArchiveInterrupted','Enable-V3ReleaseIntakeDefinition','Read-V3ReleaseContinuingIntakes',
  'Read-V3ReleaseReconciliationHeartbeat','Wait-V3ReleaseReconciliationHealth','Wait-V3ReleaseReconciliationTerminal',
  'Test-V3Pr515DisabledOnlyXmlDifference','Write-V3ReleaseImmutableReceipt','Write-V3ReleaseArchiveCheckpoint',
- 'Assert-V3ReleasePostArchiveBoundary','Get-V3ReleasePostArchiveBoundary','Complete-V3ReleasePostArchive')){
+ 'Assert-V3ReleasePostArchiveBoundary','Get-V3ReleasePostArchiveBoundary','Complete-V3ReleasePostArchive',
+ 'Assert-V3GateBCoordPaths','Publish-V3GateBCoordRequest','Read-V3GateBCoordEnvelope')){
  $defs=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true))
  if($defs.Count -ne 1){throw ('RECONCILE_HELPER_MISSING_'+$name)}
  . ([scriptblock]::Create($defs[0].Extent.Text))
@@ -506,5 +507,93 @@ try{
  Deny {Complete-V3ReleasePreArchiveInterrupted $ctx $oldJson $oldCms} 'REPLAY_AFTER_ARCHIVE_DENIED'
  Check ($script:enables -eq 0 -and $script:archives -eq 2) 'NO_DOUBLE_ENABLE_OR_ARCHIVE'
  foreach($leaseStream in $ctx.continuation_leases){$leaseStream.Dispose()}
+ # Offline bounded coordinated Reader package tests. Test-only mocks,
+ # never opened against live Cloud/Notebook/Originalhost.
+ $coord=Join-Path $temp 'atomic-pair';[IO.Directory]::CreateDirectory($coord)|Out-Null
+ $requestPath=Join-Path $coord 'post-request.json'
+ $envelopePath=Join-Path $coord 'post-envelope.json'
+ $time=[datetimeoffset]::UtcNow.AddSeconds(-8)
+ $example=[Text.Encoding]::UTF8.GetBytes(('{"observed_at_utc":"'+[datetimeoffset]::UtcNow.ToString('o')+'","kind":"V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1","test_fixture_padding":"'+('x'*80)+'"}'))
+ $expectedCms=[byte[]]@(1..64)
+ $claims=Clone $newClaim;$claims.release_commit=('e'*40)
+ $c=[pscustomobject]@{authorization=[pscustomobject]@{claims=$claims;expires_at=[datetimeoffset]::UtcNow.AddMinutes(2);approval_sha256=('c'*64)}
+   coordinated_request=$requestPath;coordinated_envelope=$envelopePath;coordinated_nonce=('a'*32)
+   journal_path=(Join-Path $coord 'original.json')}
+ [IO.File]::WriteAllText(($c.journal_path+'.awaiting-post-archive-reader.json'),(@{state='AWAITING_POST_ARCHIVE_READER';archive_observed_by_utc=$time.ToString('o')}|ConvertTo-Json -Compress))
+ [IO.File]::WriteAllText(($c.journal_path+'.reconciliation-attempt.json'),'{"immutable":true}')
+ function Assert-V3GateBCoordPaths {param($Ctx)}
+ function Test-V3Pr515SignedPreparedAbortReadback {
+  param($Payload,$Cms,$ReviewedCertSha256,$ExpectedEpochId,$ExpectedSourceSha256,$ExpectedFenceSha256,$ExpectedAclSha256)
+  return [pscustomobject]@{signed_abort_fields_and_pins_match=((Get-V3ReleaseSha256 $Cms) -ceq (Get-V3ReleaseSha256 $expectedCms))}
+ }
+ $script:scenario='success'
+ Publish-V3GateBCoordRequest -Ctx $c -After $time
+ Check (Test-Path $requestPath) 'COORDINATED_ARCHIVE_TRIGGER_PERSISTED'
+ Deny {Publish-V3GateBCoordRequest -Ctx $c -After $time} 'COORDINATED_NO_DUPLICATE_TRIGGER'
+ $envelope=[ordered]@{kind='V3_GATEB_COORDINATED_POST_ARCHIVE_ENVELOPE_V1'
+  release_id=$claims.release_id;release_commit=$claims.release_commit;epoch_id=$claims.bindings.epoch_id
+  nonce=('a'*32);request_sha256=(Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($requestPath)))
+  reader_json_base64=[Convert]::ToBase64String($example)
+  reader_cms_base64=[Convert]::ToBase64String($expectedCms)}
+ function Put-Envelope($Value){[IO.File]::WriteAllText($envelopePath,($Value|ConvertTo-Json -Compress))}
+ Put-Envelope $envelope
+ $accepted=Read-V3GateBCoordEnvelope -Ctx $c -After $time
+ Check ((Get-V3ReleaseSha256 $accepted.payload) -ceq (Get-V3ReleaseSha256 $example)) 'COORDINATED_ATOMIC_PAIR_ACCEPTED'
+ foreach($case in @('nonce','commit','epoch','request','missing_cms','bad_cms','stale')){
+  $bad=Clone $envelope
+  switch($case){
+   nonce {$bad.nonce=('b'*32)}
+   commit {$bad.release_commit=('f'*40)}
+   epoch {$bad.epoch_id=('V3CAS-AUDIT-'+('0'*32))}
+   request {$bad.request_sha256=('0'*64)}
+   missing_cms {$bad.PSObject.Properties.Remove('reader_cms_base64')}
+   bad_cms {$bad.reader_cms_base64=[Convert]::ToBase64String([byte[]]@(2..65))}
+   stale {$bad.reader_json_base64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('{"observed_at_utc":"2020-01-01T00:00:00Z"}'))}
+  }
+  Put-Envelope $bad
+  Deny {Read-V3GateBCoordEnvelope -Ctx $c -After $time} ('COORDINATED_REJECT_'+$case)
+ }
+ [IO.File]::Delete($envelopePath)
+ [IO.File]::WriteAllText(($envelopePath+'.pending-interrupted'),($envelope|ConvertTo-Json -Compress))
+ Deny {Read-V3GateBCoordEnvelope -Ctx $c -After $time} 'COORDINATED_UNCOMMITTED_TEMP_NEVER_ACCEPTED'
+
+ # Reuse the existing offline gate for the nonmutating two-device adapter:
+ # parse the actual script and invoke only isolated pure/filesystem functions.
+ $parseTokens=$null;$parseErrors=$null
+ $handoffFile=Join-Path $root 'tools/v3-one-time-gateb-coordination.ps1'
+ $astHandoff=[Management.Automation.Language.Parser]::ParseFile($handoffFile,[ref]$parseTokens,[ref]$parseErrors)
+ Check (@($parseErrors).Count -eq 0) 'COORDINATOR_AST_VALID'
+ foreach($functionName in @('Digest','Write-Once','Wait-For','Assert-Activation')){
+  $node=@($astHandoff.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $functionName},$true))
+  Check ($node.Count -eq 1) ('COORDINATOR_HELPER_'+$functionName)
+  . ([scriptblock]::Create($node[0].Extent.Text))
+ }
+ $testBytes=[Text.Encoding]::UTF8.GetBytes('ONLY ONE COMMITTED BUNDLE. NO STREAMING PARTIAL PAIRS.')
+ $target=Join-Path $coord 'first-envelope.json'
+ Write-Once -Path $target -Bytes $testBytes
+ Check ((Digest ([IO.File]::ReadAllBytes($target))) -ceq (Digest $testBytes)) 'COORDINATOR_SINGLE_FILE_BYTE_READBACK'
+ Deny {Write-Once -Path $target -Bytes ([byte[]](1,2,3))} 'COORDINATOR_NO_OVERWRITE'
+ $incomplete=Join-Path $coord 'incomplete-envelope.json'
+ [IO.File]::WriteAllBytes(($incomplete+'.pending-aborted'),$testBytes)
+ Deny {Wait-For -Path $incomplete -Directory $coord -Seconds 0} 'COORDINATOR_PENDING_NOT_COMPLETE'
+ $script:releaseId='V3-ONETIME-b90062541c1d4783a70ee814fa44ffed'
+ $script:attemptPin='353f51399f5b8c755db0d204570ab0c3d43ecfb542c79866bec86e54dbd05b47'
+ $template=[pscustomobject]@{release_commit=('a'*40)}
+ $activation=[pscustomobject]@{
+  kind='V3_GATEB_COORDINATED_ACTIVATION_V1';release_id=$script:releaseId
+  release_commit=$template.release_commit;attempt_sha256=$script:attemptPin
+  nonce=('a'*32);created_at_utc=[datetimeoffset]::UtcNow.ToString('o')}
+ Assert-Activation -Value $activation -Template $template
+ Check $true 'COORDINATOR_BOUNDED_PRE_SIGN_TRIGGER'
+ foreach($wrong in @('nonce','release','attempt','expired')){
+  $v=Clone $activation
+  if($wrong -ceq 'nonce'){$v.nonce='invalid'}
+  if($wrong -ceq 'release'){$v.release_commit=('b'*40)}
+  if($wrong -ceq 'attempt'){$v.attempt_sha256=('0'*64)}
+  if($wrong -ceq 'expired'){$v.created_at_utc='2020-01-01T00:00:00Z'}
+  Deny {Assert-Activation -Value $v -Template $template} ('COORDINATOR_ACTIVATION_REJECT_'+$wrong)
+ }
+ Write-Output 'V3_GATEB_COORDINATOR_ATOMIC_AND_PRE_SIGN_NEGATIVES_PASS'
+ Write-Output 'V3_GATEB_ATOMIC_READER_ENVELOPE_NEGATIVE_PASS'
  Write-Output ('V3_EXISTING_GATE_B_RECONCILIATION_OFFLINE_PASS='+$checks)
 }finally{[IO.Directory]::Delete($temp,$true);$cert.Dispose();$rsa.Dispose()}
