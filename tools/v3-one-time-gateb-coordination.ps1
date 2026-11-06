@@ -7,7 +7,8 @@ param(
  [string]$ShareRoot='',
  [string]$ConfigPath='',
  [string]$ReaderScript='',
- [string]$CaFile=''
+ [string]$CaFile='',
+ [Parameter(Mandatory=$true)][string]$ReviewedCoordinatorSha256
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -15,6 +16,10 @@ $utf8=[Text.UTF8Encoding]::new($false,$true)
 $releaseAuthorityCert='2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'
 $releaseId='V3-ONETIME-b90062541c1d4783a70ee814fa44ffed'
 $attemptPin='353f51399f5b8c755db0d204570ab0c3d43ecfb542c79866bec86e54dbd05b47'
+if($ReviewedCoordinatorSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+   (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ReviewedCoordinatorSha256){
+ throw 'GATEB_COORDINATOR_INDEPENDENT_SOURCE_PIN_HOLD'
+}
 if(-not $ShareRoot){
  $ShareRoot=if($Role -ceq 'MiniPc'){'D:\V3-GateB-PR675'}else{'\\192.168.178.179\Mistral_450\V3-GateB-PR675'}
 }
@@ -139,7 +144,7 @@ if($Role -ceq 'MiniPc'){
  if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'GATEB_ORIGINALHOST_ADMIN_REQUIRED'}
  if($ShareRoot -cne 'D:\V3-GateB-PR675'){throw 'GATEB_MINIPC_SHARE_SCOPE_HOLD'}
  $share=Get-SmbShare -Name 'Mistral_450' -ErrorAction Stop
- if([string]$share.Path -cne 'D:\'){throw 'GATEB_MINIPC_SHARE_TARGET_HOLD'}
+ if([string]$share.Path.TrimEnd('\') -cne 'D:'){throw 'GATEB_MINIPC_SHARE_TARGET_HOLD'}
  $package=[string]$config.package_root
  $operator=Join-Path $package 'tools\v3-one-time-release.ps1'
  foreach($p in @($operator,[string]$config.admission,[string]$config.historical_approval,
