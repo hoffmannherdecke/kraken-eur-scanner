@@ -51,7 +51,7 @@ function Assert-V3ReleaseCms([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuth
 
 function Assert-V3OneTimeReleaseAuthorization {
  param([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuthorityCertificateSha256,
-       [ValidateSet('CLOUD_ABORT_INSTALL','ORIGINALHOST_ABORT_RESTORE','ORIGINALHOST_ABORT_RECONCILE','CLOUD_STAGE4_EPOCH_OPEN','CLOUD_PREPARED_FENCE_ABORT')][string]$Scope,
+       [ValidateSet('CLOUD_ABORT_INSTALL','ORIGINALHOST_ABORT_RESTORE','ORIGINALHOST_ABORT_RECONCILE','CLOUD_STAGE4_EPOCH_OPEN','CLOUD_PREPARED_FENCE_ABORT','V3_PAPER_PREPARE','V3_PAPER_STOP','V3_PAPER_CAS_INSTALL','V3_PAPER_CAS','V3_PAPER_ACTIVATE','V3_PAPER_ROLLBACK','V3_PAPER_RUNTIME','V3_PAPER_RESUME')][string]$Scope,
        [string]$ExpectedReleaseCommit,[hashtable]$ExpectedArtifacts,
        [datetimeoffset]$Now=[datetimeoffset]::UtcNow)
  Assert-V3ReleaseCms $Payload $Cms $ReviewedAuthorityCertificateSha256
@@ -87,7 +87,7 @@ function Assert-V3OneTimeReleaseAuthorization {
  if($a.artifacts -isnot [pscustomobject] -or $null -eq $ExpectedArtifacts -or $ExpectedArtifacts.Count -lt 2 -or
     @($a.artifacts.PSObject.Properties).Count -ne $ExpectedArtifacts.Count){throw 'V3_RELEASE_ARTIFACT_SET_HOLD'}
  foreach($path in $ExpectedArtifacts.Keys){
-  if($path -cnotmatch '^(tools|supabase)/[A-Za-z0-9_./-]+$' -or $path.Contains('..') -or
+  if($path -cnotmatch '^(tools|supabase|paper_evaluator)/[A-Za-z0-9_./-]+$' -or $path.Contains('..') -or
      [string]$ExpectedArtifacts[$path] -cnotmatch '^[a-f0-9]{64}$' -or
      [string]$a.artifacts.$path -cne [string]$ExpectedArtifacts[$path]){throw 'V3_RELEASE_ARTIFACT_HASH_HOLD'}
  }

@@ -35,6 +35,11 @@ jobs:
       - name: V3 Paper Notebook one-time offline snapshots (no CAS or external service)
         shell: pwsh
         run: ./tests/test_v3_notebook_onetime_paper_witness.ps1
+      - name: Productive V3 Paper release authorization and fault recovery (offline)
+        shell: pwsh
+        run: |
+          ./tests/test_v3_one_time_paper_release.ps1
+          python -m unittest tests.test_v3_productive_native_bootstrap -v
       - name: V3 CAS isolated real PostgreSQL 17 native ACL/transaction tests
         run: |
           # Avoid the Docker pull on unrelated project-wide architecture PRs.
@@ -309,7 +314,7 @@ jobs:
           set -euo pipefail
           changed="$(git diff --name-only HEAD^1 HEAD)"
           case "$changed" in
-            *tests/sql/v3_experimental_paper_atomic_cas_smoke.sql*|*supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql*) ;;
+            *tests/sql/v3_experimental_paper_atomic_cas_smoke.sql*|*supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql*|*tools/v3-one-time-paper-release.ps1*) ;;
             *) echo 'SKIP_V3_CAS_SQL_UNCHANGED_NO_DOCKER'; exit 0 ;;
           esac
           echo 'START_DISPOSABLE_POSTGRES17_NO_NETWORK_NO_SUPABASE'

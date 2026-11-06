@@ -58,6 +58,14 @@ $relay='supabase/functions/v3-paper-evidence-relay/index.ts'
 # Root module must be pinned alongside its paper_evaluator package.
 $coreSupport='paper_context.py'
 $operatorSource=@(
+ 'tools/v3-one-time-release.ps1',
+ 'tools/v3-one-time-release-authorization.psm1',
+ 'tools/v3-one-time-paper-release.ps1',
+ 'tools/v3-one-time-originalhost-release.psm1',
+ 'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql',
+ 'supabase/v3-cas-prepared-fence-abort-INACTIVE.sql',
+ 'supabase/v3-cas-prepared-fence-abort-release.sql',
+ 'supabase/v3-cas-prepared-fence-abort-release-readback.sql',
  'tools/minipc-runtime-supervisor.ps1',
  'tools/check-minipc-v3-physical-writer-readiness.ps1',
  'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1',

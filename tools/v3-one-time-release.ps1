@@ -2,7 +2,7 @@
 # Default is local inventory only. No implicit installation, STOP, CAS or Paper.
 [CmdletBinding()]
 param(
- [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','GateAAbort','GateAReadback')][string]$Mode='Inventory',
+ [ValidateSet('Inventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')][string]$Mode='Inventory',
  [string]$PackageRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$ApprovalJson='', [string]$ApprovalCms='', [string]$ExpectedReleaseCommit='',
  [string]$AuthorityAdmissionJson='', [string]$ExpectedAuthorityAdmissionSha256='',
@@ -14,7 +14,9 @@ param(
  [string]$ExistingApprovalJson='', [string]$ExistingApprovalCms='', [string]$ReconciliationEvidenceJson='',
  [string]$InterruptedApprovalJson='', [string]$InterruptedApprovalCms='',
  [string]$CoordinatedPostArchiveRequestPath='', [string]$CoordinatedPostArchiveEnvelopePath='',
- [string]$CoordinatedHandoffNonce=''
+ [string]$CoordinatedHandoffNonce='',
+ [string]$PaperPlanJson='', [string]$RuntimeSpecJson='',
+ [string]$HostReceiptJson='', [string]$HostReceiptCms=''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -29,7 +31,7 @@ function Assert-V3OriginalInteractiveOwner {
  }
 }
 function Invoke-V3ReleasePg([string]$Sql,[Security.SecureString]$Password,[string]$Ca,
- [ValidateSet('postgres','v3_cas_inhibit_issuer_actor')][string]$Actor='postgres') {
+ [ValidateSet('postgres','v3_cas_inhibit_issuer_actor','v3_cas_executor_actor')][string]$Actor='postgres') {
  $exe='C:\Program Files\PostgreSQL\17\bin\psql.exe'
  $null=Read-V3ReleaseLocalBytes -Path $exe -MaxBytes 67108864
  $caRoot='system'
@@ -79,7 +81,7 @@ function Invoke-V3GateAOnce([string]$LatchPath,[byte[]]$Receipt,[string]$Sql,
  $null=Invoke-V3ReleasePg -Sql $Sql -Password $Password -Ca $Ca -Actor v3_cas_inhibit_issuer_actor
 }
 function Get-V3ReleaseVerifiedReadback([string]$Sql,[string]$ReleaseSql,[Security.SecureString]$Password,[string]$Ca,
- [ValidateSet('postgres','v3_cas_inhibit_issuer_actor')][string]$Actor='postgres') {
+ [ValidateSet('postgres','v3_cas_inhibit_issuer_actor','v3_cas_executor_actor')][string]$Actor='postgres') {
  $wire=Invoke-V3ReleasePg -Sql $Sql -Password $Password -Ca $Ca
  $readback=$wire|ConvertFrom-Json -ErrorAction Stop
  if([string]$readback.kind -cne 'V3_ONE_TIME_ABORT_INSTALL_READBACK_V1' -or $readback.verified -ne $true){
@@ -119,6 +121,16 @@ function Get-V3ReleaseVerifiedReadback([string]$Sql,[string]$ReleaseSql,[Securit
      [string]$acl.grantee -cnotin @('v3_cas_audit_table_owner',$allowed)){throw 'V3_RELEASE_FUNCTION_ACL_DRIFT'}
  }
  return $wire
+}
+
+if($Mode -in @('PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')){
+ . (Join-Path $PSScriptRoot 'v3-one-time-paper-release.ps1')
+ Invoke-V3OneTimePaperRelease -Mode $Mode -PackageRoot $PackageRoot -ApprovalJson $ApprovalJson -ApprovalCms $ApprovalCms `
+  -AuthorityAdmissionJson $AuthorityAdmissionJson -ExpectedAuthorityAdmissionSha256 $ExpectedAuthorityAdmissionSha256 `
+  -ExpectedReleaseCommit $ExpectedReleaseCommit -PaperPlanJson $PaperPlanJson -RuntimeSpecJson $RuntimeSpecJson `
+  -HostReceiptJson $HostReceiptJson -HostReceiptCms $HostReceiptCms -PostgresPassword $PostgresPassword -CaFile $CaFile |
+  ConvertTo-Json -Depth 24 -Compress
+ return
 }
 
 $hashes=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $PackageRoot
