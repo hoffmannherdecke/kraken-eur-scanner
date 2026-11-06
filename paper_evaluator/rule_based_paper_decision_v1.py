@@ -81,8 +81,31 @@ def assess(candidate, ticker, context, spec, control, *, decision_at_utc=None):
             return _reject("RULE_SOURCE_AUTHORITY_MISSING", "Paper source authority not confirmed.")
         event_at = _utc(candidate["event_time_utc"])
         age = (now - event_at).total_seconds()
-        if not 0 <= age <= MAX_CANDIDATE_AGE_SECONDS:
-            return _reject("RULE_CANDIDATE_STALE", "Candidate is not fresh enough for paper entry.")
+        triggered = candidate.get("v2r4_fresh_recheck_context") or {}
+        receipt = triggered.get("trigger_receipt") or {}
+        fresh_recheck = False
+        if triggered.get("kind") == "V2R4_TRIGGERED_FRESH_PAPER_RECHECK":
+            try:
+                receipt_at = _utc(receipt["observed_at_utc"])
+                fresh_recheck = (
+                    receipt.get("kind") == "V2R4_PAPER_WAIT_TRIGGER_RECEIPT"
+                    and receipt.get("candidate_id") == candidate["candidate_id"]
+                    and receipt.get("pair") == candidate["pair"]
+                    and receipt.get("paper_only") is True
+                    and receipt.get("matched") is True
+                    and receipt.get("expired") is False
+                    and receipt.get("real_money_actions_enabled") is False
+                    and receipt.get("next_action") == "FRESH_PAPER_RECHECK_ONLY"
+                    and event_at <= receipt_at <= now
+                    and (now-receipt_at).total_seconds() <= 120
+                )
+            except (KeyError, TypeError, ValueError):
+                fresh_recheck = False
+            if not fresh_recheck:
+                return _reject("RULE_RECHECK_RECEIPT_INVALID", "WAIT continuation requires a fresh matching receipt.")
+        max_age = 3600 if fresh_recheck else MAX_CANDIDATE_AGE_SECONDS
+        if not 0 <= age <= max_age:
+            return _reject("RULE_CANDIDATE_STALE", "Candidate or WAIT continuation is too old.")
         ask, bid, spread = (
             _number(ticker["ask"]), _number(ticker["bid"]),
             _number(ticker["spread_pct"]))
