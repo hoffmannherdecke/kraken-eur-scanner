@@ -237,27 +237,37 @@ def parse_json_text(text):
     return json.loads(text)
 
 def call_evaluator(candidate,current,external,spec,control):
-    """Cost-free V2R4 decision until a separately released rule engine exists.
+    """Deterministic V2R4 evaluation; the existing key never enables an LLM.
 
-    Key presence, environment flags and available credit cannot authorize a
-    paid model call or a synthetic BUY. Preserve a terminal, auditable paper
-    decision without external OpenAI network traffic.
+    Eligible canonical handoffs consume up to three public Kraken OHLC reads
+    through the existing public rate budget. Missing data fail closed.
+    V3 callers may supply already-bound closed evidence to avoid refetches.
     """
-    return {
-        "decision": "REJECT",
-        "setup_lane": "NONE",
-        "summary": "Paid model evaluation disabled; no authorized deterministic BUY rule yet.",
-        "reason_codes": ["PAID_MODEL_DISABLED_NO_RULE_BASED_BUY_AUTHORITY"],
-        "missing_triggers": [],
-        "stop_eur": None,
-        "ttl_minutes": 0,
-        "expected_remaining_move_pct": None,
-        "risk_reward_after_costs": None,
-        "stage2_trigger_eur": None,
-        "stage2_ttl_minutes": 0,
-        "watch_conditions": [],
-    }, {"response_id": None, "model": None, "attempt": 0,
-        "source": "rule_based_fail_closed_no_paid_api"}
+    from .rule_based_paper_decision_v1 import assess
+    context = dict(external or {})
+    meta = context.get("kraken_pair_metadata") or {}
+    candidate_complete = (
+        candidate.get("action") == "REVIEW_ONLY_NOT_ORDER"
+        and candidate.get("candidate_id") and candidate.get("event_time_utc")
+        and str(candidate.get("pair", "")).endswith("/EUR")
+        and str(candidate.get("altname", "")).isalnum()
+    )
+    quote_ok = (isinstance(current.get("spread_pct"), (int, float))
+                and 0 <= current["spread_pct"] <= 0.35)
+    if (candidate_complete and quote_ok and meta.get("available") is True
+            and meta.get("status") == "online"
+            and "candidate_entry_evidence" not in context):
+        from .successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
+        def public_ohlc(symbol, interval):
+            query = urllib.parse.urlencode({"pair": symbol, "interval": interval})
+            return http_json("https://api.kraken.com/0/public/OHLC?" + query,
+                             headers={"User-Agent": "paper-evaluator-rules/1.0"},
+                             timeout=9)
+        context["candidate_entry_evidence"] = fetch_public_entry_evidence(
+            candidate["altname"], candidate["pair"], loader=public_ohlc)
+    decision = assess(candidate, current, context, spec, control)
+    return decision, {"response_id": None, "model": None, "attempt": 0,
+                      "source": "public_kraken_deterministic_rules_v1"}
 
 
 def _retired_paid_model_evaluator(candidate,current,external,spec,control):
