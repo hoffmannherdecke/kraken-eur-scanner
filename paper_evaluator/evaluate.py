@@ -267,6 +267,10 @@ def call_evaluator(candidate,current,external,spec,control):
                              timeout=9)
         context["candidate_entry_evidence"] = fetch_rule_evidence(
             candidate["altname"], candidate["pair"], loader=public_ohlc)
+    # Persist the same canonical closed public inputs in the original
+    # decision_context audit record, not merely a non-reproducible decision.
+    if isinstance(external, dict) and context.get("candidate_entry_evidence"):
+        external["candidate_entry_evidence"] = context["candidate_entry_evidence"]
     decision = assess(candidate, current, context, spec, control)
     return decision, {"response_id": None, "model": None, "attempt": 0,
                       "source": "public_kraken_deterministic_rules_v1"}
