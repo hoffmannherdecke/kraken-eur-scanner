@@ -81,15 +81,16 @@ class FreeRuleNativeTests(unittest.TestCase):
             self.assertEqual(len([x for x in rows if x["phase"]=="MODEL_RESPONSE"]),0)
             self.assertEqual(len([x for x in rows if x["phase"]=="P4_VALIDATION"]),1)
             self.assertEqual(len([x for x in rows if x["phase"]=="MODEL_REQUEST"]),1)
-            again=native.released_paper_first_scanner_rule_once(
-                preflight=preflight,candidate=candidate,series_id=SID,
-                journal=journal,capture_dir=capture,model_reservations=budget,
-                expected_repo_sha="a"*40,
-                expected_bundle_sha256="b"*64,
-                expected_strategy_sha256="c"*64,
-                read_active_series=lambda *_:self.fail("patched release gate"),
-                acquire=lambda *_:self.fail("no second source fetch"),
-                clock_now=lambda:dt(12))
+            with patch.object(native,"_require_released_paper_cloud"):
+                again=native.released_paper_first_scanner_rule_once(
+                    preflight=preflight,candidate=candidate,series_id=SID,
+                    journal=journal,capture_dir=capture,model_reservations=budget,
+                    expected_repo_sha="a"*40,
+                    expected_bundle_sha256="b"*64,
+                    expected_strategy_sha256="c"*64,
+                    read_active_series=lambda *_:self.fail("patched release gate"),
+                    acquire=lambda *_:self.fail("no second source fetch"),
+                    clock_now=lambda:dt(12))
             self.assertEqual(again["status"],"FIRST_SCANNER_ALREADY_JOURNALED_NO_RULE_REPLAY")
 
 
