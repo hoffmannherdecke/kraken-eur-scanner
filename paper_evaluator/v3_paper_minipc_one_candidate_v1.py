@@ -452,7 +452,7 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
         receipt("MODEL_REQUEST","SKIP",{
             "source_status":"FREE_RULE_V3_P4_NO_MODEL",
             "model_http_attempts_reserved":0,
-            "source_known_at_utc":coin.get("known_at_utc")})
+            "input_known_at_utc":coin.get("known_at_utc")})
         receipt("P4_VALIDATION",
             validated["decision"] if validated["decision"] in
             ("BUY_SCOUT","WAIT","REJECT") else "UNKNOWN",{
