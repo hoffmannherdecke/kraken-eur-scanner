@@ -4946,6 +4946,7 @@ Export-ModuleMember -Function Invoke-V3OneTimeOriginalhostRelease,Invoke-V3OneTi
  }
 }
 function Publish-V3GateBCoordRequest([object]$Ctx,[datetimeoffset]$After) {
+ if('coordinated_request' -cnotin @($Ctx.PSObject.Properties.Name)){return}
  if([string]::IsNullOrEmpty([string]$Ctx.coordinated_request)){return}
  Assert-V3GateBCoordPaths $Ctx
  $await=$Ctx.journal_path+'.awaiting-post-archive-reader.json'
@@ -5010,7 +5011,8 @@ function Wait-V3ReleaseReconciliationTerminal([object]$Context,[datetimeoffset]$
  $b=$Context.authorization.claims.bindings
  for($i=0;$i -lt 45;$i++){
   if([datetimeoffset]::UtcNow -ge $Context.authorization.expires_at){throw 'V3_RECONCILE_SESSION_EXPIRED_NO_RETRY'}
-  if(-not [string]::IsNullOrEmpty([string]$Context.coordinated_envelope)){
+  if('coordinated_envelope' -cin @($Context.PSObject.Properties.Name) -and
+     -not [string]::IsNullOrEmpty([string]$Context.coordinated_envelope)){
    if(Test-Path -LiteralPath $Context.coordinated_envelope){return Read-V3GateBCoordEnvelope -Ctx $Context -After $After}
    Start-Sleep -Seconds 2
    continue
