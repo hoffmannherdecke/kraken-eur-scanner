@@ -19,6 +19,10 @@ $inventoryWire=& (Join-Path $root 'tools/v3-one-time-release.ps1') -Mode PaperIn
 $inventory=$inventoryWire|ConvertFrom-Json
 Need ($inventory.production_authorized -eq $false -and $inventory.cloud_contacted -eq $false -and
  $inventory.host_mutated -eq $false -and @($inventory.artifacts.PSObject.Properties).Count -eq 11) 'PRODUCTIVE_INVENTORY_NOT_INERT_OR_INCOMPLETE'
+# .NET Framework PowerShell 5.1 resolves CMS from System.Security.
+if($null -eq ('System.Security.Cryptography.Pkcs.SignedCms' -as [type])){
+ Add-Type -AssemblyName System.Security
+}
 # Real ephemeral CMS signature, pin and freshness tests; no mock verifier.
 $rsa=[Security.Cryptography.RSA]::Create(2048)
 $req=[Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=OFFLINE-NOT-RELEASE-AUTHORITY',$rsa,

@@ -632,6 +632,9 @@ jobs:
       - name: Release authorization on native Windows PowerShell 5.1
         shell: pwsh
         run: ./tests/test_v3_one_time_release_authorization.ps1
+      - name: Productive Paper operator on Windows PowerShell 5.1 (offline)
+        shell: powershell
+        run: ./tests/test_v3_one_time_paper_release.ps1
       - name: Disposable disabled task definition lease and recovery
         shell: pwsh
         run: ./tests/test_v3_pr661_task_file_lease_windows.ps1
