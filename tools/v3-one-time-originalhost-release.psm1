@@ -4715,7 +4715,7 @@ function Assert-V3ReleasePostArchiveBoundary([object]$Context) {
     [string]$latch.state -cne 'RECONCILIATION_ATTEMPTED_UNKNOWN_UNTIL_FINAL_ACK' -or
     [string]$latch.release_id -cne [string]$a.release_id -or
     [string]$latch.journal_sha256 -cne [string]$b.journal_sha256 -or
-    [string]($latch.approval_sha256 -cne (Get-V3ReleaseSha256 $historical) -and
+    ($latch.approval_sha256 -cne (Get-V3ReleaseSha256 $historical) -and
      $latch.approval_sha256 -cne [string]$checkpoint.interrupted_approval_sha256) -or
     $latch.stop_requested -ne $false){
   throw 'V3_RECONCILE_POST_ARCHIVE_ATTEMPT_DRIFT'
