@@ -516,7 +516,8 @@ def _require_released_paper_cloud(*,series_id:str,
 
 def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
         series_id:str,journal:Path,model_reservations:Path,
-        approval:dict[str,Any])->dict[str,Any]:
+        approval:dict[str,Any]|None=None,
+        free_rule:bool=False)->dict[str,Any]:
     """Independent disk readback WHILE the existing native writer lock is held.
 
     A callback's successful P4 flag, test model, or synthetic receipt cannot
@@ -524,7 +525,9 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
     local stage/model/P4/fill chain before the owner reports any local BUY.
     Cloud durability, real host pins and release proofs remain independent.
     """
-    if (not isinstance(candidate,dict) or not isinstance(approval,dict)
+    if (not isinstance(candidate,dict)
+            or (not free_rule and not isinstance(approval,dict))
+            or (free_rule and approval is not None)
             or not journal.is_dir() or journal.is_symlink()
             or not model_reservations.is_dir() or model_reservations.is_symlink()):
         raise ValueError("native paper audit roots or candidate absent")
@@ -589,19 +592,30 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
     if eligible["result"]!="PASS":
         raise ValueError("full native model not review eligible")
     request,_=one("MODEL_REQUEST")
-    response,_=one("MODEL_RESPONSE")
     p4,_=one("P4_VALIDATION")
-    if (request["result"]!="PASS"
-            or not isinstance(request["data"].get("input_fingerprint_sha256"),str)
-            or not re.fullmatch("[0-9a-f]{64}",request["data"]["input_fingerprint_sha256"])
-            or request["data"].get("model_http_attempts_reserved")!=1
-            or response["result"]!="PASS"
-            or not isinstance(response["data"].get("model_response_id"),str)
-            or not response["data"]["model_response_id"]
-            or not isinstance(response["data"].get("model_response_at_utc"),str)
-            or p4["result"] not in ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+    if (p4["result"] not in ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
             or p4["data"].get("p4_decision")!=p4["result"]):
-        raise ValueError("model budget, response or P4 original incomplete")
+        raise ValueError("invalid original P4 receipt")
+    if free_rule:
+        if (request["result"]!="SKIP"
+                or request["data"].get("source_status")!="FREE_RULE_V3_P4_NO_MODEL"
+                or request["data"].get("model_http_attempts_reserved")!=0
+                or p4["data"].get("rule_based_primary") is not True
+                or p4["data"].get("model_http_requests")!=0
+                or any(row["phase"] in ("MODEL_RESPONSE","MODEL_ERROR")
+                       for row,_ in rows)):
+            raise ValueError("free rule model-free P4 lineage mismatch")
+    else:
+        response,_=one("MODEL_RESPONSE")
+        if (request["result"]!="PASS"
+                or not isinstance(request["data"].get("input_fingerprint_sha256"),str)
+                or not re.fullmatch("[0-9a-f]{64}",request["data"]["input_fingerprint_sha256"])
+                or request["data"].get("model_http_attempts_reserved")!=1
+                or response["result"]!="PASS"
+                or not isinstance(response["data"].get("model_response_id"),str)
+                or not response["data"]["model_response_id"]
+                or not isinstance(response["data"].get("model_response_at_utc"),str)):
+            raise ValueError("model budget, response or P4 original incomplete")
     reservations=[]
     for path in model_reservations.glob("*.reserved.json"):
         if path.is_symlink() or not 0<path.stat().st_size<=4096:
@@ -610,7 +624,10 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
         if (item.get("series_id"),item.get("candidate_id"))==(
                 series_id,candidate["candidate_id"]):
             reservations.append(item)
-    if (len(reservations)!=1
+    if free_rule:
+        if reservations:
+            raise ValueError("free rule must never reserve any model spend")
+    elif (len(reservations)!=1
             or reservations[0].get("kind")!="V3_PAPER_MODEL_HTTP_RESERVED_BEFORE_NETWORK_V1"
             or reservations[0].get("unique_approval_id")!=approval.get("unique_approval_id")
             or reservations[0].get("no_automatic_retry") is not True):
