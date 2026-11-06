@@ -4713,8 +4713,18 @@ function Assert-V3ReleasePostArchiveBoundary([object]$Context) {
     [string]$latch.state -cne 'RECONCILIATION_ATTEMPTED_UNKNOWN_UNTIL_FINAL_ACK' -or
     [string]$latch.release_id -cne [string]$a.release_id -or
     [string]$latch.journal_sha256 -cne [string]$b.journal_sha256 -or
-    [string]$latch.approval_sha256 -cne (Get-V3ReleaseSha256 $historical) -or $latch.stop_requested -ne $false){
+    [string]($latch.approval_sha256 -cne (Get-V3ReleaseSha256 $historical) -and
+     $latch.approval_sha256 -cne [string]$checkpoint.interrupted_approval_sha256) -or
+    $latch.stop_requested -ne $false){
   throw 'V3_RECONCILE_POST_ARCHIVE_ATTEMPT_DRIFT'
+ }
+ if('interrupted_approval_sha256' -cin @($checkpoint.PSObject.Properties.Name)){
+  $priorPayload=[Convert]::FromBase64String($checkpoint.interrupted_approval_base64)
+  $priorCms=[Convert]::FromBase64String($checkpoint.interrupted_cms_base64)
+  Assert-V3ReconciliationPreArchiveAttemptAuthority -InterruptedPayload $priorPayload -InterruptedCms $priorCms -Attempt (Read-V3ReleaseLocalBytes ($ctx.journal_path+'.reconciliation-attempt.json')) -AuthorityPin $pin -Current $a
+  if([string]$checkpoint.interrupted_approval_sha256 -cne (Get-V3ReleaseSha256 $priorPayload)){
+   throw 'V3_RECONCILE_PRE_ARCHIVE_INTERRUPTED_PROOF_DRIFT'
+  }
  }
  $saved=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($checkpoint.instances_base64))
  $live=Read-V3ReleaseContinuingIntakes -Context $ctx -EnabledNames $ctx.tasks
