@@ -597,9 +597,16 @@ function Publish-V3GateBCoordRequest([object]$Ctx,[datetimeoffset]$After) {
  if([string]::IsNullOrEmpty([string]$Ctx.coordinated_request)){return}
  Assert-V3GateBCoordPaths $Ctx
  $await=$Ctx.journal_path+'.awaiting-post-archive-reader.json'
- $receipt=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $await)
+ $awaitBytes=Read-V3ReleaseLocalBytes $await
+ $receipt=Read-V3ReleaseJson $awaitBytes
+ # Use the persisted JSON UTC literal, not ConvertFrom-Json DateTime display
+ # formatting (which may drop subsecond precision on PowerShell 7).
+ $wire=[Text.UTF8Encoding]::new($false,$true).GetString($awaitBytes)
+ $timestamp=[regex]::Match($wire,'"archive_observed_by_utc"\s*:\s*"(?<t>[^"\\]+)"')
+ if(-not $timestamp.Success){throw 'V3_GATEB_COORDINATED_ARCHIVE_TIME_HOLD'}
+ $archived=[datetimeoffset]::Parse($timestamp.Groups['t'].Value,[Globalization.CultureInfo]::InvariantCulture)
  if([string]$receipt.state -cne 'AWAITING_POST_ARCHIVE_READER' -or
-    [datetimeoffset]::Parse([string]$receipt.archive_observed_by_utc) -ne $After){
+    [Math]::Abs(($archived-$After).TotalSeconds) -gt 1){
   throw 'V3_GATEB_COORDINATED_ARCHIVE_HOLD'
  }
  if(Test-Path -LiteralPath $Ctx.coordinated_request){throw 'V3_GATEB_COORDINATED_REQUEST_EXISTS_HOLD'}
@@ -613,7 +620,7 @@ function Publish-V3GateBCoordRequest([object]$Ctx,[datetimeoffset]$After) {
   approval_sha256=[string]$Ctx.authorization.approval_sha256
   attempt_sha256=(Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes ($Ctx.journal_path+'.reconciliation-attempt.json')))
   receipt_sha256=(Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $await))
-  archive_observed_by_utc=$After.ToString('o')
+  archive_observed_by_utc=[string]$timestamp.Groups['t'].Value
  }
  Write-V3ReleaseImmutableReceipt -Path $Ctx.coordinated_request -Value $request
 }
@@ -647,8 +654,10 @@ function Read-V3GateBCoordEnvelope([object]$Ctx,[datetimeoffset]$After) {
   throw 'V3_GATEB_COORDINATED_ENVELOPE_CMS_HOLD'
  }
  $time=[datetimeoffset]::Parse($match.Groups['t'].Value,[Globalization.CultureInfo]::InvariantCulture)
+ $req=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $Ctx.coordinated_request)
+ $archiveTime=[datetimeoffset]$req.archive_observed_by_utc
  $age=([datetimeoffset]::UtcNow-$time).TotalSeconds
- if($time -le $After -or $age -lt -5 -or $age -gt 60){
+ if($time -le $After -or $time -le $archiveTime -or $age -lt -5 -or $age -gt 60){
   throw 'V3_GATEB_COORDINATED_ENVELOPE_STALE_HOLD'
  }
  return [pscustomobject]@{payload=$payload;cms=$cms}
