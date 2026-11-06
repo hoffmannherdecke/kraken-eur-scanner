@@ -430,3 +430,53 @@ def validate_full_entry_decision(
         risk_reward_after_costs=round(risk_reward_after_costs, 6),
         full_e2e_economic_outcome_required=True,
     )
+
+def validate_free_rule_based_entry(
+    review_eligibility: dict[str, Any],
+    candidate: dict[str, Any],
+    entry_evidence: dict[str, Any],
+    fresh_ticker: dict[str, Any],
+    pair_metadata: dict[str, Any],
+    *,
+    decision_at_utc: str,
+    slippage_pct_each_side: float = 0.08,
+) -> dict[str, Any]:
+    """V3 offline no-LLM primary assessment through existing P4 guards.
+
+    Called only by separately authorized successor integration. Source-only:
+    no orders, Paper writers, model calls, storage, or CAS.
+    """
+    from paper_evaluator.rule_based_paper_decision_v1 import assess
+    context = {
+        "candidate_entry_evidence": entry_evidence,
+        "kraken_pair_metadata": {
+            "available": pair_metadata.get("status") == "online"
+                         and pair_metadata.get("spot") is True
+                         and pair_metadata.get("quote") == "EUR"
+                         and pair_metadata.get("minimum_order_passed") is True,
+            "status": pair_metadata.get("status"),
+            "ordermin": pair_metadata.get("ordermin"),
+            "costmin": pair_metadata.get("costmin"),
+        },
+    }
+    rules_candidate = dict(candidate, action="REVIEW_ONLY_NOT_ORDER")
+    quote = dict(fresh_ticker)
+    # No scanner score or external paid API can authorize a positive decision.
+    rules = assess(
+        rules_candidate, quote, context,
+        {"real_money_actions_enabled": False,
+         "entry": {"scout_notional_eur": SCOUT_EUR, "stage2_notional_eur": STAGE2_EUR}},
+        {"real_money_actions_enabled": False},
+        decision_at_utc=decision_at_utc,
+    )
+    full = dict(rules, candidate_id=candidate.get("candidate_id"),
+                pair=candidate.get("pair"), decision_at_utc=decision_at_utc,
+                anti_chase_passed=(rules["decision"] == "BUY_SCOUT"))
+    result = validate_full_entry_decision(
+        review_eligibility, candidate, entry_evidence, fresh_ticker,
+        pair_metadata, full, decision_at_utc=decision_at_utc,
+        slippage_pct_each_side=slippage_pct_each_side)
+    # Explicitly not the model or release decision, even for P4 BUY.
+    result["rule_based_primary"] = True
+    result["model_http_requests"] = 0
+    return result
