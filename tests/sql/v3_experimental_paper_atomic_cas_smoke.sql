@@ -22,6 +22,12 @@ grant v3_cas_executor to postgres with admin true, set false, inherit false;
 grant v3_cas_audit_writer to postgres with admin true, set false, inherit false;
 grant v3_cas_audit_reader to postgres with admin true, set false, inherit false;
 
+-- Match the already enrolled production audit actors in the install fixture.
+create role v3_cas_audit_reader_actor login noinherit nobypassrls;
+create role v3_cas_audit_writer_actor login noinherit nobypassrls;
+grant v3_cas_audit_reader to v3_cas_audit_reader_actor with admin false, set true, inherit false;
+grant v3_cas_audit_writer to v3_cas_audit_writer_actor with admin false, set true, inherit false;
+
 create table public.paper_series (
   series_id text primary key, test_id text not null,
   strategy_revision text not null, started_at timestamptz not null,
