@@ -128,11 +128,187 @@ def audit_offline_witness(root: Path, *, stage_sha: str = STAGE_SHA) -> dict:
             "joined_sha256": hashlib.sha256(joined.encode()).hexdigest()}
 
 
+def free_rule_export(root: Path, commit: str) -> dict:
+    """Read only the seven immutable events needed for the sandbox comparison."""
+    from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import batch
+    from tools.v3_paper_precas_originalhost_offline_witness_v1 import (
+        FREE_CASES, FREE_KIND, FREE_PHASES,
+    )
+    from tools.v3_experimental_paper_technical_gate import _free_rule_receipt_error
+
+    if not re.fullmatch(r"[a-f0-9]{40}", commit):
+        raise ValueError("exact protected release commit required")
+    if (root.name != "PRECAS-FREE-RULE-" + commit[:12]
+            or root.parent.name != "V3Paper" or root.parent.parent.name != "Research"
+            or any(p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+                   for p in (root, *root.parents))):
+        raise ValueError("exact isolated free-rule root required")
+    witness_path, journal = root / "free-rule-witness.json", root / "journal"
+    if (witness_path.is_symlink() or not witness_path.is_file()
+            or witness_path.stat().st_size > 262144
+            or journal.is_symlink() or getattr(journal, "is_junction", lambda: False)()):
+        raise ValueError("original local witness or journal missing")
+    witness = json.loads(witness_path.read_bytes())
+    series = "PAPER-V3-CANARY-PRECAS-FREE-" + commit[:12].upper()
+    identity = witness.get("runtime_identity") or {}
+    if (witness.get("kind") != FREE_KIND or witness.get("release_commit") != commit
+            or witness.get("series_id") != series
+            or witness.get("paper_release_authorized") is not False
+            or witness.get("technical_release_proofs_credited") != 0
+            or identity.get("repo_sha") != commit
+            or any(not re.fullmatch(r"[a-f0-9]{64}", str(identity.get(key)))
+                   for key in ("code_fingerprint_sha256", "strategy_fingerprint_sha256"))):
+        raise ValueError("invalid free-rule original identity")
+    files = list(journal.glob("*.json"))
+    if len(files) > 29 or any(f.is_symlink() or not f.is_file() for f in files):
+        raise ValueError("unsafe or unbounded original journal")
+    originals = batch(journal, series, set())
+    rows = {}
+    for item in originals:
+        receipt = json.loads(item["canonical_json"])
+        if receipt["phase"] == "MODEL_RESPONSE" or receipt.get("orders") is not False:
+            raise ValueError("isolated witness contains an order or provider response")
+        if receipt["phase"] in FREE_PHASES:
+            key = (receipt["candidate_id"], receipt["phase"])
+            if key in rows:
+                raise ValueError("duplicate case phase")
+            rows[key] = (item, receipt)
+    required = {}
+    labels, candidates = set(), set()
+    for case in witness["cases"]:
+        label, cid = case["case"], case["candidate_id"]
+        decision, fills = FREE_CASES[label]
+        if (label in labels or cid in candidates or case["series_id"] != series
+                or case["p4_decision"] != decision or case["paper_fill_count"] != fills
+                or _free_rule_receipt_error(case)):
+            raise ValueError("invalid free-rule case or repeated candidate")
+        labels.add(label)
+        candidates.add(cid)
+        digests = {"SOURCE_INPUT": case["original_pit_sha256"],
+                   "MODEL_REQUEST": case["rule_request_sha256"],
+                   "P4_VALIDATION": case["p4_record_sha256"]}
+        if fills:
+            digests["PAPER_FILL"] = case["native_journal_record_sha256"]
+        for phase, digest in digests.items():
+            key = cid, phase
+            if key not in rows or rows[key][0]["sha256"] != digest:
+                raise ValueError("original journal event is missing or changed")
+            if phase == "PAPER_FILL" and rows[key][1]["result"] != "PAPER_FILLED":
+                raise ValueError("positive original fill result differs")
+            required[key] = rows[key][0]
+    if labels != FREE_CASES.keys() or rows.keys() != required.keys():
+        raise ValueError("required original case set or negative zero-fill check failed")
+    return {"kind": "V3_ISOLATED_FREE_RULE_RECEIPT_EXPORT_V1", "project_id": SANDBOX_PROJECT,
+            "release_commit": commit, "series_id": series,
+            "code_fingerprint_sha256": identity["code_fingerprint_sha256"],
+            "strategy_fingerprint_sha256": identity["strategy_fingerprint_sha256"],
+            "receipts": list(required.values()), "technical_release_proofs_credited": 0}
+
+
+def free_rule_sandbox_insert_sql(export: dict) -> str:
+    """Build a bounded transaction for the existing, separately authenticated sandbox."""
+    series = export["series_id"]
+    events = export["receipts"]
+    if (export.get("project_id") != SANDBOX_PROJECT
+            or not re.fullmatch(r"PAPER-V3-CANARY-PRECAS-FREE-[A-F0-9]{12}", series)
+            or len(events) != 7 or len({item["event_id"] for item in events}) != 7):
+        raise ValueError("exact sandbox export required")
+    rows, clauses = [], []
+    for item in events:
+        raw = item["canonical_json"].encode("utf-8")
+        event = json.loads(raw)
+        eid, digest = item["event_id"], item["sha256"]
+        identity = "|".join(str(event[k]) for k in ("series_id", "candidate_id", "phase", "event_key"))
+        if (eid != hashlib.sha256(identity.encode()).hexdigest()
+                or digest != hashlib.sha256(raw).hexdigest()
+                or event["series_id"] != series or event["revision"] != REVISION
+                or event.get("orders") is not False or event.get("real_money_actions") is not False):
+            raise ValueError("event outside exact sandbox export")
+        payload = "convert_from(decode('" + raw.hex() + "','hex'),'UTF8')::jsonb"
+        rows.append(f"('{eid}','{digest}',{payload})")
+        clauses.append(f"(event_id = '{eid}' AND content_sha256 = '{digest}' AND payload = {payload})")
+    # Keep each original predicate for legacy events. The only exception is
+    # the exact test series, for which the new check pins all seven originals.
+    exact = "$events$" + " OR ".join(clauses) + "$events$"
+    values = ",\n".join(rows)
+    return f"""-- Execute ONLY through the authenticated Supabase project {SANDBOX_PROJECT}.
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
+LOCK TABLE public.v3_paper_event_receipts IN ACCESS EXCLUSIVE MODE;
+DO $scope$
+DECLARE c text; expression text;
+BEGIN
+  IF (SELECT count(*) FROM public.v3_paper_event_receipts) <> 16
+     OR EXISTS (SELECT 1 FROM public.v3_paper_event_receipts
+       WHERE series_id <> '{SERIES}' OR NOT fixture_only
+          OR evidence_class <> 'SYNTHETIC_MODEL_STUB_NOT_ORIGINAL_MARKET')
+     OR NOT EXISTS (SELECT 1 FROM public.internal_relay_credentials
+       WHERE relay_id = 'v3-paper-evidence-relay' AND NOT enabled)
+  THEN RAISE EXCEPTION 'original isolated sandbox state differs'; END IF;
+  EXECUTE format('ALTER TABLE public.v3_paper_event_receipts ADD CONSTRAINT pr685_free_rule_exact_events CHECK (series_id <> %L OR (%s))', '{series}', {exact});
+  FOREACH c IN ARRAY ARRAY[
+    'v3_paper_event_receipts_series_id_check', 'v3_paper_event_receipts_candidate_id_check',
+    'v3_paper_event_receipts_evidence_class_check', 'only_synthetic_buy_has_fill', 'expected_p4_outcome']
+  LOOP
+    SELECT pg_get_expr(conbin, conrelid) INTO STRICT expression
+      FROM pg_constraint WHERE conrelid = 'public.v3_paper_event_receipts'::regclass
+        AND conname = c AND contype = 'c' AND convalidated;
+    EXECUTE format('ALTER TABLE public.v3_paper_event_receipts DROP CONSTRAINT %I, ADD CONSTRAINT %I CHECK (CASE WHEN series_id = %L THEN evidence_class = %L ELSE (%s) END)',
+                   c, c, '{series}', 'ISOLATED_FREE_RULE_ORIGINALHOST_DRYRUN', expression);
+  END LOOP;
+END $scope$;
+INSERT INTO public.v3_paper_event_receipts
+  (event_id, series_id, revision, candidate_id, pair, phase, result,
+   source_known_at, payload, content_sha256, fixture_only, evidence_class)
+SELECT id, p->>'series_id', p->>'revision', p->>'candidate_id', p->>'pair', p->>'phase',
+       p->>'result', (p->>'known_at_utc')::timestamptz, p, digest, true,
+       'ISOLATED_FREE_RULE_ORIGINALHOST_DRYRUN'
+FROM (VALUES {values}) AS rows(id,digest,p);
+COMMIT;
+"""
+
+
+def compare_free_rule_sql_readback(export: dict, readback: list[dict]) -> None:
+    """Require exact full-series rows fetched separately via authenticated SQL."""
+    expected = {row["event_id"]: row for row in export["receipts"]}
+    actual = {row["event_id"]: row for row in readback}
+    if (export.get("project_id") != SANDBOX_PROJECT or len(expected) != 7
+            or len(readback) != len(actual) or actual.keys() != expected.keys()):
+        raise ValueError("independent sandbox row set differs")
+    for eid, row in actual.items():
+        original = expected[eid]
+        if (row.get("series_id") != export["series_id"]
+                or row.get("content_sha256") != original["sha256"]
+                or row.get("payload") != json.loads(original["canonical_json"])):
+            raise ValueError("independent sandbox original bytes or payload differs")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--witness-root",required=True,type=Path)
     parser.add_argument("--execute-isolated-cloud-sync",action="store_true")
+    parser.add_argument("--free-rule-commit")
+    parser.add_argument("--independent-sql-readback", type=Path)
+    parser.add_argument("--prepare-sandbox-insert-sql", action="store_true")
     args = parser.parse_args()
+    if args.free_rule_commit:
+        if args.execute_isolated_cloud_sync or (args.independent_sql_readback and args.prepare_sandbox_insert_sql):
+            parser.error("free-rule exports use separately authorized sandbox SQL only")
+        exported = free_rule_export(args.witness_root, args.free_rule_commit)
+        if args.independent_sql_readback:
+            compare_free_rule_sql_readback(
+                exported, json.loads(args.independent_sql_readback.read_bytes()))
+            print(json.dumps({"status": "EXACT_SANDBOX_ROWS_MATCH_LOCAL_EXPORT",
+                              "series_id": exported["series_id"],
+                              "technical_release_proofs_credited": 0}))
+        elif args.prepare_sandbox_insert_sql:
+            print(free_rule_sandbox_insert_sql(exported), end="")
+        else:
+            print(json.dumps(exported, sort_keys=True))
+        return 0
+    if args.independent_sql_readback or args.prepare_sandbox_insert_sql:
+        parser.error("sandbox readback requires the exact free-rule release commit")
     result = audit_offline_witness(args.witness_root)
     response = {
         "kind": "V3_PRECAS_SYNTHETIC_CLOUD_SANDBOX_BOUND_V1",

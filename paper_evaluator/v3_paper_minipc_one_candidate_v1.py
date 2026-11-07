@@ -37,6 +37,8 @@ REVISION="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"
 # Internal accidental-misuse barrier, NOT authority or a credential. Only
 # one OS-locked, Cloud-pinned caller may use a post-CAS production series.
 _RELEASED_MODEL_NATIVE_OWNER=object()
+_ISOLATED_FREE_RULE_WITNESS=object()
+ISOLATED_FREE_RULE_SERIES=re.compile(r"PAPER-V3-CANARY-PRECAS-FREE-[0-9A-F]{12}")
 MODEL_URL="https://api.openai.com/v1/responses"
 MAX_ONE_SHOT_HTTP=1
 APPROVED_MODEL="gpt-5.6-terra"
@@ -176,7 +178,10 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     if admit_staged_scanner_one_free_rule and (
             allow_model or approval is not None or model_key is not None
             or model_client is not None
-            or _released_model_capability is not _RELEASED_MODEL_NATIVE_OWNER
+            or not (_released_model_capability is _RELEASED_MODEL_NATIVE_OWNER
+                    or (_released_model_capability is _ISOLATED_FREE_RULE_WITNESS
+                        and ISOLATED_FREE_RULE_SERIES.fullmatch(series_id)
+                        and acquire is not None))
             or candidate.get("entry_origin")!="SCANNER"):
         raise ValueError("free Paper rule requires the existing released OS owner and zero model inputs")
     staged=(admit_staged_scanner_no_model or

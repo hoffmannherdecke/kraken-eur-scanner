@@ -194,3 +194,45 @@ resume and post-CAS rollback. Existing CI also runs the disposable PG17 atomic
 CAS fixture when this integration changes. These are not production host,
 independent Cloud-commit, loaded-code, six-E2E or operational no-paid-HTTP
 receipts. The latter remain part of the separately admitted physical release.
+
+### Pre-CAS free-rule originalhost receipts
+
+Use the existing originalhost offline witness tool with `python -I -B`,
+`--source`, `--stage`, `--expected-stage-sha`, `--free-rule-input` and
+`--expected-input-sha256`. The source is the clean protected-commit checkout,
+and the stage is its independently verified inactive copy on MINI-PC. A new
+Research/V3Paper/PRECAS-FREE-RULE-<commit12> directory is created once.
+Neither an active Cloud series nor a release approval is an input to this run.
+
+The independently reviewed input is the original archived Scanner and PIT
+bundle, kind `V3_PRECAS_PINNED_SCANNER_PIT_CASES_V1`, with the exact
+`release_commit` and `cases` named `POSITIVE_BUY_SCOUT` and `NEGATIVE_REJECT`.
+Each case contains `candidate`, its canonical one-candidate `preflight`,
+the point-in-time `entry_evidence`, `ticker`, `pair_metadata` and the original
+`decision_at_utc`. Retain the original source bytes and obtain the input
+digest independently of the replay. Keep the actual historical clocks and
+prices. Unit-test inputs do not qualify as original inputs. A different
+observed outcome aborts the run and leaves its journal for inspection.
+
+The same free rule, P4 validation, native OS lock and append-only Paper
+journal are used. This mode uses a commit-bound CANARY name, no network and
+no provider authorization. It produces one virtual BUY fill and zero REJECT
+fills only when the real rule arrives at those decisions. Its report records
+the runtime fingerprints and claims zero release proofs.
+
+Use the existing sandbox exporter from the clean source checkout with
+`python -B -m tools.v3_paper_precas_synthetic_cloud_sandbox_v1 --witness-root ... --free-rule-commit ...`.
+It exports only SOURCE_INPUT, MODEL_REQUEST/SKIP, P4 and the single BUY fill.
+After independent host and input provenance checks, the same command with
+`--prepare-sandbox-insert-sql` prepares one exact transaction. Execute it
+only through the authenticated isolated Supabase project, during a valid
+test window. It keeps the 16 old rows and their predicates, requires the
+historical relay credential to stay disabled and permits exactly the seven
+reviewed rows through an exception limited to their IDs and digests.
+
+Independently query the entire exact CANARY series in a separate read-only
+transaction for `series_id, event_id, content_sha256, payload`. Supply that
+array using `--independent-sql-readback`. The checker compares every row and
+rejects missing, extra, duplicate or altered rows. Keep the returned readback
+and the original host witness for the existing technical gate and independent
+owner. Neither the replay, export nor SQL comparison grants release authority.
