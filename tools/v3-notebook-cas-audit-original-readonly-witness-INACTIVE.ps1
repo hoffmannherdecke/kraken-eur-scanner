@@ -31,8 +31,9 @@ param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]
  [switch]$ExportSignedPrecommitCloudInventory,[string]$ReviewedNotebookCertificateSha256='',
  [switch]$PrecommitRestoreCustody,[string]$ReviewedOriginalFenceSha256='',
  [switch]$ForwardT0SignedCurrent,[switch]$PreparedAbortSignedCurrent,
- [switch]$IssuerPrestopSignedCurrent)
-if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
+ [switch]$IssuerPrestopSignedCurrent,[switch]$PaperReleaseSignedCurrent,
+ [string]$PaperPlanJson='', [string]$PaperReleaseId='')
+if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent+[int]$PaperReleaseSignedCurrent.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
 if($PrecommitRestoreCustody -and
    ($ExportSignedPrecommitCloudInventory -or
     $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
@@ -50,11 +51,19 @@ if($ForwardT0SignedCurrent -and $ReviewedNotebookCertificateSha256 -cnotmatch '^
  throw 'V3_FORWARD_T0_SIGNER_EXPLICIT_PIN_REQUIRED'
 }
 if($PreparedAbortSignedCurrent -and $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_PREPARED_ABORT_SIGNER_PIN_REQUIRED'}
+if($PaperReleaseSignedCurrent -and
+   ($ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $PaperReleaseId -cnotmatch '^V3-ONETIME-[a-f0-9]{32}$' -or -not $PaperPlanJson)){
+ throw 'V3_PAPER_RELEASE_READER_PINS_REQUIRED'
+}
+if(-not $PaperReleaseSignedCurrent -and ($PaperPlanJson -or $PaperReleaseId)){
+ throw 'V3_PAPER_RELEASE_READER_INPUT_OUTSIDE_MODE'
+}
 if($IssuerPrestopSignedCurrent -and $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_ISSUER_PRESTOP_SIGNER_PIN_REQUIRED'}
-if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and -not $ForwardT0SignedCurrent -and -not $PreparedAbortSignedCurrent -and -not $IssuerPrestopSignedCurrent -and $ReviewedNotebookCertificateSha256){
+if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and -not $ForwardT0SignedCurrent -and -not $PreparedAbortSignedCurrent -and -not $IssuerPrestopSignedCurrent -and -not $PaperReleaseSignedCurrent -and $ReviewedNotebookCertificateSha256){
  throw 'V3_SIGNED_READER_PIN_WITHOUT_EXPORT'
 }
-$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent)
+$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent -or $PaperReleaseSignedCurrent)
 if(-not $decisionReaderMode -and $CaFile){throw 'V3_READER_CA_FILE_DECISION_MODE_ONLY'}
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -128,6 +137,31 @@ COMMIT;
 )
 # The only new mode is a private, immutable current snapshot. No actor grants,
 # independent signer approval, historical coverage or Cloud write occurs.
+if($PaperReleaseSignedCurrent){
+ $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
+ if($checks.Count -ne 1){throw 'V3_PAPER_RELEASE_READER_AMBIGUOUS'}
+ $planFile=Get-Item -LiteralPath $PaperPlanJson -ErrorAction Stop
+ if($planFile.PSIsContainer -or $planFile.Length -lt 2 -or $planFile.Length -gt 65536){
+  throw 'V3_PAPER_RELEASE_READER_PLAN_SIZE_HOLD'
+ }
+ $planBytes=[IO.File]::ReadAllBytes($planFile.FullName)
+ $paperPlan=[Text.UTF8Encoding]::new($false,$true).GetString($planBytes)|ConvertFrom-Json -ErrorAction Stop
+ $epoch=$paperPlan.cas_epoch
+ if([string]$paperPlan.kind -cne 'V3_ONE_TIME_PAPER_RELEASE_PLAN_V1' -or
+    [string]$paperPlan.repo_sha -cnotmatch '^[a-f0-9]{40}$' -or
+    [string]$epoch.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$'){
+  throw 'V3_PAPER_RELEASE_READER_PLAN_IDENTITY_HOLD'
+ }
+ $hash=[Security.Cryptography.SHA256]::Create()
+ try{$planSha=([BitConverter]::ToString($hash.ComputeHash($planBytes))).Replace('-','').ToLowerInvariant()}
+ finally{$hash.Dispose()}
+ $checks[0].Sql=@"
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+SELECT v3_cas_audit.read_paper_release_epoch_v1('$($epoch.epoch_id)')::text;
+COMMIT;
+"@
+}
 if($ForwardT0SignedCurrent){
  $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
  if($checks.Count -ne 1){throw 'V3_FORWARD_T0_READER_AMBIGUOUS'}
@@ -428,6 +462,41 @@ foreach ($check in $checks) {
         $tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}
         $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=$tlsMode connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
+        if($PaperReleaseSignedCurrent){
+            if($LASTEXITCODE -ne 0){throw 'V3_PAPER_RELEASE_READER_QUERY_HOLD'}
+            $holdClass='PAPER_RELEASE_READER_PLAN_AND_EPOCH_PINS'
+            $wire=($output|Out-String).Trim()
+            if($wire.Length -lt 100 -or $wire.Length -gt 4096){throw 'V3_PAPER_RELEASE_READER_WIRE_HOLD'}
+            $row=$wire|ConvertFrom-Json -ErrorAction Stop
+            if([string]$row.kind -cne 'V3_PAPER_RELEASE_EPOCH_READER_V1' -or
+               [string]$row.release_commit -cne [string]$paperPlan.repo_sha -or
+               [string]$row.state -cnotin @('INSTALL_APPROVED_OLD_ONLY_NO_ATTEMPTS',
+                 'PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS','STOP_CONFIRMED_INTENT_COMMITTED',
+                 'SEALED_INTENT_EXECUTOR_INHIBITED','SEALED_INTENT_INHIBIT_STOP_CONFIRMED')){
+             throw 'V3_PAPER_RELEASE_READER_STATE_OR_COMMIT_HOLD'
+            }
+            foreach($field in @('epoch_id','source_sha256','fence_sha256','caller_acl_sha256')){
+             if([string]$row.$field -cne [string]$epoch.$field){throw 'V3_PAPER_RELEASE_READER_EPOCH_DRIFT'}
+            }
+            if($row.state -cin @('STOP_CONFIRMED_INTENT_COMMITTED','SEALED_INTENT_EXECUTOR_INHIBITED','SEALED_INTENT_INHIBIT_STOP_CONFIRMED')){
+             foreach($field in @('preinvoke_epoch_id','preinvoke_intent_id','preinvoke_request_sha256',
+              'preinvoke_source_sha256','preinvoke_fence_sha256','preinvoke_inhibit_receipt_sha256')){
+              if([string]$row.$field -cne [string]$paperPlan.cas_request.new_v3_config.$field){
+               throw 'V3_PAPER_RELEASE_READER_CAS_REQUEST_DRIFT'
+              }
+             }
+            }
+            $at=Read-V3ReaderUtcLiteral -RawJson $wire -Name 'observed_at_utc'
+            $age=([datetimeoffset]::UtcNow-$at.utc).TotalSeconds
+            if($age -lt 0 -or $age -gt 60){throw 'V3_PAPER_RELEASE_READER_STALE_HOLD'}
+            $row.observed_at_utc=$at.text
+            $row | Add-Member -NotePropertyName release_id -NotePropertyValue $PaperReleaseId
+            $row | Add-Member -NotePropertyName plan_sha256 -NotePropertyValue $planSha
+            $signed=Save-V3SignedNotebookReaderSnapshot ($row|ConvertTo-Json -Depth 6 -Compress) $ReviewedNotebookCertificateSha256
+            $signed | ConvertTo-Json -Compress
+            $passed++
+            continue
+        }
         if($IssuerPrestopSignedCurrent){
             if($LASTEXITCODE -ne 0){throw 'V3_ISSUER_PRESTOP_READER_SQL_HOLD'}
             $holdClass='ISSUER_PRESTOP_READER_JSON_AND_PINS'
@@ -843,7 +912,7 @@ foreach ($check in $checks) {
         if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
     }
 }
-if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent){
+if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent -or $PaperReleaseSignedCurrent){
  if($passed -ne 1){exit 1}
  return
 }
