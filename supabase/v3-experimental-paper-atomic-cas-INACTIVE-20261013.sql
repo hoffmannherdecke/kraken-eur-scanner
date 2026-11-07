@@ -53,7 +53,8 @@ begin
   -- This is privileged DBA administration, NOT an independently authorized
   -- CAS service actor. It cannot immediately SET ROLE or inherit executor
   -- rights. This cannot defend against deliberate privileged DBA alteration.
-  -- Deny ALL other grant relationships, LOGIN, BYPASSRLS and role membership.
+  -- Accept the existing dedicated audit actors with SET-only membership in
+  -- their own audit role. The executor still has no service member here.
   -- No password, Cloud credential, service membership or CAS audit is issued.
   if (
     select count(*) from pg_catalog.pg_roles r
@@ -68,15 +69,25 @@ begin
         left join pg_catalog.pg_roles a on a.oid=m.member
         where (m.roleid=r.oid or m.member=r.oid)
           and not (
-            m.roleid=r.oid and a.rolname='postgres'
-            and m.admin_option and not m.set_option
-            and not m.inherit_option
+            m.roleid=r.oid and (
+              (a.rolname='postgres'
+               and m.admin_option and not m.set_option and not m.inherit_option)
+              or (
+                (r.rolname, a.rolname) in (
+                  ('v3_cas_audit_reader', 'v3_cas_audit_reader_actor'),
+                  ('v3_cas_audit_writer', 'v3_cas_audit_writer_actor')
+                )
+                and m.set_option and not m.inherit_option and not m.admin_option
+                and not a.rolsuper and not a.rolbypassrls and not a.rolinherit
+                and not a.rolcreaterole and not a.rolcreatedb and not a.rolreplication
+              )
+            )
           )
       )
       and (
         select count(*) from pg_catalog.pg_auth_members m
         where m.roleid=r.oid
-      ) <= 1
+      ) <= case when r.rolname='v3_cas_executor' then 1 else 2 end
   ) <> 3 then
     raise exception 'V3_CAS_EXECUTOR_OR_AUDIT_ROLE_SCOPE_UNSAFE';
   end if;
@@ -499,9 +510,9 @@ revoke all on function public.rotate_v2r4_to_v3_experimental_paper(
 
   $v3_cas_revoke_locked$;
 
-  -- Only the existing distinct NOLOGIN executor gets EXECUTE. Since it has
-  -- ZERO role members and cannot log in, this GRANT alone cannot dispatch
-  -- CAS. Do NOT provision a LOGIN or membership here. A later restricted
+  -- Only the existing distinct NOLOGIN executor gets EXECUTE. With no
+  -- service member and no LOGIN, this GRANT alone cannot dispatch CAS.
+  -- Do NOT provision a LOGIN or membership here. A restricted
   -- independent caller and cryptographically bound pre-CAS intent/ACK need
   -- the original Issue #99 production security and source-origin approval.
   execute $v3_cas_executor_only$
