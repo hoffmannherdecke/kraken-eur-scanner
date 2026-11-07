@@ -125,6 +125,7 @@ try{
  function Assert-V3PaperFence {return @{phase='ARMED'}}
  function Set-V3PaperFence {$script:effects+='fence'}
  $script:effects=@()
+ [IO.File]::WriteAllBytes((Join-Path $tmp 'fence.json'),[byte[]](123,125))
  $res=Invoke-V3OneTimePaperRelease -Mode PaperStop @common
  Need ($res.kind -ceq 'V3_PAPER_STOP_QUIESCED_LOCAL_ACK') 'STOP_POSITIVE_MISSING'
  Need (($script:effects -join ',') -ceq 'disable,disable,stop,stop,fence') 'STOP_SCOPE_OR_ORDER'
