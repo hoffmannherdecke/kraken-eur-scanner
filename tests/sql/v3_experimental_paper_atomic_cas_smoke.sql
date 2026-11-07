@@ -169,7 +169,11 @@ values
 -- from the guarded Stage4 source. This fixture creates no production grants.
 \if :{?v3_postcas_reader_sql}
 alter table v3_cas_audit.epoch_v1 add column paper_release_commit text;
-create table v3_cas_audit.prepared_fence_abort_v1(epoch_id text primary key);
+create table v3_cas_audit.prepared_fence_abort_v1(
+ epoch_id text primary key, state text not null, source_sha256 text not null,
+ prepared_fence_sha256 text not null, caller_acl_sha256 text not null,
+ issuer_actor text not null
+);
 create role v3_cas_executor_actor nologin noinherit nobypassrls connection limit 0;
 grant v3_cas_executor to v3_cas_executor_actor with admin false, set true, inherit false;
 update v3_cas_audit.epoch_v1 set paper_release_commit=repeat('d',40);

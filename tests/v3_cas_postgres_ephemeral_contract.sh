@@ -1408,7 +1408,7 @@ pg -f - <"$transition_tmp/followup.sql" >/dev/null
 if pg -f - <"$transition_tmp/followup.sql" >/dev/null 2>"$transition_tmp/followup-replay.err"; then
   echo 'FAIL_FOLLOWUP_REPLAY' >&2; exit 1
 fi
-grep -Fq V3_PAPER_FOLLOWUP_ORIGINAL_STATE_HOLD "$transition_tmp/followup-replay.err"
+grep -Fq V3_PAPER_FOLLOWUP_TERMINAL_HISTORY_HOLD "$transition_tmp/followup-replay.err"
 test "$(pg -Atc "select (count(*)=2 and count(paper_release_commit)=1)::text from v3_cas_audit.epoch_v1")" = true
 test "$(pg -Atc "select (count(*)=1 and min(receipt_sha256)=repeat('d',64))::text from v3_cas_audit.prepared_fence_abort_v1")" = true
 test "$(pg -Atc "select not pg_has_role('postgres','v3_cas_audit_table_owner','SET')")" = t
