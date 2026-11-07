@@ -2,7 +2,7 @@
 # Default is local inventory only. No implicit installation, STOP, CAS or Paper.
 [CmdletBinding()]
 param(
- [ValidateSet('Inventory','PaperInventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')][string]$Mode='Inventory',
+ [ValidateSet('Inventory','PaperInventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','PaperOpenEpoch','PaperSealEpoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')][string]$Mode='Inventory',
  [string]$PackageRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$ApprovalJson='', [string]$ApprovalCms='', [string]$ExpectedReleaseCommit='',
  [string]$AuthorityAdmissionJson='', [string]$ExpectedAuthorityAdmissionSha256='',
@@ -131,7 +131,7 @@ if($Mode -eq 'PaperInventory'){
  return
 }
 
-if($Mode -in @('PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')){
+if($Mode -in @('PaperOpenEpoch','PaperSealEpoch','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperResume')){
  . (Join-Path $PSScriptRoot 'v3-one-time-paper-release.ps1')
  Invoke-V3OneTimePaperRelease -Mode $Mode -PackageRoot $PackageRoot -ApprovalJson $ApprovalJson -ApprovalCms $ApprovalCms `
   -AuthorityAdmissionJson $AuthorityAdmissionJson -ExpectedAuthorityAdmissionSha256 $ExpectedAuthorityAdmissionSha256 `
