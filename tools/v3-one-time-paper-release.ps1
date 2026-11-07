@@ -353,7 +353,10 @@ function Invoke-V3OneTimePaperRelease {
   }
   if($Mode -eq 'PaperOpenEpoch'){
    if($null -eq $PostgresPassword){throw 'V3_PAPER_EXISTING_ADMIN_CREDENTIAL_REQUIRED'}
-   if([IO.File]::Exists($ctx.fence) -or [IO.File]::Exists($casLatch)){throw 'V3_PAPER_OPEN_EPOCH_EXISTING_FENCE_OR_ATTEMPT_HOLD'}
+   if([IO.File]::Exists($ctx.fence) -or [IO.File]::Exists($casLatch) -or
+      [string](Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\').State -cne 'Disabled'){
+    throw 'V3_PAPER_OPEN_EPOCH_EXISTING_FENCE_ATTEMPT_OR_WRITER_HOLD'
+   }
    $sql=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes (Join-Path $PackageRoot 'supabase/v3-cas-audit-stage4-followup-release.sql') 1048576))
    $settings=@{
     scope='CLOUD_STAGE4_EPOCH_OPEN';commit=$ctx.commit;approval_sha256=$auth.approval_sha256
@@ -555,6 +558,8 @@ function Invoke-V3OneTimePaperRelease {
    if([string]$receipt.state -cne 'PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS'){
     throw 'V3_PAPER_ROLLBACK_INDEPENDENT_TERMINAL_ABORT_REQUIRED'
    }
+   $rollbackEpoch=Assert-V3PaperEpochPlan $ctx $inventory
+   Assert-V3PaperEpochReceipt $receipt $rollbackEpoch
    Write-V3PaperReceipt ($base+'.rollback.attempted.json') @{approval_sha256=$auth.approval_sha256}
    # Archive exact fence before the two original IgnoreNew tasks can restart.
    # All task XMLs have just been checked against their original backups.
