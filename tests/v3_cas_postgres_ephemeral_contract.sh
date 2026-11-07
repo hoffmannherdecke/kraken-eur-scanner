@@ -1377,6 +1377,7 @@ echo 'V3_PG17_PREPARED_ABORT_ISSUER_ZERO_INTENT_REPLAY_UNKNOWN_NEGATIVE_PASS'
 
 # Start the next release from the actual terminal-abort state above. Preserve
 # the historical rows and use the same PG17 non-superuser postgres identity.
+pg_root -c 'ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;' >/dev/null
 followup_epoch="V3CAS-AUDIT-88888888888888888888888888888888"
 followup_commit="$(printf '7%.0s' {1..40})"
 followup_source="$(printf '8%.0s' {1..64})"
