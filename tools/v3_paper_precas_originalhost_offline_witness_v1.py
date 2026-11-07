@@ -418,7 +418,50 @@ def run_offline_cases(root: Path, series_id: str, *, stage: Path | None = None,
 FREE_CASES = {"POSITIVE_BUY_SCOUT": ("BUY_SCOUT", 1),
               "NEGATIVE_REJECT": ("REJECT", 0)}
 FREE_KIND = "V3_PRECAS_ORIGINALHOST_FREE_RULE_WITNESS_V1"
+CONTROLLED_INPUT_KIND = "V3_PRECAS_CONTROLLED_BUY_REAL_REJECT_V1"
 FREE_PHASES = {"SOURCE_INPUT", "MODEL_REQUEST", "P4_VALIDATION", "PAPER_FILL"}
+
+
+def _controlled_buy_case(series: str) -> dict:
+    """Pinned regression inputs. The production rule, P4 and ledger decide the outcome."""
+    from paper_evaluator.v3_paper_minipc_one_candidate_v1 import CONTROLLED_BUY_CANDIDATE_ID
+    from paper_evaluator.v3_paper_positive_source_entry_v1 import STREAMS
+    from paper_evaluator.v3_paper_single_writer_preflight_v1 import plan_writer_preflight
+    from tests.test_rule_based_paper_decision_v1 import fixture, iso
+
+    candidate, ticker, context, _, _ = fixture()
+    pair = "TST/EUR"
+    candidate.update(candidate_id=CONTROLLED_BUY_CANDIDATE_ID, pair=pair,
+                     altname="TSTEUR", kind="CANONICAL_CANDIDATE_HANDOFF_V1",
+                     entry_origin="SCANNER")
+    snapshot = {
+        "entry_evidence": dict(context["candidate_entry_evidence"], pair=pair),
+        "ticker": dict(ticker, pair=pair, observed_at_utc=iso(-2)),
+        "pair_metadata": dict(context["kraken_pair_metadata"], pair=pair, altname="TSTEUR",
+                              spot=True, quote="EUR", minimum_order_passed=True,
+                              observed_at_utc=iso(-3)),
+    }
+    preflight = plan_writer_preflight(
+        scanner_events=[candidate], owner_event_packets=[], h10_context=None,
+        h11_market_capture=None, h5_macro_calendar=None,
+        authenticated_owner_ids={name: [] for name in STREAMS}, journal_receipts=[],
+        known_pairs={pair: snapshot["pair_metadata"]}, market_observations={pair: snapshot},
+        series_id=series, decision_at_utc=iso(0))
+    return dict(snapshot, candidate=candidate, preflight=preflight, decision_at_utc=iso(0))
+
+
+def _validate_captured_reject(case: dict, original: dict) -> None:
+    from paper_evaluator.evaluate import validate_candidate
+    from paper_evaluator.v3_paper_minipc_one_candidate_v1 import CONTROLLED_BUY_CANDIDATE_ID
+
+    raw = original["raw_scanner_handoff"].encode("utf-8")
+    candidate = case["candidate"]
+    if (len(raw) > 65536 or hashlib.sha256(raw).hexdigest() != original["sha256"]
+            or not HEX40.fullmatch(original["capture_commit"])
+            or candidate.get("candidate_id") == CONTROLLED_BUY_CANDIDATE_ID
+            or dict(json.loads(raw.decode("utf-8-sig")), entry_origin="SCANNER") != candidate):
+        raise ValueError("independent REJECT Scanner original does not match the input")
+    validate_candidate(candidate, candidate["candidate_id"] + ".json")
 
 
 def free_rule_cases(root: Path, series: str, inputs: dict) -> list[dict]:
@@ -429,15 +472,23 @@ def free_rule_cases(root: Path, series: str, inputs: dict) -> list[dict]:
     from paper_evaluator.v3_paper_minipc_selective_tick_v1 import _one_canary_owner
     from paper_evaluator.v3_paper_intake_receipt_stage_v1 import prepare_receipts
     from paper_evaluator.v3_experimental_paper_journal_v1 import store_receipt_explicitly
-    from tools.v3_experimental_paper_technical_gate import _free_rule_receipt_error
+    from tools.v3_experimental_paper_technical_gate import (
+        CONTROLLED_BUY_INPUT, REAL_SCANNER_INPUT, _free_rule_receipt_error,
+    )
 
+    controlled = inputs.get("kind") == CONTROLLED_INPUT_KIND
+    expected_inputs = {"NEGATIVE_REJECT"} if controlled else FREE_CASES.keys()
     if (not ISOLATED_FREE_RULE_SERIES.fullmatch(series)
-            or inputs.get("kind") != "V3_PRECAS_PINNED_SCANNER_PIT_CASES_V1"
+            or inputs.get("kind") not in (CONTROLLED_INPUT_KIND, "V3_PRECAS_PINNED_SCANNER_PIT_CASES_V1")
             or not isinstance(inputs.get("cases"), dict)
-            or set(inputs["cases"]) != FREE_CASES.keys()):
-        raise ValueError("exact isolated two-case Scanner/PIT bundle required")
+            or set(inputs["cases"]) != expected_inputs):
+        raise ValueError("exact isolated free-rule proof bundle required")
+    input_cases = inputs["cases"]
+    if controlled:
+        _validate_captured_reject(input_cases["NEGATIVE_REJECT"], inputs["negative_original"])
+        input_cases = {"POSITIVE_BUY_SCOUT": _controlled_buy_case(series), **input_cases}
     prepared = []
-    for label, case in inputs["cases"].items():
+    for label, case in input_cases.items():
         candidate = case["candidate"]
         snapshot = tuple(case[k] for k in ("entry_evidence", "ticker", "pair_metadata"))
         if (candidate.get("kind") != "CANONICAL_CANDIDATE_HANDOFF_V1"
@@ -503,6 +554,8 @@ def free_rule_cases(root: Path, series: str, inputs: dict) -> list[dict]:
                 "receipts": list(originals.values()),
                 **_case_economic_proof(journal, series, cid, p4, fill),
             }
+            if controlled:
+                case["input_origin"] = CONTROLLED_BUY_INPUT if fill_count else REAL_SCANNER_INPUT
             error = _free_rule_receipt_error(case)
             if error:
                 raise ValueError(error)

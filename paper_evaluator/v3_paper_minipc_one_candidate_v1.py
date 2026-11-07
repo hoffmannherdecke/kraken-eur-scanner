@@ -39,6 +39,7 @@ REVISION="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"
 _RELEASED_MODEL_NATIVE_OWNER=object()
 _ISOLATED_FREE_RULE_WITNESS=object()
 ISOLATED_FREE_RULE_SERIES=re.compile(r"PAPER-V3-CANARY-PRECAS-FREE-[0-9A-F]{12}")
+CONTROLLED_BUY_CANDIDATE_ID="V3-TECHNICAL-BUY-FIXTURE-V1"
 MODEL_URL="https://api.openai.com/v1/responses"
 MAX_ONE_SHOT_HTTP=1
 APPROVED_MODEL="gpt-5.6-terra"
@@ -129,6 +130,11 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                   model_client:Callable[[str,str],tuple[dict,dict]]|None=None,
                   clock:Callable[[],str]=now,
                   _released_model_capability:object=None)->dict:
+    if candidate.get("candidate_id") == CONTROLLED_BUY_CANDIDATE_ID and not (
+            admit_staged_scanner_one_free_rule
+            and _released_model_capability is _ISOLATED_FREE_RULE_WITNESS
+            and ISOLATED_FREE_RULE_SERIES.fullmatch(series_id)):
+        raise ValueError("controlled BUY fixture requires the isolated technical witness")
     if not series_id.startswith("PAPER-V3-") or candidate.get("pair","").endswith("/EUR") is False:
         raise ValueError("isolated V3 EUR PAPER series only")
     if (re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id)

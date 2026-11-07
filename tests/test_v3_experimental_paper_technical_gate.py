@@ -386,6 +386,28 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
             remote_cases[0]["rule_request_sha256"]="0"*64
             self.assertTrue(any("request/PIT digest mismatch" in e for e in validate()))
 
+            remote_cases[0]["rule_request_sha256"]=case["rule_request_sha256"]
+            from paper_evaluator.v3_paper_minipc_one_candidate_v1 import CONTROLLED_BUY_CANDIDATE_ID
+            for host_case, remote in zip(cases, remote_cases, strict=True):
+                host_case["series_id"]=remote["series_id"]="PAPER-V3-CANARY-PRECAS-FREE-0123456789AB"
+                if host_case is case:
+                    host_case["candidate_id"]=remote["candidate_id"]=CONTROLLED_BUY_CANDIDATE_ID
+                for key in ("rule_request","rule_p4"):
+                    host_case[key].update(series_id=host_case["series_id"],
+                                          candidate_id=host_case["candidate_id"])
+                for key, digest_key in (("rule_request","rule_request_sha256"),
+                                        ("rule_p4","p4_record_sha256")):
+                    host_case[digest_key]=remote[digest_key]=hashlib.sha256(
+                        canonical(host_case[key])+b"\n").hexdigest()
+            self.assertTrue(any("controlled BUY fixture" in e for e in validate()))
+            case["input_origin"]="CONTROLLED_TECHNICAL_BUY_V1"
+            remote_cases[0]["input_origin"]=case["input_origin"]
+            self.assertTrue(any("real Scanner/PIT REJECT" in e for e in validate()))
+            cases[1]["input_origin"]="ORIGINAL_SCANNER_PIT_V1"
+            self.assertTrue(any("input provenance mismatch" in e for e in validate()))
+            remote_cases[1]["input_origin"]=cases[1]["input_origin"]
+            self.assertEqual(validate(),[])
+
     def test_missing_one_real_proof_wrong_hash_budget_approval_always_blocks(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)

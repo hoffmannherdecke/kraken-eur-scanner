@@ -174,6 +174,7 @@ def free_rule_export(root: Path, commit: str) -> dict:
                 raise ValueError("duplicate case phase")
             rows[key] = (item, receipt)
     required = {}
+    input_origins = {}
     labels, candidates = set(), set()
     for case in witness["cases"]:
         label, cid = case["case"], case["candidate_id"]
@@ -184,6 +185,8 @@ def free_rule_export(root: Path, commit: str) -> dict:
             raise ValueError("invalid free-rule case or repeated candidate")
         labels.add(label)
         candidates.add(cid)
+        if case.get("input_origin") is not None:
+            input_origins[cid] = case["input_origin"]
         digests = {"SOURCE_INPUT": case["original_pit_sha256"],
                    "MODEL_REQUEST": case["rule_request_sha256"],
                    "P4_VALIDATION": case["p4_record_sha256"]}
@@ -202,7 +205,8 @@ def free_rule_export(root: Path, commit: str) -> dict:
             "release_commit": commit, "series_id": series,
             "code_fingerprint_sha256": identity["code_fingerprint_sha256"],
             "strategy_fingerprint_sha256": identity["strategy_fingerprint_sha256"],
-            "receipts": list(required.values()), "technical_release_proofs_credited": 0}
+            "receipts": list(required.values()), "input_origins_by_candidate": input_origins,
+            "technical_release_proofs_credited": 0}
 
 
 def free_rule_sandbox_insert_sql(export: dict) -> str:
@@ -301,6 +305,7 @@ def main() -> int:
                 exported, json.loads(args.independent_sql_readback.read_bytes()))
             print(json.dumps({"status": "EXACT_SANDBOX_ROWS_MATCH_LOCAL_EXPORT",
                               "series_id": exported["series_id"],
+                              "input_origins_by_candidate": exported["input_origins_by_candidate"],
                               "technical_release_proofs_credited": 0}))
         elif args.prepare_sandbox_insert_sql:
             print(free_rule_sandbox_insert_sql(exported), end="")
