@@ -95,7 +95,8 @@ try{
  function Assert-V3PaperRuntimeSpec {}
  function Open-V3PaperIntakePair {return $null}
  function Assert-V3PaperTaskPins {}
- function Assert-V3PaperEpochPlan {return @{fence_sha256=(Get-V3ReleaseSha256 ([byte[]](123,125)))}}
+ function Assert-V3PaperEpochPlan {return @{epoch_id='V3CAS-AUDIT-'+('9'*32);source_sha256=('2'*64);
+  caller_acl_sha256=('3'*64);fence_sha256=(Get-V3ReleaseSha256 ([byte[]](123,125)))}}
  function Assert-V3PaperEpochReceipt {}
  function Assert-V3PaperProcesses {}
  function Assert-V3PaperFence {return @{phase='QUIESCED'}}
@@ -110,6 +111,19 @@ try{
  $script:plan=@{kind='V3_ONE_TIME_PAPER_RELEASE_PLAN_V1';repo_sha=('a'*40);series_id='PAPER-V3-20261106T120000Z';bundle_sha256=('b'*64);strategy_sha256=('c'*64)}
  $script:receipt=@{state='UNKNOWN'};$script:effects=@()
  $common=@{PackageRoot=$root;ExpectedReleaseCommit=('a'*40)}
+ $oldPlan=$script:plan
+ $script:plan=[pscustomobject]($script:plan.Clone())
+ $script:plan | Add-Member NoteProperty supersession ([pscustomobject]@{
+  prior_epoch_id='V3CAS-AUDIT-'+('8'*32);prior_commit=('a'*40);prior_terminal_sha256=('1'*64);
+  installed_cas_sha256=('2'*64);installed_issuer_sha256=('3'*64);installed_reader_sha256=('4'*64)})
+ $script:plan.series_id='PAPER-V3-'+[datetimeoffset]::UtcNow.AddMinutes(-11).ToString("yyyyMMdd'T'HHmmss'Z'")
+ $openPw=ConvertTo-SecureString 'OFFLINE-NOT-A-CREDENTIAL' -AsPlainText -Force
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperOpenEpoch -PostgresPassword $openPw @common} 'SUCCESSOR_SERIES_OUTSIDE_CAS_WINDOW'
+ Need (@(Get-ChildItem -LiteralPath $tmp -Filter 'run*.epoch.attempted.json').Count -eq 0) 'EXPIRED_EPOCH_CREATED_DISPATCH_LATCH'
+ $script:plan.series_id='PAPER-V3-'+[datetimeoffset]::UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'")
+ Need ((Get-V3PaperSupersessionSettings $script:plan).prior_epoch_id -ceq $script:plan.supersession.prior_epoch_id) 'FRESH_SIGNED_EPOCH_NOT_PREPARABLE'
+ $openPw.Dispose()
+ $script:plan=$oldPlan
  $res=Invoke-V3OneTimePaperRelease -Mode PaperResume @common
  Need ($res.automatic_retry -eq $false -and -not $res.cas_attempted) 'RESUME_REDISPATCHED'
  Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'COMMITTED_INDEPENDENT_READER_REQUIRED'
@@ -126,6 +140,10 @@ try{
  function Set-V3PaperFence {$script:effects+='fence'}
  $script:effects=@()
  [IO.File]::WriteAllBytes((Join-Path $tmp 'fence.json'),[byte[]](123,125))
+ $script:plan.series_id='PAPER-V3-'+[datetimeoffset]::UtcNow.AddMinutes(-11).ToString("yyyyMMdd'T'HHmmss'Z'")
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperStop @common} 'SUCCESSOR_SERIES_OUTSIDE_CAS_WINDOW'
+ Need ($script:effects.Count -eq 0 -and -not [IO.File]::Exists((Join-Path $tmp 'run.stop.attempted.json'))) 'EXPIRED_SERIES_STOP_MUTATED_TASKS'
+ $script:plan.series_id='PAPER-V3-'+[datetimeoffset]::UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'")
  $res=Invoke-V3OneTimePaperRelease -Mode PaperStop @common
  Need ($res.kind -ceq 'V3_PAPER_STOP_QUIESCED_LOCAL_ACK') 'STOP_POSITIVE_MISSING'
  Need (($script:effects -join ',') -ceq 'disable,disable,stop,stop,fence') 'STOP_SCOPE_OR_ORDER'
@@ -157,18 +175,51 @@ try{
  Need ($script:sqlCalls.Count -eq 2) 'CAS_REPLAY_DISPATCHED'
  $script:receipt=@{state='CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE';successor_series_id=$script:plan.series_id;
   repo_sha=$script:plan.repo_sha;bundle_sha256=$script:plan.bundle_sha256;strategy_sha256=$script:plan.strategy_sha256}
+ foreach($key in $request.new_v3_config.PSObject.Properties.Name){$script:receipt[$key]=$request.new_v3_config.$key}
+ $nativeLauncher=Join-Path $root 'paper_evaluator\v3_paper_minipc_native_launcher_v1.py'
+ $script:nativeArguments=(Get-V3PaperNativeActionPrefix $root)+' --runtime-spec "pinned.json"'
+ Need ($script:nativeArguments.StartsWith('-I -B ',[StringComparison]::Ordinal)) 'PREPARED_NATIVE_PREFIX_DRIFT'
  function Get-ScheduledTask {
   param($TaskName)
-  return @{State='Disabled';Actions=@(@{Arguments=' -I -B "pinned.py" --released-one-shot'})}
+  return @{State='Disabled';Actions=@(@{Arguments=$script:nativeArguments})}
  }
  function Enable-ScheduledTask {$script:effects+='enable'}
  function Start-ScheduledTask {$script:effects+='start'}
  $script:effects=@()
+ $reviewedArguments=$script:nativeArguments
+ foreach($drift in @((' '+$reviewedArguments),
+                    ($reviewedArguments -replace '--released-one-shot','--released-one-shot-extra'),
+                    ($reviewedArguments.Replace($nativeLauncher,(Join-Path $root 'other.py'))))){
+  $script:nativeArguments=$drift
+  Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'REVIEWED_DISABLED_NATIVE_ACTION_REQUIRED'
+ }
+ Need ($script:effects.Count -eq 0) 'DRIFTED_ACTIVATION_MUTATED_TASKS'
+ $script:nativeArguments=$reviewedArguments
+ $script:receipt.preinvoke_request_sha256='f'*64
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'ACTIVATION_REQUEST_DRIFT'
+ Need ($script:effects.Count -eq 0) 'DRIFTED_CAS_RECEIPT_MUTATED_TASKS'
+ $script:receipt.preinvoke_request_sha256=$request.new_v3_config.preinvoke_request_sha256
  $res=Invoke-V3OneTimePaperRelease -Mode PaperActivate @common
  Need (($script:effects -join ',') -ceq 'fence,enable,start') 'ACTIVATION_ORDER'
  Need ($res.paper_operational_claimed -eq $false) 'FALSE_RUNTIME_ACK'
  Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'already exists'
  Need ($script:effects.Count -eq 3) 'DUPLICATE_ACTIVATION'
  $pw.Dispose()
+ # Separate disposable recovery fixture for expiry after Prepare but before STOP.
+ Remove-Item (Join-Path $tmp 'run.stop.attempted.json'),(Join-Path $tmp 'run.cas.attempted.json')
+ function Assert-V3PaperFence {return @{phase='ARMED'}}
+ function Get-ScheduledTask {
+  param($TaskName)
+  if($TaskName -ceq 'CryptoMiniPC-V3PaperSingleWriter'){return @{State='Disabled'}}
+  return @{State='Running'}
+ }
+ $script:effects=@()
+ $script:receipt=@{state='UNKNOWN'}
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperRollback @common} 'TERMINAL_ABORT_REQUIRED'
+ Need ([IO.File]::Exists((Join-Path $tmp 'fence.json'))) 'PRESTOP_FENCE_ARCHIVED_WITHOUT_TERMINAL_RECEIPT'
+ $script:receipt.state='PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS'
+ $res=Invoke-V3OneTimePaperRelease -Mode PaperRollback @common
+ Need ($res.kind -ceq 'V3_PAPER_PRESTOP_EXPIRED_FENCE_ARCHIVED' -and $script:effects.Count -eq 0 -and
+  [IO.File]::Exists((Join-Path $tmp 'fence.json.test.rollback'))) 'PRESTOP_ARCHIVE_REARMED_OR_LOST_FENCE'
  Write-Output 'V3_PAPER_RELEASE_OFFLINE_CMS_SQL_LATCH_RESUME_ROLLBACK_PASS'
 }finally{Remove-Item $tmp -Recurse -Force;$cert.Dispose();$rsa.Dispose()}

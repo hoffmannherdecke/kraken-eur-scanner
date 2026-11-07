@@ -72,6 +72,32 @@ fence, ACL and independently reviewed receipt hash. The same Notebook Reader
 can then attest the terminal state even with the guarded RPC installed. Only
 a separately authorized Originalhost `PaperRollback` may rearm V2R4.
 
+### Expired binding before STOP
+
+Preserve the installed CAS and both previous epoch and receipt bytes. The existing
+independent issuer records the terminal receipt for the unstarted binding. If
+Prepare already armed the fence, a separately signed PaperRollback may archive
+the exact marker with both original intakes still running and the V3 task
+disabled. After a STOP attempt use the existing quiesced recovery contract.
+
+Only in the coordinated execution window, issue a fresh UTC series ID and
+corresponding fence. Under the existing Stage4 scope the new plan includes
+`supersession` with `prior_epoch_id`, `prior_commit`, `prior_terminal_sha256`,
+`installed_cas_sha256`, `installed_issuer_sha256`, and `installed_reader_sha256`.
+The definition hashes are SHA-256 of the exact UTF-8 `pg_get_functiondef`
+results observed before signing. The transaction preserves the installed CAS,
+opens the successor only over terminal history, and updates the existing
+restricted issuer and Reader in place. The Notebook then independently issues
+the new inhibit. A fresh reader receipt permits Prepare without reinstalling CAS.
+
+Stage code, admission, credentials and offline proofs before selecting the
+timestamp. Start the independent approvals only inside the coordinated window.
+An expired plan before dispatch leaves no latch. An ambiguous dispatch must be
+resolved by independent readback before signing a new epoch. A committed but
+unused epoch needs a fresh terminal receipt before another can open. Prepare and
+STOP reject expired series before their first mutation. After STOP, preserve
+QUIESCED and follow the existing recovery path if the window expires.
+
 The signed plan includes `cas_epoch` with `epoch_id`, `source_sha256`,
 `fence_sha256` and `caller_acl_sha256`. The source hash is the reviewed CAS
 artifact hash. The fence hash is SHA256 of the UTF-8 no-BOM compact JSON bytes

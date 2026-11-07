@@ -473,13 +473,21 @@ foreach ($check in $checks) {
                [string]$row.state -cnotin @('INSTALL_APPROVED_OLD_ONLY_NO_ATTEMPTS',
                  'PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS','STOP_CONFIRMED_INTENT_COMMITTED',
                  'SEALED_INTENT_EXECUTOR_INHIBITED','SEALED_INTENT_INHIBIT_STOP_CONFIRMED',
-                 'PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS')){
+                 'PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS','CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE')){
              throw 'V3_PAPER_RELEASE_READER_STATE_OR_COMMIT_HOLD'
             }
             foreach($field in @('epoch_id','source_sha256','fence_sha256','caller_acl_sha256')){
              if([string]$row.$field -cne [string]$epoch.$field){throw 'V3_PAPER_RELEASE_READER_EPOCH_DRIFT'}
             }
-            if($row.state -cin @('STOP_CONFIRMED_INTENT_COMMITTED','SEALED_INTENT_EXECUTOR_INHIBITED','SEALED_INTENT_INHIBIT_STOP_CONFIRMED')){
+            if($row.state -ceq 'CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE' -and
+               ([string]$row.successor_series_id -cne [string]$paperPlan.series_id -or
+                [string]$row.repo_sha -cne [string]$paperPlan.repo_sha -or
+                [string]$row.bundle_sha256 -cne [string]$paperPlan.bundle_sha256 -or
+                [string]$row.strategy_sha256 -cne [string]$paperPlan.strategy_sha256)){
+             throw 'V3_PAPER_RELEASE_READER_SUCCESSOR_DRIFT'
+            }
+            if($row.state -cin @('STOP_CONFIRMED_INTENT_COMMITTED','SEALED_INTENT_EXECUTOR_INHIBITED',
+               'SEALED_INTENT_INHIBIT_STOP_CONFIRMED','CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE')){
              foreach($field in @('preinvoke_epoch_id','preinvoke_intent_id','preinvoke_request_sha256',
               'preinvoke_source_sha256','preinvoke_fence_sha256','preinvoke_inhibit_receipt_sha256')){
               if([string]$row.$field -cne [string]$paperPlan.cas_request.new_v3_config.$field){
