@@ -27,6 +27,7 @@ BEGIN
         JOIN v3_cas_audit.prepared_fence_abort_v1 a ON a.epoch_id=e.epoch_id
         WHERE e.predecessor_series_id='PAPER-V2R4-20261009T110135Z'
           AND e.expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
+          AND a.state='ABORT_RECORDED_NOT_RELEASED'
           AND e.next_ordinal=1
           AND e.epoch_id<>current_setting('v3_followup.epoch_id')
           AND e.source_sha256<>current_setting('v3_followup.source_sha256')
@@ -47,7 +48,12 @@ BEGIN
           AND t.tgenabled='O'
           AND t.tgfoid='v3_cas_audit.reject_aborted_epoch_dispatch_v1()'::regprocedure) <> 2
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_ORIGINAL_STATE_HOLD'; END IF;
- IF pg_has_role('postgres','v3_cas_audit_table_owner','SET')
+ IF (SELECT count(*) FROM pg_class
+     WHERE oid IN ('v3_cas_audit.epoch_v1'::regclass,'v3_cas_audit.intent_v1'::regclass,
+                   'v3_cas_audit.attempt_v1'::regclass,'v3_cas_audit.prepared_fence_abort_v1'::regclass)
+       AND relrowsecurity AND relforcerowsecurity
+       AND relowner='v3_cas_audit_table_owner'::regrole) <> 4
+    OR pg_has_role('postgres','v3_cas_audit_table_owner','SET')
     OR has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT,UPDATE')
     OR (SELECT count(*) FROM pg_auth_members WHERE roleid='v3_cas_audit_table_owner'::regrole
         AND member='postgres'::regrole) <> 1
