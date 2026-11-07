@@ -313,6 +313,7 @@ def assess_v3_native_source_import_closure(root:Path)->dict[str,Any]:
     }
 
 
+FREE_RULE_ROUTE="FREE_RULE_P4"
 PROOFS=frozenset({
     "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E",
     "V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT",
@@ -480,9 +481,64 @@ def reconcile_v3_cloud_canary_model_p4_rows(
     }
 
 
+def _free_rule_receipt_error(case:dict[str,Any])->str|None:
+    pit=case.get("original_pit_sha256")
+    request=case.get("rule_request")
+    p4=case.get("rule_p4")
+    if (not isinstance(pit,str) or not SHA.fullmatch(pit)
+            or not isinstance(request,dict) or not isinstance(p4,dict)):
+        return "original rule request, PIT and P4 receipts required"
+    for row,phase,result,digest in (
+            (request,"MODEL_REQUEST","SKIP","rule_request_sha256"),
+            (p4,"P4_VALIDATION",case["p4_decision"],"p4_record_sha256")):
+        if (row.get("kind")!="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
+                or row.get("phase")!=phase or row.get("result")!=result
+                or row.get("series_id")!=case["series_id"]
+                or row.get("candidate_id")!=case["candidate_id"]
+                or row.get("orders") is not False or row.get("real_money_actions") is not False
+                or not isinstance(row.get("data"),dict)):
+            return "rule receipt identity or phase mismatch"
+        try:
+            wire=(json.dumps(row,sort_keys=True,separators=(",",":"),allow_nan=False)+"\n").encode("utf-8")
+        except (ValueError,UnicodeError):
+            return "invalid canonical rule receipt"
+        if hashlib.sha256(wire).hexdigest()!=case.get(digest):
+            return "canonical rule receipt digest mismatch"
+    request_data=request["data"]
+    p4_data=p4["data"]
+    if (request_data.get("source_status")!="FREE_RULE_V3_P4_NO_MODEL"
+            or type(request_data.get("model_http_attempts_reserved")) is not int
+            or request_data["model_http_attempts_reserved"]!=0
+            or p4_data.get("rule_based_primary") is not True
+            or type(p4_data.get("model_http_requests")) is not int
+            or p4_data["model_http_requests"]!=0
+            or p4_data.get("p4_decision")!=case["p4_decision"]
+            or any("model_response_id" in row["data"] for row in (request,p4))):
+        return "rule proof requires zero provider requests and reservations"
+    if any(not request.get(key) or request[key]!=p4.get(key)
+           for key in ("pair","revision","event_key","event_time_utc")):
+        return "rule request and P4 source episode differ"
+    if case["p4_decision"]=="BUY_SCOUT":
+        stop,ask,trigger,cost=(p4_data.get(key) for key in
+            ("validated_stop_eur","ask_eur","validated_stage2_eur","total_cost_pct"))
+        if (p4_data.get("p4_status")!="FULL_BUY_SCOUT_CONTRACT_VALIDATED_OFFLINE_NOT_RELEASE_EVIDENCE"
+                or any(type(value) not in (int,float) for value in (stop,ask,trigger,cost))
+                or not 0<stop<ask<trigger or cost<1.2):
+            return "free-rule BUY lacks validated stop, Stage2 and fees"
+    try:
+        event,at,done=(datetime.fromisoformat(stamp.replace("Z","+00:00"))
+                       for stamp in (request["event_time_utc"],request["known_at_utc"],p4["known_at_utc"]))
+        if (any(stamp.tzinfo is None for stamp in (event,at,done)) or not event<=at<=done
+                or p4["known_at_utc"]!=case["p4_known_at_utc"]):
+            return "rule request and P4 chronology mismatch"
+    except (KeyError,ValueError,AttributeError,TypeError,OverflowError):
+        return "invalid rule receipt timestamps"
+    return None
+
+
 def _evidence_content_error(
         name:str,data:bytes,*,expected_code_sha:object,
-        expected_strategy_sha:object)->str|None:
+        expected_strategy_sha:object,free_rule:bool=False)->str|None:
     """Schema/integrity only. Independent live provenance remains mandatory."""
     if len(data)>65536:
         return name+" oversized original E2E proof"
@@ -543,68 +599,77 @@ def _evidence_content_error(
     # Never demand a profitable natural BUY before experimental Paper start.
     if name=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E":
         host=by_origin["MINIPC_PHYSICAL"]
-        original=host.get("original_model_p4_readback")
         cases=host.get("native_paper_writer_dryrun_cases")
-        if (not isinstance(original,dict) or
-                not isinstance(cases,list) or len(cases)!=2):
-            return name+" original paid-model and both Paper writer paths missing"
-        if (original.get("model_http_attempts_reserved")!=1
-                or original.get("model_http_retries")!=0
-                or original.get("p4_decision") not in
-                    ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
-                or original.get("source_pit_complete") is not True
-                or original.get("no_real_orders") is not True
-                or not isinstance(original.get("model_response_id"),str)
-                or not 8<=len(original["model_response_id"])<=150
-                or not isinstance(original.get("original_pit_sha256"),str)
-                or not SHA.fullmatch(original["original_pit_sha256"])
-                or not isinstance(original.get("original_p4_receipt_sha256"),str)
-                or not SHA.fullmatch(original["original_p4_receipt_sha256"])):
-            return name+" actual one-shot model/PIT/P4 original not complete"
-        # The production real-model/P4 pair must identify ONE original
-        # candidate, review episode and source event, not merely two plausible
-        # hashes. TIA's original Supabase receipts demonstrated that upload
-        # received_at may arrive out of order; use source known_at timestamps.
-        model_series=original.get("original_series_id")
-        model_candidate=original.get("original_candidate_id")
-        model_episode=original.get("original_event_key")
-        model_known=original.get("model_response_known_at_utc")
-        p4_known=original.get("p4_known_at_utc")
-        if (not isinstance(model_series,str)
-                or not re.fullmatch(r"PAPER-V3-[A-Za-z0-9-]{8,96}",model_series)
-                or not isinstance(model_candidate,str)
-                or not ORIGINAL_ID.fullmatch(model_candidate)
-                or not isinstance(model_episode,str)
-                or not re.fullmatch(r"[A-Z][A-Z0-9_]{1,63}",model_episode)):
-            return name+" original model/P4 series candidate or event episode missing"
-        try:
-            model_at=datetime.fromisoformat(model_known.replace("Z","+00:00"))
-            p4_at=datetime.fromisoformat(p4_known.replace("Z","+00:00"))
-            if (model_at.tzinfo is None or p4_at.tzinfo is None
-                    or model_at.utcoffset() is None or p4_at.utcoffset() is None
-                    or p4_at<model_at):
-                raise ValueError("not an ordered source chronology")
-        except (ValueError,TypeError,AttributeError,OverflowError):
-            return name+" original model/P4 source known-at chronology invalid"
-        # The physical readback and the independently queried production
-        # Cloud original must BOTH be observations made after the actual P4
-        # source event. Rehashing a plausible future P4 with an earlier
-        # claimed observation timestamp is not an original E2E witness.
-        # Ingestion/received_at may arrive out of order; do not use it here.
-        try:
-            host_observed=datetime.fromisoformat(
-                host["observed_at_utc"].replace("Z","+00:00"))
-            cloud_observed=datetime.fromisoformat(
-                by_origin["SUPABASE_CLOUD"]["observed_at_utc"].replace(
-                    "Z","+00:00"))
-            if (host_observed.tzinfo is None
-                    or cloud_observed.tzinfo is None
-                    or host_observed.utcoffset() is None
-                    or cloud_observed.utcoffset() is None
-                    or host_observed<p4_at or cloud_observed<p4_at):
-                raise ValueError("original readback predates P4 source")
-        except (KeyError,ValueError,TypeError,AttributeError,OverflowError):
-            return name+" model/P4 physical or Cloud original observed before source"
+        if not isinstance(cases,list) or len(cases)!=2:
+            return name+" both Paper writer paths missing"
+        if free_rule:
+            if (host.get("original_model_p4_readback") is not None
+                    or host.get("code_fingerprint_sha256")!=expected_code_sha
+                    or host.get("strategy_fingerprint_sha256")!=expected_strategy_sha):
+                return name+" free-rule original release pins or route mismatch"
+        else:
+            original=host.get("original_model_p4_readback")
+            cases=host.get("native_paper_writer_dryrun_cases")
+            if (not isinstance(original,dict) or
+                    not isinstance(cases,list) or len(cases)!=2):
+                return name+" original paid-model and both Paper writer paths missing"
+            if (original.get("model_http_attempts_reserved")!=1
+                    or original.get("model_http_retries")!=0
+                    or original.get("p4_decision") not in
+                        ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+                    or original.get("source_pit_complete") is not True
+                    or original.get("no_real_orders") is not True
+                    or not isinstance(original.get("model_response_id"),str)
+                    or not 8<=len(original["model_response_id"])<=150
+                    or not isinstance(original.get("original_pit_sha256"),str)
+                    or not SHA.fullmatch(original["original_pit_sha256"])
+                    or not isinstance(original.get("original_p4_receipt_sha256"),str)
+                    or not SHA.fullmatch(original["original_p4_receipt_sha256"])):
+                return name+" actual one-shot model/PIT/P4 original not complete"
+            # The production real-model/P4 pair must identify ONE original
+            # candidate, review episode and source event, not merely two plausible
+            # hashes. TIA's original Supabase receipts demonstrated that upload
+            # received_at may arrive out of order; use source known_at timestamps.
+            model_series=original.get("original_series_id")
+            model_candidate=original.get("original_candidate_id")
+            model_episode=original.get("original_event_key")
+            model_known=original.get("model_response_known_at_utc")
+            p4_known=original.get("p4_known_at_utc")
+            if (not isinstance(model_series,str)
+                    or not re.fullmatch(r"PAPER-V3-[A-Za-z0-9-]{8,96}",model_series)
+                    or not isinstance(model_candidate,str)
+                    or not ORIGINAL_ID.fullmatch(model_candidate)
+                    or not isinstance(model_episode,str)
+                    or not re.fullmatch(r"[A-Z][A-Z0-9_]{1,63}",model_episode)):
+                return name+" original model/P4 series candidate or event episode missing"
+            try:
+                model_at=datetime.fromisoformat(model_known.replace("Z","+00:00"))
+                p4_at=datetime.fromisoformat(p4_known.replace("Z","+00:00"))
+                if (model_at.tzinfo is None or p4_at.tzinfo is None
+                        or model_at.utcoffset() is None or p4_at.utcoffset() is None
+                        or p4_at<model_at):
+                    raise ValueError("not an ordered source chronology")
+            except (ValueError,TypeError,AttributeError,OverflowError):
+                return name+" original model/P4 source known-at chronology invalid"
+            # The physical readback and the independently queried production
+            # Cloud original must BOTH be observations made after the actual P4
+            # source event. Rehashing a plausible future P4 with an earlier
+            # claimed observation timestamp is not an original E2E witness.
+            # Ingestion/received_at may arrive out of order; do not use it here.
+            try:
+                host_observed=datetime.fromisoformat(
+                    host["observed_at_utc"].replace("Z","+00:00"))
+                cloud_observed=datetime.fromisoformat(
+                    by_origin["SUPABASE_CLOUD"]["observed_at_utc"].replace(
+                        "Z","+00:00"))
+                if (host_observed.tzinfo is None
+                        or cloud_observed.tzinfo is None
+                        or host_observed.utcoffset() is None
+                        or cloud_observed.utcoffset() is None
+                        or host_observed<p4_at or cloud_observed<p4_at):
+                    raise ValueError("original readback predates P4 source")
+            except (KeyError,ValueError,TypeError,AttributeError,OverflowError):
+                return name+" model/P4 physical or Cloud original observed before source"
         by_case={x.get("case") if isinstance(x,dict) else None:x for x in cases}
         if (len(by_case)!=2 or set(by_case)!=
                 {"POSITIVE_BUY_SCOUT","NEGATIVE_REJECT"}):
@@ -627,7 +692,7 @@ def _evidence_content_error(
             if (not isinstance(cid,str) or not ORIGINAL_ID.fullmatch(cid)
                     or not isinstance(series,str)
                     or not re.fullmatch(r"PAPER-V3-[A-Za-z0-9-]{8,96}",series)
-                    or case.get("execution_kind")!="PHYSICAL_MINIPC_OFFLINE_MODEL_STUB"
+                    or case.get("execution_kind")!=("PHYSICAL_MINIPC_FREE_RULE" if free_rule else "PHYSICAL_MINIPC_OFFLINE_MODEL_STUB")
                     or case.get("original_native_owner_lock_verified") is not True
                     or case.get("disk_ledger_readback_verified") is not True
                     or case.get("no_real_orders") is not True
@@ -638,6 +703,10 @@ def _evidence_content_error(
                     or not isinstance(case.get("native_journal_record_sha256"),str)
                     or not SHA.fullmatch(case["native_journal_record_sha256"])):
                 return name+" original host model/P4/ledger dry-run identity missing"
+            if free_rule:
+                error=_free_rule_receipt_error(case)
+                if error:
+                    return name+" "+error
             ids.append((series,cid))
         if len(set(ids))!=2 or ids[0][0]!=ids[1][0]:
             return name+" positive and negative host cases must be separate same-series candidates"
@@ -673,12 +742,21 @@ def _evidence_content_error(
                 or sandbox.get("cloud_cas_performed") is not False
                 or sandbox.get("active_paper_series_changed") is not False
                 or sandbox.get("v2r4_live_strategy_modified") is not False
-                or sandbox.get("historical_independent_original_query_previously_completed") is not True
+                or sandbox.get("same_event_id_reread_no_duplicate_verified") is not True
+                or not isinstance(cloud_cases,list)
+                or len(cloud_cases)!=2):
+            return name+" missing independent Cloud original model/P4/Paper readback"
+        if free_rule:
+            if (sandbox.get("independent_original_receipt_query") is not True
+                    or sandbox.get("code_fingerprint_sha256")!=expected_code_sha
+                    or sandbox.get("strategy_fingerprint_sha256")!=expected_strategy_sha
+                    or cloud.get("original_model_response_id") is not None):
+                return name+" independent free-rule sandbox original missing"
+        elif (sandbox.get("historical_independent_original_query_previously_completed") is not True
                 or sandbox.get("fresh_sandbox_network_access") is not False
                 or sandbox.get("synthetic_offline_fixtures_only") is not True
                 or sandbox.get("original_synthetic_event_count")!=16
                 or sandbox.get("original_historical_join_sha256")!=ISOLATED_ORIGINAL_16_SHA
-                or sandbox.get("same_event_id_reread_no_duplicate_verified") is not True
                 or cloud.get("original_model_response_id")!=
                     original["model_response_id"]
                 or cloud.get("original_model_p4_receipt_sha256")!=
@@ -687,10 +765,8 @@ def _evidence_content_error(
                 or cloud.get("original_model_candidate_id")!=model_candidate
                 or cloud.get("original_model_event_key")!=model_episode
                 or cloud.get("original_model_response_known_at_utc")!=model_known
-                or cloud.get("original_p4_known_at_utc")!=p4_known
-                or not isinstance(cloud_cases,list)
-                or len(cloud_cases)!=2):
-            return name+" missing independent Cloud original model/P4/Paper readback"
+                or cloud.get("original_p4_known_at_utc")!=p4_known):
+            return name+" missing historical provider and sandbox originals"
         cloud_by_case={
             item.get("case") if isinstance(item,dict) else None:item
             for item in cloud_cases
@@ -706,6 +782,10 @@ def _evidence_content_error(
             ):
                 if remote.get(key)!=host_case.get(key):
                     return name+" host/Cloud positive or negative original mismatch"
+            if free_rule:
+                for key in ("rule_request_sha256","original_pit_sha256"):
+                    if remote.get(key)!=host_case.get(key):
+                        return name+" independent free-rule request/PIT digest mismatch"
             if (remote.get("cloud_query_readback_verified") is not True
                     or remote.get("orders") is not False
                     or remote.get("real_money_actions") is not False):
@@ -725,13 +805,18 @@ def _evidence_content_error(
             "taker_fee_roundtrip_spread_slippage_counted_tested",
             "invalid_stop_or_stage2_never_creates_fill_tested",
             "negative_net_edge_never_creates_fill_tested",
-            "wait_trigger_no_buy_without_new_full_model_p4_tested",
-            "missing_response_id_quarantined_tested",
             "p4_buy_without_durable_fill_quarantined_tested",
-            "interrupted_http_reservation_never_retried_tested",
             "duplicate_child_episode_never_bought_twice_tested",
             "no_real_orders_tested",
-        )
+        ) + ((
+            "wait_trigger_no_buy_without_new_full_rule_p4_tested",
+            "missing_rule_p4_quarantined_tested",
+            "rule_route_rejected_provider_inputs_tested",
+        ) if free_rule else (
+            "wait_trigger_no_buy_without_new_full_model_p4_tested",
+            "missing_response_id_quarantined_tested",
+            "interrupted_http_reservation_never_retried_tested",
+        ))
         if (any(host.get(key) is not True for key in checks)
                 or host.get("paper_scout_eur")!=50
                 or host.get("paper_stage2_eur")!=50
@@ -893,13 +978,20 @@ def validate_experimental_paper_packet(root: Path, revision: str,
         v=packet.get(k)
         if not isinstance(v,str) or not SHA.fullmatch(v):
             block("invalid pinned "+k)
+    route=packet.get("primary_decision_route","PROVIDER_MODEL_P4")
+    if route not in ("PROVIDER_MODEL_P4",FREE_RULE_ROUTE):
+        block("unknown primary decision route")
+    free_rule=route==FREE_RULE_ROUTE
     scope=packet.get("bounded_research_scope")
     if not isinstance(scope,dict):
         scope={}
     for k,maximum in (("max_candidates",500),("max_model_http_attempts_including_retries",1000),
                       ("max_observation_days",21)):
         v=scope.get(k)
-        if type(v) is not int or not 1<=v<=maximum:
+        if free_rule and k=="max_model_http_attempts_including_retries":
+            if type(v) is not int or v!=0:
+                block("free-rule max_model_http_attempts_including_retries must be zero")
+        elif type(v) is not int or not 1<=v<=maximum:
             block("missing/invalid finite "+k)
     for k in ("deduplicate_pair_clock","mandatory_real_6h_24h_and_censored_followups",
               "stop_when_budget_exhausted"):
@@ -911,7 +1003,7 @@ def validate_experimental_paper_packet(root: Path, revision: str,
     for k,want in (("taker_pct_each_side",0.6),("scout_eur",50),("stage2_eur",50)):
         if risk.get(k)!=want: block("altered "+k)
     for k in ("kraken_online_spot_eur","true_pit_1m5m15m_atr_stop",
-              "full_model_decision_before_any_paper_buy",
+              ("full_rule_p4_decision_before_any_paper_buy" if free_rule else "full_model_decision_before_any_paper_buy"),
               "stop_stage2_spread_slippage_required","no_real_orders",
               "no_h3_h6_auto_activation"):
         if risk.get(k) is not True: block("missing risk "+k)
@@ -919,8 +1011,8 @@ def validate_experimental_paper_packet(root: Path, revision: str,
         block("Paper experiment cannot claim economic alpha")
     if packet.get("post_experiment_promotion_requires_economic_gate") is not True:
         block("later economic promotion gate missing")
-    if packet.get("fixed_api_cost_limit_user_authorized") is not True:
-        block("new fixed-cost budget authorization missing")
+    if packet.get("fixed_api_cost_limit_user_authorized") is not (not free_rule):
+        block("explicit zero provider budget required" if free_rule else "new fixed-cost budget authorization missing")
     # Pre-cutover requirement is a physically verified dry run, not a
     # POST-cutover ACK (requiring post ACK to authorize cutover is circular).
     # Post-cutover ACK is checked later by the existing cloud+Mini-PC monitors.
@@ -963,7 +1055,7 @@ def validate_experimental_paper_packet(root: Path, revision: str,
             continue
         content_error=_evidence_content_error(
             name,data,expected_code_sha=packet.get("code_fingerprint_sha256"),
-            expected_strategy_sha=packet.get("strategy_fingerprint_sha256"))
+            expected_strategy_sha=packet.get("strategy_fingerprint_sha256"),free_rule=free_rule)
         if content_error:
             block(content_error)
     return errors

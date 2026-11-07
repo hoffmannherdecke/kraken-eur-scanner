@@ -303,6 +303,89 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
             x=validate_learning_gate(root,"V3-PAPER-EXPERIMENTAL-001",normal)
             self.assertTrue(any("NEW_STRATEGY_BLOCKED" in e for e in x))
 
+    def test_free_rule_route_requires_zero_http_and_independent_originals(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            packet["primary_decision_route"]="FREE_RULE_P4"
+            packet["fixed_api_cost_limit_user_authorized"]=False
+            packet["bounded_research_scope"]["max_model_http_attempts_including_retries"]=0
+            packet["frozen_execution_risk"]["full_rule_p4_decision_before_any_paper_buy"]=True
+            del packet["frozen_execution_risk"]["full_model_decision_before_any_paper_buy"]
+            risk_item=next(row for row in packet["experimental_paper_technical_proofs"]
+                           if row["id"]=="V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT")
+            risk_path=root/risk_item["evidence_path"]
+            risk_envelope=json.loads(risk_path.read_bytes())
+            risk_original=risk_envelope["source_originals"][0]
+            risk_original["original_record"].update(
+                wait_trigger_no_buy_without_new_full_rule_p4_tested=True,
+                missing_rule_p4_quarantined_tested=True,
+                rule_route_rejected_provider_inputs_tested=True)
+            risk_original["original_sha256"]=hashlib.sha256(
+                json.dumps(risk_original["original_record"],sort_keys=True,separators=(",",":")).encode()).hexdigest()
+            risk_path.write_text(json.dumps(risk_envelope),encoding="utf-8")
+            risk_item["sha256"]=hashlib.sha256(risk_path.read_bytes()).hexdigest()
+            item=next(row for row in packet["experimental_paper_technical_proofs"]
+                      if row["id"]=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E")
+            path=root/item["evidence_path"]
+            envelope=json.loads(path.read_text())
+            by_origin={row["origin"]:row["original_record"] for row in envelope["source_originals"]}
+            host=by_origin["MINIPC_PHYSICAL"]
+            del host["original_model_p4_readback"]
+            cloud=by_origin["SUPABASE_CLOUD"]
+            for key in list(cloud):
+                if key.startswith("original_model_"):
+                    del cloud[key]
+            sandbox=by_origin["SUPABASE_SANDBOX"]
+            sandbox["independent_original_receipt_query"]=True
+            for row in (host,sandbox):
+                for pin in ("code_fingerprint_sha256","strategy_fingerprint_sha256"):
+                    row[pin]=packet[pin]
+            cases=host["native_paper_writer_dryrun_cases"]
+            remote_cases=sandbox["paper_writer_dryrun_case_readbacks"]
+            def canonical(row):
+                return json.dumps(row,sort_keys=True,separators=(",",":")).encode()
+            for case,remote in zip(cases,remote_cases,strict=True):
+                case["execution_kind"]="PHYSICAL_MINIPC_FREE_RULE"
+                case["original_pit_sha256"]="1"*64
+                base={key:case[key] for key in ("series_id","candidate_id")}
+                base.update(kind="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1", pair="TIA-EUR",
+                            revision=packet["strategy_revision"],event_key="SCANNER",
+                            event_time_utc="2026-10-13T09:29:00Z",
+                            known_at_utc=case["p4_known_at_utc"],orders=False,real_money_actions=False)
+                request=dict(base,phase="MODEL_REQUEST",result="SKIP",data={
+                    "source_status":"FREE_RULE_V3_P4_NO_MODEL","model_http_attempts_reserved":0})
+                p4=dict(base,phase="P4_VALIDATION",result=case["p4_decision"],data={
+                    "rule_based_primary":True,"model_http_requests":0,"p4_decision":case["p4_decision"],
+                    "p4_status":"FULL_BUY_SCOUT_CONTRACT_VALIDATED_OFFLINE_NOT_RELEASE_EVIDENCE",
+                    "validated_stop_eur":9,"ask_eur":10,"validated_stage2_eur":11,"total_cost_pct":1.4})
+                case.update(rule_request=request,rule_p4=p4,
+                    rule_request_sha256=hashlib.sha256(canonical(request)+b"\n").hexdigest(),
+                    p4_record_sha256=hashlib.sha256(canonical(p4)+b"\n").hexdigest())
+                for key in ("rule_request_sha256","original_pit_sha256","p4_record_sha256"):
+                    remote[key]=case[key]
+            def validate():
+                for row in envelope["source_originals"]:
+                    row["original_sha256"]=hashlib.sha256(canonical(row["original_record"])).hexdigest()
+                path.write_bytes(canonical(envelope))
+                item["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+                return validate_experimental_paper_packet(root,packet["strategy_revision"],packet)
+
+            self.assertEqual(validate(),[])
+            packet["bounded_research_scope"]["max_model_http_attempts_including_retries"]=1
+            self.assertTrue(any("max_model_http_attempts" in e for e in validate()))
+            packet["bounded_research_scope"]["max_model_http_attempts_including_retries"]=0
+            case=cases[0]
+            case["rule_p4"]["data"]["model_http_requests"]=1
+            case["p4_record_sha256"]=hashlib.sha256(canonical(case["rule_p4"])+b"\n").hexdigest()
+            remote_cases[0]["p4_record_sha256"]=case["p4_record_sha256"]
+            self.assertTrue(any("zero provider" in e for e in validate()))
+            case["rule_p4"]["data"]["model_http_requests"]=0
+            case["p4_record_sha256"]=hashlib.sha256(canonical(case["rule_p4"])+b"\n").hexdigest()
+            remote_cases[0]["p4_record_sha256"]=case["p4_record_sha256"]
+            remote_cases[0]["rule_request_sha256"]="0"*64
+            self.assertTrue(any("request/PIT digest mismatch" in e for e in validate()))
+
     def test_missing_one_real_proof_wrong_hash_budget_approval_always_blocks(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)
