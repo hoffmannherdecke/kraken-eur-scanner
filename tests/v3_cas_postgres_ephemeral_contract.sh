@@ -1495,5 +1495,16 @@ pg_root_db -c "ALTER ROLE v3_cas_executor_actor LOGIN CONNECTION LIMIT 1 VALID U
 followup_reader "$followup_epoch" | grep -Fq SEALED_INTENT_INHIBIT_STOP_CONFIRMED
 pg_root_db -c "ALTER ROLE v3_cas_executor_actor NOLOGIN CONNECTION LIMIT 0;" >/dev/null
 echo 'V3_PG17_FOLLOWUP_SEAL_PRECAS_RECEIPT_PASS_NO_ROTATION'
+if issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$followup_epoch','$followup_commit','$followup_source',repeat('0',64),'$followup_acl',repeat('5',64));" >/dev/null 2>&1; then
+  echo 'FAIL_FOLLOWUP_ABORT_ACCEPTED_FENCE_DRIFT' >&2; exit 1
+fi
+issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$followup_epoch','$followup_commit','$followup_source','$followup_fence','$followup_acl',repeat('5',64));" >/dev/null
+followup_reader "$followup_epoch" | grep -Fq PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS
+if pg_root_db -c "INSERT INTO v3_cas_audit.attempt_v1(epoch_id) VALUES ('$followup_epoch');" >/dev/null 2>"$transition_tmp/followup-aborted-attempt.err"; then
+  echo 'FAIL_FOLLOWUP_TERMINAL_ABORT_ALLOWED_ATTEMPT' >&2; exit 1
+fi
+grep -Fq V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT "$transition_tmp/followup-aborted-attempt.err"
+test "$(pg -Atc 'select count(*) from v3_cas_audit.prepared_fence_abort_v1')" = 2
+echo 'V3_PG17_FOLLOWUP_TERMINAL_ROLLBACK_WITH_INSTALLED_RPC_PASS'
 
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
