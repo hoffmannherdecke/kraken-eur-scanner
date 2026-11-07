@@ -12,11 +12,14 @@ function Get-MistralTransferRoot {
      $RelativeDirectory -match '(^|[\\/])\.\.([\\/]|$)' -or
      $RelativeDirectory -match '(^|[\\/])\.([\\/]|$)' -or
      $RelativeDirectory -match '[:*?"<>|]' -or
-     $RelativeDirectory.StartsWith('\\') -or $RelativeDirectory.StartsWith('/')){
+     $RelativeDirectory.StartsWith('\\') -or $RelativeDirectory.StartsWith('/') -or
+     $RelativeDirectory.StartsWith([string][char]92) -or
+     $RelativeDirectory.EndsWith([string][char]92) -or
+     $RelativeDirectory.Contains('\\\\')){
    throw 'MISTRAL_INVALID_RELATIVE_DIRECTORY'
   }
   # String composition is intentional: offline CI runs on Linux without a D: drive.
-  $root=$root.TrimEnd('\\')+'\\'+$RelativeDirectory.TrimStart('\\')
+  $root=$root.TrimEnd([char]92)+[char]92+$RelativeDirectory.TrimStart([char]92)
  }
  return $root
 }
