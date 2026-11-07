@@ -415,6 +415,151 @@ def run_offline_cases(root: Path, series_id: str, *, stage: Path | None = None,
 
 
 
+FREE_CASES = {"POSITIVE_BUY_SCOUT": ("BUY_SCOUT", 1),
+              "NEGATIVE_REJECT": ("REJECT", 0)}
+FREE_KIND = "V3_PRECAS_ORIGINALHOST_FREE_RULE_WITNESS_V1"
+FREE_PHASES = {"SOURCE_INPUT", "MODEL_REQUEST", "P4_VALIDATION", "PAPER_FILL"}
+
+
+def free_rule_cases(root: Path, series: str, inputs: dict) -> list[dict]:
+    """Replay independently pinned Scanner and point-in-time inputs on the real rule worker."""
+    from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
+        _ISOLATED_FREE_RULE_WITNESS, ISOLATED_FREE_RULE_SERIES, one_candidate,
+    )
+    from paper_evaluator.v3_paper_minipc_selective_tick_v1 import _one_canary_owner
+    from paper_evaluator.v3_paper_intake_receipt_stage_v1 import prepare_receipts
+    from paper_evaluator.v3_experimental_paper_journal_v1 import store_receipt_explicitly
+    from tools.v3_experimental_paper_technical_gate import _free_rule_receipt_error
+
+    if (not ISOLATED_FREE_RULE_SERIES.fullmatch(series)
+            or inputs.get("kind") != "V3_PRECAS_PINNED_SCANNER_PIT_CASES_V1"
+            or not isinstance(inputs.get("cases"), dict)
+            or set(inputs["cases"]) != FREE_CASES.keys()):
+        raise ValueError("exact isolated two-case Scanner/PIT bundle required")
+    prepared = []
+    for label, case in inputs["cases"].items():
+        candidate = case["candidate"]
+        snapshot = tuple(case[k] for k in ("entry_evidence", "ticker", "pair_metadata"))
+        if (candidate.get("kind") != "CANONICAL_CANDIDATE_HANDOFF_V1"
+                or candidate.get("action") != "REVIEW_ONLY_NOT_ORDER"
+                or candidate.get("entry_origin") != "SCANNER"
+                or candidate.get("deferred_recheck") is True
+                or any(row.get("pair") != candidate["pair"] for row in snapshot)):
+            raise ValueError("original Scanner and same-pair PIT sources required")
+        preflight = dict(case["preflight"], series_id=series)
+        if preflight.get("selected_candidates") != [candidate]:
+            raise ValueError("preflight does not identify one original Scanner candidate")
+        rows, _ = prepare_receipts(preflight)
+        if (len(rows) != 2
+                or {row["phase"] for row in rows} != {"SCANNER_CAPTURE", "FULL_REVIEW_ELIGIBILITY"}):
+            raise ValueError("bounded Scanner replay requires two canonical intake receipts")
+        clock = case["decision_at_utc"]
+        if any(datetime.fromisoformat(row["known_at_utc"]) > datetime.fromisoformat(clock)
+               for row in rows):
+            raise ValueError("replay decision precedes original intake")
+        prepared.append((label, candidate, snapshot, rows, clock))
+    if len({case[1]["candidate_id"] for case in prepared}) != 2:
+        raise ValueError("separate original candidate identities required")
+
+    root.mkdir(mode=0o700)
+    journal, budgets = root / "journal", root / "model-reservations"
+    journal.mkdir(mode=0o700)
+    budgets.mkdir(mode=0o700)
+    cases = []
+    with _one_canary_owner(journal):
+        for label, candidate, snapshot, rows, clock in prepared:
+            for row in rows:
+                store_receipt_explicitly(journal, row)
+            result = one_candidate(
+                candidate=candidate, series_id=series, local_receipts=journal,
+                model_reservations=budgets, admit_staged_scanner_one_free_rule=True,
+                acquire=lambda _: snapshot, clock=lambda: clock,
+                _released_model_capability=_ISOLATED_FREE_RULE_WITNESS)
+            expected, fill_count = FREE_CASES[label]
+            cid = candidate["candidate_id"]
+            receipts = _receipt_files(journal, series, cid)
+            originals = {r["phase"]: r for r in receipts if r["phase"] in FREE_PHASES}
+            phases = FREE_PHASES if fill_count else FREE_PHASES - {"PAPER_FILL"}
+            if (result.get("p4_decision") != expected
+                    or result.get("model_http_requests") != 0
+                    or result.get("model_http_attempts_reserved") != 0
+                    or result.get("model_called") is not False
+                    or set(originals) != phases
+                    or sum(r["phase"] in FREE_PHASES for r in receipts) != len(phases)
+                    or any(r["phase"] == "MODEL_RESPONSE" for r in receipts)):
+                raise ValueError("observed replay does not satisfy requested free-rule case")
+            request, p4, pit = (originals[key] for key in
+                                ("MODEL_REQUEST", "P4_VALIDATION", "SOURCE_INPUT"))
+            fill = originals.get("PAPER_FILL")
+            case = {
+                "case": label, "series_id": series, "candidate_id": cid,
+                "p4_decision": expected, "paper_fill_count": fill_count,
+                "paper_fill_result": "PAPER_FILLED" if fill else "NO_PAPER_FILL",
+                "original_pit_sha256": pit["content_sha256"],
+                "p4_record_sha256": p4["content_sha256"],
+                "rule_request_sha256": request["content_sha256"],
+                "rule_request": _original_case_receipt(journal, request, series_id=series, candidate_id=cid),
+                "rule_p4": _original_case_receipt(journal, p4, series_id=series, candidate_id=cid),
+                "receipts": list(originals.values()),
+                **_case_economic_proof(journal, series, cid, p4, fill),
+            }
+            error = _free_rule_receipt_error(case)
+            if error:
+                raise ValueError(error)
+            cases.append(case)
+        if any(budgets.iterdir()):
+            raise ValueError("isolated rule run reserved provider budget")
+    return cases
+
+
+def run_free_rule_witness(p: dict, input_path: Path, expected_digest: str) -> dict:
+    if (os.name != "nt" or os.environ.get("COMPUTERNAME", "").upper() != "MINI-PC"
+            or not sys.flags.isolated or not sys.dont_write_bytecode
+            or p["source_head"] != p["stage_sha"]):
+        raise ValueError("physical Mini-PC isolated -I -B and exact source required")
+    if input_path.is_symlink() or not input_path.is_file() or input_path.stat().st_size > 262144:
+        raise ValueError("bounded original Scanner/PIT bundle required")
+    raw = input_path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_digest:
+        raise ValueError("original Scanner/PIT bundle digest mismatch")
+    inputs = json.loads(raw)
+    if inputs.get("release_commit") != p["stage_sha"]:
+        raise ValueError("Scanner/PIT bundle not bound to this release")
+    stage, source, sha = p["stage"], p["source"], p["stage_sha"]
+    measurement = subprocess.run(
+        [sys.executable, "-I", "-B", str(stage / "paper_evaluator/v3_paper_minipc_native_launcher_v1.py"),
+         "--runtime-identity-readonly", "--expected-source-sha", sha,
+         "--proposed-v3-series", "PAPER-V3-20000101T000000Z"],
+        capture_output=True, text=True, timeout=60, check=True)
+    identity = json.loads(measurement.stdout)
+    if (identity.get("repo_sha") != sha
+            or identity.get("status") != "MEASURED_ISOLATED_RUNTIME_NOT_AUTHORIZED"
+            or identity.get("paper_release_authorized") is not False):
+        raise ValueError("original runtime fingerprint measurement failed")
+    sys.path[:0] = [str(stage), str(source)]
+    def reject_network(event, _args):
+        if event.startswith(("socket.", "subprocess.")):
+            raise PermissionError("isolated rule witness forbids network and child processes")
+    sys.addaudithook(reject_network)
+    series = "PAPER-V3-CANARY-PRECAS-FREE-" + sha[:12].upper()
+    target = p["target"].with_name("PRECAS-FREE-RULE-" + sha[:12])
+    cases = free_rule_cases(target, series, inputs)
+    report = {
+        "kind": FREE_KIND, "series_id": series, "release_commit": sha,
+        "input_sha256": expected_digest, "runtime_identity": identity, "cases": cases,
+        "host_observed_at_utc": datetime.now().astimezone().isoformat(),
+        "independent_host_verified": False, "independent_cloud_verified": False,
+        "paper_release_authorized": False, "technical_release_proofs_credited": 0,
+    }
+    with (target / "free-rule-witness.json").open("x", encoding="utf-8") as out:
+        json.dump(report, out, sort_keys=True)
+        out.flush()
+        os.fsync(out.fileno())
+    return {"status": "ISOLATED_RULE_RECEIPTS_WRITTEN_AWAITING_INDEPENDENT_READBACK",
+            "target": str(target), "series_id": series, "release_commit": sha,
+            "technical_release_proofs_credited": 0}
+
+
 def inspect_existing_offline_originals(root: Path, series_id: str,
                                        expected_cloud_digest: str | None = None,
                                        *, stage_sha: str | None = None) -> dict:
@@ -504,7 +649,18 @@ def main() -> int:
     cli.add_argument("--execute-host-offline", action="store_true")
     cli.add_argument("--readback-existing", action="store_true")
     cli.add_argument("--expected-isolated-cloud-digest", default=None)
+    cli.add_argument("--free-rule-input", type=Path)
+    cli.add_argument("--expected-input-sha256")
     a = cli.parse_args()
+    if a.free_rule_input is not None or a.expected_input_sha256 is not None:
+        if (a.free_rule_input is None or not a.expected_input_sha256
+                or a.readback_existing or a.execute_host_offline
+                or a.expected_isolated_cloud_digest is not None):
+            cli.error("free-rule witness requires the separate input and digest, without historical flags")
+        p = inspect(source=a.source, stage=a.stage, stage_sha=a.expected_stage_sha)
+        print(json.dumps(run_free_rule_witness(p, a.free_rule_input, a.expected_input_sha256),
+                         sort_keys=True))
+        return 0
     if a.execute_host_offline and a.readback_existing:
         raise ValueError("cannot reexecute writer during existing journal readback")
     if a.expected_isolated_cloud_digest is not None and not a.readback_existing:

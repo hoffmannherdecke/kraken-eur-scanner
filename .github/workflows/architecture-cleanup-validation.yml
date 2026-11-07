@@ -402,7 +402,7 @@ jobs:
       - name: V3 originalhost offline dual-case writer readback (no network or release)
         run: |
           python -m py_compile tools/v3_paper_precas_originalhost_offline_witness_v1.py
-          python -m unittest tests.test_v3_paper_precas_originalhost_offline_witness_v1 -v
+          python -m unittest tests.test_v3_paper_precas_originalhost_offline_witness_v1 tests.test_v3_precas_free_rule_witness -v
       - name: V3 early closed-5m paper-research hypothesis into shared P4 contract
         run: |
           python -m py_compile paper_evaluator/v3_p3_early_5m_continuity_research_v1.py
@@ -636,6 +636,11 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Isolated free-rule witness, Windows lock and exact sandbox export
+        run: python -m unittest tests.test_v3_precas_free_rule_witness -v
       - name: Release authorization on native Windows PowerShell 5.1
         shell: pwsh
         run: ./tests/test_v3_one_time_release_authorization.ps1
