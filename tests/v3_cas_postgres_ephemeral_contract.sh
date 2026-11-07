@@ -1473,7 +1473,7 @@ prior_commit=$followup_commit
 prior_receipt="$(printf '6%.0s' {1..64})"
 followup_epoch='V3CAS-AUDIT-77777777777777777777777777777777'
 followup_commit="$(printf '8%.0s' {1..40})"
-followup_fence="$(printf '9%.0s' {1..64})"
+followup_fence="$(printf '0%.0s' {1..64})"
 rpc_sig='public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
 definition_sha() {
  pg -Atc "select encode(sha256(convert_to(pg_get_functiondef('$1'::regprocedure),'UTF8')),'hex')"
@@ -1497,13 +1497,13 @@ supersede_sql() {
 if supersede_sql 1 > /dev/null 2>"$transition_tmp/supersede-live.err"; then
  echo 'FAIL_SUPERSESSION_ACCEPTED_UNTERMINATED_PRIOR_EPOCH' >&2; exit 1
 fi
-grep -Fq V3_PAPER_FOLLOWUP_TERMINAL_HISTORY_HOLD "$transition_tmp/supersede-live.err"
+grep -Fq V3_PAPER_FOLLOWUP_TERMINAL_HISTORY_HOLD "$transition_tmp/supersede-live.err" || { cat "$transition_tmp/supersede-live.err" >&2; exit 1; }
 prior_fence="$(pg -Atc "select original_fence_sha256 from v3_cas_audit.epoch_v1 where epoch_id='$prior_epoch'")"
 issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$prior_epoch','$prior_commit','$followup_source','$prior_fence','$followup_acl','$prior_receipt');" >/dev/null
 if supersede_sql 660 >/dev/null 2>"$transition_tmp/supersede-expired.err"; then
  echo 'FAIL_SUPERSESSION_ACCEPTED_EXPIRED_SERIES' >&2; exit 1
 fi
-grep -Fq V3_PAPER_FOLLOWUP_SUPERSESSION_BINDING_HOLD "$transition_tmp/supersede-expired.err"
+grep -Fq V3_PAPER_FOLLOWUP_SUPERSESSION_BINDING_HOLD "$transition_tmp/supersede-expired.err" || { cat "$transition_tmp/supersede-expired.err" >&2; exit 1; }
 test "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" = 2
 supersede_sql 1 >/dev/null
 test "$(definition_sha "$rpc_sig")" = "$cas_before"
