@@ -26,7 +26,9 @@ docker run --detach --rm --name "$container" --network none \
 
 ready=0
 for i in $(seq 1 40); do
-  if docker exec "$container" pg_isready -q -U v3_ci_restore_root -d v3_ci_restore_root >/dev/null 2>&1; then
+  # The image uses a temporary server for initdb before exec'ing postgres.
+  if docker exec "$container" sh -ec '[ "$(cat /proc/1/comm)" = postgres ] &&
+      pg_isready -q -U v3_ci_restore_root -d v3_ci_restore_root' >/dev/null 2>&1; then
     ready=1; break
   fi
   sleep 1
