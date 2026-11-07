@@ -291,6 +291,7 @@ function Invoke-V3OneTimePaperRelease {
    if([string]$receipt.kind -cne 'V3_NATIVE_ONE_OWNER_POST_CAS_ORIGINALHOST_READBACK_V1' -or
       [string]$receipt.release_repo_sha -cne $ExpectedReleaseCommit){throw 'V3_PAPER_HOST_RECEIPT_KIND_HOLD'}
    Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+   Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Scope Local
    Assert-V3PaperTaskPins $plan -AllowDisabledIntake -AllowRunningWriter
    Assert-V3PaperProcesses $plan -Absent
    $null=Assert-V3PaperFence $ctx @('CLOUD_COMMITTED')
@@ -330,6 +331,7 @@ function Invoke-V3OneTimePaperRelease {
    throw 'V3_PAPER_PLAN_IDENTITY_HOLD'
   }
   Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+  Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Scope Local
   # The imported existing module reloads authorization; re-importing it must
   # not discard the already verified original payload/expiry held in $ctx.
   $mutex=[Threading.Mutex]::new($false,'Global\V3Pr661OriginalhostOneShotOperator')
