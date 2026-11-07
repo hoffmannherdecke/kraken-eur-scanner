@@ -439,6 +439,11 @@ function Invoke-V3OneTimePaperRelease {
    if((Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $ctx.fence)) -cne [string]$epoch.fence_sha256){
     throw 'V3_PAPER_PRESTOP_FENCE_EPOCH_DRIFT'
    }
+   # The installed CAS uses the timestamp in the issued series ID and
+   # rejects it once it is older than ten minutes. Detect that before STOP.
+   $seriesTime=[datetimeoffset]::ParseExact($plan.series_id.Substring('PAPER-V3-'.Length),
+    "yyyyMMdd'T'HHmmss'Z'",[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal)
+   if($seriesTime -lt [datetimeoffset]::UtcNow.AddMinutes(-10)){throw 'V3_PAPER_STOP_SUCCESSOR_SERIES_EXPIRED'}
    Assert-V3PaperProcesses $plan
    Write-V3PaperReceipt ($base+'.stop.attempted.json') @{approval_sha256=$auth.approval_sha256}
    $intakes=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
