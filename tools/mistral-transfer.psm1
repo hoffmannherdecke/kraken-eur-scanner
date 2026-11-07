@@ -15,7 +15,8 @@ function Get-MistralTransferRoot {
      $RelativeDirectory.StartsWith('\\') -or $RelativeDirectory.StartsWith('/')){
    throw 'MISTRAL_INVALID_RELATIVE_DIRECTORY'
   }
-  $root=Join-Path $root $RelativeDirectory
+  # String composition is intentional: offline CI runs on Linux without a D: drive.
+  $root=$root.TrimEnd('\\')+'\\'+$RelativeDirectory.TrimStart('\\')
  }
  return $root
 }
