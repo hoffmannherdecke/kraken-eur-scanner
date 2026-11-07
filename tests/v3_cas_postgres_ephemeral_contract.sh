@@ -1473,7 +1473,7 @@ prior_commit=$followup_commit
 prior_receipt="$(printf '6%.0s' {1..64})"
 followup_epoch='V3CAS-AUDIT-77777777777777777777777777777777'
 followup_commit="$(printf '8%.0s' {1..40})"
-followup_fence="$(printf '0%.0s' {1..64})"
+followup_fence="$(printf 'f%.0s' {1..64})"
 rpc_sig='public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
 definition_sha() {
  pg -Atc "select encode(sha256(convert_to(pg_get_functiondef('$1'::regprocedure),'UTF8')),'hex')"
