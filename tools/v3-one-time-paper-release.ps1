@@ -6,6 +6,8 @@ $ErrorActionPreference='Stop'
 function Get-V3PaperReleaseInventory([string]$Root) {
  $out=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $Root
  foreach($path in @('tools/v3-one-time-paper-release.ps1',
+  'supabase/v3-cas-audit-stage4-followup-release.sql','supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql',
+  'tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1',
   'paper_evaluator/v3_paper_minipc_native_launcher_v1.py',
   'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql')){
   $out[$path]=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes (Join-Path $Root $path) 1048576)
@@ -152,7 +154,51 @@ function Get-V3PaperCasCallSql([object]$Request) {
  }
  return ('SELECT public.rotate_v2r4_to_v3_experimental_paper('+($argsList -join ',')+');')
 }
-function Get-V3PaperCasInstallSql([string]$Source,[object]$Context) {
+function Assert-V3PaperEpochPlan([object]$Context,[hashtable]$Inventory) {
+ $p=$Context.plan
+ $e=$p.cas_epoch
+ if([string]$e.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+    [string]$e.source_sha256 -cne $Inventory['supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql'] -or
+    [string]$e.fence_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    [string]$e.caller_acl_sha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_PAPER_FOLLOWUP_PLAN_EPOCH_PINS_HOLD'}
+ $native=Get-Module v3-one-time-originalhost-release
+ $marker=& $native {param($plan) New-V3Pr515PreparedArmedMarker $plan.series_id $plan.repo_sha $plan.bundle_sha256 $plan.strategy_sha256} $p
+ $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($marker|ConvertTo-Json -Depth 24 -Compress))
+ if((Get-V3ReleaseSha256 $bytes) -cne [string]$e.fence_sha256){throw 'V3_PAPER_FOLLOWUP_PREPARED_FENCE_DRIFT'}
+ return $e
+}
+function Assert-V3PaperEpochReceipt([object]$Receipt,[object]$Epoch) {
+ if([string]$Receipt.kind -cne 'V3_PAPER_RELEASE_EPOCH_READER_V1'){throw 'V3_PAPER_FOLLOWUP_READER_KIND_HOLD'}
+ foreach($field in @('epoch_id','source_sha256','fence_sha256','caller_acl_sha256')){
+  if([string]$Receipt.$field -cne [string]$Epoch.$field){throw 'V3_PAPER_FOLLOWUP_READER_EPOCH_DRIFT'}
+ }
+}
+function Get-V3PaperEpochSealSql([string]$Source,[object]$Context,[object]$Epoch,[object]$Receipt,[string]$StopSha) {
+ $lock="RAISE EXCEPTION 'V3_STAGE5_EPOCH_SEAL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+ if(([regex]::Matches($Source,[regex]::Escape($lock))).Count -ne 1){throw 'V3_PAPER_SEAL_SOURCE_LOCK_DRIFT'}
+ $config=$Context.plan.cas_request.new_v3_config
+ foreach($key in @('preinvoke_epoch_id','preinvoke_intent_id','preinvoke_request_sha256',
+    'preinvoke_source_sha256','preinvoke_fence_sha256','preinvoke_inhibit_receipt_sha256')){
+  if([string]$Receipt.$key -cne [string]$config.$key){throw 'V3_PAPER_SEAL_SIGNED_REQUEST_DRIFT'}
+ }
+ $values=[ordered]@{
+  EPOCH_ID=[string]$Epoch.epoch_id;INTENT_ID=[string]$Receipt.preinvoke_intent_id
+  REQUEST_SHA256=[string]$Receipt.preinvoke_request_sha256;SOURCE_SHA256=[string]$Epoch.source_sha256
+  FENCE_SHA256=[string]$Epoch.fence_sha256;CALLER_ACL_SHA256=[string]$Epoch.caller_acl_sha256
+ }
+ foreach($key in $values.Keys){
+  $pattern=@{EPOCH_ID='^V3CAS-AUDIT-[a-f0-9]{32}$';INTENT_ID='^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$'}[$key]
+  if(-not $pattern){$pattern='^[a-f0-9]{64}$'}
+  if($values[$key] -cnotmatch $pattern){throw 'V3_PAPER_SEAL_PARAMETER_HOLD'}
+  $Source=$Source.Replace('__'+$key+'__',$values[$key])
+ }
+ if($StopSha -cnotmatch '^[a-f0-9]{64}$' -or $Context.commit -cnotmatch '^[a-f0-9]{40}$'){throw 'V3_PAPER_SEAL_PINS_HOLD'}
+ $deadline=$Context.authorization.expires_at.ToUniversalTime().ToString('o')
+ $gate="IF session_user <> 'postgres' OR clock_timestamp() >= '$deadline'::timestamptz THEN RAISE EXCEPTION 'V3_PAPER_SEAL_AUTHORIZATION_HOLD'; END IF; " +
+  "PERFORM set_config('v3_stage5.followup','true',true),set_config('v3_stage5.commit','$($Context.commit)',true),set_config('v3_stage5.stop_sha256','$StopSha',true);"
+ return $Source.Replace($lock,$gate)
+}
+function Get-V3PaperCasInstallSql([string]$Source,[object]$Context,[object]$Epoch) {
  # Deterministic release of the existing original, never a copied CAS body.
  # Caller has already verified the independent INSTALL scope and package lease.
  $lock="raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
@@ -163,14 +209,40 @@ function Get-V3PaperCasInstallSql([string]$Source,[object]$Context) {
 DO $v3_actor_bind$
 BEGIN
  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='v3_cas_executor_actor'
-    AND rolcanlogin AND NOT rolsuper AND NOT rolcreaterole AND NOT rolcreatedb
+    AND NOT rolcanlogin AND rolconnlimit=0 AND NOT rolsuper AND NOT rolcreaterole AND NOT rolcreatedb
     AND NOT rolbypassrls AND NOT rolinherit AND NOT rolreplication)
  OR EXISTS (SELECT 1 FROM pg_auth_members WHERE member='v3_cas_executor_actor'::regrole)
+ OR EXISTS (SELECT 1 FROM pg_stat_activity WHERE usename IN ('v3_cas_executor_actor','v3_cas_executor'))
  THEN RAISE EXCEPTION 'V3_PAPER_EXECUTOR_ACTOR_SCOPE_HOLD'; END IF;
 END $v3_actor_bind$;
 GRANT v3_cas_executor TO v3_cas_executor_actor WITH INHERIT FALSE, SET TRUE, ADMIN FALSE;
 '@
- return "BEGIN;`n"+$Source.Replace($lock,$gate)+"`n"+$membership+"`nCOMMIT;"
+ $inhibit=''
+ $transaction='BEGIN;'
+ if($null -ne $Epoch){
+  $transaction='BEGIN ISOLATION LEVEL SERIALIZABLE;'
+  # The values were validated against the exact signed Originalhost plan.
+  $inhibit=@"
+DO `$v3_install_inhibit`$
+BEGIN
+ PERFORM 1 FROM v3_cas_audit.epoch_v1 e
+ JOIN v3_cas_audit.executor_inhibit_v1 i ON i.epoch_id=e.epoch_id
+ WHERE e.epoch_id='$($Epoch.epoch_id)' AND e.paper_release_commit='$($Context.commit)'
+ AND e.source_sha256='$($Epoch.source_sha256)' AND e.original_fence_sha256='$($Epoch.fence_sha256)'
+ AND e.approved_caller_acl_sha256='$($Epoch.caller_acl_sha256)'
+ AND i.source_sha256=e.source_sha256 AND i.original_fence_sha256=e.original_fence_sha256
+ AND i.caller_acl_sha256=e.approved_caller_acl_sha256 AND i.issuer_id='v3_cas_inhibit_issuer_actor'
+ AND i.state='INHIBITED' AND i.native_stop_at_utc IS NULL AND i.acknowledged_at_utc IS NULL
+ AND i.receipt_sha256 IS NULL AND NOT e.sealed AND e.next_ordinal=1;
+ IF NOT FOUND OR EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id='$($Epoch.epoch_id)')
+  OR EXISTS (SELECT FROM v3_cas_audit.intent_v1) OR EXISTS (SELECT FROM v3_cas_audit.attempt_v1)
+  OR (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
+  OR NOT EXISTS (SELECT FROM public.paper_series WHERE status='active' AND series_id='PAPER-V2R4-20261009T110135Z')
+ THEN RAISE EXCEPTION 'V3_PAPER_INSTALL_CURRENT_INHIBIT_HOLD'; END IF;
+END `$v3_install_inhibit`$;
+"@
+ }
+ return $transaction+"`n"+$inhibit+"`n"+$Source.Replace($lock,$gate)+"`n"+$membership+"`nCOMMIT;"
 }
 function Open-V3PaperIntakePair {
  $native=Get-Module v3-one-time-originalhost-release
@@ -196,7 +268,7 @@ function Invoke-V3OneTimePaperRelease {
  [string]$AuthorityAdmissionJson,[string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit,
  [string]$PaperPlanJson,[string]$RuntimeSpecJson,[string]$HostReceiptJson,[string]$HostReceiptCms,
  [Security.SecureString]$PostgresPassword,[string]$CaFile)
- $scope=@{PaperPrepare='V3_PAPER_PREPARE';PaperStop='V3_PAPER_STOP';PaperCas='V3_PAPER_CAS';InstallPaperCas='V3_PAPER_CAS_INSTALL';
+ $scope=@{PaperOpenEpoch='CLOUD_STAGE4_EPOCH_OPEN';PaperSealEpoch='CLOUD_STAGE5_EPOCH_SEAL';PaperPrepare='V3_PAPER_PREPARE';PaperStop='V3_PAPER_STOP';PaperCas='V3_PAPER_CAS';InstallPaperCas='V3_PAPER_CAS_INSTALL';
   PaperActivate='V3_PAPER_ACTIVATE';PaperRollback='V3_PAPER_ROLLBACK';PaperHostReadback='V3_PAPER_RUNTIME';PaperResume='V3_PAPER_RESUME'}[$Mode]
  if(-not $scope){throw 'V3_PAPER_UNKNOWN_MODE'}
  Assert-V3PaperOriginalHost $Mode $PackageRoot $ExpectedReleaseCommit
@@ -211,7 +283,7 @@ function Invoke-V3OneTimePaperRelease {
   if([string]$b.reader_certificate_sha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_PAPER_INDEPENDENT_READER_PIN_REQUIRED'}
   $ctx=[pscustomobject]@{authorization=$auth;commit=$ExpectedReleaseCommit;plan=$null;
    fence=(Get-V3PaperFencePath)}
-  $receipt=Read-V3PaperIndependentReceipt $ctx $HostReceiptJson $HostReceiptCms
+  $receipt=if($Mode -ne 'PaperOpenEpoch'){Read-V3PaperIndependentReceipt $ctx $HostReceiptJson $HostReceiptCms}
   if($Mode -eq 'PaperHostReadback'){
    $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
    $plan=Read-V3PaperPinnedJson $spec.paper_plan $b.plan_sha256;$ctx.plan=$plan
@@ -219,6 +291,7 @@ function Invoke-V3OneTimePaperRelease {
    if([string]$receipt.kind -cne 'V3_NATIVE_ONE_OWNER_POST_CAS_ORIGINALHOST_READBACK_V1' -or
       [string]$receipt.release_repo_sha -cne $ExpectedReleaseCommit){throw 'V3_PAPER_HOST_RECEIPT_KIND_HOLD'}
    Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+   Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Scope Local
    Assert-V3PaperTaskPins $plan -AllowDisabledIntake -AllowRunningWriter
    Assert-V3PaperProcesses $plan -Absent
    $null=Assert-V3PaperFence $ctx @('CLOUD_COMMITTED')
@@ -258,6 +331,7 @@ function Invoke-V3OneTimePaperRelease {
    throw 'V3_PAPER_PLAN_IDENTITY_HOLD'
   }
   Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+  Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Scope Local
   # The imported existing module reloads authorization; re-importing it must
   # not discard the already verified original payload/expiry held in $ctx.
   $mutex=[Threading.Mutex]::new($false,'Global\V3Pr661OriginalhostOneShotOperator')
@@ -273,12 +347,35 @@ function Invoke-V3OneTimePaperRelease {
    return [pscustomobject]@{kind='V3_PAPER_RESUME_READBACK_V1';cas_attempted=[IO.File]::Exists($casLatch);
     independent_state=$receipt.state;automatic_retry=$false;paper_operational_claimed=$false}
   }
+  if($Mode -in @('PaperOpenEpoch','PaperSealEpoch','InstallPaperCas','PaperPrepare','PaperStop','PaperCas')){
+   $epoch=Assert-V3PaperEpochPlan $ctx $inventory
+   if($Mode -ne 'PaperOpenEpoch'){Assert-V3PaperEpochReceipt $receipt $epoch}
+  }
+  if($Mode -eq 'PaperOpenEpoch'){
+   if($null -eq $PostgresPassword){throw 'V3_PAPER_EXISTING_ADMIN_CREDENTIAL_REQUIRED'}
+   if([IO.File]::Exists($ctx.fence) -or [IO.File]::Exists($casLatch) -or
+      [string](Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\').State -cne 'Disabled'){
+    throw 'V3_PAPER_OPEN_EPOCH_EXISTING_FENCE_ATTEMPT_OR_WRITER_HOLD'
+   }
+   $sql=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes (Join-Path $PackageRoot 'supabase/v3-cas-audit-stage4-followup-release.sql') 1048576))
+   $settings=@{
+    scope='CLOUD_STAGE4_EPOCH_OPEN';commit=$ctx.commit;approval_sha256=$auth.approval_sha256
+    epoch_id=[string]$epoch.epoch_id;source_sha256=[string]$epoch.source_sha256
+    fence_sha256=[string]$epoch.fence_sha256;caller_acl_sha256=[string]$epoch.caller_acl_sha256
+    expires_at=$auth.expires_at.ToUniversalTime().ToString('o')
+   }
+   $prefix=@(foreach($key in $settings.Keys){"SELECT set_config('v3_followup.$key','$($settings[$key])',false);"}) -join "`n"
+   Write-V3PaperReceipt ($base+'.epoch.attempted.json') @{approval_sha256=$auth.approval_sha256}
+   $null=Invoke-V3ReleasePg -Sql ($prefix+"`n"+$sql) -Password $PostgresPassword -Ca $CaFile
+   return @{kind='V3_PAPER_EPOCH_OPEN_RETURNED_INDEPENDENT_ISSUER_AND_READBACK_REQUIRED';epoch_id=$epoch.epoch_id}
+  }
   if($Mode -eq 'InstallPaperCas'){
    if([string]$receipt.state -cne 'INSTALL_APPROVED_OLD_ONLY_NO_ATTEMPTS'){throw 'V3_PAPER_CAS_INSTALL_READER_HOLD'}
    $source=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes (Join-Path $PackageRoot 'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql') 1048576))
-   Write-V3PaperReceipt ($base+'.install.attempted.json') @{approval_sha256=$auth.approval_sha256}
    if($null -eq $PostgresPassword){throw 'V3_PAPER_EXISTING_ADMIN_CREDENTIAL_REQUIRED'}
-   $null=Invoke-V3ReleasePg -Sql (Get-V3PaperCasInstallSql $source $ctx) -Password $PostgresPassword -Ca $CaFile
+   $sql=Get-V3PaperCasInstallSql $source $ctx -Epoch $epoch
+   Write-V3PaperReceipt ($base+'.install.attempted.json') @{approval_sha256=$auth.approval_sha256}
+   $null=Invoke-V3ReleasePg -Sql $sql -Password $PostgresPassword -Ca $CaFile
    return @{kind='V3_PAPER_CAS_INSTALL_RETURNED_INDEPENDENT_READBACK_REQUIRED';paper_activated=$false}
   }
   if($Mode -eq 'PaperPrepare'){
@@ -336,6 +433,9 @@ function Invoke-V3OneTimePaperRelease {
    if([string]$f.phase -cne 'ARMED' -or [string]$receipt.state -cne 'PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS'){
     throw 'V3_PAPER_PRESTOP_INDEPENDENT_INHIBIT_REQUIRED'
    }
+   if((Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $ctx.fence)) -cne [string]$epoch.fence_sha256){
+    throw 'V3_PAPER_PRESTOP_FENCE_EPOCH_DRIFT'
+   }
    Assert-V3PaperProcesses $plan
    Write-V3PaperReceipt ($base+'.stop.attempted.json') @{approval_sha256=$auth.approval_sha256}
    $intakes=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
@@ -362,8 +462,10 @@ function Invoke-V3OneTimePaperRelease {
    }while(-not $quiet)
    Assert-V3PaperTaskPins $plan -AllowDisabledIntake
    Set-V3PaperFence $ctx 'QUIESCED'
-   Write-V3PaperReceipt ($base+'.stop.completed.json') @{state='QUIESCED';approval_sha256=$auth.approval_sha256}
-   return @{kind='V3_PAPER_STOP_QUIESCED_LOCAL_ACK';independent_reader_required=$true}
+   $stopPath=$base+'.stop.completed.json'
+   Write-V3PaperReceipt $stopPath @{state='QUIESCED';approval_sha256=$auth.approval_sha256;
+     observed_at_utc=[datetimeoffset]::UtcNow.ToString('o')}
+   return @{kind='V3_PAPER_STOP_QUIESCED_LOCAL_ACK';independent_reader_required=$true;stop_receipt_path=$stopPath}
   }
   Assert-V3PaperProcesses $plan -Absent
   if($Mode -in @('PaperCas','PaperActivate')){
@@ -372,6 +474,24 @@ function Invoke-V3OneTimePaperRelease {
   }
   foreach($name in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
    if([string](Get-ScheduledTask -TaskName $name).State -cne 'Disabled'){throw 'V3_PAPER_OLD_INTAKE_NOT_DISABLED'}
+  }
+  if($Mode -eq 'PaperSealEpoch'){
+   if([string]$f.phase -cne 'QUIESCED' -or [string]$receipt.state -cne 'STOP_CONFIRMED_INTENT_COMMITTED'){
+    throw 'V3_PAPER_FOLLOWUP_SEAL_READER_OR_FENCE_HOLD'
+   }
+   if($null -eq $PostgresPassword){throw 'V3_PAPER_EXISTING_ADMIN_CREDENTIAL_REQUIRED'}
+   $stop=Read-V3ReleaseLocalBytes ($base+'.stop.completed.json')
+   $stopSha=Get-V3ReleaseSha256 $stop
+   if([string](Read-V3ReleaseJson $stop).state -cne 'QUIESCED' -or
+      [string]$receipt.preinvoke_inhibit_receipt_sha256 -cne $stopSha){throw 'V3_PAPER_FOLLOWUP_SEAL_ORIGINAL_STOP_DRIFT'}
+   $sql=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes (Join-Path $PackageRoot 'supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql') 1048576))
+   $sql=Get-V3PaperEpochSealSql $sql $ctx $epoch $receipt $stopSha
+   $intakePair=Open-V3PaperIntakePair
+   Assert-V3PaperTaskPins $plan -AllowDisabledIntake
+   Assert-V3PaperDeadline $ctx
+   Write-V3PaperReceipt ($base+'.seal.attempted.json') @{approval_sha256=$auth.approval_sha256}
+   $null=Invoke-V3ReleasePg -Sql $sql -Password $PostgresPassword -Ca $CaFile
+   return @{kind='V3_PAPER_EPOCH_SEAL_RETURNED_INDEPENDENT_READBACK_REQUIRED';epoch_id=$epoch.epoch_id}
   }
   if($Mode -eq 'PaperCas'){
    if([string]$f.phase -cne 'QUIESCED' -or [string]$receipt.state -cne 'SEALED_INTENT_INHIBIT_STOP_CONFIRMED'){
@@ -438,6 +558,8 @@ function Invoke-V3OneTimePaperRelease {
    if([string]$receipt.state -cne 'PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS'){
     throw 'V3_PAPER_ROLLBACK_INDEPENDENT_TERMINAL_ABORT_REQUIRED'
    }
+   $rollbackEpoch=Assert-V3PaperEpochPlan $ctx $inventory
+   Assert-V3PaperEpochReceipt $receipt $rollbackEpoch
    Write-V3PaperReceipt ($base+'.rollback.attempted.json') @{approval_sha256=$auth.approval_sha256}
    # Archive exact fence before the two original IgnoreNew tasks can restart.
    # All task XMLs have just been checked against their original backups.

@@ -6,7 +6,7 @@ changed merely because this source merges.
 
 `tools/v3-one-time-release.ps1` now owns the productive modes below. Every
 mode independently verifies the original #99 authority admission, exact release
-commit, detached CMS, artifact inventory, signed plan hash and fresh independent
+commit, detached CMS, artifact inventory, signed plan hash and, except for the Stage4 epoch opening itself, a fresh independent
 reader receipt. Existing authorization windows remain at most 15 minutes.
 Expired authority holds; this is a bounded one-shot release, not an indefinite
 unattended-operation authorization. No existing dormant SQL file is deployed
@@ -15,9 +15,11 @@ by the productive native bootstrap.
 
 | Mode | Scope | Required independent state | Effect |
 |---|---|---|---|
+| `PaperOpenEpoch` | `CLOUD_STAGE4_EPOCH_OPEN` | Original old-only Cloud, one historical terminal abort, zero intents and attempts | Open one source-bound follow-up epoch and install its read-only Notebook query in one transaction |
 | `InstallPaperCas` | `V3_PAPER_CAS_INSTALL` | `INSTALL_APPROVED_OLD_ONLY_NO_ATTEMPTS` | Install the existing atomic CAS body and bind only the existing restricted executor actor; separate approval from rotation |
 | `PaperPrepare` | `V3_PAPER_PREPARE` | `PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS` | Update the existing disabled task action; create the protected ARMED fence |
 | `PaperStop` | `V3_PAPER_STOP` | `PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS` | Disable/stop only Candidates and WAIT; require process absence before QUIESCED |
+| `PaperSealEpoch` | `CLOUD_STAGE5_EPOCH_SEAL` | `STOP_CONFIRMED_INTENT_COMMITTED` | Seal only the new epoch, with exact original STOP receipt and independent Writer/Issuer commits |
 | `PaperCas` | `V3_PAPER_CAS` | `SEALED_INTENT_INHIBIT_STOP_CONFIRMED` | Commit UNKNOWN through the existing executor, then call the existing 16-parameter rotation in a second transaction |
 | `PaperActivate` | `V3_PAPER_ACTIVATE` | `CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE` | Hold both disabled intake definitions, set CLOUD_COMMITTED, enable/start the existing V3 task once |
 | `PaperHostReadback` | `V3_PAPER_RUNTIME` | Signed original release evidence | Authenticate release evidence and independently observe actual Windows task/Python PID/birth, process absence, fence and supervisor before the locked native phase |
@@ -29,15 +31,58 @@ release builder in `Get-V3PaperCasInstallSql` replaces only that installation
 seam after INSTALL admission, within one transaction. The atomic function body,
 private audit relations, full PostgreSQL request digest, issuer inhibit,
 old-series locks and single-active index remain unchanged. Existing roles must
-already satisfy their restricted properties. A missing/disabled actor or missing
-original audit function is a concrete deployment prerequisite, not a reason to
-use postgres/service_role for rotation. Installation and rotation use separate
+already satisfy their restricted properties. The existing executor actor must be NOLOGIN, at connection limit zero, with no session or membership before installation. The installation binds only SET membership and keeps login disabled. An executable, separately authorized actor credential is needed at rotation. Installation and rotation use separate
 SecureString credentials through the existing TLS-verifying stdin-only psql
 transport. No raw caller SQL is executed.
 
+### Follow-up after terminal Gate A
+
+1. With the reviewed original Windows task definitions and signed plan, run
+   `PaperOpenEpoch` under the existing Stage4 scope. The previous Stage4 and
+   abort paths keep their historical semantics. The follow-up SQL preserves the
+   historical rows and dispatch triggers, restores the existing role escrow,
+   and refuses replay or any unexpected epoch, intent, attempt, or active series.
+2. Before installing the RPC, the existing independent issuer calls
+   `begin_executor_inhibit_v1` using the new epoch's four original bindings.
+   The Notebook runs the existing Reader script with `-PaperReleaseSignedCurrent`,
+   `-PaperPlanJson`, `-PaperReleaseId` and its existing reviewed certificate pin.
+   It queries the exact new epoch over the authenticated read-only connection
+   and signs the pre-install result with the plan digest.
+3. Run `InstallPaperCas` with the corresponding scoped approval and Reader
+   receipt. The SQL rechecks the new epoch and its genuine inhibit in the
+   transaction. Re-run the Reader in the same mode for independent installation
+   readback. It validates the exact installed RPC and limited executor membership,
+   still requiring no executor login or sessions before STOP.
+4. Use fresh signed Pre-STOP receipts for `PaperPrepare` and `PaperStop` under
+   their own scopes. After preparation the plan must pin its returned exact
+   disabled task XML. STOP checks the prepared fence bytes against the same
+   Cloud epoch. After STOP, the existing Writer commits the exact request intent
+   using `append_intent_v1`. The independent issuer confirms STOP with
+   `confirm_executor_inhibit_v1` using the completion timestamp and SHA256 of
+   the returned Originalhost STOP receipt. Obtain a fresh Reader result, then
+   run `PaperSealEpoch` on the Originalhost under its separate scope. The Reader
+   can attest the sealed epoch with the executor still inhibited. Enroll/enable
+   the existing executor only for the separately authorized CAS window, then
+   obtain the fresh pre-CAS Reader result.
+
+If the release must stop before any CAS attempt, disable the executor actor and
+verify zero sessions. Under the separate abort approval the existing issuer
+calls `record_paper_release_abort_v1` for the exact release, epoch, source,
+fence, ACL and independently reviewed receipt hash. The same Notebook Reader
+can then attest the terminal state even with the guarded RPC installed. Only
+a separately authorized Originalhost `PaperRollback` may rearm V2R4.
+
+The signed plan includes `cas_epoch` with `epoch_id`, `source_sha256`,
+`fence_sha256` and `caller_acl_sha256`. The source hash is the reviewed CAS
+artifact hash. The fence hash is SHA256 of the UTF-8 no-BOM compact JSON bytes
+that `Write-V3PaperReceipt` will write for the existing
+`New-V3Pr515PreparedArmedMarker` (using the plan's exact release, series, bundle
+and strategy). The ACL hash comes from the reviewed original ACL evidence.
+These pins remain fixed across later plan revisions for the same epoch.
+
 ## Exact inputs
 
-`-Mode PaperInventory` returns the complete eleven-file artifact inventory
+`-Mode PaperInventory` returns the complete fourteen-file artifact inventory
 from original bytes, without Windows actions or Cloud contact. Use this
 inventory for the new scopes; the historical default Inventory remains
 unchanged for its older scopes.

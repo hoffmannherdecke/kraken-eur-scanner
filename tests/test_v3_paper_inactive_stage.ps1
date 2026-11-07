@@ -124,7 +124,10 @@ try {
   }
   foreach($mustHave in @(
       'tools/v3_experimental_paper_technical_gate.py',
-      'tools/paper_series_transition_guard.py'
+      'tools/paper_series_transition_guard.py',
+      'supabase/v3-cas-audit-stage4-followup-release.sql',
+      'supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql',
+      'tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1'
   )){
     $rows=@($stored.source_manifest | Where-Object {
       $_.relative_path -ceq $mustHave
@@ -149,7 +152,7 @@ try {
        $relative -cne 'tools/minipc-runtime-supervisor.ps1' -and
        $relative -cne 'tools/check-minipc-v3-physical-writer-readiness.ps1' -and
        $relative -cne 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1' -and
-       $relative -cnotin @('tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1','tools/v3-one-time-paper-release.ps1','tools/v3-one-time-originalhost-release.psm1','supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql','supabase/v3-cas-prepared-fence-abort-INACTIVE.sql','supabase/v3-cas-prepared-fence-abort-release.sql','supabase/v3-cas-prepared-fence-abort-release-readback.sql')){
+       $relative -cnotin @('tools/v3-one-time-release.ps1','tools/v3-one-time-release-authorization.psm1','tools/v3-one-time-paper-release.ps1','tools/v3-one-time-originalhost-release.psm1','supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql','supabase/v3-cas-prepared-fence-abort-INACTIVE.sql','supabase/v3-cas-prepared-fence-abort-release.sql','supabase/v3-cas-prepared-fence-abort-release-readback.sql','supabase/v3-cas-audit-stage4-followup-release.sql','supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql','tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1')){
       throw ('Unreviewed staged path '+$relative)
     }
     $dest=Join-Path $expectedDir $relative

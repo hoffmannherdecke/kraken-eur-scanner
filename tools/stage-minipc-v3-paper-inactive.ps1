@@ -61,6 +61,8 @@ $operatorSource=@(
  'tools/v3-one-time-release.ps1',
  'tools/v3-one-time-release-authorization.psm1',
  'tools/v3-one-time-paper-release.ps1',
+ 'supabase/v3-cas-audit-stage4-followup-release.sql','supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql',
+ 'tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1',
  'tools/v3-one-time-originalhost-release.psm1',
  'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql',
  'supabase/v3-cas-prepared-fence-abort-INACTIVE.sql',

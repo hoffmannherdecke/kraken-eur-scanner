@@ -375,7 +375,7 @@ jobs:
           assert fixture.count(marker)==1
           # Actor exists before its narrowly admitted membership; no grants
           # or passwords from any real host are imported into this fixture.
-          replacement="CREATE ROLE v3_cas_executor_actor LOGIN NOINHERIT NOBYPASSRLS;\n"+r"\i /v3_ci/v3_productive_install.sql"+"\nBEGIN;"
+          replacement="CREATE ROLE v3_cas_executor_actor NOLOGIN NOINHERIT NOBYPASSRLS CONNECTION LIMIT 0;\n"+r"\i /v3_ci/v3_productive_install.sql"+"\nBEGIN;"
           setup=fixture.split(marker,1)[0]
           checks="""
           DO $verify_productive_actor$

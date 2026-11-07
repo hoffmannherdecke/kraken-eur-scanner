@@ -19,6 +19,7 @@ DECLARE
  v_source text := '__SOURCE_SHA256__';
  v_fence text := '__FENCE_SHA256__';
  v_acl text := '__CALLER_ACL_SHA256__';
+ v_followup boolean := current_setting('v3_stage5.followup',true) IS NOT DISTINCT FROM 'true';
 BEGIN
  IF current_user <> 'postgres' OR current_database() <> 'postgres'
     OR (SELECT count(*) FROM pg_catalog.pg_roles
@@ -36,17 +37,30 @@ BEGIN
  IF (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
     OR (SELECT count(*) FROM public.paper_series
         WHERE status='active' AND series_id='PAPER-V2R4-20261009T110135Z') <> 1
-    OR (SELECT count(*) FROM v3_cas_audit.epoch_v1) <> 1
+    OR (SELECT count(*) FROM v3_cas_audit.epoch_v1) <> (CASE WHEN v_followup THEN 2 ELSE 1 END)
     OR (SELECT count(*) FROM v3_cas_audit.intent_v1) <> 1
     OR pg_catalog.to_regclass('v3_cas_audit.prepared_fence_abort_v1') IS NULL
     -- A terminal issuer abort is durable and must never be sealed/reused.
     -- The abort ledger is mandatory for the same released CAS epoch path.
     OR EXISTS (SELECT 1 FROM v3_cas_audit.prepared_fence_abort_v1
                WHERE epoch_id=v_id)
-   OR pg_catalog.to_regprocedure(
+   OR (pg_catalog.to_regprocedure(
       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
-      ) IS NOT NULL THEN
+      ) IS NOT NULL) IS DISTINCT FROM v_followup THEN
   RAISE EXCEPTION 'V3_STAGE5_SEAL_UNEXPECTED_SERIES_AUDIT_OR_CAS_HOLD';
+ END IF;
+ IF v_followup THEN
+  IF NOT EXISTS (SELECT FROM v3_cas_audit.epoch_v1 e
+      JOIN v3_cas_audit.executor_inhibit_v1 g ON g.epoch_id=e.epoch_id
+      WHERE e.epoch_id=v_id AND e.paper_release_commit=current_setting('v3_stage5.commit',true)
+        AND g.source_sha256=v_source AND g.original_fence_sha256=v_fence AND g.caller_acl_sha256=v_acl
+        AND g.issuer_id='v3_cas_inhibit_issuer_actor' AND g.state='INHIBITED'
+        AND g.native_stop_at_utc IS NOT NULL AND g.acknowledged_at_utc IS NOT NULL
+        AND g.receipt_sha256=current_setting('v3_stage5.stop_sha256',true)
+        AND g.valid_through_utc>clock_timestamp() AND g.audit_intent_high_watermark=1)
+     OR EXISTS (SELECT FROM v3_cas_audit.attempt_v1)
+     OR EXISTS (SELECT FROM pg_stat_activity WHERE usename IN ('v3_cas_executor_actor','v3_cas_executor'))
+  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_SEAL_INHIBIT_OR_ATTEMPT_HOLD'; END IF;
  END IF;
  IF (SELECT count(*) FROM v3_cas_audit.epoch_v1 e
      JOIN v3_cas_audit.intent_v1 i ON i.epoch_id=e.epoch_id
