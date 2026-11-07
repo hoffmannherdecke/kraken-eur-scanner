@@ -129,7 +129,7 @@ REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 -- The original no-argument Gate-A/Stage4 Reader and abort trigger remain intact.
 CREATE FUNCTION v3_cas_audit.read_paper_release_epoch_v1(p_epoch_id text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $reader$
-DECLARE e record; g record; i v3_cas_audit.intent_v1%ROWTYPE; actor record; rpc oid; installed boolean; state text;
+DECLARE e record; g record; i v3_cas_audit.intent_v1%ROWTYPE; actor record; rpc oid; installed boolean; witness_state text;
 BEGIN
  IF session_user <> 'v3_cas_audit_reader_actor'
     OR current_setting('role',true) IS DISTINCT FROM 'v3_cas_audit_reader'
@@ -171,7 +171,7 @@ BEGIN
  IF NOT actor.rolcanlogin AND NOT e.sealed AND e.next_ordinal=1 AND g.native_stop_at_utc IS NULL
     AND g.acknowledged_at_utc IS NULL AND g.receipt_sha256 IS NULL
     AND NOT EXISTS (SELECT FROM v3_cas_audit.intent_v1) THEN
-   state:=CASE WHEN installed THEN 'PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS'
+   witness_state:=CASE WHEN installed THEN 'PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS'
                ELSE 'INSTALL_APPROVED_OLD_ONLY_NO_ATTEMPTS' END;
  ELSIF installed AND e.next_ordinal=2 AND g.native_stop_at_utc IS NOT NULL
        AND g.acknowledged_at_utc IS NOT NULL AND g.receipt_sha256 IS NOT NULL
@@ -184,12 +184,12 @@ BEGIN
      AND requested_rpc=e.expected_rpc AND predecessor_series_id=e.predecessor_series_id
      AND state='PREINVOKE_INTENT';
    IF NOT FOUND THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_INTENT_HOLD'; END IF;
-   state:=CASE WHEN NOT e.sealed THEN 'STOP_CONFIRMED_INTENT_COMMITTED'
+   witness_state:=CASE WHEN NOT e.sealed THEN 'STOP_CONFIRMED_INTENT_COMMITTED'
                WHEN actor.rolcanlogin THEN 'SEALED_INTENT_INHIBIT_STOP_CONFIRMED'
                ELSE 'SEALED_INTENT_EXECUTOR_INHIBITED' END;
  ELSE RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_PHASE_HOLD'; END IF;
  RETURN jsonb_build_object(
-  'kind','V3_PAPER_RELEASE_EPOCH_READER_V1','state',state,
+  'kind','V3_PAPER_RELEASE_EPOCH_READER_V1','state',witness_state,
   'observed_at_utc',to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
   'release_commit',e.paper_release_commit,'epoch_id',p_epoch_id,
   'source_sha256',e.source_sha256,'fence_sha256',e.original_fence_sha256,
