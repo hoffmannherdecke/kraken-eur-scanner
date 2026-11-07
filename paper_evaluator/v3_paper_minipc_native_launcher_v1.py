@@ -241,7 +241,7 @@ if __name__ == "__main__" and "--released-one-shot" in sys.argv:
     raise SystemExit(_released_windows_bootstrap())
 
 from tools.v3_experimental_paper_technical_gate import (
-    assess_v3_native_source_import_closure, validate_experimental_paper_packet,
+    FREE_RULE_ROUTE, assess_v3_native_source_import_closure, validate_experimental_paper_packet,
 )
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import read_active_paper_series
@@ -472,6 +472,10 @@ def dispatch_after_native_release_readback(*,
             or release_packet.get("strategy_fingerprint_sha256") !=
                 phase_args["strategy_sha256"]):
         raise ValueError("pinned original technical release evidence missing")
+    if (release_packet.get("primary_decision_route")==FREE_RULE_ROUTE
+            and any(phase_args.get(key) is not None
+                    for key in ("approval","model_key","model_client"))):
+        raise ValueError("free-rule release forbids paid-model inputs")
     proof_errors = validate_experimental_paper_packet(
         release_root, REVISION, release_packet)
     if proof_errors:

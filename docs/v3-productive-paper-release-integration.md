@@ -164,6 +164,19 @@ original six-proof packet and a fresh authenticated Cloud read inside the
 existing native single-writer lock. The first-scanner default remains the
 free BUY_SCOUT/WAIT/REJECT rule route from PR677–679.
 
+The existing six-proof packet explicitly selects `primary_decision_route:
+FREE_RULE_P4` for that route. Its provider HTTP attempt limit is zero and the
+packet grants no provider budget. The first proof retains its existing ID.
+It must contain actual positive and negative Mini-PC rule/PIT/P4 journals,
+including zero HTTP reservations and calls, and independent same-case
+readbacks from the isolated Cloud evidence store. Production Cloud contributes
+the separate read-only witness, with no fixture uploads or series changes.
+Exact code and strategy pins, original receipt digests, owner lock, local
+ledger and zero negative-case fills remain mandatory. The second proof checks
+the route's fail-closed behavior, including rejecting provider inputs.
+Legacy provider packets retain their original validation. Neither isolated
+CI nor a locally generated packet is an independent release approval.
+
 ## Fault handling and evidence
 
 Create-new, flushed attempt receipts precede every effectful dispatch. Timeouts,
