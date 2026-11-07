@@ -130,7 +130,7 @@ REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 CREATE FUNCTION v3_cas_audit.read_paper_release_epoch_v1(p_epoch_id text)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $reader$
 DECLARE e record; g record; i v3_cas_audit.intent_v1%ROWTYPE;
- actor record; successor public.paper_series%ROWTYPE; rpc oid; installed boolean; witness_state text;
+ actor record; successor_id text; successor_config jsonb; rpc oid; installed boolean; witness_state text;
 BEGIN
  IF session_user <> 'v3_cas_audit_reader_actor'
     OR current_setting('role',true) IS DISTINCT FROM 'v3_cas_audit_reader'
@@ -189,7 +189,7 @@ BEGIN
        AND t.source_sha256=i0.source_sha256 AND t.fence_sha256=i0.fence_sha256
        AND t.created_at_utc>=i0.created_at_utc;
    IF NOT FOUND THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_POSTCAS_ATTEMPT_DRIFT'; END IF;
-   SELECT * INTO successor FROM public.paper_series WHERE status='active'
+   SELECT series_id,config INTO successor_id,successor_config FROM public.paper_series WHERE status='active'
      AND series_id ~ '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$'
      AND config->>'series_id'=series_id AND config->>'predecessor_series_id'=e.predecessor_series_id
      AND config->>'release_repo_sha'=e.paper_release_commit
@@ -245,9 +245,9 @@ BEGIN
   'preinvoke_request_sha256',i.request_sha256,'preinvoke_source_sha256',e.source_sha256,
   'preinvoke_fence_sha256',e.original_fence_sha256,'preinvoke_inhibit_receipt_sha256',g.receipt_sha256)
   || CASE WHEN witness_state='CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE' THEN jsonb_build_object(
-       'successor_series_id',successor.series_id,'repo_sha',successor.config->>'release_repo_sha',
-       'bundle_sha256',successor.config->>'runtime_bundle_fingerprint_sha256',
-       'strategy_sha256',successor.config->>'strategy_fingerprint_sha256')
+       'successor_series_id',successor_id,'repo_sha',successor_config->>'release_repo_sha',
+       'bundle_sha256',successor_config->>'runtime_bundle_fingerprint_sha256',
+       'strategy_sha256',successor_config->>'strategy_fingerprint_sha256')
      ELSE '{}'::jsonb END;
 END $reader$;
 REVOKE ALL ON FUNCTION v3_cas_audit.read_paper_release_epoch_v1(text)
