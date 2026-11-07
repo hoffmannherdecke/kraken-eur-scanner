@@ -128,8 +128,9 @@ REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 -- Read-only extension for the existing independent Notebook Reader.
 -- The original no-argument Gate-A/Stage4 Reader and abort trigger remain intact.
 CREATE FUNCTION v3_cas_audit.read_paper_release_epoch_v1(p_epoch_id text)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $reader$
-DECLARE e record; g record; i v3_cas_audit.intent_v1%ROWTYPE; actor record; rpc oid; installed boolean; witness_state text;
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $reader$
+DECLARE e record; g record; i v3_cas_audit.intent_v1%ROWTYPE;
+ actor record; successor public.paper_series%ROWTYPE; rpc oid; installed boolean; witness_state text;
 BEGIN
  IF session_user <> 'v3_cas_audit_reader_actor'
     OR current_setting('role',true) IS DISTINCT FROM 'v3_cas_audit_reader'
@@ -138,8 +139,6 @@ BEGIN
  IF NOT FOUND
     OR (SELECT count(*) FROM v3_cas_audit.epoch_v1 WHERE paper_release_commit IS NOT NULL) <> 1
     OR (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
-    OR NOT EXISTS (SELECT FROM public.paper_series WHERE status='active' AND series_id=e.predecessor_series_id)
-    OR EXISTS (SELECT FROM v3_cas_audit.attempt_v1)
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_EPOCH_OR_SERIES_HOLD'; END IF;
  SELECT * INTO actor FROM pg_roles WHERE rolname='v3_cas_executor_actor'
   AND NOT rolsuper AND NOT rolbypassrls AND NOT rolinherit
@@ -168,7 +167,46 @@ BEGIN
     AND original_fence_sha256=e.original_fence_sha256 AND caller_acl_sha256=e.approved_caller_acl_sha256
     AND issuer_id='v3_cas_inhibit_issuer_actor' AND state='INHIBITED';
  IF NOT FOUND THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_INHIBIT_HOLD'; END IF;
- IF EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1
+ IF EXISTS (SELECT FROM v3_cas_audit.attempt_v1) THEN
+   -- DISPATCH_UNKNOWN alone is never evidence of a committed rotation.
+   -- Require the sole active successor to carry the exact sealed request.
+   IF NOT installed OR NOT e.sealed OR e.next_ordinal<>2 OR actor.rolcanlogin OR actor.rolconnlimit<>0
+      OR g.native_stop_at_utc IS NULL OR g.acknowledged_at_utc IS NULL OR g.receipt_sha256 IS NULL
+      OR g.audit_intent_high_watermark IS DISTINCT FROM 1
+      OR EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id=p_epoch_id)
+      OR (SELECT count(*) FROM v3_cas_audit.intent_v1)<>1
+      OR (SELECT count(*) FROM v3_cas_audit.attempt_v1)<>1
+      OR NOT EXISTS (SELECT FROM public.paper_series
+          WHERE series_id=e.predecessor_series_id AND status='strategy_cutover_closed')
+   THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_POSTCAS_CUSTODY_HOLD'; END IF;
+   SELECT i0.* INTO i FROM v3_cas_audit.intent_v1 i0
+     JOIN v3_cas_audit.attempt_v1 t ON t.intent_id=i0.intent_id AND t.epoch_id=i0.epoch_id
+     WHERE i0.epoch_id=p_epoch_id AND i0.ordinal=1 AND i0.state='PREINVOKE_INTENT'
+       AND i0.predecessor_series_id=e.predecessor_series_id AND i0.requested_rpc=e.expected_rpc
+       AND i0.source_sha256=e.source_sha256 AND i0.fence_sha256=e.original_fence_sha256
+       AND t.state='DISPATCH_UNKNOWN' AND t.emitter_actor='v3_cas_executor_actor'
+       AND t.requested_rpc=e.expected_rpc AND t.request_sha256=i0.request_sha256
+       AND t.source_sha256=i0.source_sha256 AND t.fence_sha256=i0.fence_sha256
+       AND t.created_at_utc>=i0.created_at_utc;
+   IF NOT FOUND THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_POSTCAS_ATTEMPT_DRIFT'; END IF;
+   SELECT * INTO successor FROM public.paper_series WHERE status='active'
+     AND series_id ~ '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$'
+     AND config->>'series_id'=series_id AND config->>'predecessor_series_id'=e.predecessor_series_id
+     AND config->>'release_repo_sha'=e.paper_release_commit
+     AND config->>'runtime_bundle_fingerprint_sha256' ~ '^[a-f0-9]{64}$'
+     AND config->>'strategy_fingerprint_sha256' ~ '^[a-f0-9]{64}$'
+     AND config->>'paper_only'='true' AND config->>'real_money_actions_enabled'='false'
+     AND config->>'automatic_activation_allowed'='false'
+     AND config->>'preinvoke_epoch_id'=p_epoch_id AND config->>'preinvoke_intent_id'=i.intent_id::text
+     AND config->>'preinvoke_request_sha256'=i.request_sha256
+     AND config->>'preinvoke_source_sha256'=i.source_sha256 AND config->>'preinvoke_fence_sha256'=i.fence_sha256
+     AND config->>'preinvoke_caller_acl_sha256'=e.approved_caller_acl_sha256
+     AND config->>'preinvoke_inhibit_receipt_sha256'=g.receipt_sha256;
+   IF NOT FOUND THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_POSTCAS_SUCCESSOR_HOLD'; END IF;
+   witness_state:='CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE';
+ ELSIF NOT EXISTS (SELECT FROM public.paper_series WHERE status='active' AND series_id=e.predecessor_series_id)
+ THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_EPOCH_OR_SERIES_HOLD';
+ ELSIF EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1
       WHERE epoch_id=p_epoch_id AND source_sha256=e.source_sha256
         AND prepared_fence_sha256=e.original_fence_sha256 AND caller_acl_sha256=e.approved_caller_acl_sha256
         AND issuer_actor='v3_cas_inhibit_issuer_actor' AND state='ABORT_RECORDED_NOT_RELEASED') THEN
@@ -205,7 +243,12 @@ BEGIN
   'caller_acl_sha256',e.approved_caller_acl_sha256,
   'preinvoke_epoch_id',p_epoch_id,'preinvoke_intent_id',i.intent_id,
   'preinvoke_request_sha256',i.request_sha256,'preinvoke_source_sha256',e.source_sha256,
-  'preinvoke_fence_sha256',e.original_fence_sha256,'preinvoke_inhibit_receipt_sha256',g.receipt_sha256);
+  'preinvoke_fence_sha256',e.original_fence_sha256,'preinvoke_inhibit_receipt_sha256',g.receipt_sha256)
+  || CASE WHEN witness_state='CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE' THEN jsonb_build_object(
+       'successor_series_id',successor.series_id,'repo_sha',successor.config->>'release_repo_sha',
+       'bundle_sha256',successor.config->>'runtime_bundle_fingerprint_sha256',
+       'strategy_sha256',successor.config->>'strategy_fingerprint_sha256')
+     ELSE '{}'::jsonb END;
 END $reader$;
 REVOKE ALL ON FUNCTION v3_cas_audit.read_paper_release_epoch_v1(text)
  FROM PUBLIC,anon,authenticated,service_role;

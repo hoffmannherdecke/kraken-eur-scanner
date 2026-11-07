@@ -165,6 +165,34 @@ values
 -- This inactive SQL file is loaded ONLY in disposable PostgreSQL.
 \ir ../../supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql
 
+-- The architecture smoke supplies the exact reader definition extracted
+-- from the guarded Stage4 source. This fixture creates no production grants.
+\if :{?v3_postcas_reader_sql}
+alter table v3_cas_audit.epoch_v1 add column paper_release_commit text;
+create table v3_cas_audit.prepared_fence_abort_v1(epoch_id text primary key);
+create role v3_cas_executor_actor nologin noinherit nobypassrls connection limit 0;
+grant v3_cas_executor to v3_cas_executor_actor with admin false, set true, inherit false;
+update v3_cas_audit.epoch_v1 set paper_release_commit=repeat('d',40);
+update v3_cas_audit.executor_inhibit_v1 set issuer_id='v3_cas_inhibit_issuer_actor';
+grant usage on schema v3_cas_audit to v3_cas_audit_reader;
+\i :v3_postcas_reader_sql
+revoke all on function v3_cas_audit.read_paper_release_epoch_v1(text) from public;
+grant execute on function v3_cas_audit.read_paper_release_epoch_v1(text) to v3_cas_audit_reader;
+set session authorization v3_cas_audit_reader_actor;
+set role v3_cas_audit_reader;
+do $reader_unknown$
+begin
+ perform v3_cas_audit.read_paper_release_epoch_v1('V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ raise exception 'DISPATCH_UNKNOWN alone was credited as committed';
+exception when others then
+ if sqlerrm <> 'V3_PAPER_FOLLOWUP_POSTCAS_CUSTODY_HOLD' then raise; end if;
+end;
+$reader_unknown$;
+reset role;
+set session authorization postgres;
+revoke v3_cas_executor from v3_cas_executor_actor;
+\endif
+
 -- Exercise true transaction rollback on INSERT after the predecessor UPDATE,
 -- not just textual acceptance of a BEGIN/END statement.
 create function public.reject_v3_fixture_insert() returns trigger
@@ -810,6 +838,41 @@ begin
   raise notice 'V3_DISPOSABLE_POSTGRES_ATOMIC_CAS_FAILCLOSED_AND_ROLLBACK_PASS';
 end;
 $fixture$;
+
+\if :{?v3_postcas_reader_sql}
+grant v3_cas_executor to v3_cas_executor_actor with admin false, set true, inherit false;
+set session authorization v3_cas_audit_reader_actor;
+set role v3_cas_audit_reader;
+do $reader_committed$
+declare r jsonb;
+begin
+ r:=v3_cas_audit.read_paper_release_epoch_v1('V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ if r->>'state' is distinct from 'CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE'
+    or r->>'repo_sha' is distinct from repeat('d',40)
+    or r->>'successor_series_id' !~ '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$'
+ then raise exception 'CAS commit did not produce the independent successor witness: %',r; end if;
+end;
+$reader_committed$;
+reset role;
+set session authorization postgres;
+savepoint before_drift;
+update public.paper_series set config=config||jsonb_build_object('preinvoke_request_sha256',repeat('0',64))
+ where status='active';
+set session authorization v3_cas_audit_reader_actor;
+set role v3_cas_audit_reader;
+do $reader_drift$
+begin
+ perform v3_cas_audit.read_paper_release_epoch_v1('V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ raise exception 'post-CAS request drift was signed';
+exception when others then
+ if sqlerrm <> 'V3_PAPER_FOLLOWUP_POSTCAS_SUCCESSOR_HOLD' then raise; end if;
+end;
+$reader_drift$;
+reset role;
+set session authorization postgres;
+rollback to before_drift;
+\echo V3_PG17_POSTCAS_INDEPENDENT_READER_SUCCESS_UNKNOWN_DRIFT_PASS
+\endif
 
 -- No fixture tables, roles, function, or trigger survive this transaction.
 rollback;

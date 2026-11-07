@@ -157,13 +157,30 @@ try{
  Need ($script:sqlCalls.Count -eq 2) 'CAS_REPLAY_DISPATCHED'
  $script:receipt=@{state='CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE';successor_series_id=$script:plan.series_id;
   repo_sha=$script:plan.repo_sha;bundle_sha256=$script:plan.bundle_sha256;strategy_sha256=$script:plan.strategy_sha256}
+ foreach($key in $request.new_v3_config.PSObject.Properties.Name){$script:receipt[$key]=$request.new_v3_config.$key}
+ $nativeLauncher=Join-Path $root 'paper_evaluator\v3_paper_minipc_native_launcher_v1.py'
+ $script:nativeArguments=(Get-V3PaperNativeActionPrefix $root)+' --runtime-spec "pinned.json"'
+ Need ($script:nativeArguments.StartsWith('-I -B ',[StringComparison]::Ordinal)) 'PREPARED_NATIVE_PREFIX_DRIFT'
  function Get-ScheduledTask {
   param($TaskName)
-  return @{State='Disabled';Actions=@(@{Arguments=' -I -B "pinned.py" --released-one-shot'})}
+  return @{State='Disabled';Actions=@(@{Arguments=$script:nativeArguments})}
  }
  function Enable-ScheduledTask {$script:effects+='enable'}
  function Start-ScheduledTask {$script:effects+='start'}
  $script:effects=@()
+ $reviewedArguments=$script:nativeArguments
+ foreach($drift in @((' '+$reviewedArguments),
+                    ($reviewedArguments -replace '--released-one-shot','--released-one-shot-extra'),
+                    ($reviewedArguments.Replace($nativeLauncher,(Join-Path $root 'other.py'))))){
+  $script:nativeArguments=$drift
+  Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'REVIEWED_DISABLED_NATIVE_ACTION_REQUIRED'
+ }
+ Need ($script:effects.Count -eq 0) 'DRIFTED_ACTIVATION_MUTATED_TASKS'
+ $script:nativeArguments=$reviewedArguments
+ $script:receipt.preinvoke_request_sha256='f'*64
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'ACTIVATION_REQUEST_DRIFT'
+ Need ($script:effects.Count -eq 0) 'DRIFTED_CAS_RECEIPT_MUTATED_TASKS'
+ $script:receipt.preinvoke_request_sha256=$request.new_v3_config.preinvoke_request_sha256
  $res=Invoke-V3OneTimePaperRelease -Mode PaperActivate @common
  Need (($script:effects -join ',') -ceq 'fence,enable,start') 'ACTIVATION_ORDER'
  Need ($res.paper_operational_claimed -eq $false) 'FALSE_RUNTIME_ACK'

@@ -258,6 +258,10 @@ function Assert-V3PaperOriginalHost([string]$Mode,[string]$PackageRoot,[string]$
  }else{Assert-V3OriginalInteractiveOwner}
  if([IO.Path]::GetFullPath($PackageRoot).TrimEnd('\') -cne ('C:\Users\ADMIN\Trading\Staging\V3Paper-INACTIVE-'+$ExpectedReleaseCommit.Substring(0,12))){throw 'V3_PAPER_PINNED_STAGE_REQUIRED'}
 }
+function Get-V3PaperNativeActionPrefix([string]$PackageRoot) {
+ $launcher=Join-Path $PackageRoot 'paper_evaluator\v3_paper_minipc_native_launcher_v1.py'
+ return ('-I -B "'+$launcher+'" --released-one-shot')
+}
 function Get-V3PaperStateBase([string]$ReleaseId) {
  return ('C:\Users\ADMIN\Trading\State\'+$ReleaseId)
 }
@@ -390,8 +394,7 @@ function Invoke-V3OneTimePaperRelease {
     'approval-cms'=$r.approval_cms;'admission-json'=$r.admission_json;
     'admission-sha256'=$ExpectedAuthorityAdmissionSha256;'expected-source-sha'=$ExpectedReleaseCommit;
     'host-receipt'=$r.host_receipt;'host-cms'=$r.host_cms}
-   $launcher=Join-Path $PackageRoot 'paper_evaluator\v3_paper_minipc_native_launcher_v1.py'
-   $arguments='-I -B "'+$launcher+'" --released-one-shot'
+   $arguments=Get-V3PaperNativeActionPrefix $PackageRoot
    foreach($key in $pairs.Keys){
     $value=[string]$pairs[$key]
     if($key -notin @('admission-sha256','expected-source-sha')){
@@ -533,12 +536,22 @@ function Invoke-V3OneTimePaperRelease {
       [string]$receipt.successor_series_id -cne [string]$plan.series_id -or
       [string]$receipt.repo_sha -cne $ctx.commit -or [string]$receipt.bundle_sha256 -cne [string]$plan.bundle_sha256 -or
       [string]$receipt.strategy_sha256 -cne [string]$plan.strategy_sha256){throw 'V3_PAPER_COMMITTED_INDEPENDENT_READER_REQUIRED'}
+   $epoch=Assert-V3PaperEpochPlan $ctx $inventory
+   Assert-V3PaperEpochReceipt $receipt $epoch
+   foreach($key in @('preinvoke_epoch_id','preinvoke_intent_id','preinvoke_request_sha256','preinvoke_source_sha256',
+     'preinvoke_fence_sha256','preinvoke_inhibit_receipt_sha256')){
+    $expected=[string]$plan.cas_request.new_v3_config.$key
+    if(-not $expected -or [string]$receipt.$key -cne $expected){throw 'V3_PAPER_ACTIVATION_REQUEST_DRIFT'}
+   }
    $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
    Assert-V3PaperRuntimeSpec $spec $plan
    # The pre-reviewed existing disabled V3 definition must already contain
    # the exact -I -B retained-snapshot action. No task installation here.
    $v3=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter'
-   if([string]$v3.State -cne 'Disabled' -or [string]$v3.Actions[0].Arguments -notmatch ' -I -B .*--released-one-shot'){
+   $expectedArguments=Get-V3PaperNativeActionPrefix $PackageRoot
+   $actualArguments=[string]$v3.Actions[0].Arguments
+   if([string]$v3.State -cne 'Disabled' -or
+      -not ($actualArguments -ceq $expectedArguments -or $actualArguments.StartsWith($expectedArguments+' ',[StringComparison]::Ordinal))){
     throw 'V3_PAPER_REVIEWED_DISABLED_NATIVE_ACTION_REQUIRED'
    }
    Write-V3PaperReceipt ($base+'.activate.attempted.json') @{approval_sha256=$auth.approval_sha256}
