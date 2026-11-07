@@ -481,7 +481,30 @@ def reconcile_v3_cloud_canary_model_p4_rows(
     }
 
 
+CONTROLLED_BUY_INPUT = "CONTROLLED_TECHNICAL_BUY_V1"
+REAL_SCANNER_INPUT = "ORIGINAL_SCANNER_PIT_V1"
+
+
+def _free_rule_input_origin_error(case:dict[str,Any])->str|None:
+    from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
+        CONTROLLED_BUY_CANDIDATE_ID, ISOLATED_FREE_RULE_SERIES,
+    )
+
+    origin=case.get("input_origin")
+    controlled=case.get("candidate_id")==CONTROLLED_BUY_CANDIDATE_ID
+    if controlled:
+        if (origin!=CONTROLLED_BUY_INPUT or case.get("case")!="POSITIVE_BUY_SCOUT"
+                or not ISOLATED_FREE_RULE_SERIES.fullmatch(str(case.get("series_id","")))):
+            return "controlled BUY fixture identity and isolated provenance required"
+    elif origin not in (None, REAL_SCANNER_INPUT):
+        return "controlled BUY provenance cannot label another input"
+    return None
+
+
 def _free_rule_receipt_error(case:dict[str,Any])->str|None:
+    error=_free_rule_input_origin_error(case)
+    if error:
+        return error
     pit=case.get("original_pit_sha256")
     request=case.get("rule_request")
     p4=case.get("rule_p4")
@@ -685,6 +708,9 @@ def _evidence_content_error(
                 or negative.get("paper_fill_result")!="NO_PAPER_FILL"
                 or negative.get("paper_fill_count")!=0):
             return name+" positive/negative P4 to immutable Paper fill contradiction"
+        if (free_rule and positive.get("input_origin")==CONTROLLED_BUY_INPUT
+                and negative.get("input_origin")!=REAL_SCANNER_INPUT):
+            return name+" controlled BUY requires a real Scanner/PIT REJECT original"
         ids=[]
         for case in cases:
             cid=case.get("candidate_id")
@@ -783,9 +809,9 @@ def _evidence_content_error(
                 if remote.get(key)!=host_case.get(key):
                     return name+" host/Cloud positive or negative original mismatch"
             if free_rule:
-                for key in ("rule_request_sha256","original_pit_sha256"):
+                for key in ("rule_request_sha256","original_pit_sha256","input_origin"):
                     if remote.get(key)!=host_case.get(key):
-                        return name+" independent free-rule request/PIT digest mismatch"
+                        return name+" independent free-rule request/PIT digest mismatch or input provenance mismatch"
             if (remote.get("cloud_query_readback_verified") is not True
                     or remote.get("orders") is not False
                     or remote.get("real_money_actions") is not False):

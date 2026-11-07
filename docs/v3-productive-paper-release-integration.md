@@ -214,6 +214,26 @@ digest independently of the replay. Keep the actual historical clocks and
 prices. Unit-test inputs do not qualify as original inputs. A different
 observed outcome aborts the run and leaves its journal for inspection.
 
+For the controlled technical BUY option, use input kind
+`V3_PRECAS_CONTROLLED_BUY_REAL_REJECT_V1`. Supply only the previously captured
+`NEGATIVE_REJECT` plus `negative_original` containing the original Scanner
+handoff text, its SHA-256, and its capture commit. Bind the outer bundle to the
+new release commit. The Mini-PC witness generates the pinned regression
+scenario for the positive case under the reserved candidate ID
+`V3-TECHNICAL-BUY-FIXTURE-V1`. The native worker only accepts that ID with the
+isolated free-rule capability and an exact PRECAS-FREE CANARY series. No live
+order or production-series journal may originate from this fixture.
+
+Label the technical case `CONTROLLED_TECHNICAL_BUY_V1` and the real negative
+case `ORIGINAL_SCANNER_PIT_V1` in both the host and independent sandbox case
+records. The sandbox comparison first matches the original digest and exact
+payload, including the reserved candidate ID. The release validator then
+requires matching provenance across both independent sources. The fixture
+only proves operation of the BUY path and its one virtual fill. Market-derived
+BUY decisions, fills and economic outcomes are measured separately during
+released Paper operation. The other evidence categories and release admission
+remain mandatory.
+
 The same free rule, P4 validation, native OS lock and append-only Paper
 journal are used. This mode uses a commit-bound CANARY name, no network and
 no provider authorization. It produces one virtual BUY fill and zero REJECT

@@ -1,5 +1,7 @@
 """Isolated replay uses the actual free rule, P4, journal and sandbox export."""
 import copy
+import hashlib
+from datetime import datetime
 import json
 from pathlib import Path
 import tempfile
@@ -7,7 +9,12 @@ import unittest
 from unittest.mock import patch
 
 from tests.test_rule_based_paper_decision_v1 import fixture, iso
-from tools.v3_paper_precas_originalhost_offline_witness_v1 import FREE_KIND, free_rule_cases
+from tools.v3_paper_precas_originalhost_offline_witness_v1 import (
+    CONTROLLED_INPUT_KIND, FREE_KIND, free_rule_cases,
+)
+from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
+    CONTROLLED_BUY_CANDIDATE_ID, _RELEASED_MODEL_NATIVE_OWNER, one_candidate,
+)
 from tools.v3_paper_precas_synthetic_cloud_sandbox_v1 import (
     compare_free_rule_sql_readback, free_rule_export,
 )
@@ -82,3 +89,37 @@ class FreeRuleWitnessTests(unittest.TestCase):
             path.write_bytes(path.read_bytes() + b" ")
             with self.assertRaisesRegex(ValueError, "missing or changed"):
                 free_rule_export(root, COMMIT)
+
+
+    def test_controlled_buy_with_original_reject_stays_isolated(self):
+        neg = input_case(True)
+        candidate = neg["candidate"]
+        at = datetime.fromisoformat(candidate["event_time_utc"].replace("Z", "+00:00"))
+        run, pair, ts = 23, candidate["pair"].replace("/", "-"), int(at.timestamp())
+        candidate.update(candidate_id=f"{at:%Y%m%d-%H%M%S}-{pair}-r{run}",
+                         source_scanner_run_id=run, queue_id=f"{run}:{pair}:{ts}",
+                         event_ts=ts, scanner_candidate={}, scanner_market_context={})
+        neg["preflight"]["review_preflights"][0]["candidate_id"] = candidate["candidate_id"]
+        raw = json.dumps(candidate)
+        bundle = {"kind": CONTROLLED_INPUT_KIND, "cases": {"NEGATIVE_REJECT": neg},
+                  "negative_original": {"raw_scanner_handoff": raw, "capture_commit": "a" * 40,
+                                        "sha256": hashlib.sha256(raw.encode()).hexdigest()}}
+        with tempfile.TemporaryDirectory() as td, patch(
+                "paper_evaluator.evaluate.http_json", side_effect=AssertionError("HTTP forbidden")):
+            root = Path(td)
+            with self.assertRaisesRegex(ValueError, "isolated technical witness"):
+                one_candidate(candidate={"candidate_id": CONTROLLED_BUY_CANDIDATE_ID},
+                              series_id="PAPER-V3-20261107T130000Z", local_receipts=root,
+                              model_reservations=root, admit_staged_scanner_one_free_rule=True,
+                              _released_model_capability=_RELEASED_MODEL_NATIVE_OWNER)
+            tampered = copy.deepcopy(bundle)
+            tampered["negative_original"]["sha256"] = "0" * 64
+            with self.assertRaisesRegex(ValueError, "REJECT Scanner original"):
+                free_rule_cases(root / "tampered", SERIES, tampered)
+            self.assertFalse((root / "tampered").exists())
+            cases = free_rule_cases(root / "mixed", SERIES, bundle)
+            self.assertEqual([(c["p4_decision"], c["paper_fill_count"], c["input_origin"])
+                              for c in cases], [("BUY_SCOUT", 1, "CONTROLLED_TECHNICAL_BUY_V1"),
+                                               ("REJECT", 0, "ORIGINAL_SCANNER_PIT_V1")])
+            self.assertEqual(cases[0]["candidate_id"], CONTROLLED_BUY_CANDIDATE_ID)
+            self.assertEqual(cases[1]["candidate_id"], candidate["candidate_id"])
