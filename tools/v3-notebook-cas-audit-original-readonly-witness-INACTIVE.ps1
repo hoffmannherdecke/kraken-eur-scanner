@@ -472,7 +472,8 @@ foreach ($check in $checks) {
                [string]$row.release_commit -cne [string]$paperPlan.repo_sha -or
                [string]$row.state -cnotin @('INSTALL_APPROVED_OLD_ONLY_NO_ATTEMPTS',
                  'PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS','STOP_CONFIRMED_INTENT_COMMITTED',
-                 'SEALED_INTENT_EXECUTOR_INHIBITED','SEALED_INTENT_INHIBIT_STOP_CONFIRMED')){
+                 'SEALED_INTENT_EXECUTOR_INHIBITED','SEALED_INTENT_INHIBIT_STOP_CONFIRMED',
+                 'PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS')){
              throw 'V3_PAPER_RELEASE_READER_STATE_OR_COMMIT_HOLD'
             }
             foreach($field in @('epoch_id','source_sha256','fence_sha256','caller_acl_sha256')){
