@@ -2,7 +2,7 @@
 # V3 PAPER / SOURCE-ONLY / DISPOSABLE POSTGRESQL CONTRACT TEST.
 # This script NEVER connects to Supabase or an existing database.
 # Networkless, disposable PostgreSQL 17 Docker container; no ports or secrets.
-# No V3 CAS function is installed or invoked. Original SQL remains INACTIVE.
+# No V3 CAS function is invoked. The original SQL remains INACTIVE.
 set -Eeuo pipefail
 cd "$(git rev-parse --show-toplevel)"
 source_sql="supabase/v3-cas-preinvoke-ledger-INACTIVE.sql"
@@ -1374,5 +1374,125 @@ BEGIN
 END $assert_terminal$;
 SQL
 echo 'V3_PG17_PREPARED_ABORT_ISSUER_ZERO_INTENT_REPLAY_UNKNOWN_NEGATIVE_PASS'
+
+# Start the next release from the actual terminal-abort state above. Preserve
+# the historical rows and use the same PG17 non-superuser postgres identity.
+followup_epoch="V3CAS-AUDIT-88888888888888888888888888888888"
+followup_commit="$(printf '7%.0s' {1..40})"
+followup_source="$(printf '8%.0s' {1..64})"
+followup_fence="$(printf '9%.0s' {1..64})"
+followup_acl="$(printf '1%.0s' {1..64})"
+followup_sql="supabase/v3-cas-audit-stage4-followup-release.sql"
+{
+  printf "SET v3_followup.scope='CLOUD_STAGE4_EPOCH_OPEN';\n"
+  printf "SET v3_followup.commit='%s';\n" "$followup_commit"
+  printf "SET v3_followup.epoch_id='%s';\n" "$followup_epoch"
+  printf "SET v3_followup.source_sha256='%s';\n" "$followup_source"
+  printf "SET v3_followup.fence_sha256='%s';\n" "$followup_fence"
+  printf "SET v3_followup.caller_acl_sha256='%s';\n" "$followup_acl"
+  printf "SELECT set_config('v3_followup.approval_sha256',repeat('2',64),false);\n"
+  printf "SELECT set_config('v3_followup.expires_at',(clock_timestamp()+interval '5 minutes')::text,false);\n"
+  cat "$followup_sql"
+} >"$transition_tmp/followup.sql"
+if pg -f - <"$followup_sql" > /dev/null 2>"$transition_tmp/followup-unsigned.err"; then
+  echo 'FAIL_FOLLOWUP_UNSIGNED' >&2; exit 1
+fi
+grep -Fq V3_PAPER_FOLLOWUP_STAGE4_SCOPE_HOLD "$transition_tmp/followup-unsigned.err"
+pg -f - <"$transition_tmp/followup.sql" >/dev/null
+if pg -f - <"$transition_tmp/followup.sql" >/dev/null 2>"$transition_tmp/followup-replay.err"; then
+  echo 'FAIL_FOLLOWUP_REPLAY' >&2; exit 1
+fi
+grep -Fq V3_PAPER_FOLLOWUP_ORIGINAL_STATE_HOLD "$transition_tmp/followup-replay.err"
+test "$(pg -Atc "select (count(*)=2 and count(paper_release_commit)=1)::text from v3_cas_audit.epoch_v1")" = true
+test "$(pg -Atc "select (count(*)=1 and min(receipt_sha256)=repeat('d',64))::text from v3_cas_audit.prepared_fence_abort_v1")" = true
+test "$(pg -Atc "select not pg_has_role('postgres','v3_cas_audit_table_owner','SET')")" = t
+
+followup_reader() {
+ docker exec -e PGPASSWORD='CI-READER-NO-PRODUCTION-SECRET' "$container" \
+  psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 -U v3_cas_audit_reader_actor -d postgres \
+  -c "SET ROLE v3_cas_audit_reader; BEGIN READ ONLY; SELECT v3_cas_audit.read_paper_release_epoch_v1('$1'); COMMIT;"
+}
+if followup_reader 'V3CAS-AUDIT-99999999999999999999999999999999' >/dev/null 2>&1 ||
+   followup_reader "$followup_epoch" >/dev/null 2>&1; then
+  echo 'FAIL_FOLLOWUP_READER_ACCEPTED_ABORT_OR_MISSING_INHIBIT' >&2; exit 1
+fi
+if issuer_transaction -c "SELECT v3_cas_audit.begin_executor_inhibit_v1('$followup_epoch',repeat('0',64),'$followup_fence','$followup_acl');" >/dev/null 2>&1; then
+  echo 'FAIL_FOLLOWUP_ISSUER_ACCEPTED_SOURCE_DRIFT' >&2; exit 1
+fi
+issuer_transaction -c "SELECT v3_cas_audit.begin_executor_inhibit_v1('$followup_epoch','$followup_source','$followup_fence','$followup_acl');" >/dev/null
+followup_reader "$followup_epoch" | grep -Fq INSTALL_APPROVED_OLD_ONLY_NO_ATTEMPTS
+if pg -c "SELECT v3_cas_audit.read_paper_release_epoch_v1('$followup_epoch');" >/dev/null 2>&1; then
+  echo 'FAIL_ADMIN_IMPERSONATED_INDEPENDENT_FOLLOWUP_READER' >&2; exit 1
+fi
+
+# Drop only the earlier CI-only role memberships to reproduce the exact
+# production Reader/Writer ACL at the productive installation seam.
+pg_root_db -c 'REVOKE v3_cas_audit_reader FROM v3_ci_reader_login; REVOKE v3_cas_audit_writer FROM v3_ci_writer_login;' >/dev/null
+# The real atomic CAS body references these original Paper tables; no rotation
+# is invoked by this test.
+pg -c 'CREATE TABLE IF NOT EXISTS public.paper_candidate_outcomes (candidate_id text); CREATE TABLE IF NOT EXISTS public.paper_trade_results (candidate_id text);' >/dev/null
+export V3_CI_EPOCH="$followup_epoch" V3_CI_COMMIT="$followup_commit" V3_CI_SOURCE="$followup_source" V3_CI_FENCE="$followup_fence" V3_CI_ACL="$followup_acl"
+pwsh -NoProfile -NonInteractive -Command '
+ . ./tools/v3-one-time-paper-release.ps1
+ $ctx=@{commit=$env:V3_CI_COMMIT;authorization=@{expires_at=[datetimeoffset]::UtcNow.AddMinutes(5)}}
+ $epoch=@{epoch_id=$env:V3_CI_EPOCH;source_sha256=$env:V3_CI_SOURCE;fence_sha256=$env:V3_CI_FENCE;caller_acl_sha256=$env:V3_CI_ACL}
+ $source=[IO.File]::ReadAllText("supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql")
+ Get-V3PaperCasInstallSql $source $ctx $epoch
+' >"$transition_tmp/followup-install.sql"
+sed "s/$followup_fence/$(printf '0%.0s' {1..64})/g" "$transition_tmp/followup-install.sql" >"$transition_tmp/followup-install-drift.sql"
+if pg -f - <"$transition_tmp/followup-install-drift.sql" >/dev/null 2>"$transition_tmp/followup-install-drift.err"; then
+  echo 'FAIL_FOLLOWUP_INSTALL_ACCEPTED_FENCE_DRIFT' >&2; exit 1
+fi
+grep -Fq V3_PAPER_INSTALL_CURRENT_INHIBIT_HOLD "$transition_tmp/followup-install-drift.err"
+pg -f - <"$transition_tmp/followup-install.sql" >/dev/null
+followup_reader "$followup_epoch" | grep -Fq PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS
+test "$(pg -Atc "select not rolcanlogin and rolconnlimit=0 from pg_roles where rolname='v3_cas_executor_actor'")" = t
+if pg -f - <"$transition_tmp/followup-install.sql" >/dev/null 2>"$transition_tmp/followup-install-replay.err"; then
+  echo 'FAIL_FOLLOWUP_INSTALL_REPLAY' >&2; exit 1
+fi
+grep -Fq V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD "$transition_tmp/followup-install-replay.err"
+pg_root_db -c 'ALTER ROLE v3_cas_executor_actor LOGIN CONNECTION LIMIT 1;' >/dev/null
+if followup_reader "$followup_epoch" >/dev/null 2>&1; then
+  echo 'FAIL_FOLLOWUP_PRESTOP_ACCEPTED_UNINHIBITED_EXECUTOR' >&2; exit 1
+fi
+pg_root_db -c 'ALTER ROLE v3_cas_executor_actor NOLOGIN CONNECTION LIMIT 0;' >/dev/null
+test "$(pg -Atc 'select count(*) from v3_cas_audit.attempt_v1')" = 0
+test "$(pg -Atc "select count(*) from public.paper_series where status='active' and series_id='PAPER-V2R4-20261009T110135Z'")" = 1
+echo 'V3_PG17_FOLLOWUP_EPOCH_INHIBIT_INSTALL_PRESTOP_REPLAY_DRIFT_ACL_PASS'
+
+# Genuine independent Writer and issuer commits are prerequisites for sealing.
+followup_intent='88888888-8888-8888-8888-888888888888'
+followup_request="$(printf '3%.0s' {1..64})"
+followup_stop="$(printf '4%.0s' {1..64})"
+pg_root_db -c "SET SESSION AUTHORIZATION v3_cas_audit_writer_actor; SET ROLE v3_cas_audit_writer; SELECT v3_cas_audit.append_intent_v1('$followup_epoch','$followup_intent','$followup_request','$followup_source','$followup_fence');" >/dev/null
+issuer_transaction -c "SELECT v3_cas_audit.confirm_executor_inhibit_v1('$followup_epoch',clock_timestamp(),'$followup_stop');" >/dev/null
+followup_reader "$followup_epoch" | grep -Fq STOP_CONFIRMED_INTENT_COMMITTED
+export V3_CI_INTENT="$followup_intent" V3_CI_REQUEST="$followup_request" V3_CI_STOP="$followup_stop"
+pwsh -NoProfile -NonInteractive -Command '
+ . ./tools/v3-one-time-paper-release.ps1
+ $epoch=@{epoch_id=$env:V3_CI_EPOCH;source_sha256=$env:V3_CI_SOURCE;fence_sha256=$env:V3_CI_FENCE;caller_acl_sha256=$env:V3_CI_ACL}
+ $receipt=@{preinvoke_epoch_id=$env:V3_CI_EPOCH;preinvoke_intent_id=$env:V3_CI_INTENT;
+  preinvoke_request_sha256=$env:V3_CI_REQUEST;preinvoke_source_sha256=$env:V3_CI_SOURCE;
+  preinvoke_fence_sha256=$env:V3_CI_FENCE;preinvoke_inhibit_receipt_sha256=$env:V3_CI_STOP}
+ $ctx=@{commit=$env:V3_CI_COMMIT;authorization=@{expires_at=[datetimeoffset]::UtcNow.AddMinutes(5)};
+  plan=@{cas_request=@{new_v3_config=$receipt}}}
+ $source=[IO.File]::ReadAllText("supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql")
+ Get-V3PaperEpochSealSql $source $ctx $epoch $receipt $env:V3_CI_STOP
+' >"$transition_tmp/followup-seal.sql"
+sed "s/$followup_stop/$(printf '0%.0s' {1..64})/g" "$transition_tmp/followup-seal.sql" >"$transition_tmp/followup-seal-drift.sql"
+if pg -f - <"$transition_tmp/followup-seal-drift.sql" >/dev/null 2>"$transition_tmp/followup-seal-drift.err"; then
+  echo 'FAIL_FOLLOWUP_SEAL_ACCEPTED_STOP_DRIFT' >&2; exit 1
+fi
+grep -Fq V3_PAPER_FOLLOWUP_SEAL_INHIBIT_OR_ATTEMPT_HOLD "$transition_tmp/followup-seal-drift.err"
+pg -f - <"$transition_tmp/followup-seal.sql" >/dev/null
+if pg -f - <"$transition_tmp/followup-seal.sql" >/dev/null 2>"$transition_tmp/followup-seal-replay.err"; then
+  echo 'FAIL_FOLLOWUP_SEAL_REPLAY' >&2; exit 1
+fi
+grep -Fq V3_STAGE5_SEAL_DURABLE_EXACT_INTENT_NOT_VISIBLE_HOLD "$transition_tmp/followup-seal-replay.err"
+followup_reader "$followup_epoch" | grep -Fq SEALED_INTENT_EXECUTOR_INHIBITED
+pg_root_db -c "ALTER ROLE v3_cas_executor_actor LOGIN CONNECTION LIMIT 1 VALID UNTIL '2099-01-01';" >/dev/null
+followup_reader "$followup_epoch" | grep -Fq SEALED_INTENT_INHIBIT_STOP_CONFIRMED
+pg_root_db -c "ALTER ROLE v3_cas_executor_actor NOLOGIN CONNECTION LIMIT 0;" >/dev/null
+echo 'V3_PG17_FOLLOWUP_SEAL_PRECAS_RECEIPT_PASS_NO_ROTATION'
 
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
