@@ -70,8 +70,8 @@ begin
         where (m.roleid=r.oid or m.member=r.oid)
           and not (
             m.roleid=r.oid and (
-              (a.rolname='postgres' and m.admin_option
-               and not m.set_option and not m.inherit_option)
+              (a.rolname='postgres'
+               and m.admin_option and not m.set_option and not m.inherit_option)
               or (
                 (r.rolname, a.rolname) in (
                   ('v3_cas_audit_reader', 'v3_cas_audit_reader_actor'),
