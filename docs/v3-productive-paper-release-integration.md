@@ -65,6 +65,13 @@ transport. No raw caller SQL is executed.
    the existing executor only for the separately authorized CAS window, then
    obtain the fresh pre-CAS Reader result.
 
+If the release must stop before any CAS attempt, disable the executor actor and
+verify zero sessions. Under the separate abort approval the existing issuer
+calls `record_paper_release_abort_v1` for the exact release, epoch, source,
+fence, ACL and independently reviewed receipt hash. The same Notebook Reader
+can then attest the terminal state even with the guarded RPC installed. Only
+a separately authorized Originalhost `PaperRollback` may rearm V2R4.
+
 The signed plan includes `cas_epoch` with `epoch_id`, `source_sha256`,
 `fence_sha256` and `caller_acl_sha256`. The source hash is the reviewed CAS
 artifact hash. The fence hash is SHA256 of the UTF-8 no-BOM compact JSON bytes
