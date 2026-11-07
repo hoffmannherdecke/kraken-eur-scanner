@@ -55,21 +55,20 @@ function Copy-MistralVerifiedFile {
  if($item.PSIsContainer){throw 'MISTRAL_SOURCE_NOT_FILE'}
  $target=Join-Path $root $DestinationName
  if(Test-Path -LiteralPath $target){throw 'MISTRAL_NO_OVERWRITE'}
- $bytes=[IO.File]::ReadAllBytes($item.FullName)
- $sourceHash=[Security.Cryptography.SHA256]::HashData($bytes)
- $stream=[IO.File]::Open($target,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
- try {$stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)}
- finally {$stream.Dispose()}
- $readback=[IO.File]::ReadAllBytes($target)
- $hash=[Security.Cryptography.SHA256]::HashData($readback)
- if(-not [Linq.Enumerable]::SequenceEqual[byte]($sourceHash,$hash)){
-  throw 'MISTRAL_TRANSFER_SHA256_MISMATCH'
- }
+ $sourceHash=(Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+ $sourceStream=[IO.File]::Open($item.FullName,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+ try {
+  $targetStream=[IO.File]::Open($target,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+  try {$sourceStream.CopyTo($targetStream);$targetStream.Flush($true)}
+  finally {$targetStream.Dispose()}
+ } finally {$sourceStream.Dispose()}
+ $targetHash=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+ if($sourceHash -cne $targetHash){throw 'MISTRAL_TRANSFER_SHA256_MISMATCH'}
  [pscustomobject]@{
   kind='MISTRAL_VERIFIED_FILE_TRANSFER_V1'
   role=$Role; relative_directory=$RelativeDirectory; file=$DestinationName
-  sha256=([Convert]::ToHexString($hash)).ToLowerInvariant()
-  bytes=$readback.Length
+  sha256=$targetHash
+  bytes=(Get-Item -LiteralPath $target).Length
   release_authorized=$false
  }
 }
