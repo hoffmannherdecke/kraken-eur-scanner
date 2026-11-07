@@ -135,7 +135,7 @@ BEGIN
     OR current_setting('role',true) IS DISTINCT FROM 'v3_cas_audit_reader'
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_IDENTITY_HOLD'; END IF;
  SELECT * INTO e FROM v3_cas_audit.epoch_v1 WHERE epoch_id=p_epoch_id AND paper_release_commit IS NOT NULL;
- IF NOT FOUND OR EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id=p_epoch_id)
+ IF NOT FOUND
     OR (SELECT count(*) FROM v3_cas_audit.epoch_v1 WHERE paper_release_commit IS NOT NULL) <> 1
     OR (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
     OR NOT EXISTS (SELECT FROM public.paper_series WHERE status='active' AND series_id=e.predecessor_series_id)
@@ -168,7 +168,16 @@ BEGIN
     AND original_fence_sha256=e.original_fence_sha256 AND caller_acl_sha256=e.approved_caller_acl_sha256
     AND issuer_id='v3_cas_inhibit_issuer_actor' AND state='INHIBITED';
  IF NOT FOUND THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_INHIBIT_HOLD'; END IF;
- IF NOT actor.rolcanlogin AND NOT e.sealed AND e.next_ordinal=1 AND g.native_stop_at_utc IS NULL
+ IF EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1
+      WHERE epoch_id=p_epoch_id AND source_sha256=e.source_sha256
+        AND prepared_fence_sha256=e.original_fence_sha256 AND caller_acl_sha256=e.approved_caller_acl_sha256
+        AND issuer_actor='v3_cas_inhibit_issuer_actor' AND state='ABORT_RECORDED_NOT_RELEASED') THEN
+   IF actor.rolcanlogin OR actor.rolconnlimit<>0
+   THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_ABORT_READER_ACTOR_HOLD'; END IF;
+   witness_state:='PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS';
+ ELSIF EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id=p_epoch_id)
+ THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_ABORT_BINDINGS_HOLD';
+ ELSIF NOT actor.rolcanlogin AND NOT e.sealed AND e.next_ordinal=1 AND g.native_stop_at_utc IS NULL
     AND g.acknowledged_at_utc IS NULL AND g.receipt_sha256 IS NULL
     AND NOT EXISTS (SELECT FROM v3_cas_audit.intent_v1) THEN
    witness_state:=CASE WHEN installed THEN 'PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS'
