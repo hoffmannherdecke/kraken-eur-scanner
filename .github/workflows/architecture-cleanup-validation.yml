@@ -32,6 +32,9 @@ jobs:
       - name: V3 one-time release CMS admission and negative scope tests
         shell: pwsh
         run: ./tests/test_v3_one_time_release_authorization.ps1
+      - name: Project-wide Mistral handoff path and input regression (offline)
+        shell: pwsh
+        run: ./tests/test_mistral_transfer.ps1
       - name: V3 Paper Notebook one-time offline snapshots (no CAS or external service)
         shell: pwsh
         run: ./tests/test_v3_notebook_onetime_paper_witness.ps1
