@@ -356,7 +356,7 @@ jobs:
           assert test.count(original) == 1
           (root / "v3_arch_ci_smoke.sql").write_text(test.replace(original, r"\i /v3_ci/v3_arch_ci_unlocked.sql"), "utf-8")
           stage4 = Path("supabase/v3-cas-audit-stage4-followup-release.sql").read_text("utf-8")
-          start = stage4.index("CREATE FUNCTION v3_cas_audit.read_paper_release_epoch_v1")
+          start = stage4.index("CREATE OR REPLACE FUNCTION v3_cas_audit.read_paper_release_epoch_v1")
           stop = stage4.index("END $reader$;", start) + len("END $reader$;")
           (root / "v3_arch_ci_postcas_reader.sql").write_text(stage4[start:stop] + "\n", "utf-8")
           PY

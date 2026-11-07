@@ -4,6 +4,8 @@ BEGIN;
 SET LOCAL statement_timeout = '15s';
 SELECT pg_advisory_xact_lock(82314, 4);
 DO $gate$
+DECLARE continuing boolean := coalesce(current_setting('v3_followup.prior_epoch_id',true),'')<>'';
+ rpc oid := to_regprocedure('public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)');
 BEGIN
  IF session_user <> 'postgres' OR current_user <> 'postgres'
     OR current_database() <> 'postgres'
@@ -20,29 +22,18 @@ BEGIN
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_STAGE4_SCOPE_HOLD'; END IF;
  IF (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
     OR NOT EXISTS (SELECT FROM public.paper_series WHERE status='active' AND series_id='PAPER-V2R4-20261009T110135Z')
-    OR (SELECT count(*) FROM v3_cas_audit.epoch_v1) <> 1
-    OR (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1) <> 1
-    OR NOT EXISTS (
-        SELECT FROM v3_cas_audit.epoch_v1 e
-        JOIN v3_cas_audit.prepared_fence_abort_v1 a ON a.epoch_id=e.epoch_id
-        WHERE e.predecessor_series_id='PAPER-V2R4-20261009T110135Z'
-          AND e.expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
-          AND a.state='ABORT_RECORDED_NOT_RELEASED'
-          AND a.source_sha256=e.source_sha256 AND a.prepared_fence_sha256=e.original_fence_sha256
-          AND a.caller_acl_sha256=e.approved_caller_acl_sha256
-          AND e.next_ordinal=1
-          AND e.epoch_id<>current_setting('v3_followup.epoch_id')
-          AND e.source_sha256<>current_setting('v3_followup.source_sha256')
-          AND e.original_fence_sha256<>current_setting('v3_followup.fence_sha256'))
     OR EXISTS (SELECT FROM v3_cas_audit.intent_v1)
     OR EXISTS (SELECT FROM v3_cas_audit.attempt_v1)
-    OR EXISTS (SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-               WHERE n.nspname='public' AND p.proname='rotate_v2r4_to_v3_experimental_paper')
+    OR (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+         WHERE n.nspname='public' AND p.proname='rotate_v2r4_to_v3_experimental_paper') <> continuing::int
     OR (SELECT count(*) FROM pg_roles WHERE rolname IN ('v3_cas_executor_actor','v3_cas_executor')
         AND NOT rolcanlogin AND NOT rolbypassrls AND NOT rolsuper) <> 2
     OR NOT EXISTS (SELECT FROM pg_roles WHERE rolname='v3_cas_executor_actor' AND rolconnlimit=0)
     OR EXISTS (SELECT FROM pg_stat_activity WHERE usename IN ('v3_cas_executor_actor','v3_cas_executor'))
-    OR EXISTS (SELECT FROM pg_auth_members WHERE member='v3_cas_executor_actor'::regrole)
+    OR (SELECT count(*) FROM pg_auth_members WHERE member='v3_cas_executor_actor'::regrole) <> continuing::int
+    OR (continuing AND NOT EXISTS (SELECT FROM pg_auth_members
+        WHERE member='v3_cas_executor_actor'::regrole AND roleid='v3_cas_executor'::regrole
+          AND set_option AND NOT inherit_option AND NOT admin_option))
     OR (SELECT count(*) FROM pg_trigger t
         WHERE (t.tgrelid,t.tgname) IN
           (('v3_cas_audit.intent_v1'::regclass,'v3_reject_aborted_intent_insert_v1'),
@@ -50,6 +41,51 @@ BEGIN
           AND t.tgenabled='O'
           AND t.tgfoid='v3_cas_audit.reject_aborted_epoch_dispatch_v1()'::regprocedure) <> 2
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_ORIGINAL_STATE_HOLD'; END IF;
+ -- The next epoch can open only after every earlier one is terminal.
+ IF NOT EXISTS (SELECT FROM v3_cas_audit.epoch_v1)
+    OR EXISTS (
+      SELECT FROM v3_cas_audit.epoch_v1 e
+      LEFT JOIN v3_cas_audit.prepared_fence_abort_v1 a ON a.epoch_id=e.epoch_id
+      WHERE a.state IS DISTINCT FROM 'ABORT_RECORDED_NOT_RELEASED'
+         OR a.source_sha256 IS DISTINCT FROM e.source_sha256
+         OR a.prepared_fence_sha256 IS DISTINCT FROM e.original_fence_sha256
+         OR a.caller_acl_sha256 IS DISTINCT FROM e.approved_caller_acl_sha256
+         OR e.predecessor_series_id<>'PAPER-V2R4-20261009T110135Z'
+         OR e.expected_rpc<>'public.rotate_v2r4_to_v3_experimental_paper'
+         OR e.next_ordinal<>1 OR e.sealed
+         OR e.epoch_id=current_setting('v3_followup.epoch_id')
+         OR e.original_fence_sha256=current_setting('v3_followup.fence_sha256'))
+ THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_TERMINAL_HISTORY_HOLD'; END IF;
+ IF continuing THEN
+   IF (current_setting('v3_followup.series_time',true)::timestamptz
+          BETWEEN clock_timestamp()-interval '10 minutes' AND clock_timestamp()) IS DISTINCT FROM TRUE
+      OR encode(sha256(convert_to(pg_get_functiondef(
+          'v3_cas_audit.read_paper_release_epoch_v1(text)'::regprocedure),'UTF8')),'hex')
+         IS DISTINCT FROM current_setting('v3_followup.installed_reader_sha256',true)
+      OR rpc IS NULL OR encode(sha256(convert_to(pg_get_functiondef(rpc),'UTF8')),'hex')
+         IS DISTINCT FROM current_setting('v3_followup.installed_cas_sha256',true)
+      OR NOT has_function_privilege('v3_cas_executor',rpc,'EXECUTE')
+      OR EXISTS (SELECT FROM unnest(ARRAY['anon','authenticated','service_role','v3_cas_executor_actor',
+          'v3_cas_audit_reader','v3_cas_audit_writer']) AS r(role_name) WHERE has_function_privilege(r.role_name,rpc,'EXECUTE'))
+      OR NOT EXISTS (
+        SELECT FROM v3_cas_audit.epoch_v1 e
+        JOIN v3_cas_audit.prepared_fence_abort_v1 a ON a.epoch_id=e.epoch_id
+        JOIN v3_cas_audit.executor_inhibit_v1 i ON i.epoch_id=e.epoch_id
+        WHERE e.epoch_id=current_setting('v3_followup.prior_epoch_id')
+          AND e.paper_release_commit=current_setting('v3_followup.prior_commit')
+          AND e.source_sha256=current_setting('v3_followup.source_sha256')
+          AND e.approved_caller_acl_sha256=current_setting('v3_followup.caller_acl_sha256')
+          AND a.receipt_sha256=current_setting('v3_followup.prior_terminal_sha256')
+          AND a.issuer_actor='v3_cas_inhibit_issuer_actor'
+          AND i.state='INHIBITED' AND i.issuer_id=a.issuer_actor
+          AND i.source_sha256=e.source_sha256 AND i.original_fence_sha256=e.original_fence_sha256
+          AND i.caller_acl_sha256=e.approved_caller_acl_sha256 AND i.native_stop_at_utc IS NULL
+          AND NOT EXISTS (SELECT FROM v3_cas_audit.epoch_v1 later WHERE later.opened_at_utc>e.opened_at_utc))
+   THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_SUPERSESSION_BINDING_HOLD'; END IF;
+ ELSIF (SELECT count(*) FROM v3_cas_audit.epoch_v1)<>1
+    OR EXISTS (SELECT FROM v3_cas_audit.epoch_v1 WHERE source_sha256=current_setting('v3_followup.source_sha256'))
+ THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_FIRST_EPOCH_HOLD'; END IF;
+
  IF (SELECT count(*) FROM pg_class
      WHERE oid IN ('v3_cas_audit.epoch_v1'::regclass,'v3_cas_audit.intent_v1'::regclass,
                    'v3_cas_audit.attempt_v1'::regclass,'v3_cas_audit.prepared_fence_abort_v1'::regclass)
@@ -67,8 +103,13 @@ END $gate$;
 -- Same temporary owner escrow as the original Stage4 transaction.
 GRANT v3_cas_audit_table_owner TO postgres WITH INHERIT FALSE, SET TRUE, ADMIN FALSE;
 SET ROLE v3_cas_audit_table_owner;
-ALTER TABLE v3_cas_audit.epoch_v1 ADD COLUMN paper_release_commit text
- CHECK (paper_release_commit ~ '^[a-f0-9]{40}$');
+DO $epoch_schema$
+BEGIN
+ IF coalesce(current_setting('v3_followup.prior_epoch_id',true),'')='' THEN
+   ALTER TABLE v3_cas_audit.epoch_v1 ADD COLUMN paper_release_commit text
+    CHECK (paper_release_commit ~ '^[a-f0-9]{40}$');
+ END IF;
+END $epoch_schema$;
 GRANT INSERT ON v3_cas_audit.epoch_v1 TO postgres;
 RESET ROLE;
 INSERT INTO v3_cas_audit.epoch_v1
@@ -90,7 +131,39 @@ REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 GRANT v3_cas_audit_table_owner TO postgres WITH INHERIT FALSE, SET TRUE, ADMIN FALSE;
 GRANT CREATE ON SCHEMA v3_cas_audit TO v3_cas_audit_table_owner;
 SET ROLE v3_cas_audit_table_owner;
-CREATE FUNCTION v3_cas_audit.record_paper_release_abort_v1(p_epoch text,p_commit text,
+DO $issuer_upgrade$
+DECLARE issuer oid := 'v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)'::regprocedure;
+ old_def text;
+ new_def text;
+ old_guard text := $guard$OR to_regprocedure(
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
+       ) IS NOT NULL$guard$;
+BEGIN
+ IF coalesce(current_setting('v3_followup.prior_epoch_id',true),'')='' THEN RETURN; END IF;
+ old_def:=pg_get_functiondef(issuer);
+ IF encode(sha256(convert_to(old_def,'UTF8')),'hex')
+      IS DISTINCT FROM current_setting('v3_followup.installed_issuer_sha256',true)
+ THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_ISSUER_SOURCE_DRIFT'; END IF;
+ IF position('V3_SIGNED_FOLLOWUP_INSTALLED_RPC' in old_def)>0 THEN RETURN; END IF;
+ new_def:=replace(old_def,old_guard,'OR ('||substring(old_guard from 4)||$permit$
+    AND NOT ( -- V3_SIGNED_FOLLOWUP_INSTALLED_RPC
+      EXISTS (SELECT FROM v3_cas_audit.epoch_v1 current_epoch
+        WHERE current_epoch.epoch_id=p_epoch_id AND current_epoch.paper_release_commit IS NOT NULL
+          AND NOT EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 a WHERE a.epoch_id=p_epoch_id))
+      AND NOT EXISTS (SELECT FROM v3_cas_audit.epoch_v1 e WHERE e.epoch_id<>p_epoch_id AND NOT EXISTS (
+        SELECT FROM v3_cas_audit.prepared_fence_abort_v1 a WHERE a.epoch_id=e.epoch_id
+         AND a.state='ABORT_RECORDED_NOT_RELEASED' AND a.source_sha256=e.source_sha256
+         AND a.prepared_fence_sha256=e.original_fence_sha256 AND a.caller_acl_sha256=e.approved_caller_acl_sha256))
+      AND (SELECT count(*) FROM v3_cas_audit.epoch_v1)>=3
+      AND NOT EXISTS (SELECT FROM v3_cas_audit.intent_v1)
+      AND NOT EXISTS (SELECT FROM v3_cas_audit.attempt_v1)
+      AND EXISTS (SELECT FROM pg_roles WHERE rolname='v3_cas_executor_actor' AND NOT rolcanlogin AND rolconnlimit=0)
+      AND NOT EXISTS (SELECT FROM pg_stat_activity WHERE usename IN ('v3_cas_executor_actor','v3_cas_executor'))
+    ))$permit$);
+ IF new_def=old_def THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_ISSUER_GUARD_SEAM_HOLD'; END IF;
+ EXECUTE new_def;
+END $issuer_upgrade$;
+CREATE OR REPLACE FUNCTION v3_cas_audit.record_paper_release_abort_v1(p_epoch text,p_commit text,
  p_source text,p_fence text,p_acl text,p_receipt text)
 RETURNS timestamptz LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $abort$
 DECLARE result_at timestamptz;
@@ -127,7 +200,7 @@ REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 
 -- Read-only extension for the existing independent Notebook Reader.
 -- The original no-argument Gate-A/Stage4 Reader and abort trigger remain intact.
-CREATE FUNCTION v3_cas_audit.read_paper_release_epoch_v1(p_epoch_id text)
+CREATE OR REPLACE FUNCTION v3_cas_audit.read_paper_release_epoch_v1(p_epoch_id text)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $reader$
 DECLARE e record; g record; i v3_cas_audit.intent_v1%ROWTYPE;
  actor record; successor_id text; successor_config jsonb; rpc oid; installed boolean; witness_state text;
@@ -137,7 +210,11 @@ BEGIN
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_IDENTITY_HOLD'; END IF;
  SELECT * INTO e FROM v3_cas_audit.epoch_v1 WHERE epoch_id=p_epoch_id AND paper_release_commit IS NOT NULL;
  IF NOT FOUND
-    OR (SELECT count(*) FROM v3_cas_audit.epoch_v1 WHERE paper_release_commit IS NOT NULL) <> 1
+    OR EXISTS (SELECT FROM v3_cas_audit.epoch_v1 other
+      WHERE other.epoch_id<>p_epoch_id AND NOT EXISTS (
+       SELECT FROM v3_cas_audit.prepared_fence_abort_v1 a WHERE a.epoch_id=other.epoch_id
+        AND a.state='ABORT_RECORDED_NOT_RELEASED' AND a.source_sha256=other.source_sha256
+        AND a.prepared_fence_sha256=other.original_fence_sha256 AND a.caller_acl_sha256=other.approved_caller_acl_sha256))
     OR (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_READER_EPOCH_OR_SERIES_HOLD'; END IF;
  SELECT * INTO actor FROM pg_roles WHERE rolname='v3_cas_executor_actor'

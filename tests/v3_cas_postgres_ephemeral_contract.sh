@@ -1466,6 +1466,56 @@ test "$(pg -Atc 'select count(*) from v3_cas_audit.attempt_v1')" = 0
 test "$(pg -Atc "select count(*) from public.paper_series where status='active' and series_id='PAPER-V2R4-20261009T110135Z'")" = 1
 echo 'V3_PG17_FOLLOWUP_EPOCH_INHIBIT_INSTALL_PRESTOP_REPLAY_DRIFT_ACL_PASS'
 
+# Supersede only the terminal, never-stopped binding while retaining the
+# installed CAS definition and the original epoch rows.
+prior_epoch=$followup_epoch
+prior_commit=$followup_commit
+prior_receipt="$(printf '6%.0s' {1..64})"
+followup_epoch='V3CAS-AUDIT-77777777777777777777777777777777'
+followup_commit="$(printf '8%.0s' {1..40})"
+followup_fence="$(printf '9%.0s' {1..64})"
+rpc_sig='public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
+definition_sha() {
+ pg -Atc "select encode(sha256(convert_to(pg_get_functiondef('$1'::regprocedure),'UTF8')),'hex')"
+}
+cas_before="$(definition_sha "$rpc_sig")"
+issuer_before="$(definition_sha 'v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)')"
+reader_before="$(definition_sha 'v3_cas_audit.read_paper_release_epoch_v1(text)')"
+supersede_sql() {
+ {
+  printf "SET v3_followup.%s='%s';\n" scope CLOUD_STAGE4_EPOCH_OPEN commit "$followup_commit" \
+   epoch_id "$followup_epoch" source_sha256 "$followup_source" fence_sha256 "$followup_fence" \
+   caller_acl_sha256 "$followup_acl" prior_epoch_id "$prior_epoch" prior_commit "$prior_commit" \
+   prior_terminal_sha256 "$prior_receipt" installed_cas_sha256 "$cas_before" \
+   installed_issuer_sha256 "$issuer_before" installed_reader_sha256 "$reader_before"
+  printf "SELECT set_config('v3_followup.series_time',(clock_timestamp()-interval '%s seconds')::text,false);\n" "$1"
+  printf "SELECT set_config('v3_followup.approval_sha256',repeat('2',64),false);\n"
+  printf "SELECT set_config('v3_followup.expires_at',(clock_timestamp()+interval '5 minutes')::text,false);\n"
+  cat supabase/v3-cas-audit-stage4-followup-release.sql
+ } | pg -f -
+}
+if supersede_sql 1 > /dev/null 2>"$transition_tmp/supersede-live.err"; then
+ echo 'FAIL_SUPERSESSION_ACCEPTED_UNTERMINATED_PRIOR_EPOCH' >&2; exit 1
+fi
+grep -Fq V3_PAPER_FOLLOWUP_TERMINAL_HISTORY_HOLD "$transition_tmp/supersede-live.err"
+prior_fence="$(pg -Atc "select original_fence_sha256 from v3_cas_audit.epoch_v1 where epoch_id='$prior_epoch'")"
+issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$prior_epoch','$prior_commit','$followup_source','$prior_fence','$followup_acl','$prior_receipt');" >/dev/null
+if supersede_sql 660 >/dev/null 2>"$transition_tmp/supersede-expired.err"; then
+ echo 'FAIL_SUPERSESSION_ACCEPTED_EXPIRED_SERIES' >&2; exit 1
+fi
+grep -Fq V3_PAPER_FOLLOWUP_SUPERSESSION_BINDING_HOLD "$transition_tmp/supersede-expired.err"
+test "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" = 2
+supersede_sql 1 >/dev/null
+test "$(definition_sha "$rpc_sig")" = "$cas_before"
+if supersede_sql 1 >/dev/null 2>&1; then
+ echo 'FAIL_SUPERSESSION_REPLAY' >&2; exit 1
+fi
+issuer_transaction -c "SELECT v3_cas_audit.begin_executor_inhibit_v1('$followup_epoch','$followup_source','$followup_fence','$followup_acl');" >/dev/null
+followup_reader "$followup_epoch" | grep -Fq PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS
+test "$(pg -Atc "select receipt_sha256 from v3_cas_audit.prepared_fence_abort_v1 where epoch_id='$prior_epoch'")" = "$prior_receipt"
+export V3_CI_EPOCH="$followup_epoch" V3_CI_COMMIT="$followup_commit" V3_CI_FENCE="$followup_fence"
+echo 'V3_PG17_SUPERSESSION_EXPIRY_REPLAY_ORIGINAL_CAS_PRESERVED_PASS'
+
 # Genuine independent Writer and issuer commits are prerequisites for sealing.
 followup_intent='88888888-8888-8888-8888-888888888888'
 followup_request="$(printf '3%.0s' {1..64})"
@@ -1509,7 +1559,7 @@ if pg_root_db -c "INSERT INTO v3_cas_audit.attempt_v1(epoch_id) VALUES ('$follow
   echo 'FAIL_FOLLOWUP_TERMINAL_ABORT_ALLOWED_ATTEMPT' >&2; exit 1
 fi
 grep -Fq V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT "$transition_tmp/followup-aborted-attempt.err"
-test "$(pg -Atc 'select count(*) from v3_cas_audit.prepared_fence_abort_v1')" = 2
+test "$(pg -Atc 'select count(*) from v3_cas_audit.prepared_fence_abort_v1')" = 3
 echo 'V3_PG17_FOLLOWUP_TERMINAL_ROLLBACK_WITH_INSTALLED_RPC_PASS'
 
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'

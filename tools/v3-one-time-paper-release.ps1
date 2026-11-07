@@ -258,6 +258,34 @@ function Assert-V3PaperOriginalHost([string]$Mode,[string]$PackageRoot,[string]$
  }else{Assert-V3OriginalInteractiveOwner}
  if([IO.Path]::GetFullPath($PackageRoot).TrimEnd('\') -cne ('C:\Users\ADMIN\Trading\Staging\V3Paper-INACTIVE-'+$ExpectedReleaseCommit.Substring(0,12))){throw 'V3_PAPER_PINNED_STAGE_REQUIRED'}
 }
+function Assert-V3PaperCurrentSuccessor([string]$SeriesId) {
+ $stamp=[datetimeoffset]::ParseExact($SeriesId.Substring('PAPER-V3-'.Length),
+  "yyyyMMdd'T'HHmmss'Z'",[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal)
+ $now=[datetimeoffset]::UtcNow
+ if($stamp -lt $now.AddMinutes(-10) -or $stamp -gt $now){throw 'V3_PAPER_SUCCESSOR_SERIES_OUTSIDE_CAS_WINDOW'}
+ return $stamp
+}
+function Get-V3PaperSupersessionSettings([object]$Plan) {
+ $settings=@{prior_epoch_id='';prior_commit='';prior_terminal_sha256='';installed_cas_sha256='';
+  installed_issuer_sha256='';installed_reader_sha256='';series_time=''}
+ $property=$Plan.PSObject.Properties['supersession']
+ if($null -eq $property){return $settings}
+ $previous=$property.Value
+ $fields=@('prior_epoch_id','prior_commit','prior_terminal_sha256','installed_cas_sha256',
+  'installed_issuer_sha256','installed_reader_sha256')
+ if($null -eq $previous -or @($previous.PSObject.Properties).Count -ne $fields.Count -or
+    [string]$previous.prior_epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+    [string]$previous.prior_commit -cnotmatch '^[a-f0-9]{40}$'){
+  throw 'V3_PAPER_SUPERSESSION_PINS_REQUIRED'
+ }
+ foreach($field in $fields){
+  $value=[string]$previous.$field
+  if($field -like '*sha256' -and $value -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_PAPER_SUPERSESSION_DIGEST_HOLD'}
+  $settings[$field]=$value
+ }
+ $settings.series_time=(Assert-V3PaperCurrentSuccessor $Plan.series_id).ToUniversalTime().ToString('o')
+ return $settings
+}
 function Get-V3PaperNativeActionPrefix([string]$PackageRoot) {
  $launcher=Join-Path $PackageRoot 'paper_evaluator\v3_paper_minipc_native_launcher_v1.py'
  return ('-I -B "'+$launcher+'" --released-one-shot')
@@ -368,8 +396,16 @@ function Invoke-V3OneTimePaperRelease {
     fence_sha256=[string]$epoch.fence_sha256;caller_acl_sha256=[string]$epoch.caller_acl_sha256
     expires_at=$auth.expires_at.ToUniversalTime().ToString('o')
    }
+   $supersession=Get-V3PaperSupersessionSettings $plan
+   foreach($key in $supersession.Keys){$settings[$key]=$supersession[$key]}
    $prefix=@(foreach($key in $settings.Keys){"SELECT set_config('v3_followup.$key','$($settings[$key])',false);"}) -join "`n"
-   Write-V3PaperReceipt ($base+'.epoch.attempted.json') @{approval_sha256=$auth.approval_sha256}
+   Assert-V3PaperDeadline $ctx
+   $epochLatch=$base+'.epoch.attempted.json'
+   if($supersession.prior_epoch_id){
+    $null=Assert-V3PaperCurrentSuccessor $plan.series_id
+    $epochLatch=$base+'.'+$epoch.epoch_id+'.epoch.attempted.json'
+   }
+   Write-V3PaperReceipt $epochLatch @{approval_sha256=$auth.approval_sha256;epoch_id=$epoch.epoch_id}
    $null=Invoke-V3ReleasePg -Sql ($prefix+"`n"+$sql) -Password $PostgresPassword -Ca $CaFile
    return @{kind='V3_PAPER_EPOCH_OPEN_RETURNED_INDEPENDENT_ISSUER_AND_READBACK_REQUIRED';epoch_id=$epoch.epoch_id}
   }
@@ -387,6 +423,7 @@ function Invoke-V3OneTimePaperRelease {
       [IO.File]::Exists($ctx.fence) -or [IO.File]::Exists($casLatch)){
     throw 'V3_PAPER_PREPARE_EXISTING_FENCE_OR_UNSAFE_READER_HOLD'
    }
+   $null=Assert-V3PaperCurrentSuccessor $plan.series_id
    $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
    Assert-V3PaperRuntimeSpec $spec $plan
    $r=$plan.runtime_bootstrap
@@ -441,9 +478,7 @@ function Invoke-V3OneTimePaperRelease {
    }
    # The installed CAS uses the timestamp in the issued series ID and
    # rejects it once it is older than ten minutes. Detect that before STOP.
-   $seriesTime=[datetimeoffset]::ParseExact($plan.series_id.Substring('PAPER-V3-'.Length),
-    "yyyyMMdd'T'HHmmss'Z'",[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal)
-   if($seriesTime -lt [datetimeoffset]::UtcNow.AddMinutes(-10)){throw 'V3_PAPER_STOP_SUCCESSOR_SERIES_EXPIRED'}
+   $null=Assert-V3PaperCurrentSuccessor $plan.series_id
    Assert-V3PaperProcesses $plan
    Write-V3PaperReceipt ($base+'.stop.attempted.json') @{approval_sha256=$auth.approval_sha256}
    $intakes=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
@@ -474,6 +509,30 @@ function Invoke-V3OneTimePaperRelease {
    Write-V3PaperReceipt $stopPath @{state='QUIESCED';approval_sha256=$auth.approval_sha256;
      observed_at_utc=[datetimeoffset]::UtcNow.ToString('o')}
    return @{kind='V3_PAPER_STOP_QUIESCED_LOCAL_ACK';independent_reader_required=$true;stop_receipt_path=$stopPath}
+  }
+  if($Mode -eq 'PaperRollback' -and [string]$f.phase -ceq 'ARMED' -and
+     -not [IO.File]::Exists($base+'.stop.attempted.json') -and -not [IO.File]::Exists($casLatch)){
+   if([string]$receipt.state -cne 'PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS'){
+    throw 'V3_PAPER_ROLLBACK_INDEPENDENT_TERMINAL_ABORT_REQUIRED'
+   }
+   $rollbackEpoch=Assert-V3PaperEpochPlan $ctx $inventory
+   Assert-V3PaperEpochReceipt $receipt $rollbackEpoch
+   if((Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $ctx.fence)) -cne [string]$rollbackEpoch.fence_sha256){
+    throw 'V3_PAPER_PRESTOP_ROLLBACK_FENCE_DRIFT'
+   }
+   Assert-V3PaperProcesses $plan
+   foreach($name in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
+    if([string](Get-ScheduledTask -TaskName $name -TaskPath '\').State -cne 'Running'){
+     throw 'V3_PAPER_PRESTOP_ROLLBACK_ORIGINAL_INTAKE_NOT_RUNNING'
+    }
+   }
+   if([string](Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\').State -cne 'Disabled'){
+    throw 'V3_PAPER_PRESTOP_ROLLBACK_V3_WRITER_NOT_DISABLED'
+   }
+   Assert-V3PaperDeadline $ctx
+   Write-V3PaperReceipt ($base+'.rollback.attempted.json') @{approval_sha256=$auth.approval_sha256}
+   [IO.File]::Move($ctx.fence,($ctx.fence+'.'+$auth.claims.release_id+'.rollback'))
+   return @{kind='V3_PAPER_PRESTOP_EXPIRED_FENCE_ARCHIVED';old_intake_rearmed=$false;paper_activated=$false}
   }
   Assert-V3PaperProcesses $plan -Absent
   if($Mode -in @('PaperCas','PaperActivate')){

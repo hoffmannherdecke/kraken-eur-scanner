@@ -37,7 +37,14 @@ BEGIN
  IF (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
     OR (SELECT count(*) FROM public.paper_series
         WHERE status='active' AND series_id='PAPER-V2R4-20261009T110135Z') <> 1
-    OR (SELECT count(*) FROM v3_cas_audit.epoch_v1) <> (CASE WHEN v_followup THEN 2 ELSE 1 END)
+    OR (NOT v_followup AND (SELECT count(*) FROM v3_cas_audit.epoch_v1)<>1)
+    OR (v_followup AND (
+      (SELECT count(*) FROM v3_cas_audit.epoch_v1)<2
+      OR EXISTS (SELECT FROM v3_cas_audit.epoch_v1 e WHERE e.epoch_id<>v_id AND NOT EXISTS (
+        SELECT FROM v3_cas_audit.prepared_fence_abort_v1 a WHERE a.epoch_id=e.epoch_id
+          AND a.state='ABORT_RECORDED_NOT_RELEASED' AND a.source_sha256=e.source_sha256
+          AND a.prepared_fence_sha256=e.original_fence_sha256 AND a.caller_acl_sha256=e.approved_caller_acl_sha256))
+    ))
     OR (SELECT count(*) FROM v3_cas_audit.intent_v1) <> 1
     OR pg_catalog.to_regclass('v3_cas_audit.prepared_fence_abort_v1') IS NULL
     -- A terminal issuer abort is durable and must never be sealed/reused.
