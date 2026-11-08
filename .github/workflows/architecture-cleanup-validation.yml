@@ -647,6 +647,9 @@ jobs:
       - name: Productive Paper operator on Windows PowerShell 5.1 (offline)
         shell: powershell
         run: ./tests/test_v3_one_time_paper_release.ps1
+      - name: PR515 offline recovery reader on Windows PowerShell 5.1
+        shell: powershell
+        run: ./tests/test_v3_pr515_armed_recovery_decision_offline.ps1
       - name: Disposable disabled task definition lease and recovery
         shell: pwsh
         run: ./tests/test_v3_pr661_task_file_lease_windows.ps1

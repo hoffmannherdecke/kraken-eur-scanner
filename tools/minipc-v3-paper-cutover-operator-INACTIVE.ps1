@@ -4226,10 +4226,10 @@ function Read-V3ScopedPrecommitSnapshotFile([string]$Path,[string[]]$ExactKeys){
   throw 'V3_PR515_TWO_SOURCE_UNSAFE_FILE'
  }
  $bytes=[IO.File]::ReadAllBytes($item.FullName)
- $raw=[Text.UTF8Encoding]::new($false,$true).GetString([byte[]]$bytes)
- if($raw.StartsWith([char]0xFEFF)){
+ if($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF){
   throw 'V3_PR515_TWO_SOURCE_UNEXPECTED_BOM'
  }
+ $raw=[Text.UTF8Encoding]::new($false,$true).GetString([byte[]]$bytes)
  $json=$raw|ConvertFrom-Json -ErrorAction Stop
  if($null -eq $json -or $json -isnot [pscustomobject]){
   throw 'V3_PR515_TWO_SOURCE_NOT_JSON_OBJECT'

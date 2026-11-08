@@ -1,6 +1,7 @@
 # Offline PR515 ARMED/QUIESCED policy test: ONLY extracted pure AST functions.
 # No live operator, Windows Task, network, secrets or real CAS invocation.
 $ErrorActionPreference='Stop'
+if($PSVersionTable.PSEdition -eq 'Desktop'){Add-Type -AssemblyName System.Security}
 $src=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile(
@@ -378,6 +379,15 @@ try{
  # All negative controls are local files. The pure parser rejects injection
  # and unsigned sources; the policy review refuses stale and non-empty rows.
  $original=[IO.File]::ReadAllText($readerPath)
+ [IO.File]::WriteAllText($readerPath,$original,[Text.UTF8Encoding]::new($true))
+ $bomRejected=$false
+ try{
+  $null=Read-V3ScopedPrecommitSnapshotFile -Path $readerPath -ExactKeys @($reader.Keys)
+ }catch{
+  if($_.Exception.Message -cne 'V3_PR515_TWO_SOURCE_UNEXPECTED_BOM'){throw}
+  $bomRejected=$true
+ }
+ if(-not $bomRejected){throw 'V3_TWO_SOURCE_ACTUAL_UTF8_BOM_ACCEPTED'}
  foreach($bad in @(
   $original.Replace('"intent_count":0','"intent_count":1'),
   $original.Replace('"role":"v3_cas_audit_reader"','"role":"v3_cas_executor"'),
