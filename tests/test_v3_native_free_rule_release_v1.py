@@ -5,6 +5,7 @@ These are offline source/receipt tests, not physical Cloud/CAS authorizations.
 import json
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -17,6 +18,7 @@ from tests.test_v3_paper_minipc_one_candidate_v1 import (
     fixture, fake_acquire, stage_scanner_original, SID,
 )
 from tests.test_v2r4_v3_entry_handoff_probe import dt
+from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt, store_receipt_explicitly
 
 
 class FreeRuleNativeTests(unittest.TestCase):
@@ -92,6 +94,73 @@ class FreeRuleNativeTests(unittest.TestCase):
                     acquire=lambda *_:self.fail("no second source fetch"),
                     clock_now=lambda:dt(12))
             self.assertEqual(again["status"],"FIRST_SCANNER_ALREADY_JOURNALED_NO_RULE_REPLAY")
+
+
+    def test_released_rule_wait_continues_without_provider_receipts(self):
+        series = "PAPER-V3-20261108T100000Z"
+        start = datetime(2026, 11, 8, 10, 0, tzinfo=timezone.utc)
+        candidate = dict(candidate_id="SCANNER-WAIT-ORIGINAL", pair="XBT/EUR",
+                         altname="XBTEUR", entry_origin="SCANNER", event_time_utc=start.isoformat())
+        with tempfile.TemporaryDirectory() as tmp:
+            journal, capture, budget, ack = (Path(tmp, name) for name in ("journal", "capture", "budget", "ack"))
+            for root in (journal, capture, budget, ack):
+                root.mkdir()
+            original = [
+                ("SCANNER_CAPTURE", "SEEN", "FIRST", {"candidate_origin": "SCANNER"}),
+                ("FULL_REVIEW_ELIGIBILITY", "PASS", "FIRST", {}),
+                ("FULL_REVIEW_ELIGIBILITY", "PASS", "FRESHRECHECK", {}),
+                ("MODEL_REQUEST", "SKIP", "FRESHRECHECK",
+                 {"source_status": "FREE_RULE_V3_P4_NO_MODEL", "model_http_attempts_reserved": 0}),
+                ("P4_VALIDATION", "WAIT", "FRESHRECHECK",
+                 {"p4_decision": "WAIT", "p4_completed_at_utc": start.isoformat(),
+                  "rule_based_primary": True, "model_http_requests": 0}),
+                ("WAIT_WATCH", "WAIT", "FRESHRECHECK",
+                 {"raw_wait_ttl_minutes": 30, "raw_watch_conditions":
+                  [{"metric": "ask_eur", "op": "<=", "value": 100.0}]}),
+            ]
+            def store(phase, result, key, data):
+                store_receipt_explicitly(journal, make_receipt(
+                    series_id=series, revision=native.REVISION,
+                    candidate_id=candidate["candidate_id"], pair=candidate["pair"],
+                    event_time_utc=start.isoformat(), known_at_utc=start.isoformat(),
+                    phase=phase, result=result, event_key=key, data=data))
+            for row in original:
+                store(*row)
+            now = start + timedelta(minutes=5, seconds=10)
+            def tick():
+                return native.released_paper_followup_tick_once(
+                    candidate=candidate, series_id=series, journal=journal, capture_dir=capture,
+                    model_reservations=budget, ack_file=ack / "readback.json",
+                    expected_repo_sha="a"*40, expected_bundle_sha256="b"*64,
+                    expected_strategy_sha256="c"*64,
+                    read_active_series=lambda *_: self.fail("patched release gate"),
+                    clock_now=lambda: now.isoformat(),
+                    capture=lambda **_: {"status": "CLOSED_KRAKEN_1M_SNAPSHOT_SAVED", "count": 0},
+                    fetch=lambda *_: {"pair": "XBT/EUR", "observed_at_utc": now.isoformat(),
+                                     "frames": {"5": {"status": "VALID",
+                                                      "last_closed_bar_end_utc":
+                                                      (start+timedelta(minutes=5)).isoformat()}}},
+                    ticker=lambda *_: {"ask": 99.0})
+            with patch.object(native, "_require_released_paper_cloud"), \
+                 patch.object(evaluate, "http_json", side_effect=AssertionError("unexpected HTTP")):
+                result = tick()
+                self.assertIn("wait", result, result)
+                self.assertEqual(result["wait"]["status"], "WAIT_CONDITIONS_MATCHED_REQUIRES_NEW_RULE_P4")
+                self.assertFalse(result["wait"]["authorized_buy"])
+                now = start + timedelta(hours=7, seconds=1)
+                result = tick()
+                self.assertFalse(result["orders"])
+                store("MODEL_RESPONSE", "PASS", "FRESHRECHECK", {})
+                mixed = tick()
+                self.assertFalse(mixed["tick_called"])
+                self.assertEqual(mixed["source_capture_calls"], 0)
+            phases = [json.loads(p.read_text())["phase"] for p in journal.glob("*.json")]
+            self.assertIn("WAIT_RECHECK", phases)
+            self.assertIn("WAIT_EXPIRY", phases)
+            self.assertIn("FOLLOWUP_6H", phases)
+            self.assertNotIn("PAPER_FILL", phases)
+            self.assertEqual(phases.count("MODEL_RESPONSE"), 1)  # Deliberately mixed test input.
+            self.assertFalse(list(budget.iterdir()))
 
 
 if __name__=="__main__":
