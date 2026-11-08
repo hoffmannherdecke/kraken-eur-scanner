@@ -221,5 +221,33 @@ try{
  $res=Invoke-V3OneTimePaperRelease -Mode PaperRollback @common
  Need ($res.kind -ceq 'V3_PAPER_PRESTOP_EXPIRED_FENCE_ARCHIVED' -and $script:effects.Count -eq 0 -and
   [IO.File]::Exists((Join-Path $tmp 'fence.json.test.rollback'))) 'PRESTOP_ARCHIVE_REARMED_OR_LOST_FENCE'
+ # Fault after the first task restart must preserve the original fence and
+ # create-new attempt latch. Never reopen automatically after a partial restore.
+ Remove-Item (Join-Path $tmp 'run.rollback.attempted.json'),(Join-Path $tmp 'fence.json.test.rollback')
+ [IO.File]::WriteAllBytes((Join-Path $tmp 'fence.json'),[byte[]](123,125))
+ Write-V3PaperReceipt (Join-Path $tmp 'run.stop.attempted.json') @{state='TEST'}
+ function Assert-V3PaperFence {return @{phase='QUIESCED'}}
+ function Get-ScheduledTask {return @{State='Disabled'}}
+ function Start-ScheduledTask {throw 'SIMULATED_RESTORE_START_FAILURE'}
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperRollback @common} 'SIMULATED_RESTORE_START_FAILURE'
+ Need ([IO.File]::Exists((Join-Path $tmp 'fence.json'))) 'FAILED_RESTORE_REMOVED_FENCE'
+ Need ([IO.File]::Exists((Join-Path $tmp 'run.rollback.attempted.json'))) 'FAILED_RESTORE_ATTEMPT_LOST'
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperRollback @common} 'already exists'
+ Remove-Item (Join-Path $tmp 'run.rollback.attempted.json')
+ function Start-ScheduledTask {$script:effects+='restore-start'}
+ function Wait-V3PaperOriginalIntakeRestore {
+  Need ([IO.File]::Exists((Join-Path $tmp 'fence.json'))) 'FENCE_REMOVED_BEFORE_WORKER_ACK'
+  throw 'SIMULATED_MISSING_RESTORE_HEARTBEAT'
+ }
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperRollback @common} 'SIMULATED_MISSING_RESTORE_HEARTBEAT'
+ Need ([IO.File]::Exists((Join-Path $tmp 'fence.json'))) 'STALE_HEARTBEAT_REMOVED_FENCE'
+ Remove-Item (Join-Path $tmp 'run.rollback.attempted.json')
+ function Wait-V3PaperOriginalIntakeRestore {
+  Need ([IO.File]::Exists((Join-Path $tmp 'fence.json'))) 'FENCE_REMOVED_BEFORE_WORKER_ACK'
+  $script:effects+='two-original-heartbeats'
+ }
+ $res=Invoke-V3OneTimePaperRelease -Mode PaperRollback @common
+ Need ($res.kind -ceq 'V3_PAPER_PRECAS_RESTORE_REQUESTED_AFTERCARE_ACK_PENDING' -and
+  [IO.File]::Exists((Join-Path $tmp 'fence.json.test.rollback'))) 'CONFIRMED_WORKERS_NOT_ARCHIVED'
  Write-Output 'V3_PAPER_RELEASE_OFFLINE_CMS_SQL_LATCH_RESUME_ROLLBACK_PASS'
 }finally{Remove-Item $tmp -Recurse -Force;$cert.Dispose();$rsa.Dispose()}

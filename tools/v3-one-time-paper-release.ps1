@@ -137,6 +137,35 @@ function Set-V3PaperFence([object]$Context,[string]$Phase) {
  Set-Acl $tmp (Get-Acl $Context.fence)
  [IO.File]::Replace($tmp,$Context.fence,($Context.fence+'.'+[guid]::NewGuid().ToString('N')+'.bak'),$true)
 }
+function Wait-V3PaperOriginalIntakeRestore([object]$Context,[datetimeoffset]$StartedAfter) {
+ $state='C:\Users\ADMIN\Trading\State'
+ $workers=[ordered]@{
+  'CryptoMiniPC-V2R4PaperCandidates'='v2r4-paper-candidate-runtime-heartbeat.json'
+  'CryptoMiniPC-V2R4PaperWait'='v2r4-paper-wait-runtime-heartbeat.json'
+ }
+ $until=$StartedAfter.AddSeconds(180)
+ do{
+  Assert-V3PaperDeadline $Context
+  $fresh=0
+  foreach($name in $workers.Keys){
+   if([string](Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop).State -cne 'Running'){continue}
+   try{
+    $raw=[Text.UTF8Encoding]::new($false,$true).GetString((Read-V3ReleaseLocalBytes (Join-Path $state $workers[$name]) 65536))
+    $stamp=[regex]::Matches($raw,'"checked_at_utc"\s*:\s*"(?<utc>[^"\\]+)"')
+    if($stamp.Count -ne 1 -or $stamp[0].Groups['utc'].Value -cnotmatch '(Z|\+00:00)$'){continue}
+    $at=[datetimeoffset]::Parse($stamp[0].Groups['utc'].Value,[Globalization.CultureInfo]::InvariantCulture)
+    $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
+    if(($raw|ConvertFrom-Json -ErrorAction Stop).status -ceq 'HEALTHY' -and
+       $at -gt $StartedAfter -and $age -ge 0 -and $age -le 90){$fresh++}
+   }catch{
+    # The scheduler may be running before its first complete heartbeat.
+   }
+  }
+  if($fresh -eq 2){return}
+  Start-Sleep -Seconds 2
+ }while([datetimeoffset]::UtcNow -lt $until)
+ throw 'V3_PAPER_RESTORE_HEARTBEATS_MISSING_PRESERVE_FENCE'
+}
 function Get-V3PaperCasCallSql([object]$Request) {
  $fields=@('expected_old_series_id','expected_old_release_sha','expected_old_strategy_sha256','expected_old_runtime_sha256',
   'expected_old_candidate_count','expected_old_trade_count','expected_old_last_outcome_updated_at','expected_old_last_trade_updated_at',
@@ -626,7 +655,7 @@ function Invoke-V3OneTimePaperRelease {
    return @{kind='V3_PAPER_TASK_START_REQUESTED_RUNTIME_ACK_PENDING';paper_operational_claimed=$false}
   }
   if($Mode -eq 'PaperRollback'){
-   if([IO.File]::Exists($casLatch)){
+   if([IO.File]::Exists($casLatch) -or [string]$f.phase -ceq 'CLOUD_COMMITTED'){
     # After a possible CAS, safe rollback is V3 HOLD; never revive old intake.
     Disable-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter'|Out-Null
     Stop-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter'
@@ -637,15 +666,30 @@ function Invoke-V3OneTimePaperRelease {
    }
    $rollbackEpoch=Assert-V3PaperEpochPlan $ctx $inventory
    Assert-V3PaperEpochReceipt $receipt $rollbackEpoch
+   if([string](Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction Stop).State -cne 'Disabled'){
+    throw 'V3_PAPER_PRECAS_ROLLBACK_V3_WRITER_NOT_DISABLED'
+   }
+   Assert-V3PaperDeadline $ctx
    Write-V3PaperReceipt ($base+'.rollback.attempted.json') @{approval_sha256=$auth.approval_sha256}
-   # Archive exact fence before the two original IgnoreNew tasks can restart.
-   # All task XMLs have just been checked against their original backups.
-   [IO.File]::Move($ctx.fence,($ctx.fence+'.'+$auth.claims.release_id+'.rollback'))
+   # ARMED permits explicit original starts while preventing automatic rearm.
+   # Keep the marker until both original workers confirm forward progress.
+   if([string]$f.phase -ceq 'QUIESCED'){Set-V3PaperFence $ctx 'ARMED'}
+   $null=Assert-V3PaperFence $ctx @('ARMED')
+   $armedSha=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $ctx.fence)
+   if($armedSha -cne [string]$rollbackEpoch.fence_sha256){throw 'V3_PAPER_RESTORE_ARMED_FENCE_DRIFT'}
+   $archive=$ctx.fence+'.'+$auth.claims.release_id+'.rollback'
+   if([IO.File]::Exists($archive)){throw 'V3_PAPER_RESTORE_ARCHIVE_COLLISION_PRESERVE_FENCE'}
+   $startedAfter=[datetimeoffset]::UtcNow
    foreach($name in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
     Assert-V3PaperDeadline $ctx
-    Enable-ScheduledTask -TaskName $name|Out-Null
-    Start-ScheduledTask -TaskName $name
+    Enable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
+    Start-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
    }
+   Wait-V3PaperOriginalIntakeRestore $ctx $startedAfter
+   Assert-V3PaperDeadline $ctx
+   $null=Assert-V3PaperFence $ctx @('ARMED')
+   if((Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $ctx.fence)) -cne $armedSha){throw 'V3_PAPER_RESTORE_ARMED_FENCE_DRIFT'}
+   [IO.File]::Move($ctx.fence,$archive)
    return @{kind='V3_PAPER_PRECAS_RESTORE_REQUESTED_AFTERCARE_ACK_PENDING';paper_activated=$false}
   }
  }finally{
