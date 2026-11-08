@@ -210,8 +210,12 @@ class OriginalScannerTests(unittest.TestCase):
         self.assertEqual(candidate["event_time_utc"], event["observed_at_utc"])
         self.assertEqual(candidate["scanner_market_context"]["source_event"], event)
         self.assertEqual(candidate, original_candidate(event, **window))
+        watch = {**event, "would_request_fresh_recheck": False,
+                 "liquidity_class_without_depth": "WATCH_ONLY"}
+        admitted = original_candidate(watch, **window)
+        self.assertEqual(admitted["candidate_id"], candidate["candidate_id"])
+        self.assertEqual(admitted["scanner_market_context"]["source_event"], watch)
         for invalid in (
-            {"would_request_fresh_recheck": False, "liquidity_class_without_depth": "WATCH_ONLY"},
             {"real_money_actions_enabled": True},
             {"source_pair_received_at_utc": "2026-11-08T15:42:01Z"},
         ):
@@ -228,8 +232,8 @@ class OriginalScannerTests(unittest.TestCase):
             "kind": "V2R4_WS_SHADOW_DISCOVERY", "schema_version": 1, "pair": "SCOR/EUR",
             "shadow_only": True, "paper_only": True, "real_money_actions_enabled": False,
             "fresh_recheck_invoked": False, "next_action": "SHADOW_OBSERVE_ONLY",
-            "would_request_fresh_recheck": True,
-            "liquidity_class_without_depth": "STANDARD_EXECUTION_GATE",
+            "would_request_fresh_recheck": False,
+            "liquidity_class_without_depth": "WATCH_ONLY",
             "observed_at_utc": "2026-11-08T15:34:44.133104Z",
             "source_pair_received_at_utc": "2026-11-08T15:34:41.420751Z",
             "source_snapshot_written_at_utc": "2026-11-08T15:34:43.309110Z",
@@ -240,7 +244,7 @@ class OriginalScannerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp)
             file = source / "20261108T153444.133104Z-SCOR-EUR.json"
-            file.write_text(json.dumps({**event, "would_request_fresh_recheck": False}))
+            file.write_text(json.dumps({**event, "real_money_actions_enabled": True}))
             attempted = set()
             args = dict(source=source, series_id="PAPER-V3-20261108T153400Z",
                         series_started=observed - timedelta(minutes=8), seen=set(),

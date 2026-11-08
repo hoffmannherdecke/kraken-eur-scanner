@@ -1076,21 +1076,22 @@ def _pr692_original_proof_pins() -> tuple[str, str] | None:
                 "c3d600ae8d5baf20b475a6d085281dd002ba03bddc7538440f4234c2ff042e88",
                 "bf8feb1703b1fb6f11b0e6d14467762663e0ac861c18372520d43c089a8f36e3",
             ),
-            "paper_evaluator/v3_paper_native_scanner_input_v1.py": (
-                None,
-                "e162a74bb41944eeb3bab60b79ae4285a6d4d097bacb71971cc49f05ca635f59",
-            ),
             "tools/v3-one-time-paper-release.ps1": (
                 "b69fb898762d7ff26729ef0eaae3469d63ca9a27e2f9d45be1e08f6bc9dece01",
                 "d59641a1dd402ec0c7ee7775bf8a568516cc9d72b0e1260969918e5bf227182d",
             ),
         }
-        if all(inventory.get(path) == new for path, (_, new) in scanner_input_delta.items()):
+        scanner_input = "paper_evaluator/v3_paper_native_scanner_input_v1.py"
+        scanner_variants = (
+            "e162a74bb41944eeb3bab60b79ae4285a6d4d097bacb71971cc49f05ca635f59",
+            "79c1526e70c4e600c7056e7c79d46106acdeae340a610c299fe7365016f0a685",
+        )
+        if (inventory.get(scanner_input) in scanner_variants
+                and all(inventory.get(path) == new
+                        for path, (_, new) in scanner_input_delta.items())):
+            del inventory[scanner_input]
             for path, (old, _) in scanner_input_delta.items():
-                if old is None:
-                    del inventory[path]
-                else:
-                    inventory[path] = old
+                inventory[path] = old
         if all(inventory.get(path) == new
                for path, (_, new) in bounded_runtime_delta.items()):
             for path, (old, _) in bounded_runtime_delta.items():
