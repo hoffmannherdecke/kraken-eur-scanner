@@ -21,7 +21,8 @@ by the productive native bootstrap.
 | `PaperStop` | `V3_PAPER_STOP` | `PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS` | Disable/stop only Candidates and WAIT; require process absence before QUIESCED |
 | `PaperSealEpoch` | `CLOUD_STAGE5_EPOCH_SEAL` | `STOP_CONFIRMED_INTENT_COMMITTED` | Seal only the new epoch, with exact original STOP receipt and independent Writer/Issuer commits |
 | `PaperCas` | `V3_PAPER_CAS` | `SEALED_INTENT_INHIBIT_STOP_CONFIRMED` | Commit UNKNOWN through the existing executor, then call the existing 16-parameter rotation in a second transaction |
-| `PaperActivate` | `V3_PAPER_ACTIVATE` | `CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE` | Hold both disabled intake definitions, set CLOUD_COMMITTED, enable/start the existing V3 task once |
+| `PaperActivate` | `V3_PAPER_ACTIVATE` | Signed Post-CAS Reader receipt and separately signed repeated operating lease | Verify both against the prepared disabled action, then start the existing task once and collect the host runtime readback |
+| `PaperRuntimeBootstrap` | `V3_PAPER_RUNTIME_REPEATED` | Signed Post-CAS Reader receipt, operating lease and matching local activation attempt | Return the current lease to the SYSTEM launcher without requiring a running-task observation |
 | `PaperHostReadback` | `V3_PAPER_RUNTIME` | Signed original release evidence | Authenticate release evidence and independently observe actual Windows task/Python PID/birth, process absence, fence and supervisor before the locked native phase |
 | `PaperResume` | `V3_PAPER_RESUME` | Fresh independent current result | Read-only resolution; never redispatch CAS or activation |
 | `PaperRollback` | `V3_PAPER_ROLLBACK` | `PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS` before CAS | Restore only original intake definitions after independent terminal abort. After possible CAS: request V3 safe HOLD, never rearm old intake |
@@ -143,6 +144,33 @@ V3 action requires its resulting original XML to be bound in subsequent plans;
 Prepare returns its exact XML digest. Original Candidates/WAIT XMLs permit only
 the existing semantically validated Enabled change. Lifecycle and CloudSync
 remain Running and unchanged.
+
+For repeated Paper, the existing `host_receipt` and `host_cms` task arguments
+refer to the original Notebook Post-CAS Reader pair. Use the same bytes for
+activation. The independent operating lease pins that JSON as
+`bindings.host_receipt_sha256` and signs the reviewed startup facts in
+`bindings.start_authority`: `native_task_action_sha256`,
+`native_task_launcher_file_sha256`, `runtime_release_packet_file_sha256`,
+`approved_six_proof_release_packet_sha256` (the native canonical packet digest),
+`six_external_original_e2e_proofs_approved`, `successor_series_assignment`,
+the existing eight `maintenance_*` fields, `paper_only` and
+`real_money_actions`. The task action hash is SHA-256 of its UTF-8 executable,
+arguments and working directory separated by NUL bytes. The operating lease
+does not attest any future Task state, PID, fence acknowledgement or heartbeat.
+Activation checks the prepared Task XML and the complete bootstrap action, then
+records the accepted operating lease and Cloud receipt digests before dispatch.
+The lease cannot be swapped after that dispatch.
+
+The SYSTEM launcher first verifies those original inputs and the committed
+fence, then publishes a `STARTING` heartbeat under the existing lifetime
+writer lock. This permits the host and supervisor to observe the process
+independently. Actual Paper phases still require the live Task action, PID and
+birth, no old intake workers, supervisor no-rearm acknowledgement and a fresh
+locked Cloud read. The activation operator corroborates the later `HEALTHY`
+heartbeat against the running Task, its CIM process and the existing supervisor.
+Missing or mismatched readback is HOLD with the original activation attempt
+preserved and no automatic second start. The local readback alone does not claim
+the full operational cutover.
 
 The native runtime spec has exactly these keys:
 `kind` (`V3_NATIVE_RELEASE_RUNTIME_SPEC_V1`), `series_id`, `repo_sha`,

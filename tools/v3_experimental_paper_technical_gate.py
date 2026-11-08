@@ -1086,6 +1086,28 @@ def _pr692_original_proof_pins() -> tuple[str, str] | None:
             "e162a74bb41944eeb3bab60b79ae4285a6d4d097bacb71971cc49f05ca635f59",
             "79c1526e70c4e600c7056e7c79d46106acdeae340a610c299fe7365016f0a685",
         )
+        # Activation ordering changes only the native start and authority
+        # handoff. Preserve historical Free-Rule and WAIT evidence for this
+        # exact PR697 successor inventory, never for a mixed source snapshot.
+        activation_order_delta = {
+            "paper_evaluator/v3_paper_minipc_native_launcher_v1.py": (
+                scanner_input_delta["paper_evaluator/v3_paper_minipc_native_launcher_v1.py"][1],
+                "8be20e3d64495046906f78a86fccdb473ea87f28cc404f114aaf31e1eb35e24c",
+            ),
+            "tools/v3-one-time-paper-release.ps1": (
+                scanner_input_delta["tools/v3-one-time-paper-release.ps1"][1],
+                "18d6d6344b10ec3a5d46fb27338b5485300c2097097ff2761df0d3b73114ac10",
+            ),
+            "tools/v3-one-time-release.ps1": (
+                "69b197e2e6ec9bb17e76c74b2461980b47b5c406f71dd464f0db0417b17cd32f",
+                "f806d51c7c16fb55390cf03b27659d93ca33ad7431c97e4c7caa75f010dc0d35",
+            ),
+        }
+        if (inventory.get(scanner_input) == scanner_variants[1]
+                and all(inventory.get(path) == new
+                        for path, (_, new) in activation_order_delta.items())):
+            for path, (old, _) in activation_order_delta.items():
+                inventory[path] = old
         if (inventory.get(scanner_input) in scanner_variants
                 and all(inventory.get(path) == new
                         for path, (_, new) in scanner_input_delta.items())):

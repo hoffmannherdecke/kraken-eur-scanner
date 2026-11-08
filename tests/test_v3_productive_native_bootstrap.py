@@ -104,7 +104,10 @@ class RepeatedPaperTests(unittest.TestCase):
 
     def test_multiple_cycles_expiry_and_restart_use_one_owner(self):
         def observe(**kwargs):
-            return {"runtime_lease": {**self.lease, "expires_at_utc": self.deadline.isoformat()}}
+            if not kwargs["bootstrap"]:
+                self.assertTrue(self.heartbeat.exists())
+            return {"kind": "V3_PAPER_RUNTIME_BOOTSTRAP_V1" if kwargs["bootstrap"] else "live",
+                    "runtime_lease": {**self.lease, "expires_at_utc": self.deadline.isoformat()}}
 
         candidate = {"candidate_id": "real-original-fixture"}
         preflight = {"selected_candidates": [candidate]}
@@ -164,7 +167,7 @@ class RepeatedPaperTests(unittest.TestCase):
                  patch.object(native, "ORIGINALHOST_TRADING_ROOT", str(self.root)), \
                  patch.object(native, "_originalhost_wall_clock_utc", return_value=self.now), \
                  patch.object(native, "authenticated_originalhost_release_provider",
-                              return_value={"runtime_lease": lease}), \
+                              return_value={"kind": "V3_PAPER_RUNTIME_BOOTSTRAP_V1", "runtime_lease": lease}), \
                  patch.object(native, "dispatch_from_original_windows_one_shot") as dispatch:
                 with self.assertRaises(ValueError):
                     self.run_writer()
@@ -176,7 +179,7 @@ class RepeatedPaperTests(unittest.TestCase):
         with patch.object(native, "ORIGINALHOST_TRADING_ROOT", str(self.root)), \
              patch.object(native, "_originalhost_wall_clock_utc", return_value=self.now), \
              patch.object(native, "authenticated_originalhost_release_provider",
-                          return_value={"runtime_lease": lease}), \
+                          return_value={"kind": "V3_PAPER_RUNTIME_BOOTSTRAP_V1", "runtime_lease": lease}), \
              patch.object(native, "dispatch_from_original_windows_one_shot",
                           side_effect=ValueError("reconciliation required")) as dispatch:
             with self.assertRaisesRegex(ValueError, "reconciliation required"):

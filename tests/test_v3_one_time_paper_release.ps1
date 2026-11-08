@@ -35,7 +35,7 @@ try{
  $ctx=[pscustomobject]@{commit=('a'*40);authorization=@{claims=@{release_id='V3-ONETIME-test';bindings=@{reader_certificate_sha256=$pin;plan_sha256=('b'*64)}}}}
  $r=[ordered]@{release_commit=('a'*40);release_id='V3-ONETIME-test';plan_sha256=('b'*64);observed_at_utc=[datetimeoffset]::UtcNow.ToString('o');state='TEST_ONLY'}
  function SaveSigned($row){
-  $bytes=[Text.Encoding]::UTF8.GetBytes(($row|ConvertTo-Json -Compress))
+  $bytes=[Text.Encoding]::UTF8.GetBytes(($row|ConvertTo-Json -Depth 12 -Compress))
   $cms=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new($bytes),$true)
   $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
   $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
@@ -55,6 +55,64 @@ try{
  $r.observed_at_utc=[datetimeoffset]::UtcNow.ToString('o');SaveSigned $r
  [IO.File]::AppendAllText((Join-Path $tmp 'receipt.json'),' ')
  Reject {Read-V3PaperIndependentReceipt $ctx (Join-Path $tmp 'receipt.json') (Join-Path $tmp 'receipt.cms')} 'signature'
+ # Genuine signed Cloud witness and separately signed operating lease.
+ $commit='a'*40
+ $id='V3-ONETIME-'+('b'*32)
+ $sid='PAPER-V3-20261108T110000Z'
+ $plan=@{series_id=$sid;bundle_sha256=('c'*64);strategy_sha256=('d'*64);
+  cas_request=@{new_v3_config=@{}}}
+ $cloud=[ordered]@{kind='V3_PAPER_RELEASE_EPOCH_READER_V1';state='CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE';
+  release_commit=$commit;release_id=$id;plan_sha256=('e'*64);repo_sha=$commit;successor_series_id=$sid;
+  bundle_sha256=$plan.bundle_sha256;strategy_sha256=$plan.strategy_sha256;observed_at_utc=[datetimeoffset]::UtcNow.ToString('o')}
+ foreach($key in @('preinvoke_epoch_id','preinvoke_intent_id','preinvoke_request_sha256',
+   'preinvoke_source_sha256','preinvoke_fence_sha256','preinvoke_inhibit_receipt_sha256')){
+  $cloud[$key]='fixture-'+$key
+  $plan.cas_request.new_v3_config[$key]=$cloud[$key]
+ }
+ SaveSigned $cloud
+ $cloudJson=Join-Path $tmp 'cloud.json';$cloudCms=Join-Path $tmp 'cloud.cms'
+ Move-Item (Join-Path $tmp 'receipt.json') $cloudJson
+ Move-Item (Join-Path $tmp 'receipt.cms') $cloudCms
+ $packetPath=Join-Path $tmp 'packet.json'
+ $packetBytes=[Text.Encoding]::UTF8.GetBytes('{"primary_decision_route":"FREE_RULE_P4","bounded_research_scope":{"max_candidates":4,"max_observation_days":1}}')
+ [IO.File]::WriteAllBytes($packetPath,$packetBytes)
+ $static=[ordered]@{native_task_action_sha256=('a'*64);native_task_launcher_file_sha256=('b'*64);
+  approved_six_proof_release_packet_sha256=('a'*64);runtime_release_packet_file_sha256=(Get-V3ReleaseSha256 $packetBytes);
+  six_external_original_e2e_proofs_approved=$true;
+  successor_series_assignment=@{release_owner='https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99';
+   decision='ISSUED_FOR_EXACT_RUNTIME_RELEASE';independent_decision_reference='https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-1';
+   successor_series_id=$sid;repo_sha=$commit;code_fingerprint_sha256=$plan.bundle_sha256;strategy_fingerprint_sha256=$plan.strategy_sha256};
+  maintenance_release_repo_sha=$commit;maintenance_receipt_kind='V3_EXISTING_MINIPC_MAINTENANCE_ORIGINALHOST_ACK_V1';
+  maintenance_receipt_sha256=('c'*64);maintenance_completed_at_utc=[datetimeoffset]::UtcNow.AddDays(-1).ToString('o');
+  maintenance_cpu_bios_boot_thermal_originalhost_pass=$true;maintenance_windows_drivers_reboots_originalhost_pass=$true;
+  maintenance_scripts_originalhost_source_ack_pass=$true;maintenance_v2r4_restart_and_aftercare_originalhost_pass=$true;
+  paper_only=$true;real_money_actions=$false}
+ $artifacts=@{'tools/a.ps1'=('a'*64);'tools/b.ps1'=('b'*64)}
+ $claims=[ordered]@{kind='V3_ONE_TIME_RELEASE_AUTHORIZATION_V1';release_id=$id;scope='V3_PAPER_RUNTIME_REPEATED';
+  base_commit='5b1789e349b157d06d3109c5f0ff10d95154bf81';release_commit=$commit;
+  not_before_utc=[datetime]::UtcNow.AddSeconds(-5).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
+  expires_at_utc=[datetime]::UtcNow.AddMinutes(5).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
+  project_ref='nlgzjmqgwueojlyqmoru';computer_name='MINI-PC';trading_root='C:\Users\ADMIN\Trading';artifacts=$artifacts;
+  bindings=@{reader_certificate_sha256=$pin;plan_sha256=$cloud.plan_sha256;
+   host_receipt_sha256=(Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes($cloudJson)));start_authority=$static}}
+ function ReadRuntimeFixture {
+  SaveSigned $claims
+  $payload=[IO.File]::ReadAllBytes((Join-Path $tmp 'receipt.json'))
+  $cmsBytes=[IO.File]::ReadAllBytes((Join-Path $tmp 'receipt.cms'))
+  return (Assert-V3OneTimeReleaseAuthorization -Payload $payload -Cms $cmsBytes -ReviewedAuthorityCertificateSha256 $pin `
+   -Scope V3_PAPER_RUNTIME_REPEATED -ExpectedReleaseCommit $commit -ExpectedArtifacts $artifacts)
+ }
+ $startupContext=[pscustomobject]@{commit=$commit;authorization=(ReadRuntimeFixture);plan=$plan}
+ $observedCloud=Read-V3PaperIndependentReceipt $startupContext $cloudJson $cloudCms
+ $startLease=Get-V3PaperRepeatedStart $startupContext @{release_packet=$packetPath} $observedCloud
+ Need ($startLease.scope -ceq 'V3_PAPER_RUNTIME_REPEATED') 'SIGNED_START_REQUIRES_LIVE_TASK'
+ $observedCloud.successor_series_id='PAPER-V3-20261108T120000Z'
+ Reject {Get-V3PaperRepeatedStart $startupContext @{release_packet=$packetPath} $observedCloud} 'START_CLOUD_RECEIPT_HOLD'
+ $observedCloud.successor_series_id=$sid
+ [IO.File]::AppendAllText($packetPath,' ')
+ Reject {Get-V3PaperRepeatedStart $startupContext @{release_packet=$packetPath} $observedCloud} 'START_PROOF_BINDING_HOLD'
+ $claims.expires_at_utc=[datetime]::UtcNow.AddSeconds(-1).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+ Reject {ReadRuntimeFixture} 'APPROVAL_EXPIRED_OR_FUTURE_HOLD'
  # Durable latch is crash-safe and cannot be reopened as a second attempt.
  Write-V3PaperReceipt (Join-Path $tmp 'attempt.json') @{state='DISPATCH_UNKNOWN'}
  Reject {Write-V3PaperReceipt (Join-Path $tmp 'attempt.json') @{state='RETRY'}} 'already exists'
@@ -84,14 +142,35 @@ try{
  Reject {Get-V3PaperCasInstallSql 'altered' @{authorization=@{expires_at=[datetimeoffset]::UtcNow}}} 'SEAM_DRIFT'
  # Resume/rollback decisions are exercised below with mock native boundaries;
  # these mocks are confined to this test script, absent from CLI parameters.
+ function Import-Module {
+  param($Name,[switch]$Force,$Scope)
+  if([IO.Path]::GetFileName($Name) -cne 'v3-one-time-release-authorization.psm1'){
+   Microsoft.PowerShell.Core\Import-Module -Name $Name -Force:$Force
+  }
+ }
  function Assert-V3PaperOriginalHost {}
- function Get-V3PaperReleaseInventory {return @{}}
+ function Get-V3ReleaseSha256([byte[]]$Bytes){
+  $hasher=[Security.Cryptography.SHA256]::Create()
+  try{return ([BitConverter]::ToString($hasher.ComputeHash($Bytes))).Replace('-','').ToLowerInvariant()}
+  finally{$hasher.Dispose()}
+ }
+ function Get-V3PaperReleaseInventory {return @{'paper_evaluator/v3_paper_minipc_native_launcher_v1.py'=('e'*64)}}
  function Open-V3ReleasePackageReadLease {return @()}
  function Assert-V3ReleaseAuthorityAdmission {return 'd'*64}
  function Read-V3ReleaseLocalBytes {return ,[byte[]](123,125)}
- function Assert-V3OneTimeReleaseAuthorization {return $script:authorization}
+ function Assert-V3OneTimeReleaseAuthorization {
+  param($Scope)
+  if($Scope -ceq 'V3_PAPER_RUNTIME_REPEATED'){
+   if($script:runtime.expires_at -le [datetimeoffset]::UtcNow){throw 'V3_RELEASE_APPROVAL_EXPIRED_OR_FUTURE_HOLD'}
+   return $script:runtime
+  }
+  return $script:authorization
+ }
  function Read-V3PaperIndependentReceipt {return $script:receipt}
- function Read-V3PaperPinnedJson {return $script:plan}
+ function Read-V3PaperPinnedJson($path){
+  if($path -ceq 'runtime.json'){return $script:runtimeSpec}
+  return $script:plan
+ }
  function Assert-V3PaperRuntimeSpec {}
  function Open-V3PaperIntakePair {return $null}
  function Assert-V3PaperTaskPins {}
@@ -173,7 +252,7 @@ try{
   $script:sqlCalls[1].sql.Contains('statement_timeout')) 'CAS_COMMIT_ORDER_OR_DEADLINE'
  Reject {Invoke-V3OneTimePaperRelease -Mode PaperCas -PostgresPassword $pw @common} 'already exists'
  Need ($script:sqlCalls.Count -eq 2) 'CAS_REPLAY_DISPATCHED'
- $script:receipt=@{state='CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE';successor_series_id=$script:plan.series_id;
+ $script:receipt=@{kind='V3_PAPER_RELEASE_EPOCH_READER_V1';state='CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE';successor_series_id=$script:plan.series_id;
   repo_sha=$script:plan.repo_sha;bundle_sha256=$script:plan.bundle_sha256;strategy_sha256=$script:plan.strategy_sha256}
  foreach($key in $request.new_v3_config.PSObject.Properties.Name){$script:receipt[$key]=$request.new_v3_config.$key}
  $nativeLauncher=Join-Path $root 'paper_evaluator\v3_paper_minipc_native_launcher_v1.py'
@@ -181,24 +260,65 @@ try{
  Need ($script:nativeArguments.StartsWith('-I -B ',[StringComparison]::Ordinal)) 'PREPARED_NATIVE_PREFIX_DRIFT'
  function Get-ScheduledTask {
   param($TaskName)
-  return @{State='Disabled';Actions=@(@{Arguments=$script:nativeArguments})}
+  if(-not $TaskName){return $script:otherWriters}
+  return @{State='Disabled';Actions=@($script:nativeAction)}
  }
  function Enable-ScheduledTask {$script:effects+='enable'}
  function Start-ScheduledTask {$script:effects+='start'}
  $script:effects=@()
+ $script:otherWriters=@()
+ $common.RuntimeSpecJson='runtime.json'
+ $script:runtimeSpec=@{kind='V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1';paper_plan='plan.json';release_packet='proof.json'}
+ $script:plan.runtime_bootstrap=@{approval_json='runtime-approval.json';approval_cms='runtime-approval.cms';
+  admission_json='admission.json';host_receipt='cas-reader.json';host_cms='cas-reader.cms'}
+ $common.ExpectedAuthorityAdmissionSha256=Get-V3ReleaseSha256 ([byte[]](123,125))
+ $script:nativeAction=@{Execute='python.exe';WorkingDirectory=$root;Arguments=$script:nativeArguments}
+ $runtimeBindings=$script:authorization.claims.bindings.Clone()
+ $runtimeBindings.host_receipt_sha256=$common.ExpectedAuthorityAdmissionSha256
+ $runtimeBindings.start_authority=@{native_task_action_sha256=(Get-V3PaperTaskActionSha256 $script:nativeAction);
+  native_task_launcher_file_sha256=('e'*64)}
+ $script:runtime=@{claims=@{release_id='test';bindings=$runtimeBindings};approval_sha256=('9'*64);
+  not_before=[datetimeoffset]::UtcNow.AddMinutes(-1);expires_at=[datetimeoffset]::UtcNow.AddMinutes(5)}
+ function Get-V3PaperNativeActionArguments {return $reviewedArguments}
  $reviewedArguments=$script:nativeArguments
  foreach($drift in @((' '+$reviewedArguments),
                     ($reviewedArguments -replace '--released-one-shot','--released-one-shot-extra'),
                     ($reviewedArguments.Replace($nativeLauncher,(Join-Path $root 'other.py'))))){
-  $script:nativeArguments=$drift
+  $script:nativeAction.Arguments=$drift
   Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'REVIEWED_DISABLED_NATIVE_ACTION_REQUIRED'
  }
  Need ($script:effects.Count -eq 0) 'DRIFTED_ACTIVATION_MUTATED_TASKS'
- $script:nativeArguments=$reviewedArguments
+ $script:nativeAction.Arguments=$reviewedArguments
  $script:receipt.preinvoke_request_sha256='f'*64
  Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'ACTIVATION_REQUEST_DRIFT'
  Need ($script:effects.Count -eq 0) 'DRIFTED_CAS_RECEIPT_MUTATED_TASKS'
  $script:receipt.preinvoke_request_sha256=$request.new_v3_config.preinvoke_request_sha256
+ $expires=$script:runtime.expires_at
+ $script:runtime.expires_at=[datetimeoffset]::UtcNow.AddSeconds(-1)
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'APPROVAL_EXPIRED'
+ $script:runtime.expires_at=$expires
+ function Get-V3PaperRepeatedStart {}
+ $script:runtime.claims.bindings.host_receipt_sha256='0'*64
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'START_BYTES_HOLD'
+ $script:runtime.claims.bindings.host_receipt_sha256=$common.ExpectedAuthorityAdmissionSha256
+ $script:otherWriters=@(@{TaskName='CryptoMiniPC-V3PaperOtherWriter';TaskPath='\';State='Ready'})
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'COMPETING_NATIVE_WRITER_HOLD'
+ $script:otherWriters=@()
+ Need ($script:effects.Count -eq 0) 'INVALID_RUNTIME_MUTATED_TASKS'
+ function Get-ScheduledTask {
+  param($TaskName)
+  if(-not $TaskName){return $script:otherWriters}
+  return @{State='Running';Actions=@($script:nativeAction)}
+ }
+ function Assert-V3PaperFence {return @{phase='QUIESCED'}}
+ $healthContext=@{authorization=$script:authorization;plan=$script:plan}
+ Need ($null -eq (Get-V3PaperRepeatedHealth $healthContext $script:runtime $script:nativeAction ([datetimeoffset]::UtcNow))) 'MISSING_HEARTBEAT_ACCEPTED'
+ function Get-ScheduledTask {
+  param($TaskName)
+  if(-not $TaskName){return $script:otherWriters}
+  return @{State='Disabled';Actions=@($script:nativeAction)}
+ }
+ function Get-V3PaperRepeatedHealth {return @{kind='V3_PAPER_ORIGINALHOST_RUNTIME_READBACK_V1';paper_operational_claimed=$false}}
  $res=Invoke-V3OneTimePaperRelease -Mode PaperActivate @common
  Need (($script:effects -join ',') -ceq 'fence,enable,start') 'ACTIVATION_ORDER'
  Need ($res.paper_operational_claimed -eq $false) 'FALSE_RUNTIME_ACK'

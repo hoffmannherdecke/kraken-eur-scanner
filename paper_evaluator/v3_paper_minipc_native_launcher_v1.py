@@ -1305,17 +1305,17 @@ def preflight_native_windows_one_shot(*,
 
 
 
-def authenticated_originalhost_release_provider(*, args, repeated=False) -> dict[str, Any]:
-    """Authenticate original independent bytes with the existing CMS/owner gate.
+def authenticated_originalhost_release_provider(*, args, repeated=False, bootstrap=False) -> dict[str, Any]:
+    """Authenticate the signed operating scope and independent Cloud receipt.
 
-    No report flags are created here. The independent receipt must describe
-    this actual PID/birth and be refreshed by its original issuer; the native
-    dispatcher separately correlates it with Windows and locked Cloud reads.
+    Bootstrap returns a lease without claiming a running Task. The live mode
+    also observes the invoking process and fences before any Paper phase.
     """
     command = [str(ORIGINALHOST_POWERSHELL), "-NoProfile", "-NonInteractive",
                "-ExecutionPolicy", "Bypass", "-File",
                str(Path(__file__).absolute().parents[1] / "tools/v3-one-time-release.ps1"),
-               "-Mode", "PaperHostReadback", "-RuntimeSpecJson", args.runtime_spec,
+               "-Mode", "PaperRuntimeBootstrap" if bootstrap else "PaperHostReadback",
+               "-RuntimeSpecJson", args.runtime_spec,
                "-ApprovalJson", args.approval_json, "-ApprovalCms", args.approval_cms,
                "-AuthorityAdmissionJson", args.admission_json,
                "-ExpectedAuthorityAdmissionSha256", args.admission_sha256,
@@ -1416,9 +1416,11 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
     deadline = None
     approval_sha = None
 
-    def authorize():
+    def authorize(*, bootstrap=False):
         nonlocal deadline, approval_sha
-        report = authenticated_originalhost_release_provider(args=args, repeated=True)
+        report = authenticated_originalhost_release_provider(args=args, repeated=True, bootstrap=bootstrap)
+        if bootstrap and report.get("kind") != "V3_PAPER_RUNTIME_BOOTSTRAP_V1":
+            raise ValueError("authenticated V3 Paper startup authority required")
         lease = report.get("runtime_lease")
         if (not isinstance(lease, dict)
                 or lease.get("scope") != "V3_PAPER_RUNTIME_REPEATED"
@@ -1467,15 +1469,14 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
     with _one_canary_owner(state):
         # Authentication precedes a status write. A previous process cannot
         # keep publishing once this process holds the same lifetime lock.
-        initial = authorize()
+        authorize(bootstrap=True)
         publish("STARTING")
         try:
             while True:
                 _check_runtime_deadline(deadline)
                 # Retain the same independently authorized Cloud/journal phase
                 # even while waiting for the next real Scanner opportunity.
-                run_phase("CLOUD_RECEIPT_ACK", readback=(lambda: initial) if initial is not None else authorize)
-                initial = None
+                run_phase("CLOUD_RECEIPT_ACK")
                 seen, pending = _scanner_journal_progress(params["journal"], series_id)
                 cycle_status = "WAITING_FOR_FRESH_ELIGIBLE_SCANNER_INPUT"
                 scanner_ready = False
