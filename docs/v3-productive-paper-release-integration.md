@@ -151,9 +151,12 @@ The native runtime spec has exactly these keys:
 `candidate`, `preflight`, `paper_plan`. Candidate/preflight are existing JSON
 paths or null as appropriate for the existing three phases. The signed
 `V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1` uses null for both fields. Its
-existing V3 task reads eligible originals from the Mini-PC WS Shadow event
+existing V3 task reads original discovery events from the Mini-PC WS Shadow
 directory, verifies a fresh Shadow heartbeat and builds the one-candidate
-preflight with public Kraken data. It retains the admitted candidate in the
+preflight with public Kraken data. Shadow's existing market-discovery triggers
+define the input events. Its legacy liquidity class and recheck flag remain
+source metadata and do not gate the V3 preflight. The V3 preflight and
+Free-Rule P4 determine review eligibility and the Paper decision. It retains the admitted candidate in the
 existing capture directory so follow-up can resume after a task restart.
 No paid model key, model approval, callback, clock, alternative Cloud transport or arbitrary module
 is accepted. The existing dedicated relay credential stays at its fixed local

@@ -13,11 +13,12 @@ from paper_evaluator.successor_coin_entry_evidence_v1 import fetch_public_entry_
 from paper_evaluator.v3_p3_ab_five_bounded_research import verified_spot_metadata
 from paper_evaluator.v3_paper_positive_source_entry_v1 import STREAMS, utc
 from paper_evaluator.v3_paper_single_writer_preflight_v1 import plan_writer_preflight
-from paper_evaluator.v2r4_precandidate_discovery import STANDARD_EXECUTION_GATE
 
 
 def original_candidate(event: dict, *, observed: datetime, series_started: datetime) -> dict | None:
     """Preserve the original scanner clock and the existing canonical handoff ID."""
+    # Legacy liquidity/recheck labels belong to the source evidence.
+    # The released V3 preflight alone determines review eligibility.
     pair = event.get("pair")
     if (event.get("kind") != "V2R4_WS_SHADOW_DISCOVERY"
             or type(event.get("schema_version")) is not int or event["schema_version"] != 1
@@ -26,8 +27,6 @@ def original_candidate(event: dict, *, observed: datetime, series_started: datet
             or event.get("real_money_actions_enabled") is not False
             or event.get("fresh_recheck_invoked") is not False
             or event.get("next_action") != "SHADOW_OBSERVE_ONLY"
-            or event.get("would_request_fresh_recheck") is not True
-            or event.get("liquidity_class_without_depth") != STANDARD_EXECUTION_GATE
             or not isinstance(pair, str) or re.fullmatch(r"[A-Z0-9]{2,20}/EUR", pair) is None):
         return None
     try:
