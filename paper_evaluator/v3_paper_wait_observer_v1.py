@@ -43,9 +43,22 @@ def _wait_setup(rows:list[dict])->tuple[dict,dict,dict,int,Any]:
     p4=next((r for r in rows if r["phase"]=="P4_VALIDATION"),None)
     watch=next((r for r in rows if r["phase"]=="WAIT_WATCH" and r["result"]=="WAIT"),None)
     model=next((r for r in rows if r["phase"]=="MODEL_RESPONSE"),None)
-    if (not origin or not p4 or p4["result"]!="WAIT" or
-            not watch or not model or model["data"].get("raw_model_decision")!="WAIT"):
-        raise ValueError("model P4 WAIT + original watch required; no source-only BUY")
+    if not origin or not p4 or p4["result"]!="WAIT" or not watch:
+        raise ValueError("P4 WAIT + original watch required; no source-only BUY")
+    if p4["data"].get("rule_based_primary") is True:
+        request=next((r for r in rows if r["phase"]=="MODEL_REQUEST"),None)
+        if (model or not request or request["result"]!="SKIP"
+                or request["data"].get("source_status")!="FREE_RULE_V3_P4_NO_MODEL"
+                or request["data"].get("model_http_attempts_reserved")!=0
+                or p4["data"].get("model_http_requests")!=0
+                or request["event_key"]!=p4["event_key"]
+                or watch["event_key"]!=p4["event_key"]):
+            raise ValueError("free-rule WAIT original lineage required")
+        decision=clock(p4["data"]["p4_completed_at_utc"])
+    else:
+        if not model or model["data"].get("raw_model_decision")!="WAIT":
+            raise ValueError("model P4 WAIT + original watch required; no source-only BUY")
+        decision=clock(model["data"]["model_response_at_utc"])
     ttl=watch["data"].get("raw_wait_ttl_minutes")
     if type(ttl) is not int or not 1<=ttl<=60:raise ValueError("invalid model watch TTL")
     conditions=watch["data"].get("raw_watch_conditions")
@@ -57,7 +70,6 @@ def _wait_setup(rows:list[dict])->tuple[dict,dict,dict,int,Any]:
                 or type(c.get("value")) not in (int,float)
                 or not math.isfinite(c["value"])):
             raise ValueError("untrusted model WATCH comparison")
-    decision=clock(model["data"]["model_response_at_utc"])
     if abs((decision-clock(watch["known_at_utc"])).total_seconds())>10:
         raise ValueError("mismatched model-watch lineage")
     return origin,p4,watch,ttl,decision
@@ -70,6 +82,7 @@ def observe_wait(*,journal:Path,series_id:str,candidate_id:str,
     """
     rows=candidate_receipts(journal,series_id,candidate_id)
     origin,p4,watch,ttl,decision=_wait_setup(rows)
+    free_rule=p4["data"].get("rule_based_primary") is True
     deadline=decision+timedelta(minutes=ttl)
     now=clock(now_at_utc)
     if now>deadline:
@@ -78,7 +91,8 @@ def observe_wait(*,journal:Path,series_id:str,candidate_id:str,
     if any(r["phase"]=="WAIT_EXPIRY" for r in rows):
         return {"status":"WAIT_ALREADY_EXPIRED","authorized_buy":False}
     if any(r["phase"]=="WAIT_RECHECK" and r["result"]=="PASS" for r in rows):
-        return {"status":"WAIT_TRIGGER_ALREADY_RECORDED_REQUIRES_NEW_MODEL_AUTH",
+        return {"status":("WAIT_TRIGGER_ALREADY_RECORDED_REQUIRES_NEW_RULE_P4" if free_rule
+                          else "WAIT_TRIGGER_ALREADY_RECORDED_REQUIRES_NEW_MODEL_AUTH"),
                 "authorized_buy":False}
     if not isinstance(snapshot,dict) or snapshot.get("pair")!=origin["pair"]:
         return {"status":"WAIT_NO_SAME_PAIR_SOURCE","authorized_buy":False}
@@ -121,19 +135,22 @@ def observe_wait(*,journal:Path,series_id:str,candidate_id:str,
             "watch_conditions_met":matched,
             "watch_snapshot_values":{k:round(float(v),8) for k,v in values.items() if k in FIELDS and type(v) in (int,float) and math.isfinite(v)},
             "source_status":"PROSPECTIVELY_OBSERVED_NO_TRADE_AUTHORITY",
-            "phase_failure_stage":"MODEL_BUDGET_EXHAUSTED_NO_AUTO_REVIEW" if matched
-                                  else "WAIT_CONDITIONS_NOT_YET_ALL_MET",
+            "phase_failure_stage":(("FRESH_RULE_P4_REQUIRED_NO_AUTO_REVIEW" if free_rule
+                                     else "MODEL_BUDGET_EXHAUSTED_NO_AUTO_REVIEW") if matched
+                                   else "WAIT_CONDITIONS_NOT_YET_ALL_MET"),
         })
     store_receipt_explicitly(journal,receipt)
-    return {"status":"WAIT_CONDITIONS_MATCHED_REQUIRES_NEW_MODEL_P4_AUTH"
-            if matched else "WAIT_VALID_5M_TICK_NOT_YET_MATCHED",
+    return {"status":(("WAIT_CONDITIONS_MATCHED_REQUIRES_NEW_RULE_P4" if free_rule
+                       else "WAIT_CONDITIONS_MATCHED_REQUIRES_NEW_MODEL_P4_AUTH")
+                      if matched else "WAIT_VALID_5M_TICK_NOT_YET_MATCHED"),
             "authorized_buy":False,"model_calls":0,
             "condition_count":len(checks),"observed_at_utc":snapshot["known_at_utc"]}
 
 def finish_wait(*,journal:Path,series_id:str,candidate_id:str,
                 now_at_utc:str)->dict[str,Any]:
     rows=candidate_receipts(journal,series_id,candidate_id)
-    origin,_,watch,ttl,decision=_wait_setup(rows)
+    origin,p4,watch,ttl,decision=_wait_setup(rows)
+    free_rule=p4["data"].get("rule_based_primary") is True
     now=clock(now_at_utc)
     if now<decision+timedelta(minutes=ttl):
         return {"status":"WAIT_TTL_NOT_EXPIRED","authorized_buy":False}
@@ -156,8 +173,9 @@ def finish_wait(*,journal:Path,series_id:str,candidate_id:str,
             "source_status":"MATCHED_WITHIN_TTL_BUT_NO_NEW_BUY_AUTHORITY" if matched
                 else "UNKNOWN_DID_NOT_CAPTURE_COMPLETE_TTL_NO_NEGATIVE_INFERENCE",
             "watch_did_not_prove_no_trigger":not matched,
-            "phase_failure_stage":"MODEL_REVIEW_AUTHORITY_EXHAUSTED" if matched
-                                   else "HISTORICAL_WAIT_TTL_OBSERVATION_INCOMPLETE",
+            "phase_failure_stage":(("FRESH_RULE_P4_REQUIRED_NO_AUTO_REVIEW" if free_rule
+                                      else "MODEL_REVIEW_AUTHORITY_EXHAUSTED") if matched
+                                    else "HISTORICAL_WAIT_TTL_OBSERVATION_INCOMPLETE"),
         })
     store_receipt_explicitly(journal,receipt)
     return {"status":"WAIT_EXPIRED_AFTER_MATCH_NO_BUY" if matched

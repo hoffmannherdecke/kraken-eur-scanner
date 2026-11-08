@@ -26,7 +26,7 @@ from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
 from paper_evaluator.v3_paper_minipc_followup_v1 import record_horizon
 from paper_evaluator.v3_paper_missed_opportunity_followup_v1 import followup_no_buy
 from paper_evaluator.v3_paper_wait_observer_v1 import (
-    candidate_receipts,observe_wait,finish_wait,
+    candidate_receipts,observe_wait,finish_wait,_wait_setup,
 )
 from paper_evaluator.v3_experimental_paper_journal_v1 import (
     clock,make_receipt,store_receipt_explicitly,
@@ -222,9 +222,13 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
     reentry_quote=None
     if watch and p4 and p4["result"]=="WAIT":
         old=next((r for r in rows if r["phase"]=="MODEL_RESPONSE"),None)
-        if old and isinstance(old["data"].get("model_response_at_utc"),str):
+        start=None
+        if p4["data"].get("rule_based_primary") is True:
+            _,_,_,ttl,start=_wait_setup(rows)
+        elif old and isinstance(old["data"].get("model_response_at_utc"),str):
             start=clock(old["data"]["model_response_at_utc"])
             ttl=watch["data"].get("raw_wait_ttl_minutes")
+        if start is not None:
             now=clock(clock_now())
             if type(ttl) is int and now>=start+timedelta(minutes=ttl):
                 results["wait"]=finish_wait(journal=journal,series_id=series_id,
@@ -1152,8 +1156,8 @@ def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
     authentic. A supplied callback alone cannot prove these facts. No CLI,
     daemon, scheduler, model, orders, Cloud POST or CAS is created here.
 
-    Only previously immutable-journalled candidates with an actual MODEL/P4 and
-    one valid O_EXCL HTTP reservation are eligible. Missing/ambiguous results
+    Require durable paid MODEL/P4 with its reservation or a verified
+    model-free rule P4 lineage with no reservation. Missing/ambiguous results
     stay on HOLD before any public Kraken request or journal mutation.
     """
     # Never permit a non-CANARY tick from the unguarded standalone CLI.
@@ -1524,7 +1528,16 @@ def plan_canary_resume(*,candidate:dict[str,Any],series_id:str,
     if not p4s:
         return block("MODEL_NOT_FINAL_NO_AUTOMATIC_SPEND_OR_FOLLOWUP")
     p4=p4s[0]
-    if (not requests or requests[0]["result"]!="PASS"
+    if is_released and p4["data"].get("rule_based_primary") is True:
+        try:
+            _verify_first_native_model_paper_journal(
+                candidate=candidate,series_id=series_id,journal=journal,
+                model_reservations=model_reservations,free_rule=True)
+            if p4["result"]=="WAIT":
+                _wait_setup(rows)
+        except (OSError,ValueError,KeyError,TypeError,OverflowError):
+            return block("UNVERIFIED_FREE_RULE_P4_PROVENANCE_QUARANTINE")
+    elif (not requests or requests[0]["result"]!="PASS"
             or not responses or responses[0]["result"]!="PASS"
             or not reserved):
         return block("UNVERIFIED_MODEL_P4_PROVENANCE_QUARANTINE")
