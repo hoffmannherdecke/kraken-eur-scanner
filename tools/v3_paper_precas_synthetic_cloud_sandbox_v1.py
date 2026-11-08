@@ -217,6 +217,29 @@ def free_rule_sandbox_insert_sql(export: dict) -> str:
             or not re.fullmatch(r"PAPER-V3-CANARY-PRECAS-FREE-[A-F0-9]{12}", series)
             or len(events) != 7 or len({item["event_id"] for item in events}) != 7):
         raise ValueError("exact sandbox export required")
+    return _sandbox_insert_sql(series, events)
+
+
+def wait_sandbox_insert_sql(witness: dict) -> str:
+    """Prepare only the three checked WAIT censors for the existing test project."""
+    from paper_evaluator.v3_paper_precas_wait_witness_v1 import (
+        WAIT_REPLAY, receipt_wire, validate_wait_sandbox_rows,
+    )
+
+    if (witness.get("kind") != WAIT_REPLAY or witness.get("production_authorized") is not False
+            or witness.get("technical_release_proofs_credited") != 0):
+        raise ValueError("explicit isolated WAIT witness required")
+    generated = witness["generated"]
+    scanner = validate_wait_sandbox_rows(witness["originals"], generated, generated)
+    series = scanner["series_id"]
+    if not re.fullmatch(r"PAPER-V3-CANARY-[A-Z0-9-]{8,90}", series) or series == SERIES:
+        raise ValueError("unexpected historical WAIT series")
+    events = [dict(event_id=r["event_id"], sha256=r["content_sha256"],
+                   canonical_json=receipt_wire(r["payload"])) for r in generated]
+    return _sandbox_insert_sql(series, events, wait_only=True)
+
+
+def _sandbox_insert_sql(series, events, *, wait_only=False):
     rows, clauses = [], []
     for item in events:
         raw = item["canonical_json"].encode("utf-8")
@@ -235,6 +258,26 @@ def free_rule_sandbox_insert_sql(export: dict) -> str:
     # the exact test series, for which the new check pins all seven originals.
     exact = "$events$" + " OR ".join(clauses) + "$events$"
     values = ",\n".join(rows)
+    constraint = "v3_precas_wait_exact_censors" if wait_only else "pr685_free_rule_exact_events"
+    evidence_class = ("ISOLATED_PRECAS_WAIT_CENSOR_DRYRUN" if wait_only
+                      else "ISOLATED_FREE_RULE_ORIGINALHOST_DRYRUN")
+    if wait_only:
+        baseline = f"""  IF (SELECT count(*) FROM public.v3_paper_event_receipts) <> 37
+     OR (SELECT count(*) FROM public.v3_paper_event_receipts WHERE series_id = '{SERIES}'
+         AND fixture_only AND evidence_class = 'SYNTHETIC_MODEL_STUB_NOT_ORIGINAL_MARKET') <> 16
+     OR (SELECT count(*) FROM public.v3_paper_event_receipts
+         WHERE series_id ~ '^PAPER-V3-CANARY-PRECAS-FREE-[A-F0-9]{{12}}$'
+           AND fixture_only AND evidence_class = 'ISOLATED_FREE_RULE_ORIGINALHOST_DRYRUN') <> 21
+     OR EXISTS (SELECT 1 FROM public.v3_paper_event_receipts WHERE series_id = '{series}')
+     OR EXISTS (SELECT 1 FROM public.internal_relay_credentials
+         WHERE relay_id = 'v3-paper-evidence-relay' AND enabled)
+"""
+    else:
+        baseline = f"""  IF (SELECT count(*) FROM public.v3_paper_event_receipts) <> 16
+     OR EXISTS (SELECT 1 FROM public.v3_paper_event_receipts
+       WHERE series_id <> '{SERIES}' OR NOT fixture_only
+          OR evidence_class <> 'SYNTHETIC_MODEL_STUB_NOT_ORIGINAL_MARKET')
+"""
     return f"""-- Execute ONLY through the authenticated Supabase project {SANDBOX_PROJECT}.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
@@ -243,14 +286,11 @@ LOCK TABLE public.v3_paper_event_receipts IN ACCESS EXCLUSIVE MODE;
 DO $scope$
 DECLARE c text; expression text;
 BEGIN
-  IF (SELECT count(*) FROM public.v3_paper_event_receipts) <> 16
-     OR EXISTS (SELECT 1 FROM public.v3_paper_event_receipts
-       WHERE series_id <> '{SERIES}' OR NOT fixture_only
-          OR evidence_class <> 'SYNTHETIC_MODEL_STUB_NOT_ORIGINAL_MARKET')
+{baseline.rstrip()}
      OR NOT EXISTS (SELECT 1 FROM public.internal_relay_credentials
        WHERE relay_id = 'v3-paper-evidence-relay' AND NOT enabled)
   THEN RAISE EXCEPTION 'original isolated sandbox state differs'; END IF;
-  EXECUTE format('ALTER TABLE public.v3_paper_event_receipts ADD CONSTRAINT pr685_free_rule_exact_events CHECK (series_id <> %L OR (%s))', '{series}', {exact});
+  EXECUTE format('ALTER TABLE public.v3_paper_event_receipts ADD CONSTRAINT {constraint} CHECK (series_id <> %L OR (%s))', '{series}', {exact});
   FOREACH c IN ARRAY ARRAY[
     'v3_paper_event_receipts_series_id_check', 'v3_paper_event_receipts_candidate_id_check',
     'v3_paper_event_receipts_evidence_class_check', 'only_synthetic_buy_has_fill', 'expected_p4_outcome']
@@ -259,7 +299,7 @@ BEGIN
       FROM pg_constraint WHERE conrelid = 'public.v3_paper_event_receipts'::regclass
         AND conname = c AND contype = 'c' AND convalidated;
     EXECUTE format('ALTER TABLE public.v3_paper_event_receipts DROP CONSTRAINT %I, ADD CONSTRAINT %I CHECK (CASE WHEN series_id = %L THEN evidence_class = %L ELSE (%s) END)',
-                   c, c, '{series}', 'ISOLATED_FREE_RULE_ORIGINALHOST_DRYRUN', expression);
+                   c, c, '{series}', '{evidence_class}', expression);
   END LOOP;
 END $scope$;
 INSERT INTO public.v3_paper_event_receipts
@@ -267,7 +307,7 @@ INSERT INTO public.v3_paper_event_receipts
    source_known_at, payload, content_sha256, fixture_only, evidence_class)
 SELECT id, p->>'series_id', p->>'revision', p->>'candidate_id', p->>'pair', p->>'phase',
        p->>'result', (p->>'known_at_utc')::timestamptz, p, digest, true,
-       'ISOLATED_FREE_RULE_ORIGINALHOST_DRYRUN'
+       '{evidence_class}'
 FROM (VALUES {values}) AS rows(id,digest,p);
 COMMIT;
 """
