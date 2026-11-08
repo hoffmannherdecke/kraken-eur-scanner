@@ -86,6 +86,16 @@ def read_active_paper_series(*,series_id:str,token:str,
         "series_id","status","strategy_revision","observed_at_utc","config")}
 
 
+def _replace_json(path: Path, value: dict[str, Any]) -> None:
+    tmp=path.with_name(path.name+"."+uuid.uuid4().hex+".tmp")
+    try:
+        with tmp.open("x",encoding="utf-8") as f:
+            json.dump(value,f,sort_keys=True);f.flush();os.fsync(f.fileno())
+        os.replace(tmp,path)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def sync_once(*,journal:Path,series_id:str,ack_file:Path,token:str,
               relay_url:str=ENDPOINT,post=None,
               _released_cloud_sync_capability:object=None)->dict[str,Any]:
@@ -121,13 +131,7 @@ def sync_once(*,journal:Path,series_id:str,ack_file:Path,token:str,
     # fixed-name .tmp file block every future 5-minute synchronization.
     # Unique sibling temp + atomic replacement also preserves the older ACK
     # until the new bytes are durable; the actual cloud write is idempotent.
-    tmp=ack_file.with_name(ack_file.name+"."+uuid.uuid4().hex+".tmp")
-    try:
-        with tmp.open("x",encoding="utf-8") as f:
-            json.dump(state,f,sort_keys=True);f.flush();os.fsync(f.fileno())
-        os.replace(tmp,ack_file)
-    finally:
-        tmp.unlink(missing_ok=True)
+    _replace_json(ack_file, state)
     return {"status":"V3_RECEIPTS_CLOUD_ACK_VERIFIED","count":len(out),
             "total_acked":len(state["acked"]),"paper_only":True,"orders":False}
 

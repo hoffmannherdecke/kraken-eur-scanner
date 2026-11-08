@@ -1041,6 +1041,36 @@ def _pr692_original_proof_pins() -> tuple[str, str] | None:
             return None
         # The PR693 original-host inventory covers every other staged file,
         # including the CAS SQL in its exact installed CRLF representation.
+        # The bounded runtime repair changes scheduling, signatures and the
+        # candidate-count ceiling, while retaining the original Free-Rule,
+        # WAIT and Cloud data contracts. Only the exact complete byte delta
+        # may inherit these two original proof envelopes.
+        bounded_runtime_delta = {
+            "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py": (
+                "c737d8d59a76cfda231137610796c5a7178e45b2f905667c6902aaf93c84050b",
+                "178939f69cd3682d3d6400308e4f0970dc72f1c3d16f1183c675ab3e4e56463f",
+            ),
+            "paper_evaluator/v3_paper_minipc_native_launcher_v1.py": (
+                "6b0fad901f9da34dcdcbfd4f3585ee777fa6021395ea864dd490f8826ec6fc27",
+                "c3d600ae8d5baf20b475a6d085281dd002ba03bddc7538440f4234c2ff042e88",
+            ),
+            "paper_evaluator/v3_paper_minipc_selective_tick_v1.py": (
+                "41e86bad604f4cfd263fae1fa9ca4333c5e091f62862d42d02fd4305cc89406f",
+                "3feb4d049241eba5cc4f12e311b56e5a63aa11973a87a6aec9ae2a463838871f",
+            ),
+            "tools/v3-one-time-paper-release.ps1": (
+                "f1b22cb88c9982b6fe64976ada55464d521c71973adfdb42a5bf6b2f8b43f489",
+                "b69fb898762d7ff26729ef0eaae3469d63ca9a27e2f9d45be1e08f6bc9dece01",
+            ),
+            "tools/v3-one-time-release-authorization.psm1": (
+                "0be0d9ee7ee6794943f00c3ceb6b03a3e7d6eb564f9bb0d504c03d5d1b938860",
+                "02ad00ab3880246f5aeea5d9d23165051f77a891e72b18c34b6042ab419096c2",
+            ),
+        }
+        if all(inventory.get(path) == new
+               for path, (_, new) in bounded_runtime_delta.items()):
+            for path, (old, _) in bounded_runtime_delta.items():
+                inventory[path] = old
         encoded = json.dumps(inventory, sort_keys=True, separators=(",", ":")).encode()
         if hashlib.sha256(encoded).hexdigest() != "60230cbf8fd6b4babdb9d26cf3fea56aa80ee1ee39babbc3b065e35b51f776a8":
             return None

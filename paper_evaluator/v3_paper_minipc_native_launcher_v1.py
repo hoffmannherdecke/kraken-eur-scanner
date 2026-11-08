@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -244,12 +245,15 @@ from tools.v3_experimental_paper_technical_gate import (
     FREE_RULE_ROUTE, assess_v3_native_source_import_closure, validate_experimental_paper_packet,
 )
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
-from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import read_active_paper_series
+from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import (
+    _post_to_existing_relay, _replace_json, read_active_paper_series,
+)
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
     released_paper_first_scanner_rule_once,
     released_paper_first_scanner_model_once,
     released_paper_followup_tick_once,
     released_paper_cloud_ack_once,
+    _one_canary_owner,
 )
 
 def _originalhost_wall_clock_utc() -> datetime:
@@ -258,6 +262,16 @@ def _originalhost_wall_clock_utc() -> datetime:
 
 
 PHASES = ("FIRST_SCANNER_MODEL_P4", "FOLLOWUP_6H24H72H", "CLOUD_RECEIPT_ACK")
+REPEATED_SPEC = "V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1"
+
+
+class PaperRuntimeLeaseExpired(ValueError):
+    pass
+
+
+def _check_runtime_deadline(deadline: datetime) -> None:
+    if _originalhost_wall_clock_utc() >= deadline:
+        raise PaperRuntimeLeaseExpired("signed V3 Paper operating window expired")
 SERIES = re.compile(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z")
 REPO_SHA = re.compile(r"[0-9a-f]{40}")
 FILE_SHA = re.compile(r"[0-9a-f]{64}")
@@ -344,7 +358,8 @@ def dispatch_one_owned_paper_phase(*, phase: str,
         existing_context: dict[str, Any] | None = None,
         source_fetch: Callable | None = None,
         source_ticker: Callable | None = None,
-        cloud_post: Callable | None = None) -> dict[str, Any]:
+        cloud_post: Callable | None = None,
+        max_scanner_candidates: int | None = None) -> dict[str, Any]:
     """Dispatch exactly ONE phase to its existing locked release-bound worker.
 
     The caller must independently verify actual Windows Task/PID ownership,
@@ -390,6 +405,8 @@ def dispatch_one_owned_paper_phase(*, phase: str,
         if source_acquire is not None: params["acquire"] = source_acquire
         if existing_context is not None: params["existing_context"] = existing_context
         if not paid:
+            if max_scanner_candidates is not None:
+                params["max_candidates"] = max_scanner_candidates
             return released_paper_first_scanner_rule_once(**params)
         # Delegate to the ORIGINAL separately budgeted native owner. It
         # already validates the complete approval BEFORE source/journal
@@ -628,6 +645,28 @@ def dispatch_after_native_release_readback(*,
         raise ValueError("native originalhost readback timestamp invalid") from exc
     # No additional run loop, schedule, model call, Paper authority or Cloud
     # writer is introduced here; the existing worker locks and guards own it.
+    if "runtime_lease" in report:
+        deadline = datetime.fromisoformat(report["runtime_lease"]["expires_at_utc"])
+        original_cloud_readback = phase_args["read_active_series"]
+
+        def guarded_cloud(series_id):
+            _check_runtime_deadline(deadline)
+            reply = original_cloud_readback(series_id)
+            _check_runtime_deadline(deadline)
+            return reply
+
+        def guarded_clock():
+            _check_runtime_deadline(deadline)
+            return _originalhost_wall_clock_utc().isoformat()
+
+        def guarded_post(url, token, payload):
+            _check_runtime_deadline(deadline)
+            return _post_to_existing_relay(url, token, payload)
+
+        phase_args.update(read_active_series=guarded_cloud, clock_now=guarded_clock,
+                          max_scanner_candidates=release_packet["bounded_research_scope"]["max_candidates"])
+        if phase == "CLOUD_RECEIPT_ACK":
+            phase_args["cloud_post"] = guarded_post
     return dispatch_one_owned_paper_phase(**phase_args)
 
 
@@ -1264,7 +1303,7 @@ def preflight_native_windows_one_shot(*,
 
 
 
-def authenticated_originalhost_release_provider(*, args) -> dict[str, Any]:
+def authenticated_originalhost_release_provider(*, args, repeated=False) -> dict[str, Any]:
     """Authenticate original independent bytes with the existing CMS/owner gate.
 
     No report flags are created here. The independent receipt must describe
@@ -1280,7 +1319,8 @@ def authenticated_originalhost_release_provider(*, args) -> dict[str, Any]:
                "-ExpectedAuthorityAdmissionSha256", args.admission_sha256,
                "-ExpectedReleaseCommit", args.expected_source_sha,
                "-HostReceiptJson", args.host_receipt, "-HostReceiptCms", args.host_cms]
-    result = subprocess.run(command, capture_output=True, text=True, timeout=60, check=False)
+    result = subprocess.run(command, capture_output=True, text=True,
+                            timeout=145 if repeated else 60, check=False)
     if result.returncode or not 1 <= len(result.stdout) <= 65536:
         raise ValueError("authenticated originalhost release readback HOLD")
     report = json.loads(result.stdout)
@@ -1293,14 +1333,15 @@ def run_authenticated_windows_spec(*, args, spec: dict[str, Any]) -> int:
     required = {"kind", "series_id", "repo_sha", "bundle_sha256", "strategy_sha256",
                 "phase", "journal", "capture_dir", "model_reservations", "ack_file",
                 "release_root", "release_packet", "candidate", "preflight", "paper_plan"}
-    if (set(spec) != required or spec["kind"] != "V3_NATIVE_RELEASE_RUNTIME_SPEC_V1"
-            or spec["repo_sha"] != args.expected_source_sha or spec["phase"] not in PHASES):
+    repeated = spec.get("kind") == REPEATED_SPEC
+    if (set(spec) != required or spec["repo_sha"] != args.expected_source_sha
+            or ((spec["phase"] != "REPEATED_PAPER" or not spec["candidate"] or not spec["preflight"])
+                if repeated else (spec["kind"] != "V3_NATIVE_RELEASE_RUNTIME_SPEC_V1"
+                                  or spec["phase"] not in PHASES))):
         raise ValueError("exact native runtime spec required")
     params = {k: spec[k] for k in ("series_id", "repo_sha", "bundle_sha256", "strategy_sha256", "phase")}
     for key in ("journal", "capture_dir", "model_reservations", "ack_file"):
         params[key] = Path(spec[key])
-    params["candidate"] = _bounded_release_json(Path(spec["candidate"])) if spec["candidate"] else None
-    params["preflight"] = _bounded_release_json(Path(spec["preflight"])) if spec["preflight"] else None
     packet = _bounded_release_json(Path(spec["release_packet"]))
     # Existing dedicated relay secret; no environment/argv token, paid model
     # key, caller transport or arbitrary module/function selection.
@@ -1308,12 +1349,108 @@ def run_authenticated_windows_spec(*, args, spec: dict[str, Any]) -> int:
     if secret.is_symlink() or not 24 <= secret.stat().st_size <= 514:
         raise ValueError("existing dedicated V3 relay credential unavailable")
     token = secret.read_text(encoding="utf-8").strip()
+    if repeated:
+        _run_repeated_paper(args=args, spec=spec, params=params, packet=packet, token=token)
+        return 0
+    params["candidate"] = _bounded_release_json(Path(spec["candidate"])) if spec["candidate"] else None
+    params["preflight"] = _bounded_release_json(Path(spec["preflight"])) if spec["preflight"] else None
     result = dispatch_from_original_windows_one_shot(
         originalhost_release_readback=lambda: authenticated_originalhost_release_provider(args=args),
         release_root=Path(spec["release_root"]), release_packet=packet,
         original_cloud_relay_token=token, **params)
     print(json.dumps(result, sort_keys=True))
     return 0
+
+
+def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
+    """One existing Windows Task process, repeatedly using its locked phases."""
+    if packet.get("primary_decision_route") != FREE_RULE_ROUTE:
+        raise ValueError("repeated V3 Paper requires the free-rule route")
+    state = Path(ORIGINALHOST_TRADING_ROOT) / "State"
+    if state.resolve() == params["journal"].resolve():
+        raise ValueError("separate existing V3 journal and Originalhost state required")
+    max_days = packet.get("bounded_research_scope", {}).get("max_observation_days")
+    if type(max_days) is not int or not 1 <= max_days <= 21:
+        raise ValueError("repeated V3 Paper requires a signed finite observation scope")
+    heartbeat = state / "v3-paper-single-writer-heartbeat.json"
+    deadline = None
+    approval_sha = None
+
+    def authorize():
+        nonlocal deadline, approval_sha
+        report = authenticated_originalhost_release_provider(args=args, repeated=True)
+        lease = report.get("runtime_lease")
+        if (not isinstance(lease, dict)
+                or lease.get("scope") != "V3_PAPER_RUNTIME_REPEATED"
+                or lease.get("runtime_spec") != spec
+                or not FILE_SHA.fullmatch(str(lease.get("approval_sha256", "")))):
+            raise ValueError("exact independent repeated Paper operating signature required")
+        start = datetime.fromisoformat(lease["not_before_utc"])
+        deadline = datetime.fromisoformat(lease["expires_at_utc"])
+        if (deadline.tzinfo is None or start.tzinfo is None
+                or not 0 < (deadline-start).total_seconds() <= max_days*86400
+                or start > _originalhost_wall_clock_utc()):
+            raise ValueError("signed V3 Paper operating window outside observation scope")
+        _check_runtime_deadline(deadline)
+        approval_sha = lease["approval_sha256"]
+        return report
+
+    def publish(status):
+        _replace_json(heartbeat, {
+            "kind": "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1", "status": status,
+            "checked_at_utc": _originalhost_wall_clock_utc().isoformat(),
+            "series_id": spec["series_id"], "release_repo_sha": spec["repo_sha"],
+            "runtime_bundle_sha256": spec["bundle_sha256"],
+            "strategy_sha256": spec["strategy_sha256"],
+            "runtime_approval_sha256": approval_sha, "pid": os.getpid(),
+            "expires_at_utc": deadline.isoformat() if deadline else None,
+            "paper_only": True, "orders": False, "real_money_actions": False,
+        })
+
+    def run_phase(phase, candidate=None, preflight=None, readback=authorize):
+        if deadline is not None:
+            _check_runtime_deadline(deadline)
+        return dispatch_from_original_windows_one_shot(
+            originalhost_release_readback=readback,
+            release_root=Path(spec["release_root"]), release_packet=packet,
+            original_cloud_relay_token=token, candidate=candidate,
+            preflight=preflight, **{**params, "phase": phase})
+
+    # The fixed State lock excludes a second Task process for its whole
+    # lifetime. Each phase additionally keeps its original journal lock and
+    # re-reads the exact active Cloud successor inside that lock.
+    with _one_canary_owner(state):
+        # Authentication precedes a status write. A previous process cannot
+        # keep publishing once this process holds the same lifetime lock.
+        initial = authorize()
+        publish("STARTING")
+        try:
+            while True:
+                _check_runtime_deadline(deadline)
+                candidate = _bounded_release_json(Path(spec["candidate"]))
+                preflight = _bounded_release_json(Path(spec["preflight"]))
+                scan = run_phase("FIRST_SCANNER_MODEL_P4", candidate, preflight,
+                                 readback=(lambda: initial) if initial is not None else authorize)
+                initial = None
+                if scan.get("status") not in (
+                        "FIRST_SCANNER_FREE_RULE_P4_DURABLE_WAIT_FOR_FOLLOWUP",
+                        "FIRST_SCANNER_ALREADY_JOURNALED_NO_RULE_REPLAY"):
+                    raise ValueError("V3 Paper Scanner phase requires reconciliation")
+                run_phase("CLOUD_RECEIPT_ACK")
+                followup = run_phase("FOLLOWUP_6H24H72H", candidate)
+                status = str(followup.get("status", ""))
+                if (status.startswith("NONCANARY_FOLLOWUP_HOLD_") and
+                        status != "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
+                    raise ValueError("V3 Paper followup requires reconciliation")
+                run_phase("CLOUD_RECEIPT_ACK")
+                _check_runtime_deadline(deadline)
+                publish("HEALTHY")
+                time.sleep(min(30, max(0, (deadline - _originalhost_wall_clock_utc()).total_seconds())))
+        except PaperRuntimeLeaseExpired:
+            publish("EXPIRED")
+        except Exception:
+            publish("HOLD")
+            raise
 
 def main() -> int:
     parser = argparse.ArgumentParser(

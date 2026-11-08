@@ -20,12 +20,16 @@ function Read-V3PaperPinnedJson([string]$Path,[string]$Sha) {
  return ([Text.UTF8Encoding]::new($false,$true).GetString($bytes)|ConvertFrom-Json -ErrorAction Stop)
 }
 function Assert-V3PaperRuntimeSpec([object]$Spec,[object]$Plan) {
- if([string]$Spec.kind -cne 'V3_NATIVE_RELEASE_RUNTIME_SPEC_V1' -or
+ $phaseMatchesKind=(
+  ([string]$Spec.kind -ceq 'V3_NATIVE_RELEASE_RUNTIME_SPEC_V1' -and
+   [string]$Spec.phase -cin @('FIRST_SCANNER_MODEL_P4','FOLLOWUP_6H24H72H','CLOUD_RECEIPT_ACK')) -or
+  ([string]$Spec.kind -ceq 'V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1' -and
+   [string]$Spec.phase -ceq 'REPEATED_PAPER'))
+ if(-not $phaseMatchesKind -or
     [string]$Spec.series_id -cne [string]$Plan.series_id -or
     [string]$Spec.repo_sha -cne [string]$Plan.repo_sha -or
     [string]$Spec.bundle_sha256 -cne [string]$Plan.bundle_sha256 -or
-    [string]$Spec.strategy_sha256 -cne [string]$Plan.strategy_sha256 -or
-    [string]$Spec.phase -cnotin @('FIRST_SCANNER_MODEL_P4','FOLLOWUP_6H24H72H','CLOUD_RECEIPT_ACK')){
+    [string]$Spec.strategy_sha256 -cne [string]$Plan.strategy_sha256){
   throw 'V3_PAPER_RUNTIME_SPEC_BINDING_HOLD'
  }
 }
@@ -42,8 +46,17 @@ function Read-V3PaperIndependentReceipt([object]$Context,[string]$Json,[string]$
  Assert-V3ReleaseCms $raw (Read-V3ReleaseLocalBytes $Cms 32768) $Context.authorization.claims.bindings.reader_certificate_sha256
  $r=[Text.UTF8Encoding]::new($false,$true).GetString($raw)|ConvertFrom-Json -ErrorAction Stop
  $at=[datetimeoffset]::Parse([string]$r.observed_at_utc,[Globalization.CultureInfo]::InvariantCulture)
- $age=([datetimeoffset]::UtcNow-$at).TotalSeconds
- if($age -lt 0 -or $age -gt 90 -or [string]$r.release_commit -cne $Context.commit -or
+ $now=[datetimeoffset]::UtcNow
+ $fresh=0 -le ($now-$at).TotalSeconds -and ($now-$at).TotalSeconds -le 90
+ if($Context.authorization.claims.PSObject.Properties['scope'] -and
+    $Context.authorization.claims.scope -ceq 'V3_PAPER_RUNTIME_REPEATED'){
+  # The independent lease pins this exact post-CAS witness. Its creation
+  # must be contemporaneous with lease issuance; live host checks still run
+  # below on every phase and after every restart.
+  $fresh=$at -le $now -and [math]::Abs(($Context.authorization.not_before-$at).TotalSeconds) -le 90 -and
+   (Get-V3ReleaseSha256 $raw) -ceq [string]$Context.authorization.claims.bindings.host_receipt_sha256
+ }
+ if(-not $fresh -or [string]$r.release_commit -cne $Context.commit -or
     [string]$r.release_id -cne $Context.authorization.claims.release_id -or
     [string]$r.plan_sha256 -cne $Context.authorization.claims.bindings.plan_sha256){throw 'V3_PAPER_INDEPENDENT_CURRENT_RECEIPT_HOLD'}
  return $r
@@ -338,6 +351,14 @@ function Invoke-V3OneTimePaperRelease {
  $mutex=$null;$held=$false;$intakePair=$null
  try{
   $pin=Assert-V3ReleaseAuthorityAdmission (Read-V3ReleaseLocalBytes $AuthorityAdmissionJson) $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
+  $repeated=$false
+  if($Mode -eq 'PaperHostReadback'){
+   # This untrusted discriminator selects the signature scope only.
+   # The original bytes are pinned and checked again after CMS verification.
+   $runtimeHeader=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $RuntimeSpecJson)
+   $repeated=[string]$runtimeHeader.kind -ceq 'V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1'
+   if($repeated){$scope='V3_PAPER_RUNTIME_REPEATED'}
+  }
   $auth=Assert-V3OneTimeReleaseAuthorization -Payload (Read-V3ReleaseLocalBytes $ApprovalJson) -Cms (Read-V3ReleaseLocalBytes $ApprovalCms 32768) `
    -ReviewedAuthorityCertificateSha256 $pin -Scope $scope -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $inventory
   $b=$auth.claims.bindings
@@ -349,6 +370,9 @@ function Invoke-V3OneTimePaperRelease {
    $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
    $plan=Read-V3PaperPinnedJson $spec.paper_plan $b.plan_sha256;$ctx.plan=$plan
    Assert-V3PaperRuntimeSpec $spec $plan
+   if($repeated -ne ([string]$spec.kind -ceq 'V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1')){
+    throw 'V3_PAPER_RUNTIME_SCOPE_DRIFT'
+   }
    if([string]$receipt.kind -cne 'V3_NATIVE_ONE_OWNER_POST_CAS_ORIGINALHOST_READBACK_V1' -or
       [string]$receipt.release_repo_sha -cne $ExpectedReleaseCommit){throw 'V3_PAPER_HOST_RECEIPT_KIND_HOLD'}
    Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
@@ -371,10 +395,30 @@ function Invoke-V3OneTimePaperRelease {
       [string]$local.native_task_launcher_file_sha256 -cne [string]$receipt.native_task_launcher_file_sha256){
     throw 'V3_PAPER_ACTUAL_NATIVE_TASK_PROCESS_SOURCE_HOLD'
    }
-   $super=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes 'C:\Users\ADMIN\Trading\State\minipc-runtime-supervisor.json' 131072))|ConvertFrom-Json
-   $age=([datetimeoffset]::UtcNow-[datetimeoffset]::Parse([string]$super.checked_at_utc)).TotalSeconds
-   if($age -lt 0 -or $age -gt 150 -or [string]$super.v3_paper_old_intake_fence.mode -cne 'CLOUD_COMMITTED'){
-    throw 'V3_PAPER_CURRENT_SUPERVISOR_NO_REARM_ACK_REQUIRED'
+   # The existing supervisor observes the new fence on its own cadence.
+   # Waiting here is read-only; it neither starts the supervisor nor starts
+   # a Paper phase before the original acknowledgement.
+   $supervisorDeadline=[datetimeoffset]::UtcNow.AddSeconds(125)
+   do{
+    Assert-V3PaperDeadline $ctx
+    $super=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes 'C:\Users\ADMIN\Trading\State\minipc-runtime-supervisor.json' 131072))|ConvertFrom-Json
+    $age=([datetimeoffset]::UtcNow-[datetimeoffset]::Parse([string]$super.checked_at_utc)).TotalSeconds
+    if($age -ge 0 -and $age -le 150 -and [string]$super.v3_paper_old_intake_fence.mode -ceq 'CLOUD_COMMITTED'){break}
+    if(-not $repeated -or [datetimeoffset]::UtcNow -ge $supervisorDeadline){
+     throw 'V3_PAPER_CURRENT_SUPERVISOR_NO_REARM_ACK_REQUIRED'
+    }
+    Start-Sleep -Seconds 1
+   }while($true)
+   Assert-V3PaperDeadline $ctx
+   $receipt.PSObject.Properties.Remove('runtime_lease')
+   if($repeated){
+    Assert-V3PaperProcesses $plan -Absent
+    $null=Assert-V3PaperFence $ctx @('CLOUD_COMMITTED')
+    $receipt|Add-Member -NotePropertyName runtime_lease -NotePropertyValue ([ordered]@{
+     scope=$scope;approval_sha256=$auth.approval_sha256
+     not_before_utc=$auth.not_before.ToUniversalTime().ToString('o')
+     expires_at_utc=$auth.expires_at.ToUniversalTime().ToString('o');runtime_spec=$spec
+    }) -Force
    }
    # Only live observations replace these fields. Six-proof, maintenance,
    # exact compiled bundle/strategy, issuance and independent CAS facts stay

@@ -815,7 +815,8 @@ def released_paper_first_scanner_rule_once(*,preflight:dict[str,Any],
         clock_now:Callable[[],str]=utc_now,
         capture:Callable=capture_public_1m,
         acquire:Callable|None=None,
-        existing_context:dict[str,Any]|None=None)->dict[str,Any]:
+        existing_context:dict[str,Any]|None=None,
+        max_candidates:int|None=None)->dict[str,Any]:
     """Single released Scanner -> free rule P4 via existing locked OS owner.
 
     No budget, OpenAI key, model client, alternate Task or extra writer.
@@ -856,6 +857,20 @@ def released_paper_first_scanner_rule_once(*,preflight:dict[str,Any],
         if candidate_receipts(journal,series_id,candidate["candidate_id"]):
             return {"status":"FIRST_SCANNER_ALREADY_JOURNALED_NO_RULE_REPLAY",
                     "model_http_calls":0,"orders":False,"paper_writer_active":False}
+        if max_candidates is not None:
+            if type(max_candidates) is not int or not 1 <= max_candidates <= 500:
+                raise ValueError("exact bounded Paper candidate budget required")
+            # Count durable Scanner admissions under the same native lock.
+            # A process restart cannot reset the budget.
+            admitted=set()
+            for path in journal.glob("*.json"):
+                if path.is_symlink() or not path.is_file():
+                    raise ValueError("unsafe V3 Paper journal input")
+                row=json.loads(path.read_text("utf-8"))
+                if row.get("series_id")==series_id and row.get("phase")=="SCANNER_CAPTURE":
+                    admitted.add(row["candidate_id"])
+                    if len(admitted)>=max_candidates:
+                        raise ValueError("signed V3 Paper candidate budget exhausted")
         enrollment=stage_and_witness_first_minute(
             preflight=preflight,journal_directory=journal,
             capture_directory=capture_dir,observed_at_utc=clock_now(),
