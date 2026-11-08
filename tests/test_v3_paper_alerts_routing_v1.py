@@ -52,6 +52,7 @@ class AlertRouterTests(unittest.TestCase):
         self.src=original_sources()
         self.p4_history=[self.src["p4"]]
         self.model_history=[self.src["model"]]
+        self.request_history=[]
         self.fills=[]
         self.sent=[]
         self.receipts=[]
@@ -72,13 +73,16 @@ class AlertRouterTests(unittest.TestCase):
         if path.startswith("v3_paper_event_receipts?"):
             if "phase=eq.PAPER_FILL" in path:
                 return self.fills
-            if "phase=eq.P4_VALIDATION" in path or "phase=eq.MODEL_RESPONSE" in path:
+            if any("phase=eq."+phase in path for phase in ("P4_VALIDATION","MODEL_RESPONSE","MODEL_REQUEST")):
                 # The true PostgREST JSON-field filter must be present for
                 # each exact candidate episode, not just candidate+phase.
                 self.assertIn("payload->>event_key=eq.",path)
                 event_key=path.split("payload->>event_key=eq.",1)[1].split("&",1)[0]
-                history=(self.p4_history if "phase=eq.P4_VALIDATION" in path
-                         else self.model_history)
+                history=next(items for phase,items in (
+                    ("P4_VALIDATION",self.p4_history),
+                    ("MODEL_RESPONSE",self.model_history),
+                    ("MODEL_REQUEST",self.request_history),
+                ) if "phase=eq."+phase in path)
                 return [x for x in history
                         if x["payload"].get("event_key")==event_key][:2]
             raise AssertionError("unapproved V3 query: "+path)
@@ -98,6 +102,43 @@ class AlertRouterTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()) as buf:
             ALERT.main()
         return json.loads(buf.getvalue())
+
+    def arrange_free_rule_fill(self):
+        self.fills=[self.src["fill"]]
+        self.model_history=[]
+        self.src["p4"]["payload"]["data"].update(
+            rule_based_primary=True, model_http_requests=0)
+        self.request_history=[row("MODEL_REQUEST","SKIP",{
+            "source_status":"FREE_RULE_V3_P4_NO_MODEL",
+            "model_http_attempts_reserved":0,
+        })]
+
+    def test_free_rule_same_episode_fill_delivers_and_deduplicates_without_model(self):
+        self.arrange_free_rule_fill()
+        self.run_relay()
+        self.run_relay()
+        self.assertEqual(len(self.sent),1)
+        self.assertIn("V3 PAPER BUY_SCOUT",self.sent[0])
+        self.assertFalse(any("phase=eq.MODEL_RESPONSE" in path
+                             for path in self.request_paths))
+
+    def test_free_rule_missing_foreign_or_charged_request_blocks_delivery(self):
+        for problem in ("missing","foreign_episode","reservation","provider_calls"):
+            with self.subTest(problem=problem):
+                self.arrange_free_rule_fill()
+                request=self.request_history[0]["payload"]
+                if problem=="missing":
+                    self.request_history=[]
+                elif problem=="foreign_episode":
+                    request["event_key"]="FRESHRECHECK"
+                elif problem=="reservation":
+                    request["data"]["model_http_attempts_reserved"]=1
+                else:
+                    self.src["p4"]["payload"]["data"]["model_http_requests"]=1
+                with self.assertRaises(RuntimeError):
+                    self.run_relay()
+                self.assertEqual(self.sent,[])
+                self.assertEqual(self.receipts,[])
 
     def test_only_current_v2r4_original_is_unchanged(self):
         self.series={"series_id":"PAPER-V2R4-20261009T110135Z",

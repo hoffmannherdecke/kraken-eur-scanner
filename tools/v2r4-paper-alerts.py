@@ -201,11 +201,22 @@ def _v3_buy_from_originals(url,key,sid,row):
     f=_v3_original(row,sid,cid,pair,"PAPER_FILL","PAPER_FILLED",episode)
     p4=_v3_single_source(url,key,sid,cid,"P4_VALIDATION",episode)
     pd=_v3_original(p4,sid,cid,pair,"P4_VALIDATION","BUY_SCOUT",episode)
-    model=_v3_single_source(url,key,sid,cid,"MODEL_RESPONSE",episode)
-    md=_v3_original(model,sid,cid,pair,"MODEL_RESPONSE","PASS",episode)
-    if (pd.get("p4_decision")!="BUY_SCOUT"
-            or md.get("raw_model_decision")!="BUY_SCOUT"):
-        raise RuntimeError("V3_ALERT_NO_ORIGINAL_MODEL_P4_BUY_CHAIN")
+    if pd.get("rule_based_primary") is True:
+        decision_source=_v3_single_source(url,key,sid,cid,"MODEL_REQUEST",episode)
+        request=_v3_original(decision_source,sid,cid,pair,"MODEL_REQUEST","SKIP",episode)
+        if (pd.get("p4_decision")!="BUY_SCOUT"
+                or type(pd.get("model_http_requests")) is not int
+                or pd["model_http_requests"]!=0
+                or request.get("source_status")!="FREE_RULE_V3_P4_NO_MODEL"
+                or type(request.get("model_http_attempts_reserved")) is not int
+                or request["model_http_attempts_reserved"]!=0):
+            raise RuntimeError("V3_ALERT_NO_ORIGINAL_FREE_RULE_P4_BUY_CHAIN")
+    else:
+        decision_source=_v3_single_source(url,key,sid,cid,"MODEL_RESPONSE",episode)
+        model=_v3_original(decision_source,sid,cid,pair,"MODEL_RESPONSE","PASS",episode)
+        if (pd.get("p4_decision")!="BUY_SCOUT"
+                or model.get("raw_model_decision")!="BUY_SCOUT"):
+            raise RuntimeError("V3_ALERT_NO_ORIGINAL_MODEL_P4_BUY_CHAIN")
     def numeric(value):
         if type(value) not in (int,float) or not math.isfinite(value):
             raise RuntimeError("V3_ALERT_NONFINITE_FILL")
@@ -225,14 +236,14 @@ def _v3_buy_from_originals(url,key,sid,row):
     stamp=row.get("source_known_at")
     try:
         clocks=[]
-        for original in (model,p4,row):
+        for original in (decision_source,p4,row):
             value=original.get("source_known_at")
             ts=datetime.fromisoformat(value.replace("Z","+00:00"))
             if ts.tzinfo is None or ts.utcoffset() is None:
                 raise ValueError("naive source clock")
             clocks.append(ts)
         if not clocks[0]<=clocks[1]<=clocks[2]:
-            raise ValueError("model/P4/fill source clock inverted")
+            raise ValueError("decision/P4/fill source clock inverted")
     except (TypeError,AttributeError,ValueError,OverflowError):
         raise RuntimeError("V3_ALERT_FILL_SOURCE_CLOCK_INVALID")
     return {"candidate_id":cid,"pair":pair,"event_id":event,
