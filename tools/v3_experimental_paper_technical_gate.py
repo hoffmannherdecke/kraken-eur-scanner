@@ -1015,6 +1015,60 @@ def _evidence_content_error(
     return None
 
 
+# BEGIN PR692 ORIGINAL PROOF REUSE
+def _pr692_original_proof_pins() -> tuple[str, str] | None:
+    """Keep historical proof bytes only on the observed equivalent stage.
+
+    This is a bounded provenance mapping, not a cutover or signer approval.
+    The native launcher still requires the current compiled runtime pins and
+    the independent signature over the complete current proof packet.
+    """
+    gate = Path(__file__).absolute()
+    stage = gate.parent.parent
+    try:
+        manifest = json.loads((stage / "v3-paper-inactive-source-manifest.json").read_bytes())
+        commit = manifest["source_git_sha"]
+        if (not re.fullmatch(r"[a-f0-9]{40}", commit)
+                or stage.name != "V3Paper-INACTIVE-" + commit[:12]
+                or stage.parent.name != "Staging"):
+            return None
+        rows = manifest["source_manifest"]
+        inventory = {r["relative_path"]: r["sha256"] for r in rows}
+        if len(rows) != len(inventory):
+            return None
+        raw_gate = gate.read_bytes()
+        if inventory.pop("tools/v3_experimental_paper_technical_gate.py") != hashlib.sha256(raw_gate).hexdigest():
+            return None
+        # The PR693 original-host inventory covers every other staged file,
+        # including the CAS SQL in its exact installed CRLF representation.
+        encoded = json.dumps(inventory, sort_keys=True, separators=(",", ":")).encode()
+        if hashlib.sha256(encoded).hexdigest() != "60230cbf8fd6b4babdb9d26cf3fea56aa80ee1ee39babbc3b065e35b51f776a8":
+            return None
+        # Only this proof adapter may differ in the gate itself. This also
+        # prevents a later strategy or gate edit from silently inheriting it.
+        label = b"PR692 ORIGINAL PROOF REUSE"
+        lines = raw_gate.splitlines(keepends=True)
+        for indent in (b"", b"    ", b"        "):
+            begin = indent + b"# BEGIN " + label + b"\n"
+            end = indent + b"# END " + label + b"\n"
+            if lines.count(begin) != 1 or lines.count(end) != 1:
+                return None
+            first, last = lines.index(begin), lines.index(end)
+            if first >= last:
+                return None
+            del lines[first:last+1]
+        if hashlib.sha256(b"".join(lines)).hexdigest() != "56a971af3760facf2ed681e8a38114507a27b232cffabb2f3fe59de3dbd04f2b":
+            return None
+        if (sys.flags.optimize != 0 or hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+                != "72b29481593c5da37c99248c82777fbfb56217ea7809b771bc760d0a9ecb179b"):
+            return None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return ("94667a46e8399ea5b6fa69d865beda1b96b8f7bb24429fa2001095df1c52bfe6",
+            "691ed3fcc37abfea9d5ebfce21ee681f7730405d09c73f3e9e9faa6974b9f9f8")
+
+
+# END PR692 ORIGINAL PROOF REUSE
 def validate_experimental_paper_packet(root: Path, revision: str,
                                        packet: dict[str, Any]) -> list[str]:
     """Return blockers. No approval from a CI fixture or old V3 model budget."""
@@ -1086,6 +1140,18 @@ def validate_experimental_paper_packet(root: Path, revision: str,
     by_id={x.get("id"):x for x in rows}
     if len(by_id)!=len(rows) or set(by_id)!=PROOFS:
         block("technical proof IDs mismatch or duplicated")
+    # BEGIN PR692 ORIGINAL PROOF REUSE
+    retained_pins = None
+    retained = {
+        "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E": "81562fc742be9d3d348a4d3d7de652c67657976ed0afebf2936df751c40a4922",
+        "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE": "97df702b53314a03a671e878c36f2fb3bc0eed735db27d5048825097c20fa56c",
+    }
+    if "historical_proof_reuse" in packet:
+        if free_rule and packet["historical_proof_reuse"] == "PR692_ORIGINALS_EXACT_STAGE_EQUIVALENCE_V1":
+            retained_pins = _pr692_original_proof_pins()
+        if retained_pins is None:
+            block("historical proof reuse stage or scope not verified")
+    # END PR692 ORIGINAL PROOF REUSE
     for name in PROOFS:
         x=by_id.get(name)
         if not isinstance(x,dict):
@@ -1115,6 +1181,12 @@ def validate_experimental_paper_packet(root: Path, revision: str,
         content_error=_evidence_content_error(
             name,data,expected_code_sha=packet.get("code_fingerprint_sha256"),
             expected_strategy_sha=packet.get("strategy_fingerprint_sha256"),free_rule=free_rule)
+        # BEGIN PR692 ORIGINAL PROOF REUSE
+        if content_error and retained_pins and retained.get(name) == digest:
+            content_error = _evidence_content_error(
+                name,data,expected_code_sha=retained_pins[0],
+                expected_strategy_sha=retained_pins[1],free_rule=True)
+        # END PR692 ORIGINAL PROOF REUSE
         if content_error:
             block(content_error)
     return errors
