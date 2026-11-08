@@ -16,7 +16,7 @@ import json
 import math
 import os
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 import socket
 import subprocess
@@ -704,7 +704,52 @@ def main() -> int:
     cli.add_argument("--expected-isolated-cloud-digest", default=None)
     cli.add_argument("--free-rule-input", type=Path)
     cli.add_argument("--expected-input-sha256")
+    cli.add_argument("--wait-originals", type=Path)
+    cli.add_argument("--wait-originals-sha256")
+    cli.add_argument("--wait-capture-archive", type=Path)
+    cli.add_argument("--wait-journal", type=Path)
+    cli.add_argument("--wait-without-capture", action="store_true")
     a = cli.parse_args()
+    if any(v is not None for v in (a.wait_originals, a.wait_originals_sha256, a.wait_capture_archive, a.wait_journal)) or a.wait_without_capture:
+        if (a.wait_originals is None or a.wait_journal is None
+                or (a.wait_capture_archive is None) != a.wait_without_capture
+                or not a.wait_originals_sha256 or a.execute_host_offline or a.readback_existing
+                or a.expected_isolated_cloud_digest or a.free_rule_input or a.expected_input_sha256):
+            cli.error("WAIT witness requires exact originals, archive and digest only")
+        p = inspect(source=a.source, stage=a.stage, stage_sha=a.expected_stage_sha)
+        if (os.name != "nt" or os.environ.get("COMPUTERNAME") != "MINI-PC"
+                or not sys.flags.isolated or not sys.dont_write_bytecode):
+            raise ValueError("original isolated Mini-PC interpreter required")
+        if (a.wait_originals.is_symlink() or not 1 <= a.wait_originals.stat().st_size <= 65536):
+            raise ValueError("bounded original WAIT input required")
+        raw = a.wait_originals.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != a.wait_originals_sha256:
+            raise ValueError("WAIT input SHA differs")
+        sys.path[:0] = [str(p["stage"]), str(p["source"])]
+        from paper_evaluator.v3_paper_precas_wait_witness_v1 import (
+            WAIT_REPLAY, run_isolated_wait_witness, validate_wait_originals,
+        )
+        originals = json.loads(raw)
+        validate_wait_originals(originals)
+        journal = _regular_tree(a.wait_journal)
+        captures = _regular_tree(a.wait_capture_archive) if a.wait_capture_archive else None
+        research_root = p["target"].parent
+        if not journal.is_relative_to(research_root) or (
+                captures is not None and not captures.is_relative_to(research_root)):
+            raise ValueError("WAIT inputs must remain under the existing Research root")
+        for item in originals:
+            path = journal / (item["event_id"] + ".json")
+            if (path.is_symlink() or not 1 <= path.stat().st_size <= 16000
+                    or hashlib.sha256(path.read_bytes()).hexdigest() != item["content_sha256"]):
+                raise ValueError("original Mini-PC WAIT receipt differs from Cloud readback")
+        generated = run_isolated_wait_witness(originals, captures)
+        print(json.dumps({"kind": WAIT_REPLAY, "release_commit": p["stage_sha"],
+                          "originals_sha256": a.wait_originals_sha256, "originals": originals,
+                          "generated": generated, "capture_archive_supplied": captures is not None,
+                          "observed_at_utc": datetime.now(timezone.utc).isoformat(),
+                          "technical_release_proofs_credited": 0,
+                          "production_authorized": False}, sort_keys=True))
+        return 0
     if a.free_rule_input is not None or a.expected_input_sha256 is not None:
         if (a.free_rule_input is None or not a.expected_input_sha256
                 or a.readback_existing or a.execute_host_offline

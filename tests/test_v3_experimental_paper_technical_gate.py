@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from datetime import datetime, timezone
 
 from tools.v3_experimental_paper_technical_gate import (
     PROOFS, PROOF_KIND, PROOF_ORIGINS, validate_experimental_paper_packet,
@@ -726,6 +727,69 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
             proof["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
             self.assertEqual(validate_experimental_paper_packet(
                 root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+
+    def test_isolated_wait_requires_one_original_lineage_and_independent_sandbox_censors(self):
+        from paper_evaluator.v3_paper_precas_wait_witness_v1 import (
+            WAIT_REPLAY, _export_row, run_isolated_wait_witness,
+        )
+        from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt
+        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
+        from tools.v3_experimental_paper_technical_gate import _evidence_content_error
+        from tools.v3_paper_precas_synthetic_cloud_sandbox_v1 import wait_sandbox_insert_sql
+
+        key = "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            packet = fixture(root)
+            entry = next(x for x in packet["experimental_paper_technical_proofs"] if x["id"] == key)
+            proof = json.loads((root / entry["evidence_path"]).read_bytes())
+            host, cloud = (next(r["original_record"] for r in proof["source_originals"] if r["origin"] == source)
+                           for source in ("MINIPC_PHYSICAL", "SUPABASE_CLOUD"))
+            at = "2026-10-16T19:00:00Z"
+            originals = [_export_row(make_receipt(
+                series_id=host["witnessed_v3_series_id"], candidate_id=host["witnessed_v3_candidate_id"],
+                revision=REVISION, pair="TIA/EUR", event_time_utc=at, known_at_utc=at,
+                phase=phase, result=result)) for phase, result in (
+                    ("SCANNER_CAPTURE", "SEEN"), ("P4_VALIDATION", "WAIT"),
+                    ("WAIT_WATCH", "WAIT"), ("WAIT_RECHECK", "WAIT"), ("WAIT_EXPIRY", "UNKNOWN"))]
+            snapshots = root / "archive"
+            snapshots.mkdir()
+            generated = run_isolated_wait_witness(originals, snapshots)
+            self.assertEqual(len(generated), 3)
+            self.assertTrue(all(r["payload"]["result"] == "CENSORED" for r in generated))
+            self.assertEqual(list(snapshots.iterdir()), [])
+            sql = wait_sandbox_insert_sql(dict(kind=WAIT_REPLAY, originals=originals,
+                generated=generated, production_authorized=False, technical_release_proofs_credited=0))
+            self.assertIn("zxyhunwpviafyxyqysne", sql)
+            self.assertIn("ISOLATED_PRECAS_WAIT_CENSOR_DRYRUN", sql)
+            self.assertNotIn("nlgzjmqgwueojlyqmoru", sql)
+
+            pins = dict(code_fingerprint_sha256="a"*64, strategy_fingerprint_sha256="b"*64,
+                        release_commit="c"*40)
+            recorded = datetime.now(timezone.utc).isoformat()
+            host.update(pins, observed_at_utc=recorded, trigger_requires_fresh_full_rule_p4_tested=True,
+                        wait_originals=originals, isolated_followups=generated)
+            cloud.update(cloud_project_id="nlgzjmqgwueojlyqmoru", read_only=True, wait_originals=originals)
+            cloud.pop("v3_no_buy_followup_original_journal_readback_verified")
+            sandbox = dict(pins, source_id="sandbox:test:wait", observed_at_utc=recorded,
+                           cloud_project_id="zxyhunwpviafyxyqysne", read_only=True,
+                           independent_original_receipt_query=True, isolated_followups=copy.deepcopy(generated))
+            proof["source_originals"].append(dict(origin="SUPABASE_SANDBOX",
+                original_id=sandbox["source_id"], original_record=sandbox))
+            proof["wait_witness_mode"] = WAIT_REPLAY
+
+            def result():
+                for row in proof["source_originals"]:
+                    raw = json.dumps(row["original_record"], sort_keys=True, separators=(",", ":")).encode()
+                    row["original_sha256"] = hashlib.sha256(raw).hexdigest()
+                return _evidence_content_error(key, json.dumps(proof).encode(),
+                    expected_code_sha="a"*64, expected_strategy_sha="b"*64, free_rule=True)
+
+            self.assertIsNone(result())
+            sandbox["isolated_followups"][0]["payload"]["candidate_id"] = "OTHER-CANDIDATE"
+            self.assertIn("readback differs", result())
+            proof["source_originals"].pop()
+            self.assertIn("missing required", result())
 
     def test_v3_journal_wait_no_buy_inheritance_blocks_on_missing_originals(self):
         # All tests use synthetic packets; each edited source record is

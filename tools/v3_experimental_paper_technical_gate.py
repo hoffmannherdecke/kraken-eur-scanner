@@ -577,6 +577,10 @@ def _evidence_content_error(
     required=PROOF_ORIGINS[name]
     if not isinstance(sources,list) or not 1<=len(sources)<=12:
         return name+" original external readbacks absent"
+    wait_replay = (name == "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE"
+                   and free_rule and proof.get("wait_witness_mode") == "V3_PRECAS_ORIGINAL_WAIT_CENSOR_V1")
+    if wait_replay:
+        required = required | {"SUPABASE_SANDBOX"}
     present=set()
     by_origin={}
     for item in sources:
@@ -586,7 +590,7 @@ def _evidence_content_error(
             ("origin","original_id","original_record","original_sha256"))
         if origin not in {"MINIPC_PHYSICAL","SUPABASE_CLOUD","SUPABASE_SANDBOX","GITHUB","WORK","SLACK"}:
             return name+" unrecognized independent proof source"
-        if origin=="SUPABASE_SANDBOX" and name!="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E":
+        if origin=="SUPABASE_SANDBOX" and name!="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and not wait_replay:
             return name+" sandbox receipt not a required source for this proof"
         if not isinstance(identity,str) or not ORIGINAL_ID.fullmatch(identity):
             return name+" missing original external receipt ID"
@@ -861,7 +865,8 @@ def _evidence_content_error(
             "original_v3_single_writer_wait_tick_tested",
             "valid_closed_5m_wait_observation_within_ttl_tested",
             "missing_or_late_wait_ticks_become_unknown_tested",
-            "trigger_requires_fresh_full_model_and_p4_tested",
+            ("trigger_requires_fresh_full_rule_p4_tested" if wait_replay
+             else "trigger_requires_fresh_full_model_and_p4_tested"),
             "no_buy_wait_reject_skip_unknown_followup_routing_tested",
             "prospective_closed_1m_no_historical_backfill_tested",
             "followup_6h24h72h_and_gap_censor_logic_tested",
@@ -869,7 +874,7 @@ def _evidence_content_error(
         )
         cloud_checks=(
             "v3_wait_recheck_expiry_original_readback_verified",
-            "v3_no_buy_followup_original_journal_readback_verified",
+            *(() if wait_replay else ("v3_no_buy_followup_original_journal_readback_verified",)),
             "missingness_never_claimed_as_zero_pnl_verified",
             "old_v2r4_aftercare_remains_original_series_verified",
         )
@@ -885,6 +890,34 @@ def _evidence_content_error(
                 or cloud.get("witnessed_v3_series_id")!=series
                 or cloud.get("witnessed_v3_candidate_id")!=candidate):
             return name+" independent V3 WAIT/No-BUY candidate lineage mismatch"
+        if wait_replay:
+            from paper_evaluator.v3_paper_precas_wait_witness_v1 import validate_wait_sandbox_rows
+            sandbox = by_origin["SUPABASE_SANDBOX"]
+            try:
+                if (cloud["cloud_project_id"] != PRODUCTION_ORIGINAL_PROJECT
+                        or sandbox["cloud_project_id"] != ISOLATED_SYNTHETIC_PROJECT
+                        or cloud["read_only"] is not True
+                        or sandbox["read_only"] is not True
+                        or sandbox["independent_original_receipt_query"] is not True
+                        or host["wait_originals"] != cloud["wait_originals"]
+                        or host["release_commit"] != sandbox["release_commit"]
+                        or not re.fullmatch(r"[0-9a-f]{40}", host["release_commit"])
+                        or any(record.get(k) != expected for record in (host, sandbox)
+                               for k, expected in (("code_fingerprint_sha256", expected_code_sha),
+                                                   ("strategy_fingerprint_sha256", expected_strategy_sha)))):
+                    raise ValueError("unmatched WAIT source bindings")
+                original = validate_wait_sandbox_rows(
+                    host["wait_originals"], host["isolated_followups"], sandbox["isolated_followups"])
+                if (original["series_id"], original["candidate_id"]) != (series, candidate):
+                    raise ValueError("unmatched WAIT lineage")
+                host_at = datetime.fromisoformat(host["observed_at_utc"].replace("Z", "+00:00"))
+                sandbox_at = datetime.fromisoformat(sandbox["observed_at_utc"].replace("Z", "+00:00"))
+                if host_at > sandbox_at or any(
+                        datetime.fromisoformat(r["payload"]["known_at_utc"].replace("Z", "+00:00")) > host_at
+                        for r in host["isolated_followups"]):
+                    raise ValueError("WAIT sandbox readback precedes isolated execution")
+            except (KeyError, ValueError, AttributeError, TypeError, OverflowError):
+                return name + " isolated WAIT follow-up or independent original readback differs"
         # Before first experimental Paper, require physical schedule/source
         # wiring + bounded negative tests, NOT natural 72h results from the
         # future. After start, genuine maturing/censored receipts are separate.
