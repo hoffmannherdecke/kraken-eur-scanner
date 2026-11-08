@@ -1,0 +1,2 @@
+# The installed V3 CAS epoch binds the exact CRLF checkout bytes.
+supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql text eol=crlf
