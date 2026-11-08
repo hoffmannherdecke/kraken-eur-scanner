@@ -51,7 +51,7 @@ function Assert-V3ReleaseCms([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuth
 
 function Assert-V3OneTimeReleaseAuthorization {
  param([byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedAuthorityCertificateSha256,
-       [ValidateSet('CLOUD_ABORT_INSTALL','ORIGINALHOST_ABORT_RESTORE','ORIGINALHOST_ABORT_RECONCILE','CLOUD_STAGE4_EPOCH_OPEN','CLOUD_STAGE5_EPOCH_SEAL','CLOUD_PREPARED_FENCE_ABORT','V3_PAPER_PREPARE','V3_PAPER_STOP','V3_PAPER_CAS_INSTALL','V3_PAPER_CAS','V3_PAPER_ACTIVATE','V3_PAPER_ROLLBACK','V3_PAPER_RUNTIME','V3_PAPER_RESUME')][string]$Scope,
+       [ValidateSet('CLOUD_ABORT_INSTALL','ORIGINALHOST_ABORT_RESTORE','ORIGINALHOST_ABORT_RECONCILE','CLOUD_STAGE4_EPOCH_OPEN','CLOUD_STAGE5_EPOCH_SEAL','CLOUD_PREPARED_FENCE_ABORT','V3_PAPER_PREPARE','V3_PAPER_STOP','V3_PAPER_CAS_INSTALL','V3_PAPER_CAS','V3_PAPER_ACTIVATE','V3_PAPER_ROLLBACK','V3_PAPER_RUNTIME','V3_PAPER_RUNTIME_REPEATED','V3_PAPER_RESUME')][string]$Scope,
        [string]$ExpectedReleaseCommit,[hashtable]$ExpectedArtifacts,
        [datetimeoffset]$Now=[datetimeoffset]::UtcNow)
  Assert-V3ReleaseCms $Payload $Cms $ReviewedAuthorityCertificateSha256
@@ -81,8 +81,11 @@ function Assert-V3OneTimeReleaseAuthorization {
      [Globalization.DateTimeStyles]::AssumeUniversal,[ref]$at)){throw 'V3_RELEASE_APPROVAL_TIME_FORMAT_HOLD'}
   $times[$field]=$at
  }
+ # Only the separately signed operating scope can cover a multi-day
+ # Paper observation. Existing effectful cutover scopes keep 15 minutes.
+ $maxMinutes=if($Scope -ceq 'V3_PAPER_RUNTIME_REPEATED'){4*24*60}else{15}
  if($times.expires_at_utc -le $times.not_before_utc -or
-    ($times.expires_at_utc-$times.not_before_utc).TotalMinutes -gt 15 -or
+    ($times.expires_at_utc-$times.not_before_utc).TotalMinutes -gt $maxMinutes -or
     $Now -lt $times.not_before_utc -or $Now -ge $times.expires_at_utc){throw 'V3_RELEASE_APPROVAL_EXPIRED_OR_FUTURE_HOLD'}
  if($a.artifacts -isnot [pscustomobject] -or $null -eq $ExpectedArtifacts -or $ExpectedArtifacts.Count -lt 2 -or
     @($a.artifacts.PSObject.Properties).Count -ne $ExpectedArtifacts.Count){throw 'V3_RELEASE_ARTIFACT_SET_HOLD'}
@@ -93,7 +96,7 @@ function Assert-V3OneTimeReleaseAuthorization {
  }
  if($a.bindings -isnot [pscustomobject]){throw 'V3_RELEASE_BINDINGS_HOLD'}
  return [pscustomobject]@{claims=$a;approval_sha256=(Get-V3ReleaseSha256 $Payload);
-                         expires_at=$times.expires_at_utc}
+                         not_before=$times.not_before_utc;expires_at=$times.expires_at_utc}
 }
 
 function Read-V3ReleaseLocalBytes([string]$Path,[int]$MaxBytes=65536) {

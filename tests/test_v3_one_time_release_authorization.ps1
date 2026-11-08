@@ -77,6 +77,22 @@ try {
  $copy=[ordered]@{};foreach($key in $claim.Keys){$copy[$key]=$claim[$key]};$copy.base_commit=('0'*40);Deny (Sign-Claims $copy)
  $copy=[ordered]@{};foreach($key in $claim.Keys){$copy[$key]=$claim[$key]};$copy.computer_name='FOREIGN-HOST';Deny (Sign-Claims $copy)
  $copy=[ordered]@{};foreach($key in $claim.Keys){$copy[$key]=$claim[$key]};$copy.expires_at_utc=$now.AddHours(1).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");Deny (Sign-Claims $copy)
+ $repeated=[ordered]@{};foreach($key in $claim.Keys){$repeated[$key]=$claim[$key]}
+ $repeated.scope='V3_PAPER_RUNTIME_REPEATED'
+ $repeated.bindings=@{host_receipt_sha256=('a'*64);runtime_spec_sha256=('b'*64);plan_sha256=('c'*64);reader_certificate_sha256=('d'*64)}
+ $lease=Sign-Claims $repeated
+ $lease.Scope='V3_PAPER_RUNTIME_REPEATED'
+ $verified=Assert-V3OneTimeReleaseAuthorization @lease
+ if($verified.claims.scope -cne $repeated.scope -or $verified.not_before -ge $verified.expires_at){throw 'REPEATED_SCOPE_REJECTED'}
+ $wrong=$lease.Clone();$wrong.Scope='V3_PAPER_RUNTIME';Deny $wrong
+ $wrong=$lease.Clone();$wrong.Scope='V3_PAPER_ACTIVATE';Deny $wrong
+ $wrong=$lease.Clone();$wrong.Now=$verified.expires_at;Deny $wrong
+ $wrong=$lease.Clone();$wrong.Cms=[byte[]]@();Deny $wrong
+ $repeated.expires_at_utc=$now.AddDays(3).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+ $lease=Sign-Claims $repeated;$lease.Scope='V3_PAPER_RUNTIME_REPEATED'
+ $null=Assert-V3OneTimeReleaseAuthorization @lease
+ $repeated.expires_at_utc=$now.AddDays(5).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+ $lease=Sign-Claims $repeated;$lease.Scope='V3_PAPER_RUNTIME_REPEATED';Deny $lease
  $duplicate=[Text.Encoding]::UTF8.GetBytes('{"kind":"x","kind":"y"}')
  $denied=$false;try{$null=Read-V3ReleaseJson $duplicate}catch{$denied=$true}
  if(-not $denied){throw 'RELEASE_DUPLICATE_KEYS_ACCEPTED'};$checks++
