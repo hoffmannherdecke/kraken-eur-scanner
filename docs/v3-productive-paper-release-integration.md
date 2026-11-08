@@ -149,8 +149,13 @@ The native runtime spec has exactly these keys:
 `bundle_sha256`, `strategy_sha256`, `phase`, `journal`, `capture_dir`,
 `model_reservations`, `ack_file`, `release_root`, `release_packet`,
 `candidate`, `preflight`, `paper_plan`. Candidate/preflight are existing JSON
-paths or null as appropriate for the existing three phases. No paid model key,
-model approval, callback, clock, alternative Cloud transport or arbitrary module
+paths or null as appropriate for the existing three phases. The signed
+`V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1` uses null for both fields. Its
+existing V3 task reads eligible originals from the Mini-PC WS Shadow event
+directory, verifies a fresh Shadow heartbeat and builds the one-candidate
+preflight with public Kraken data. It retains the admitted candidate in the
+existing capture directory so follow-up can resume after a task restart.
+No paid model key, model approval, callback, clock, alternative Cloud transport or arbitrary module
 is accepted. The existing dedicated relay credential stays at its fixed local
 secret path and never enters task arguments or output.
 

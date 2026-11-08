@@ -24,7 +24,8 @@ function Assert-V3PaperRuntimeSpec([object]$Spec,[object]$Plan) {
   ([string]$Spec.kind -ceq 'V3_NATIVE_RELEASE_RUNTIME_SPEC_V1' -and
    [string]$Spec.phase -cin @('FIRST_SCANNER_MODEL_P4','FOLLOWUP_6H24H72H','CLOUD_RECEIPT_ACK')) -or
   ([string]$Spec.kind -ceq 'V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1' -and
-   [string]$Spec.phase -ceq 'REPEATED_PAPER'))
+   [string]$Spec.phase -ceq 'REPEATED_PAPER' -and
+   $null -eq $Spec.candidate -and $null -eq $Spec.preflight))
  if(-not $phaseMatchesKind -or
     [string]$Spec.series_id -cne [string]$Plan.series_id -or
     [string]$Spec.repo_sha -cne [string]$Plan.repo_sha -or
