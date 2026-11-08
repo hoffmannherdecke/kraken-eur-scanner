@@ -915,6 +915,86 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
             self.assertEqual(validate_experimental_paper_packet(
                 root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 
+    def test_isolated_aftercare_preserves_production_and_requires_independent_receipts(self):
+        from tools.v3_experimental_paper_technical_gate import (
+            ISOLATED_CUTOVER_MODE, ISOLATED_HOST_CASES, ISOLATED_CLOUD_CASES,
+        )
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            packet = fixture(root)
+            packet.update(primary_decision_route="FREE_RULE_P4")
+            # Other proof categories are covered separately. Exercise the sixth content guard.
+            from tools.v3_experimental_paper_technical_gate import _evidence_content_error
+            row = next(x for x in packet["experimental_paper_technical_proofs"]
+                       if x["id"] == "V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN")
+            proof = json.loads((root / row["evidence_path"]).read_bytes())
+            proof["cutover_witness_mode"] = ISOLATED_CUTOVER_MODE
+
+            def digest(record):
+                return hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+            records = {x["origin"]: x["original_record"] for x in proof["source_originals"]}
+            host, cloud = records["MINIPC_PHYSICAL"], records["SUPABASE_CLOUD"]
+            for record in (host, cloud):
+                record.update(proposed_successor_series_id="PAPER-V3-20261108T190000Z",
+                              observed_at_utc="2026-11-08T19:00:30Z")
+            for record, fields in ((host, ISOLATED_HOST_CASES), (cloud, ISOLATED_CLOUD_CASES)):
+                for key in fields:
+                    record.pop(key)
+            pins = {"old_sender_sha256": "1"*64, "installed_cas_body_sha256": "2"*64,
+                    "installed_relay_sha256": "3"*64}
+            host["old_sender_sha256"] = pins["old_sender_sha256"]
+            cloud.update(project_ref="nlgzjmqgwueojlyqmoru",
+                         installed_cas_body_sha256=pins["installed_cas_body_sha256"],
+                         installed_relay_sha256=pins["installed_relay_sha256"])
+            run = "ISOLATED-" + "a"*32
+            common = dict(isolated_run_id=run, observed_at_utc="2026-11-07T18:00:00Z",
+                          executed_end_to_end=True, production_mutated=False, real_money_actions=False)
+            records["MINIPC_ISOLATED"] = dict(common, **pins, source_id="isolated-host-1", computer_name="MINI-PC",
+                                               **dict.fromkeys(ISOLATED_HOST_CASES, True))
+            records["SUPABASE_SANDBOX"] = dict(common, **pins, source_id="isolated-sandbox-1",
+                                                project_ref="zxyhunwpviafyxyqysne",
+                                                independent_original_receipt_query=True,
+                                                **dict.fromkeys(ISOLATED_CLOUD_CASES, True))
+            records["WORK"] = dict(source_id="independent-work-1", isolated_run_id=run,
+                                   observed_at_utc="2026-11-07T18:03:00Z",
+                                   independent_original_receipts_verified=True,
+                                   verified_receipt_sha256={k: digest(records[k])
+                                       for k in ("MINIPC_ISOLATED", "SUPABASE_SANDBOX")})
+
+            def check(value):
+                proof["source_originals"] = [
+                    dict(origin=k, original_id=r["source_id"], original_record=r, original_sha256=digest(r))
+                    for k, r in value.items()
+                ]
+                return _evidence_content_error(row["id"], json.dumps(proof).encode(),
+                    expected_code_sha=packet["code_fingerprint_sha256"],
+                    expected_strategy_sha=packet["strategy_fingerprint_sha256"], free_rule=True)
+
+            self.assertIsNone(check(records))
+            for missing in ("MINIPC_PHYSICAL", "SUPABASE_CLOUD", "MINIPC_ISOLATED", "SUPABASE_SANDBOX", "WORK"):
+                with self.subTest(missing=missing):
+                    self.assertIsNotNone(check({k:r for k,r in records.items() if k != missing}))
+            for origin, key, bad, reason in (
+                ("MINIPC_PHYSICAL", "old_supervisor_intake_rearm_fence_tested", False, "pre-CAS"),
+                ("SUPABASE_CLOUD", "phase", "CLOUD_COMMITTED", "pre-CAS"),
+                ("SUPABASE_CLOUD", "observed_at_utc", "2026-11-08T19:10:00Z", "fresh paired"),
+                ("SUPABASE_CLOUD", "project_ref", "zxyhunwpviafyxyqysne", "provenance"),
+                ("WORK", "verified_receipt_sha256", {}, "receipt binding"),
+                ("WORK", "observed_at_utc", "2026-11-08T19:00:01Z", "fresh paired"),
+                ("MINIPC_ISOLATED", "executed_end_to_end", False, "required case"),
+                ("SUPABASE_SANDBOX", "installed_cas_body_sha256", "5"*64, "differs from production"),
+                ("SUPABASE_SANDBOX", "closed_old_series_trade_exit_update_accepted_tested", False, "required case"),
+                ("SUPABASE_SANDBOX", "stale_predecessor_cas_rejected_tested", False, "required case"),
+                ("SUPABASE_SANDBOX", "production_mutated", True, "required case"),
+            ):
+                with self.subTest(key=key):
+                    invalid = copy.deepcopy(records)
+                    invalid[origin][key] = bad
+                    if origin in ("MINIPC_ISOLATED", "SUPABASE_SANDBOX"):
+                        invalid["WORK"]["verified_receipt_sha256"][origin] = digest(invalid[origin])
+                    self.assertIn(reason, check(invalid))
+
     def test_cas_mini_pc_old_followup_owner_missing_blocks_before_release(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)

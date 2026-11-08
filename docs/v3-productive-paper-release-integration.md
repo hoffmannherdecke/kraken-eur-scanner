@@ -213,6 +213,32 @@ the route's fail-closed behavior, including rejecting provider inputs.
 Legacy provider packets retain their original validation. Neither isolated
 CI nor a locally generated packet is an independent release approval.
 
+## Independent isolated aftercare cases in the sixth proof
+
+For the first free-rule cutover, the existing
+`V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN` envelope may declare
+`cutover_witness_mode: V3_PRECAS_INDEPENDENT_ISOLATED_AFTERCARE_V1`. The
+production `MINIPC_PHYSICAL` and `SUPABASE_CLOUD` originals still prove the
+single active predecessor, exact successor fingerprints, disabled successor
+writer, backup and original-host restore and no-rearm protections. The paired
+production observations must be within 90 seconds of each other and inside
+the existing ten-minute proposed-series window.
+
+Complete and independently review the series-independent behavior first.
+The real `MINIPC_ISOLATED` execution on the original Mini-PC supplies the
+old owner and historical follow-up continuity cases. The real
+`SUPABASE_SANDBOX` execution and independent readback supply stale CAS,
+ambiguous outcome quarantine, postcommit no-restart, closed follow-up and
+exit updates and rejection of new old-series intake. Both receipts share an
+`ISOLATED-<32 lowercase hex>` run ID and the exact deployed relay, installed
+CAS body and original Mini-PC sender digests. The `WORK` independent
+readback pins both original receipt digests and must precede issuance of the
+production series proposal. Keep the production and sandbox project identities
+separate. A local fixture, CI result or mock remains supporting test evidence.
+The external release owner still verifies provenance and signs the complete
+packet. Existing STOP, CAS and activation approvals and the actual post-cutover
+runtime readback remain separate.
+
 ## Fault handling and evidence
 
 Create-new, flushed attempt receipts precede every effectful dispatch. Timeouts,

@@ -11,7 +11,7 @@ import hashlib
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 # Repository unit tests import through tools.*, while the canonical project
@@ -559,6 +559,69 @@ def _free_rule_receipt_error(case:dict[str,Any])->str|None:
     return None
 
 
+ISOLATED_CUTOVER_MODE = "V3_PRECAS_INDEPENDENT_ISOLATED_AFTERCARE_V1"
+ISOLATED_HOST_CASES = (
+    "old_followups_retained_on_original_series_tested",
+    "old_followup_owner_running_after_cutover_tested",
+)
+ISOLATED_CLOUD_CASES = (
+    "stale_predecessor_cas_rejected_tested",
+    "ambiguous_cloud_outcome_quarantines_both_tested",
+    "postcommit_no_predecessor_restart_tested",
+    "closed_old_series_followup_update_accepted_tested",
+    "closed_old_series_trade_exit_update_accepted_tested",
+    "closed_old_series_new_intake_rejected_tested",
+)
+
+
+def _isolated_cutover_error(by_origin, original_digests, successor):
+    """Check isolated behavior independently of the fresh production binding."""
+    host, cloud = (by_origin[k] for k in ("MINIPC_PHYSICAL", "SUPABASE_CLOUD"))
+    isolated_host, sandbox, reviewer = (
+        by_origin[k] for k in ("MINIPC_ISOLATED", "SUPABASE_SANDBOX", "WORK")
+    )
+    if (cloud.get("project_ref") != PRODUCTION_ORIGINAL_PROJECT
+            or isolated_host.get("computer_name") != "MINI-PC"
+            or sandbox.get("project_ref") != ISOLATED_SYNTHETIC_PROJECT
+            or sandbox.get("independent_original_receipt_query") is not True
+            or reviewer.get("independent_original_receipts_verified") is not True):
+        return "independent isolated and production project provenance missing"
+    run_id = isolated_host.get("isolated_run_id")
+    if (not isinstance(run_id, str) or not re.fullmatch(r"ISOLATED-[a-f0-9]{32}", run_id)
+            or any(r.get("isolated_run_id") != run_id for r in (sandbox, reviewer))
+            or reviewer.get("verified_receipt_sha256") != {
+                k: original_digests[k] for k in ("MINIPC_ISOLATED", "SUPABASE_SANDBOX")
+            }):
+        return "independent isolated receipt binding differs"
+    for record, fields in ((isolated_host, ISOLATED_HOST_CASES),
+                           (sandbox, ISOLATED_CLOUD_CASES)):
+        if (record.get("executed_end_to_end") is not True
+                or record.get("production_mutated") is not False
+                or record.get("real_money_actions") is not False
+                or any(record.get(k) is not True for k in fields)):
+            return "isolated execution or required case not witnessed"
+    for key, production in (("old_sender_sha256", host),
+                            ("installed_cas_body_sha256", cloud),
+                            ("installed_relay_sha256", cloud)):
+        digest = production.get(key)
+        if (not isinstance(digest, str) or not SHA.fullmatch(digest)
+                or any(r.get(key) != digest for r in (isolated_host, sandbox))):
+            return "isolated execution artifact differs from production"
+    try:
+        issued = datetime.strptime(successor[9:], "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+        host_at, cloud_at, isolated_at, sandbox_at, reviewer_at = (
+            datetime.fromisoformat(row["observed_at_utc"].replace("Z", "+00:00"))
+            for row in (host, cloud, isolated_host, sandbox, reviewer)
+        )
+        if (not all(0 <= (at - issued).total_seconds() < 600 for at in (host_at, cloud_at))
+                or abs((host_at - cloud_at).total_seconds()) > 90
+                or not max(isolated_at, sandbox_at) <= reviewer_at <= issued):
+            return "isolated review must precede a fresh paired production observation"
+    except (ValueError, OverflowError):
+        return "invalid isolated cutover chronology"
+    return None
+
+
 def _evidence_content_error(
         name:str,data:bytes,*,expected_code_sha:object,
         expected_strategy_sha:object,free_rule:bool=False)->str|None:
@@ -581,16 +644,28 @@ def _evidence_content_error(
                    and free_rule and proof.get("wait_witness_mode") == "V3_PRECAS_ORIGINAL_WAIT_CENSOR_V1")
     if wait_replay:
         required = required | {"SUPABASE_SANDBOX"}
+    isolated_cutover = (
+        name == "V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN"
+        and free_rule and proof.get("cutover_witness_mode") == ISOLATED_CUTOVER_MODE
+    )
+    if "cutover_witness_mode" in proof and not isolated_cutover:
+        return name + " unsupported isolated cutover proof scope"
+    if isolated_cutover:
+        required = required | {"MINIPC_ISOLATED", "SUPABASE_SANDBOX", "WORK"}
+    allowed_origins = required if isolated_cutover else {
+        "MINIPC_PHYSICAL", "SUPABASE_CLOUD", "SUPABASE_SANDBOX", "GITHUB", "WORK", "SLACK",
+    }
     present=set()
     by_origin={}
+    original_digests={}
     for item in sources:
         if not isinstance(item,dict):
             return name+" original readback record invalid"
         origin,identity,payload,digest=(item.get(x) for x in
             ("origin","original_id","original_record","original_sha256"))
-        if origin not in {"MINIPC_PHYSICAL","SUPABASE_CLOUD","SUPABASE_SANDBOX","GITHUB","WORK","SLACK"}:
+        if not isinstance(origin, str) or origin not in allowed_origins:
             return name+" unrecognized independent proof source"
-        if origin=="SUPABASE_SANDBOX" and name!="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and not wait_replay:
+        if origin=="SUPABASE_SANDBOX" and name!="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and not (wait_replay or isolated_cutover):
             return name+" sandbox receipt not a required source for this proof"
         if not isinstance(identity,str) or not ORIGINAL_ID.fullmatch(identity):
             return name+" missing original external receipt ID"
@@ -617,6 +692,7 @@ def _evidence_content_error(
         if origin in by_origin:
             return name+" duplicated external readback source role"
         by_origin[origin]=payload
+        original_digests[origin]=digest
     if not required.issubset(present):
         return name+" missing required independent Mini-PC/Cloud/Work source role"
     # Technical proof #1 must NOT be a generic "the model and writer work"
@@ -989,21 +1065,19 @@ def _evidence_content_error(
                 or any(payload.get("dry_run_only") is not True
                        for payload in (host,cloud))):
             return name+" false physical fence or cloud CAS dry-run assertion"
-        # Test both sides of the rollback boundary. The concrete source
-        # receipts still require independent validation outside this parser.
-        if (host.get("precommit_original_backup_verified") is not True
-                or host.get("precommit_restore_only_before_cloud_commit_tested") is not True
-                or host.get("old_followups_retained_on_original_series_tested") is not True
-                or host.get("old_followup_owner_running_after_cutover_tested") is not True
-                or host.get("old_supervisor_intake_rearm_fence_tested") is not True
-                or cloud.get("stale_predecessor_cas_rejected_tested") is not True
-                or cloud.get("ambiguous_cloud_outcome_quarantines_both_tested") is not True
-                or cloud.get("postcommit_no_predecessor_restart_tested") is not True
-                or cloud.get("closed_old_series_followup_update_accepted_tested") is not True
-                or cloud.get("closed_old_series_trade_exit_update_accepted_tested") is not True
-                or cloud.get("closed_old_series_new_intake_rejected_tested") is not True
-                or cloud.get("phase")!="CLOUD_COMMIT_NOT_ATTEMPTED"):
-            return name+" V3 pre/post-CAS rollback safety not witnessed"
+        # Precommit backup, restore and no-rearm remain original-host checks.
+        if (any(host.get(k) is not True for k in (
+                    "precommit_original_backup_verified",
+                    "precommit_restore_only_before_cloud_commit_tested",
+                    "old_supervisor_intake_rearm_fence_tested"))
+                or cloud.get("phase") != "CLOUD_COMMIT_NOT_ATTEMPTED"):
+            return name + " V3 pre-CAS rollback safety not witnessed"
+        if isolated_cutover:
+            if error := _isolated_cutover_error(by_origin, original_digests, successor):
+                return name + " " + error
+        elif (any(host.get(k) is not True for k in ISOLATED_HOST_CASES)
+                or any(cloud.get(k) is not True for k in ISOLATED_CLOUD_CASES)):
+            return name + " V3 post-CAS rollback and aftercare safety not witnessed"
         active=cloud.get("active_paper_series")
         recovery=assess_v3_cutover_recovery(
             phase=cloud["phase"],active_series=active,
@@ -1134,7 +1208,7 @@ def _pr692_original_proof_pins() -> tuple[str, str] | None:
             if first >= last:
                 return None
             del lines[first:last+1]
-        if hashlib.sha256(b"".join(lines)).hexdigest() != "56a971af3760facf2ed681e8a38114507a27b232cffabb2f3fe59de3dbd04f2b":
+        if hashlib.sha256(b"".join(lines)).hexdigest() != "ff8426778f4dacc22de77c0bbed41c54a44b082a6e5eac2ea65eb2c7463de8f9":
             return None
         if (sys.flags.optimize != 0 or hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
                 != "72b29481593c5da37c99248c82777fbfb56217ea7809b771bc760d0a9ecb179b"):
