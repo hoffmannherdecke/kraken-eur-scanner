@@ -15,6 +15,39 @@ foreach($file in @('tools/v3-one-time-paper-release.ps1','tools/v3-one-time-rele
  $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root $file),[ref]$t,[ref]$e)
  Need ($e.Count -eq 0) 'PAPER_PARSE_FAILURE'
 }
+if($env:OS -eq 'Windows_NT'){
+ & {
+  $dir='C:\Users\ADMIN\Trading\TestOnly'
+  $plan=@{runtime_bootstrap=@{approval_json="$dir\approval.json";approval_cms="$dir\approval.cms";
+   admission_json="$dir\admission.json";host_receipt="$dir\reader.json";host_cms="$dir\reader.cms"}}
+  $spec="$dir\runtime.json"
+  $present=@{}
+  $present[$spec]=$true
+  $present[$plan.runtime_bootstrap.admission_json]=$true
+  function Read-V3ReleaseLocalBytes([string]$Path){
+   if(-not $present.ContainsKey($Path)){throw 'FIXTURE_FUTURE_FILE_MISSING'}
+   return ,[byte[]](123,125)
+  }
+  function Test-Path([string]$LiteralPath,$ErrorAction){return $present.ContainsKey($LiteralPath)}
+  function Get-Item([string]$LiteralPath,[switch]$Force,$ErrorAction){
+   $attributes=if($LiteralPath -ceq $reparse){[IO.FileAttributes]::ReparsePoint}else{[IO.FileAttributes]::Directory}
+   return @{PSIsContainer=$true;Attributes=$attributes}
+  }
+  $reparse=''
+  $prepared=Get-V3PaperNativeActionArguments $plan $dir $spec ('a'*64) ('b'*40) -PrepareDisabledAction
+  Need ($prepared.Contains('--host-receipt "'+$plan.runtime_bootstrap.host_receipt+'"')) 'FUTURE_PATH_NOT_BOUND'
+  Reject {Get-V3PaperNativeActionArguments $plan $dir $spec ('a'*64) ('b'*40)} 'FIXTURE_FUTURE_FILE_MISSING'
+  foreach($path in $plan.runtime_bootstrap.Values){$present[$path]=$true}
+  $ready=Get-V3PaperNativeActionArguments $plan $dir $spec ('a'*64) ('b'*40)
+  Need ($prepared -ceq $ready) 'DISABLED_ACTION_PATH_BINDING_CHANGED_AT_ACTIVATION'
+  $present.Remove($plan.runtime_bootstrap.host_receipt)
+  $reparse=$dir
+  Reject {Get-V3PaperNativeActionArguments $plan $dir $spec ('a'*64) ('b'*40) -PrepareDisabledAction} 'BOOTSTRAP_DESTINATION_HOLD'
+  $reparse=''
+  $plan.runtime_bootstrap.host_receipt='C:\Users\ADMIN\Trading\..\reader.json'
+  Reject {Get-V3PaperNativeActionArguments $plan $dir $spec ('a'*64) ('b'*40) -PrepareDisabledAction} 'BOOTSTRAP_LOCAL_TRADING_PATH_REQUIRED'
+ }
+}
 $inventoryWire=& (Join-Path $root 'tools/v3-one-time-release.ps1') -Mode PaperInventory -PackageRoot $root
 $inventory=$inventoryWire|ConvertFrom-Json
 Need ($inventory.production_authorized -eq $false -and $inventory.cloud_contacted -eq $false -and
