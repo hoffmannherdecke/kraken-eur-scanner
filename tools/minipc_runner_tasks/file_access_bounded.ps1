@@ -85,7 +85,7 @@ try {
         foreach($item in $items){
         Check-Time;$visited++;if($visited -gt 1200){break}
         if($item.Attributes -band [IO.FileAttributes]::ReparsePoint){continue}
-        if($item.PSIsContainer){
+        if($item -is [IO.DirectoryInfo]){
           if($directory.Substring($root.Length).Split('\').Count -lt 8){$queue.Enqueue($item.FullName)}
           continue
         }
