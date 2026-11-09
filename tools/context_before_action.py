@@ -108,8 +108,8 @@ def read_v3_release_dashboard(fetcher=None) -> dict:
             "einziger aktueller AP-Status" in body,
             "canonical V3 dashboard marker missing")
     matches = re.findall(
-        r"(?m)^- \\[([ x])\\] \\*\\*(AP(?:00|01|02|03|04|05A|05B|05C|06A|06B)) "
-        r"(DONE|NEXT|HOLD|IN_PROGRESS|BLOCKED_BY_[A-Z0-9]+):\\*\\*",
+        r"(?m)^- \[([ x])\] \*\*(AP(?:00|01|02|03|04|05A|05B|05C|06A|06B)) "
+        r"(DONE|NEXT|HOLD|IN_PROGRESS|BLOCKED_BY_[A-Z0-9]+):\*\*",
         body,
     )
     require(len(matches) == len(V3_DASHBOARD_IDS) and
