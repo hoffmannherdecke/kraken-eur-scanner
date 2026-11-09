@@ -137,8 +137,11 @@ The plan has kind `V3_ONE_TIME_PAPER_RELEASE_PLAN_V1`, `repo_sha`, `series_id`,
 `bundle_sha256`, `strategy_sha256`, five `tasks` (`name`, `xml_path`,
 `xml_sha256`), and exact `intake_processes` (`pid`, `started_at_utc`,
 `command_sha256`). `cas_request` uses the original sixteen `p_` argument names
-without the `p_` prefix. `runtime_bootstrap` contains existing `approval_json`,
-`approval_cms`, `admission_json`, `host_receipt`, `host_cms` paths. Task XML and
+without the `p_` prefix. `runtime_bootstrap` binds local `approval_json`,
+`approval_cms`, `admission_json`, `host_receipt`, `host_cms` paths. While the
+task is disabled, Prepare can bind the destinations for the future operating
+approval and Post-CAS witness under existing local directories. Activation
+requires and verifies the original signed files at those exact paths. Task XML and
 process data must be read from originals, not transcribed. A changed disabled
 V3 action requires its resulting original XML to be bound in subsequent plans;
 Prepare returns its exact XML digest. Original Candidates/WAIT XMLs permit only

@@ -4,13 +4,16 @@ import copy
 import hashlib
 import io
 import json
+import re
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from datetime import datetime, timezone
+from unittest.mock import Mock, patch
 
+from tools import v3_experimental_paper_technical_gate as technical_gate
 from tools.v3_experimental_paper_technical_gate import (
     PROOFS, PROOF_KIND, PROOF_ORIGINS, validate_experimental_paper_packet,
     assess_v3_experimental_source_inventory, BUNDLE_SOURCE, REQUIRED_SOURCE_ANCHORS,
@@ -279,6 +282,54 @@ def fixture(root:Path)->dict:
 
 
 class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
+    def test_prepare_destination_delta_keeps_only_exact_proof_source_equivalence(self):
+        root = Path(__file__).resolve().parents[1]
+        stage_source = (root / "tools/stage-minipc-v3-paper-inactive.ps1").read_text(encoding="utf-8")
+        operator_list = stage_source.split("$operatorSource=@(", 1)[1].split(")", 1)[0]
+        paths = set(re.findall(r"'([^']+)'", operator_list))
+        paths.update(("paper_context.py", BUNDLE_SOURCE, "supabase/functions/v3-paper-evidence-relay/index.ts"))
+        for package in ("paper_evaluator", "market_data"):
+            paths.update(file.relative_to(root).as_posix() for file in (root / package).glob("*.py")
+                         if re.fullmatch(r"[A-Za-z0-9_]+\.py", file.name))
+        closure = assess_v3_native_source_import_closure(root)
+        paths.update(row[0] for row in closure["candidate_transitive_files"])
+        inventory = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in paths}
+        with tempfile.TemporaryDirectory() as temp:
+            stage = Path(temp) / "Staging" / "V3Paper-INACTIVE-aaaaaaaaaaaa"
+            (stage / "tools").mkdir(parents=True)
+            gate_name = "tools/v3_experimental_paper_technical_gate.py"
+            (stage / gate_name).write_bytes((root / gate_name).read_bytes())
+            executable = stage / "offline-python-fixture"
+            fixture = b"offline synthetic executable"
+            executable.write_bytes(fixture)
+            digest = hashlib.sha256
+
+            def offline_sha256(data):
+                # Keep all source and inventory checks real. CI has no Originalhost Python executable.
+                if data == fixture:
+                    return Mock(**{"hexdigest.return_value":
+                        "72b29481593c5da37c99248c82777fbfb56217ea7809b771bc760d0a9ecb179b"})
+                return digest(data)
+
+            def pins():
+                (stage / "v3-paper-inactive-source-manifest.json").write_text(json.dumps({
+                    "source_git_sha": "a" * 40,
+                    "source_manifest": [{"relative_path": name, "sha256": value}
+                                        for name, value in inventory.items()],
+                }), encoding="utf-8")
+                return technical_gate._pr692_original_proof_pins(pr699=True)
+
+            with patch.object(technical_gate, "__file__", str(stage / gate_name)), \
+                 patch.object(technical_gate.sys, "executable", str(executable)), \
+                 patch.object(technical_gate.hashlib, "sha256", side_effect=offline_sha256):
+                self.assertIsNotNone(pins())
+                for name in ("tools/v3-one-time-paper-release.ps1", "paper_context.py"):
+                    with self.subTest(name=name):
+                        original = inventory[name]
+                        inventory[name] = "0" * 64
+                        self.assertIsNone(pins())
+                        inventory[name] = original
+
     def test_current_v2r4_unchanged_and_no_v3_evidence_is_blocked(self):
         self.assertEqual(validate_learning_gate(ROOT,
             active_revision="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION"),[])

@@ -1090,7 +1090,7 @@ def _evidence_content_error(
 
 
 # BEGIN PR692 ORIGINAL PROOF REUSE
-def _pr692_original_proof_pins() -> tuple[str, str] | None:
+def _pr692_original_proof_pins(*, pr699: bool = False) -> tuple[str, str] | None:
     """Keep historical proof bytes only on the observed equivalent stage.
 
     This is a bounded provenance mapping, not a cutover or signer approval.
@@ -1177,6 +1177,15 @@ def _pr692_original_proof_pins() -> tuple[str, str] | None:
                 "f806d51c7c16fb55390cf03b27659d93ca33ad7431c97e4c7caa75f010dc0d35",
             ),
         }
+        # Disabled-task preparation now binds future Post-CAS paths. Only
+        # this exact operator change can inherit the PR699 evidence bytes.
+        prepare_operator = "tools/v3-one-time-paper-release.ps1"
+        prepare_delta = inventory.get(prepare_operator) == (
+            "731cde2166d0e3e26b99808129492a28e6aa6910b12def9558d9f55b3e23adb1")
+        if pr699 and not prepare_delta:
+            return None
+        if prepare_delta:
+            inventory[prepare_operator] = activation_order_delta[prepare_operator][1]
         if (inventory.get(scanner_input) == scanner_variants[1]
                 and all(inventory.get(path) == new
                         for path, (_, new) in activation_order_delta.items())):
@@ -1215,6 +1224,9 @@ def _pr692_original_proof_pins() -> tuple[str, str] | None:
             return None
     except (OSError, ValueError, KeyError, TypeError):
         return None
+    if pr699:
+        return ("edf23b4553d3a6a7221dc64d55e9bffc64215a554b5de0d3978b68e4782e7d37",
+                "891658b679e20b9fc17a2f7c949f65ee73ebb808b352b8e8a134ca9189166721")
     return ("94667a46e8399ea5b6fa69d865beda1b96b8f7bb24429fa2001095df1c52bfe6",
             "691ed3fcc37abfea9d5ebfce21ee681f7730405d09c73f3e9e9faa6974b9f9f8")
 
@@ -1293,13 +1305,19 @@ def validate_experimental_paper_packet(root: Path, revision: str,
         block("technical proof IDs mismatch or duplicated")
     # BEGIN PR692 ORIGINAL PROOF REUSE
     retained_pins = None
+    pr699_pins = None
     retained = {
         "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E": "81562fc742be9d3d348a4d3d7de652c67657976ed0afebf2936df751c40a4922",
         "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE": "97df702b53314a03a671e878c36f2fb3bc0eed735db27d5048825097c20fa56c",
     }
+    retained_pr699 = {
+        "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E": "537af1118cfa3090c4760ad346e0454e7c4b624f1236857e832cde708c81d990",
+        "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE": "6759eb883486ba9fa59f27b35d2616409e06812999f91bb9e17358ec81fa4098",
+    }
     if "historical_proof_reuse" in packet:
         if free_rule and packet["historical_proof_reuse"] == "PR692_ORIGINALS_EXACT_STAGE_EQUIVALENCE_V1":
             retained_pins = _pr692_original_proof_pins()
+            pr699_pins = _pr692_original_proof_pins(pr699=True)
         if retained_pins is None:
             block("historical proof reuse stage or scope not verified")
     # END PR692 ORIGINAL PROOF REUSE
@@ -1337,6 +1355,10 @@ def validate_experimental_paper_packet(root: Path, revision: str,
             content_error = _evidence_content_error(
                 name,data,expected_code_sha=retained_pins[0],
                 expected_strategy_sha=retained_pins[1],free_rule=True)
+        elif content_error and pr699_pins and retained_pr699.get(name) == digest:
+            content_error = _evidence_content_error(
+                name,data,expected_code_sha=pr699_pins[0],
+                expected_strategy_sha=pr699_pins[1],free_rule=True)
         # END PR692 ORIGINAL PROOF REUSE
         if content_error:
             block(content_error)

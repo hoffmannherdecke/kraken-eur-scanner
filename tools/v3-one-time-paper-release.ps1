@@ -459,7 +459,7 @@ function Get-V3PaperNativeActionPrefix([string]$PackageRoot) {
  return ('-I -B "'+$launcher+'" --released-one-shot')
 }
 function Get-V3PaperNativeActionArguments([object]$Plan,[string]$PackageRoot,[string]$RuntimeSpecJson,
- [string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit) {
+ [string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit,[switch]$PrepareDisabledAction) {
    $r=$Plan.runtime_bootstrap
    $pairs=[ordered]@{'runtime-spec'=$RuntimeSpecJson;'approval-json'=$r.approval_json;
     'approval-cms'=$r.approval_cms;'admission-json'=$r.admission_json;
@@ -469,9 +469,24 @@ function Get-V3PaperNativeActionArguments([object]$Plan,[string]$PackageRoot,[st
    foreach($key in $pairs.Keys){
     $value=[string]$pairs[$key]
     if($key -notin @('admission-sha256','expected-source-sha')){
-     $null=Read-V3ReleaseLocalBytes $value
-     if(-not $value.StartsWith('C:\Users\ADMIN\Trading\',[StringComparison]::OrdinalIgnoreCase)){
+     if(-not $value.StartsWith('C:\Users\ADMIN\Trading\',[StringComparison]::OrdinalIgnoreCase) -or
+        $value.IndexOf(':',2) -ge 0 -or $value -ne [IO.Path]::GetFullPath($value)){
       throw 'V3_PAPER_BOOTSTRAP_LOCAL_TRADING_PATH_REQUIRED'
+     }
+     # Only the disabled action can name future Post-CAS evidence. Activation
+     # still reads and independently verifies the original bytes before start.
+     if(-not $PrepareDisabledAction -or $key -in @('runtime-spec','admission-json') -or
+        (Test-Path -LiteralPath $value -ErrorAction Stop)){
+      $null=Read-V3ReleaseLocalBytes $value
+     }else{
+      $parent=[IO.Path]::GetDirectoryName($value)
+      while($parent){
+       $directory=Get-Item -LiteralPath $parent -Force -ErrorAction Stop
+       if(-not $directory.PSIsContainer -or ($directory.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+        throw 'V3_PAPER_BOOTSTRAP_DESTINATION_HOLD'
+       }
+       $parent=[IO.Path]::GetDirectoryName($parent)
+      }
      }
     }
     if($value.Contains('"') -or $value.Contains("`r") -or $value.Contains("`n")){throw 'V3_PAPER_BOOTSTRAP_ARGUMENT_HOLD'}
@@ -674,7 +689,7 @@ function Invoke-V3OneTimePaperRelease {
    $null=Assert-V3PaperCurrentSuccessor $plan.series_id
    $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
    Assert-V3PaperRuntimeSpec $spec $plan
-   $arguments=Get-V3PaperNativeActionArguments $plan $PackageRoot $RuntimeSpecJson $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
+   $arguments=Get-V3PaperNativeActionArguments $plan $PackageRoot $RuntimeSpecJson $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit -PrepareDisabledAction
    $task=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter'
    if([string]$task.State -cne 'Disabled'){throw 'V3_PAPER_PREPARE_WRITER_MUST_BE_DISABLED'}
    Write-V3PaperReceipt ($base+'.prepare.attempted.json') @{approval_sha256=$auth.approval_sha256}
