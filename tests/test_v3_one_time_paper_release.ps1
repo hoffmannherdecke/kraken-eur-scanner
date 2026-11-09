@@ -206,7 +206,14 @@ try{
  }
  function Assert-V3PaperRuntimeSpec {}
  function Open-V3PaperIntakePair {return $null}
- function Assert-V3PaperTaskPins {}
+ $script:writerEnabled=$false
+ $script:writerXmlDrift=$false
+ function Assert-V3PaperTaskPins {
+  param($Plan,[switch]$AllowDisabledIntake,[switch]$AllowRunningWriter)
+  if($script:writerXmlDrift -or ($script:writerEnabled -and -not $AllowRunningWriter)){
+   throw 'V3_PAPER_ORIGINAL_TASK_XML_DRIFT'
+  }
+ }
  function Assert-V3PaperEpochPlan {return @{epoch_id='V3CAS-AUDIT-'+('9'*32);source_sha256=('2'*64);
   caller_acl_sha256=('3'*64);fence_sha256=(Get-V3ReleaseSha256 ([byte[]](123,125)))}}
  function Assert-V3PaperEpochReceipt {}
@@ -240,11 +247,19 @@ try{
  Need ($res.automatic_retry -eq $false -and -not $res.cas_attempted) 'RESUME_REDISPATCHED'
  Reject {Invoke-V3OneTimePaperRelease -Mode PaperActivate @common} 'COMMITTED_INDEPENDENT_READER_REQUIRED'
  Reject {Invoke-V3OneTimePaperRelease -Mode PaperRollback @common} 'TERMINAL_ABORT_REQUIRED'
+ $script:writerEnabled=$true
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperResume @common} 'ORIGINAL_TASK_XML_DRIFT'
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperRollback @common} 'ORIGINAL_TASK_XML_DRIFT'
  Write-V3PaperReceipt (Join-Path $tmp 'run.cas.attempted.json') @{state='DISPATCH_UNKNOWN'}
+ $script:writerXmlDrift=$true
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperResume @common} 'ORIGINAL_TASK_XML_DRIFT'
+ Reject {Invoke-V3OneTimePaperRelease -Mode PaperRollback @common} 'ORIGINAL_TASK_XML_DRIFT'
+ $script:writerXmlDrift=$false
  $res=Invoke-V3OneTimePaperRelease -Mode PaperResume @common
  Need ($res.cas_attempted -eq $true -and $script:effects.Count -eq 0) 'UNKNOWN_RESUME_MUTATED'
  $res=Invoke-V3OneTimePaperRelease -Mode PaperRollback @common
  Need ($res.old_intake_rearmed -eq $false -and ($script:effects -join ',') -ceq 'disable,stop') 'POST_CAS_REARMED_OLD_WRITER'
+ $script:writerEnabled=$false
  # Successful STOP and CAS plumbing; faults preserve their create-new latches.
  Remove-Item (Join-Path $tmp 'run.cas.attempted.json')
  $script:receipt=@{state='PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS'}

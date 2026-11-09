@@ -635,7 +635,10 @@ function Invoke-V3OneTimePaperRelease {
   $base=Get-V3PaperStateBase $auth.claims.release_id
   $casLatch=$base+'.cas.attempted.json'
   Assert-V3PaperDeadline $ctx
-  Assert-V3PaperTaskPins $plan -AllowDisabledIntake
+  # After a possible CAS, recovery must also reach an already enabled task
+  # whose exact disabled definition was signed before activation.
+  $allowEnabledWriter=$Mode -in @('PaperResume','PaperRollback') -and [IO.File]::Exists($casLatch)
+  Assert-V3PaperTaskPins $plan -AllowDisabledIntake -AllowRunningWriter:$allowEnabledWriter
   if($Mode -eq 'PaperResume'){
    # Read-only recovery never redispatches STOP/CAS/activation. A fresh signed
    # independent result permits the next separately authorized phase only.

@@ -1177,11 +1177,14 @@ def _pr692_original_proof_pins(*, pr699: bool = False) -> tuple[str, str] | None
                 "f806d51c7c16fb55390cf03b27659d93ca33ad7431c97e4c7caa75f010dc0d35",
             ),
         }
-        # Disabled-task preparation now binds future Post-CAS paths. Only
-        # this exact operator change can inherit the PR699 evidence bytes.
+        # Disabled-task preparation binds future Post-CAS paths. Its exact
+        # recovery-only successor also accepts the already enabled writer
+        # for Resume or safe Hold. Other operator changes cannot inherit.
         prepare_operator = "tools/v3-one-time-paper-release.ps1"
-        prepare_delta = inventory.get(prepare_operator) == (
-            "731cde2166d0e3e26b99808129492a28e6aa6910b12def9558d9f55b3e23adb1")
+        prepare_delta = inventory.get(prepare_operator) in (
+            "731cde2166d0e3e26b99808129492a28e6aa6910b12def9558d9f55b3e23adb1",
+            "f3c118b273fa0d1e070c1bc268092ce9e4471df975e0b4895ee48b3f527c73fe",
+        )
         if pr699 and not prepare_delta:
             return None
         if prepare_delta:
