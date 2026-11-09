@@ -111,7 +111,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             "Get-FileHash", "Assert-RealDirectory", "Assert-Path",
             "C:\\Users\\ADMIN\\Trading", "C:\\Users\\ADMIN\\Downloads",
             "\\\\192.168.178.179\\Mistral_450",
-            "Get-ChildItem -LiteralPath", "65536", "2097152", "AddSeconds(75)",
+            "EnumerateFileSystemInfos()", "65536", "2097152", "AddSeconds(75)",
             "visited -lt 1200", "found.Count -lt 20",
             "MINIPC_FILE_V1", "RUNNER_TEMP",
         ):
