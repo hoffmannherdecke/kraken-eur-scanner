@@ -6,6 +6,8 @@ name: MINI-PC tools smoke
     branches: [main]
     paths:
       - 'tools/minipc-*.ps1'
+      - 'tools/minipc_runner_tasks/file_access_bounded.ps1'
+      - 'tools/minipc_runner_guard/pre_job.ps1'
       - 'tools/*minipc*.py'
       - 'tools/v2r4-shadow-cloud-sync.py'
       - 'tools/v2r4-ws-shadow-*.py'
@@ -18,6 +20,8 @@ name: MINI-PC tools smoke
     branches: [main]
     paths:
       - 'tools/minipc-*.ps1'
+      - 'tools/minipc_runner_tasks/file_access_bounded.ps1'
+      - 'tools/minipc_runner_guard/pre_job.ps1'
       - 'tools/install-minipc-baseline-tasks.ps1'
       - 'tools/uninstall-minipc-baseline-tasks.ps1'
       - 'tools/minipc-altrady-poller.py'
@@ -89,6 +93,33 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WS_SHADOW_FIX_REGRESSIONS_FAILED' }
           python .\tools\minipc-github-cadence-guard.py --self-test
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
+
+      - name: Validate typed Mini-PC file request syntax and fail-closed source contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach($p in @('tools/minipc_runner_tasks/file_access_bounded.ps1','tools/minipc_runner_guard/pre_job.ps1')){
+            $tokens=$null;$errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$errors)
+            if(@($errors).Count -gt 0){throw "MINIPC_FILE_ACCESS_PARSE_DENIED:$p"}
+          }
+          $task=Get-Content -LiteralPath 'tools/minipc_runner_tasks/file_access_bounded.ps1' -Raw
+          $guard=Get-Content -LiteralPath 'tools/minipc_runner_guard/pre_job.ps1' -Raw
+          foreach($marker in @('MINIPC_REVIEWED_TASK_ACK_V1','file_access_bounded','REPARSE_ROOT','REPARSE_FILE','HASH_MISMATCH','AddSeconds(75)','EnumerateFileSystemInfos()','MISTRAL','C:\Users\ADMIN\Downloads')){
+            if(-not $task.Contains($marker)){throw "MINIPC_FILE_ACCESS_MISSING:$marker"}
+          }
+          foreach($marker in @('MINIPC_FILE_V1','MINIPC_TASK_V1','expired_request','wrong_connector')){
+            if(-not $guard.Contains($marker)){throw "MINIPC_FILE_GUARD_MISSING:$marker"}
+          }
+          $syntax='^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'
+          $pin='a'*40;$digest='b'*64
+          foreach($valid in @("MINIPC_FILE_V1 | $pin | SEARCH | MISTRAL | fixture","MINIPC_FILE_V1 | $pin | EXPORT | DOWNLOADS | Zml4dHVyZS50eHQ | $digest")){
+            if($valid -cnotmatch $syntax){throw 'MINIPC_FILE_POSITIVE_SYNTAX_DENIED'}
+          }
+          foreach($invalid in @("MINIPC_FILE_V1 | $pin | SEARCH | C: | fixture","MINIPC_FILE_V1 | $pin | SEARCH | TRADING | ..\secret","MINIPC_FILE_V1 | $pin | SEARCH | M: | fixture")){
+            if($invalid -cmatch $syntax){throw 'MINIPC_FILE_NEGATIVE_SYNTAX_DENIED'}
+          }
+          Write-Output 'MINIPC_FILE_ACCESS_SOURCE_SYNTAX_AND_BOUNDARY_PASS'
 
       - name: Parse PowerShell scripts
         shell: powershell

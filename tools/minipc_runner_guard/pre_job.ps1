@@ -37,7 +37,21 @@ Assert-Gate ($eventData.comment.user.login -ceq 'hoffmannherdecke') 'wrong_actor
 Assert-Gate ($eventData.comment.author_association -ceq 'OWNER') 'wrong_association'
 Assert-Gate ($eventData.comment.performed_via_github_app.slug -ceq 'chatgpt-codex-connector') 'wrong_connector'
 $body = [string]$eventData.comment.body
-Assert-Gate ($body -cmatch '^MINIPC_TASK_V1 \| [a-f0-9]{40} \| [a-z][a-z0-9_-]{0,39}$') 'wrong_request_type'
+$legacy = $body -cmatch '^MINIPC_TASK_V1 \| [a-f0-9]{40} \| [a-z][a-z0-9_-]{0,39}$'
+$fileRequest = $body -cmatch '^MINIPC_FILE_V1 \| [a-f0-9]{40} \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'
+if ($fileRequest) {
+    $fileMode = [string]$Matches[1]
+    $fileSelector = [string]$Matches[3]
+    $fileDigest = [string]$Matches[4]
+    $fileRequest = (
+        ($fileMode -ceq 'SEARCH' -and -not $fileDigest -and
+         $fileSelector -cmatch '^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$') -or
+        ($fileMode -ceq 'EXPORT' -and
+         $fileDigest -cmatch '^[a-f0-9]{64}$' -and
+         $fileSelector -cmatch '^[A-Za-z0-9_-]{4,512}$')
+    )
+}
+Assert-Gate ($legacy -or $fileRequest) 'wrong_request_type'
 $created = [DateTimeOffset]::MinValue
 Assert-Gate ([DateTimeOffset]::TryParse([string]$eventData.comment.created_at, [ref]$created)) 'timestamp_invalid'
 $age = ([DateTimeOffset]::UtcNow - $created.ToUniversalTime()).TotalSeconds

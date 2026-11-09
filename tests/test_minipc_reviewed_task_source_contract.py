@@ -55,7 +55,8 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         self.assertTrue(SCRIPT.is_file())
         self.assertEqual(
             sorted(FOLDER.glob("*.ps1")),
-            [FOLDER / "access_boundary_probe.ps1", SCRIPT,
+            [FOLDER / "access_boundary_probe.ps1",
+             FOLDER / "file_access_bounded.ps1", SCRIPT,
              FOLDER / "log_status_summary.ps1",
              FOLDER / "operations_readonly_bundle.ps1",
              FOLDER / "v3_cas_log_readonly_triage.ps1",
@@ -94,6 +95,63 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
                     malicious)
         self.assertTrue(reviewed_task_violations(
             "other_task", good), "task identity substitution must fail")
+
+    def test_bounded_file_access_new_security_boundary(self):
+        """Source-only negative boundaries; real Windows and SMB proofs remain separate."""
+        from re import fullmatch
+        task = (FOLDER / "file_access_bounded.ps1").read_text(encoding="utf-8")
+        guard = Path("tools/minipc_runner_guard/pre_job.ps1").read_text("utf-8")
+        self.assertEqual(reviewed_task_violations("file_access_bounded", task), [])
+        for required in (
+            "MINIPC_REVIEWED_TASK_ACK_V1", "task = 'file_access_bounded'",
+            "mutation_scope = 'RESTRICTED'", "reviewed_git_sha = $sourceSha",
+            "FILE_ACCESS_DENIED:REPARSE_ROOT", "FILE_ACCESS_DENIED:REPARSE_FILE",
+            "FILE_ACCESS_DENIED:SENSITIVE_NAME", "FILE_ACCESS_DENIED:SENSITIVE_CONTENT",
+            "FILE_HASH_MISMATCH", "local_filesystem_writes",
+            "Get-FileHash", "Assert-RealDirectory", "Assert-Path",
+            "C:\\Users\\ADMIN\\Trading", "C:\\Users\\ADMIN\\Downloads",
+            "\\\\192.168.178.179\\Mistral_450",
+            "EnumerateFileSystemInfos()", "65536", "2097152", "AddSeconds(75)",
+            "visited -lt 1200", "found.Count -lt 20",
+            "MINIPC_FILE_V1", "RUNNER_TEMP",
+        ):
+            self.assertIn(required, task)
+        for required in (
+            "Assert-Gate ($legacy -or $fileRequest) 'wrong_request_type'",
+            "performed_via_github_app.slug",
+            "GITHUB_WORKFLOW_SHA -ceq $pin",
+            "expired_request",
+        ):
+            self.assertIn(required, guard)
+        self.assertEqual(guard.count("Write-Output 'LOCAL_PREJOB_V1_APPROVED"), 1)
+        self.assertNotIn("Invoke-Expression", task)
+        self.assertNotIn("Set-Acl", task)
+        self.assertNotIn("Start-Process", task)
+        sha, digest = "a"*40, "b"*64
+        pattern = (r"MINIPC_FILE_V1 \| [a-f0-9]{40} \| (SEARCH|EXPORT) \| "
+                   r"(TRADING|DOWNLOADS|MISTRAL) \| "
+                   r"([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})"
+                   r"(?: \| ([a-f0-9]{64}))?")
+        for message in (
+            f"MINIPC_FILE_V1 | {sha} | SEARCH | TRADING | fixture",
+            f"MINIPC_FILE_V1 | {sha} | SEARCH | MISTRAL | fixture",
+            f"MINIPC_FILE_V1 | {sha} | EXPORT | DOWNLOADS | Zml4dHVyZS50eHQ | {digest}",
+        ):
+            self.assertIsNotNone(fullmatch(pattern, message))
+        for message in (
+            f"MINIPC_FILE_V1 | {sha} | SEARCH | C: | fixture",
+            f"MINIPC_FILE_V1 | {sha} | SEARCH | TRADING | ..\\private",
+            f"MINIPC_FILE_V1 | {sha} | EXPORT | DOWNLOADS | Zml4dHVyZS50eHQ",
+            f"MINIPC_FILE_V1 | {sha} | SEARCH | TRADING | fixture | {digest}",
+            f"MINIPC_FILE_V1 | {sha} | SEARCH | M: | fixture",
+        ):
+            # Some illegal combinations are caught by the additional mode
+            # validation, not by the outer syntax grammar alone.
+            match = fullmatch(pattern, message)
+            self.assertTrue(match is None or (
+                (match.group(1) == "SEARCH" and match.group(4) is not None) or
+                (match.group(1) == "EXPORT" and match.group(4) is None)
+            ))
 
     def test_readonly_boundary_probe_fails_closed_and_never_prints_file_names(self):
         script = FOLDER / "access_boundary_probe.ps1"
