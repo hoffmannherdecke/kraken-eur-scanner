@@ -15,6 +15,9 @@ $root=[string]$roots[$key]
 $deadline=[DateTime]::UtcNow.AddSeconds(75)
 function Check-Time {if([DateTime]::UtcNow -gt $deadline){throw 'FILE_UNAVAILABLE:TIME_LIMIT'}}
 function Assert-RealDirectory([string]$path) {
+  # The share root itself is never skipped by the ancestor walk (UNC root equals PathRoot).
+  $rootItem=Get-Item -LiteralPath $path -Force -ErrorAction Stop
+  if(-not $rootItem.PSIsContainer -or ($rootItem.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'FILE_ACCESS_DENIED:REPARSE_ROOT'}
   $current=$path
   $stack=New-Object 'System.Collections.Generic.List[string]'
   while($current -and $current -ne [IO.Path]::GetPathRoot($current)){
