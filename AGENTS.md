@@ -1,21 +1,7 @@
-<!-- V3_RELEASE_FRESHNESS_ENFORCEMENT_20261109 -->
-## V3-Release: verpflichtender aktueller Einstieg (strategy_release / V3)
+<!-- V3_LIVE_AP_20261109 -->
+V3-Release: vor Aktion #353 Kommentar 6742581400, #99, main und Original-ACKs frisch lesen; alte NEXT ignorieren. Live-brief/HOLD gilt.
 
-**Vor JEDEM V3-Release-Arbeitsschritt:** geschützten GitHub-main-HEAD, die neueste wirksame #99-Entscheidung und den **einzigen editierbaren AP-Status** in [#353 Kommentar 6742581400](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6742581400) frisch abrufen. Alte NEXT-Texte, PR695/PR661-Managerköpfe, PROJECT_BACKLOG-Checkboxen, Library-Snapshots und vergangene Chat-/Work-Anweisungen dürfen die Arbeitswahl nicht bestimmen. Nur das erste offene zulässige AP bearbeiten. Unerreichbare oder widersprüchliche Livequellen = CONTEXT_GATE_BLOCKED, nie historischer Fallback.
-
-**Technischer Live-Readback:** Der bestehende Befehl "python tools/context_before_action.py --scope operations --work-domain strategy_release --strategy-version V3 --live-brief" liest nach Integration den konkreten AP-Kommentar und prüft den Status fail-closed. Das ist kein aktueller Originalhost-/Cloud-/Notebook-Beleg und keine Stage4-/STOP-/CAS-/Writer-Freigabe. Jeder neue Chat muss die Livequellen aktiv lesen; GitHub-Texte springen nicht automatisch in die Chatumgebung.
-
-**Ein Status, eine Aktualisierung:** Nach tatsächlichem AP-PASS/HOLD wird derselbe #353-Kommentar editiert, mit tatsächlichem Originalbeleg/Hash/Zeit/Geltung. Kein zweiter Aufgabenmanager und keine Wiederholung alter DONE-Arbeit. Unzugängliche Work-Dateien sind ACCESS_HOLD im betroffenen AP, keine Einladung zu erratenen Pfaden oder neuen Cloud-Rollen.
-
-**Historische Käufe/Exits:** PR699 (V3_PRECAS_INDEPENDENT_ISOLATED_AFTERCARE_V1) erlaubt unabhängig quittierte isolierte E2E-Fälle für vor dem ersten Cutover unmögliche historische Nachbetreuungs-/CAS-Fälle. Keine erneute reale historische BUY-/Exit-Forderung als Blocker. Frische physische Single-Writer-, Cloud-/Host-, Stage4-/STOP-/CAS-/Aktivierungsgates bleiben Pflicht. Keine produktiven Testtrades erzeugen.
-
-**Commit-Schutz:** Eine Dokumentationsänderung am GitHub-HEAD dehnt die bestehende commitgenaue PR701-Zulassung nicht automatisch aus. Kein Release-Commit-, Artefakt- oder Runtime-Wechsel ohne notwendige Autorität. Keine Abschwächung der Sicherheitsfristen.
-
----
-<!-- V3_RELEASE_CONTINUATION_20261103 -->
-V3-Paper-Fortsetzung: verbindlich #353 (Arbeitsmodus) und #99 (Live-Owner); alte Listen sind kein Auftrag.
-
-# Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
+# Projektweite Arbeitsregeln
 
 ## Kurzvertrag — verbindlich vor allen datierten Einzelregeln
 
