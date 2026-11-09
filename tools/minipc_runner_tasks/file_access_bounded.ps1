@@ -79,9 +79,10 @@ try {
     while($queue.Count -gt 0 -and $visited -lt 1200 -and $found.Count -lt 20){
       Check-Time
       $directory=$queue.Dequeue()
-      try{$items=@(Get-ChildItem -LiteralPath $directory -Force -ErrorAction Stop)}
-      catch [System.UnauthorizedAccessException]{continue}
-      foreach($item in $items){
+      # Lazy enumeration: never materialize an unbounded directory before applying the 1200-entry cap.
+      try {
+        $items=[IO.DirectoryInfo]::new($directory).EnumerateFileSystemInfos()
+        foreach($item in $items){
         Check-Time;$visited++;if($visited -gt 1200){break}
         if($item.Attributes -band [IO.FileAttributes]::ReparsePoint){continue}
         if($item.PSIsContainer){
@@ -100,7 +101,9 @@ try {
           [void]$found.Add([pscustomobject][ordered]@{relative_path=$rel;size=[long]$verified.Length;sha256=$digest})
         }catch{continue}
         if($found.Count -ge 20){break}
-      }
+        }
+      } catch [System.UnauthorizedAccessException] { continue }
+        catch [System.IO.IOException] { continue }
     }
     $state=if($found.Count -eq 0){'NOT_FOUND'}elseif($queue.Count -gt 0 -or $visited -ge 1200){'PARTIAL_LIMIT'}else{'FOUND'}
     Result $state @($found.ToArray()) ''
