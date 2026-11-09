@@ -1249,5 +1249,17 @@
       "work_final_ack": "NOT_CLAIMED",
       "runtime_change_authorized": false
     }
+  },
+  "v3_release_work_selection": {
+    "kind": "V3_RELEASE_LIVE_OWNER_POINTER_V1",
+    "status": "DYNAMIC_GITHUB_READ_REQUIRED_NOT_CACHED_RELEASE_ACK",
+    "canonical_issue": 353,
+    "canonical_comment_id": 6742581400,
+    "release_owner_issue": 99,
+    "mandatory_reader": "python tools/context_before_action.py --scope operations --work-domain strategy_release --strategy-version V3 --live-brief",
+    "is_runtime_truth": false,
+    "legacy_strategy_series_is_historical": true,
+    "isolated_aftercare_equivalence": "PR699_SCOPED_AND_INDEPENDENTLY_WITNESSED",
+    "no_auto_stage4_stop_cas_writer": true
   }
 }
