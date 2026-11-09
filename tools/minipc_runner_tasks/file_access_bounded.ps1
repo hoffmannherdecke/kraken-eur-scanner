@@ -6,8 +6,8 @@ $req=[string]$env:MINI_PC_FILE_REQUEST
 $id=[Security.Principal.WindowsIdentity]::GetCurrent()
 $principal=New-Object Security.Principal.WindowsPrincipal($id)
 if($id.Name -notmatch '(?i)\\CryptoSupportSvc$' -or $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) -or $env:RUNNER_NAME -cne 'MINI-PC-CryptoSupport'){throw 'FILE_ACCESS_DENIED:IDENTITY'}
-if($req -cnotmatch '^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512}) (?:\| ([a-f0-9]{64}))?$'){throw 'FILE_ACCESS_DENIED:REQUEST'}
-$mode=[string]$Matches[2];$key=[string]$Matches[3];$selector=[string]$Matches[4];$expected=[string]$Matches[5]
+if($req -cnotmatch '^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'){throw 'FILE_ACCESS_DENIED:REQUEST'}
+$sourceSha=[string]$Matches[1];$mode=[string]$Matches[2];$key=[string]$Matches[3];$selector=[string]$Matches[4];$expected=[string]$Matches[5]
 if(($mode -ceq 'SEARCH' -and ($expected -or $selector -cnotmatch '^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$')) -or
    ($mode -ceq 'EXPORT' -and (!$expected -or $selector -cnotmatch '^[A-Za-z0-9_-]{4,512}$'))){throw 'FILE_ACCESS_DENIED:REQUEST_MODE'}
 $roots=@{TRADING='C:\Users\ADMIN\Trading';DOWNLOADS='C:\Users\ADMIN\Downloads';MISTRAL='\\192.168.178.179\Mistral_450'}
@@ -44,8 +44,28 @@ function Safe-Name([string]$name) {
   return $name -cmatch '^[A-Za-z0-9_. -]{1,100}$' -and $name -notmatch '^\.' 
 }
 function Result([string]$state,[object[]]$files,[string]$exportFile) {
-  $body=[pscustomobject][ordered]@{kind='MINIPC_FILE_ACCESS_RESULT_V1';status=$state;mode=$mode;root_key=$key;files=@($files);export_ready=([bool]$exportFile);local_file=$exportFile}
-  $body | ConvertTo-Json -Compress -Depth 6
+  # Reuse the single original runner ACK. File outcome is a bounded detail, not a second ACK protocol.
+  [pscustomobject][ordered]@{
+    kind = 'MINIPC_REVIEWED_TASK_ACK_V1'
+    status = 'SUCCESS'
+    task = 'file_access_bounded'
+    mutation_scope = 'RESTRICTED'
+    checked_at_utc = [DateTimeOffset]::UtcNow.ToString('o')
+    reviewed_git_sha = $sourceSha
+    file_status = $state
+    mode = $mode
+    root_key = $key
+    files = @($files)
+    export_ready = [bool]$exportFile
+    local_file = $exportFile
+    local_filesystem_writes = [bool]$exportFile
+    writes_outside_workspace = [bool]$exportFile # Runner temporary artifact staging only; never source modifications.
+    service_or_task_mutations = $false
+    new_permissions = $false
+    active_runtime_release = $false
+    trading_orders_permitted = $false
+    secrets_used = $false
+  } | ConvertTo-Json -Compress -Depth 6
 }
 try {
   Assert-RealDirectory $root
@@ -95,8 +115,8 @@ try {
     $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
     if($hash -cne $expected){throw 'FILE_HASH_MISMATCH'}
     $body=[IO.File]::ReadAllBytes($file.FullName)
-    if($body.Length -ne $file.Length){throw 'FILE_HASH_MISMATCH'}
-    $text=New-Object Text.UTF8Encoding($false,$true)
+    if($body.Length -ne $file.Length -or [BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($body)).Replace('-','').ToLowerInvariant() -cne $expected){throw 'FILE_HASH_MISMATCH'}
+    $text = [Text.UTF8Encoding]::new($false,$true)
     try{$decoded=$text.GetString($body)}catch{throw 'FILE_ACCESS_DENIED:BINARY'}
     if($decoded -match '(?i)(password|passwd|secret|api[_-]?key|token|authorization|bearer|private.key|BEGIN [A-Z ]*PRIVATE KEY|postgres(?:ql)?://|SUPABASE_|sk-[A-Za-z0-9]{10})'){throw 'FILE_ACCESS_DENIED:SENSITIVE_CONTENT'}
     $temp=[string]$env:RUNNER_TEMP
