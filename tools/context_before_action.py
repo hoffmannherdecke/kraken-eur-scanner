@@ -82,6 +82,62 @@ def _github_api_read(url: str) -> tuple[object, str]:
         return json.loads(response.read().decode("utf-8")), response.headers.get("Link", "")
 
 
+
+# This is the one existing #353 release-task dashboard, not another owner,
+# database, scheduler or authorization source. Read it freshly for every V3
+# release work-selection request, not as a local 2026-11-09 snapshot.
+V3_DASHBOARD_COMMENT_ID = 6742581400
+V3_DASHBOARD_IDS = ("AP00", "AP01", "AP02", "AP03", "AP04",
+                    "AP05A", "AP05B", "AP05C", "AP06A", "AP06B")
+
+
+def read_v3_release_dashboard(fetcher=None) -> dict:
+    """Fail closed on absent/ambiguous canonical GitHub task state.
+
+    A dashboard marks *work selection* only. It cannot approve or establish
+    a time-bound release, a physical host state, a cloud writer or a CMS.
+    """
+    getter = fetcher or _github_api_read
+    payload, _ = getter(GITHUB_API_BASE + f"/issues/comments/{V3_DASHBOARD_COMMENT_ID}")
+    require(isinstance(payload, dict) and
+            isinstance(payload.get("body"), str) and
+            payload.get("id") == V3_DASHBOARD_COMMENT_ID,
+            "canonical V3 dashboard missing or wrong comment")
+    body = payload["body"]
+    require("V3_RELEASE_CANONICAL_STATUS_V1" in body and
+            "einziger aktueller AP-Status" in body,
+            "canonical V3 dashboard marker missing")
+    matches = re.findall(
+        r"(?m)^- \[([ x])\] \*\*(AP(?:00|01|02|03|04|05A|05B|05C|06A|06B)) "
+        r"(DONE|NEXT|HOLD|IN_PROGRESS|BLOCKED_BY_[A-Z0-9]+):\*\*",
+        body,
+    )
+    require(len(matches) == len(V3_DASHBOARD_IDS) and
+            {row[1] for row in matches} == set(V3_DASHBOARD_IDS),
+            "canonical V3 dashboard incomplete or ambiguous")
+    states = {item: state for _, item, state in matches}
+    require(all((mark == "x") == (state == "DONE")
+                for mark, item, state in matches),
+            "canonical V3 dashboard DONE checkboxes inconsistent")
+    next_ids = [item for item, state in states.items() if state == "NEXT"]
+    require(len(next_ids) <= 1,
+            "canonical V3 dashboard has multiple NEXT tasks")
+    require(bool(next_ids) or any(
+        state in ("HOLD", "IN_PROGRESS") for state in states.values())
+        or all(state == "DONE" for state in states.values()),
+        "canonical V3 dashboard missing active task or explicit HOLD")
+    return {
+        "kind": "V3_CANONICAL_GITHUB_TASK_DASHBOARD_READBACK_V1",
+        "status": "GITHUB_TASK_SELECTION_ONLY_NOT_RUNTIME_OR_RELEASE_PERMISSION",
+        "url": payload.get("html_url"),
+        "edited_at": payload.get("updated_at"),
+        "states": states,
+        "next_task_id": next_ids[0] if next_ids else None,
+        "requires_fresh_host_cloud_and_owner_gates": True,
+        "does_not_authorize_new_stage4_stop_cas_or_writer": True,
+    }
+
+
 def live_owner_readback(work_domain: str, strategy_version: str | None,
                         fetcher=None, expected_main: str | None = None,
                         candidate_id: str | None = None) -> dict:
@@ -195,6 +251,9 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
             ],
             "comments_are_not_independent_runtime_proof": True,
         })
+    dashboard = (read_v3_release_dashboard(getter)
+                 if work_domain == "strategy_release" and strategy_version == "V3"
+                 else None)
     for number, version in issue_versions.items():
         repeat, _ = getter(GITHUB_API_BASE + f"/issues/{number}")
         require(isinstance(repeat, dict) and isinstance(repeat.get("body"), str)
@@ -212,6 +271,7 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
         "strategy_version": strategy_version or "UNSPECIFIED",
         "owners": owners,
         "named_release_gate": release_view,
+        "canonical_v3_task_dashboard": dashboard,
         "source_and_staging_done_must_not_be_reopened_by_pending_runtime": True,
         "no_new_development_without_specific_new_defect_evidence": True,
         "next_gate_requires_original_proof_and_applicable_approval": True,

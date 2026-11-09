@@ -948,6 +948,24 @@ class LiveOwnerReadbackTests(unittest.TestCase):
     BASE = "https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner"
 
     def fake_fetch(self, url):
+        if url.endswith("/issues/comments/6742581400"):
+            body = (
+                "<!-- V3_RELEASE_CANONICAL_STATUS_V1 -->\n"
+                "# V3 Paper Release – einziger aktueller AP-Status (09.11.2026)\n"
+                "- [x] **AP00 DONE:** completed\n"
+                "- [ ] **AP01 NEXT:** bind originals\n"
+                "- [ ] **AP02 BLOCKED_BY_AP01:** inputs\n"
+                "- [ ] **AP03 BLOCKED_BY_AP02:** window\n"
+                "- [ ] **AP04 BLOCKED_BY_AP03:** stage4\n"
+                "- [ ] **AP05A BLOCKED_BY_AP04:** stop\n"
+                "- [ ] **AP05B BLOCKED_BY_AP05A:** cas\n"
+                "- [ ] **AP05C BLOCKED_BY_AP05B:** reader\n"
+                "- [ ] **AP06A BLOCKED_BY_AP05C:** activate\n"
+                "- [ ] **AP06B BLOCKED_BY_AP06A:** operational\n"
+            )
+            return {"id": 6742581400, "body": body,
+                    "html_url": "https://github.com/example/issues/353#issuecomment-6742581400",
+                    "updated_at": "2026-11-09T14:30:00Z"}, ""
         if url.endswith("/commits/main"):
             return {"sha": "a" * 40}, ""
         for number in (99, 353):
@@ -970,6 +988,32 @@ class LiveOwnerReadbackTests(unittest.TestCase):
                          "created_at": "2026-10-28T12:01:00Z"}], ""
         raise AssertionError("unexpected endpoint: " + url)
 
+    def test_canonical_v3_dashboard_is_loaded_and_is_not_release_permission(self):
+        from tools.context_before_action import read_v3_release_dashboard
+        state = read_v3_release_dashboard(fetcher=self.fake_fetch)
+        self.assertEqual(state["next_task_id"], "AP01")
+        self.assertEqual(state["states"]["AP00"], "DONE")
+        self.assertTrue(state["does_not_authorize_new_stage4_stop_cas_or_writer"])
+
+    def test_canonical_v3_dashboard_fails_closed_when_missing_or_ambiguous(self):
+        from tools.context_before_action import read_v3_release_dashboard
+        from tools.context_before_action import ContextGateError
+        def bad_fetch(url):
+            result, link = self.fake_fetch(url)
+            if url.endswith("/issues/comments/6742581400"):
+                result = dict(result, body=result["body"].replace(
+                    "**AP02 BLOCKED_BY_AP01:**", "**AP02 NEXT:**"))
+            return result, link
+        with self.assertRaisesRegex(ContextGateError, "multiple NEXT"):
+            read_v3_release_dashboard(fetcher=bad_fetch)
+        def missing_fetch(url):
+            result, link = self.fake_fetch(url)
+            if url.endswith("/issues/comments/6742581400"):
+                result = dict(result, body="historical issue body")
+            return result, link
+        with self.assertRaisesRegex(ContextGateError, "marker missing"):
+            read_v3_release_dashboard(fetcher=missing_fetch)
+
     def test_v3_live_owner_reads_both_managers_and_last_comment_page(self):
         from tools.context_before_action import live_owner_readback
         packet = live_owner_readback(
@@ -977,6 +1021,7 @@ class LiveOwnerReadbackTests(unittest.TestCase):
             fetcher=self.fake_fetch, expected_main="a" * 40)
         self.assertEqual([x["issue"] for x in packet["owners"]], [353, 99])
         self.assertEqual(packet["main_sha"], "a" * 40)
+        self.assertEqual(packet["canonical_v3_task_dashboard"]["next_task_id"], "AP01")
         self.assertEqual(packet["status"],
                          "CURRENT_GITHUB_OWNER_READBACK_ONLY_NOT_HOST_OR_CLOUD_ACK")
         self.assertTrue(packet["source_and_staging_done_must_not_be_reopened_by_pending_runtime"])

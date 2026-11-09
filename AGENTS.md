@@ -1,7 +1,7 @@
-<!-- V3_RELEASE_CONTINUATION_20261103 -->
-V3-Paper-Fortsetzung: verbindlich #353 (Arbeitsmodus) und #99 (Live-Owner); alte Listen sind kein Auftrag.
+<!-- V3_LIVE_AP_20261109 -->
+V3-Release: vor Aktion #353 Kommentar 6742581400, #99, main und Original-ACKs frisch lesen; alte NEXT ignorieren. Live-brief/HOLD gilt.
 
-# Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
+# Projektweite Arbeitsregeln
 
 ## Kurzvertrag — verbindlich vor allen datierten Einzelregeln
 

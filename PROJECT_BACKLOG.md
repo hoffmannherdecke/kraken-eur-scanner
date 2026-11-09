@@ -1,3 +1,11 @@
+<!-- V3_RELEASE_CURRENT_AP_ROUTING_20261109 -->
+## V3-Paper: nur der aktuelle AP-Status steuert die nächste Arbeit
+
+Vor jedem V3-Arbeitsschritt: [#353 kanonischer, editierbarer AP-Status](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6742581400), tatsächlicher GitHub-main-HEAD und passende [#99-Fachowner-Entscheidungen und Original-ACKs](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99) aktiv lesen. Das nachfolgende Dokument ist ein gewachsener Aufgabenindex, nicht eine zweite dynamische V3-Aufgabenliste. Alte PR661/PR695-Texte und historische sechste-Beleg-Checkboxen sind keine neuen Blocker. PR699-isolierter Ersatznachweis ist bindend.
+
+Nach jedem echten AP-PASS/HOLD denselben Kommentar unter #353 aktualisieren; keine Freigabe durch Status allein. Fehlende Livequelle bedeutet HOLD, kein Rückgriff auf alte Snapshot-Aufgaben. Keine automatische Host/Cloud/Notebook-Synchronisierung behaupten. Kein Release-Start durch Backlogpflege.
+
+---
 <!-- V3_RELEASE_CONTINUATION_INDEX_20261103 -->
 ## V3-Release-Arbeitsauswahl – aktueller Owner statt historische Checkboxen (03.11.2026)
 Die **verbindliche Ausführungsregel** liegt in [#353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353), der **dynamische Fach-/Release-Status** ausschließlich im neuesten Originalnachweis von [#99](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99). In neuen Chats und Work-Läufen müssen vor Arbeitsauswahl `main`-HEAD, aktueller #661-HEAD/CI und jüngste #99-Original-ACKs geprüft werden. Historische `[ ]`-Einträge in dieser Datei sind **keine** neuen Arbeitsaufträge und dürfen keinen älteren Releasepfad wieder eröffnen. #661 nicht parallel duplizieren.
