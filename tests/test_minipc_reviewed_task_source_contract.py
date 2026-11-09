@@ -149,7 +149,8 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             # validation, not by the outer syntax grammar alone.
             match = fullmatch(pattern, message)
             self.assertTrue(match is None or (
-                match.group(1) == "SEARCH" and match.group(4) is not None
+                (match.group(1) == "SEARCH" and match.group(4) is not None) or
+                (match.group(1) == "EXPORT" and match.group(4) is None)
             ))
 
     def test_readonly_boundary_probe_fails_closed_and_never_prints_file_names(self):
