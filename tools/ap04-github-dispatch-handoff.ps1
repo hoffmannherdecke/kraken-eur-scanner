@@ -53,7 +53,7 @@ try {
     $thisScriptSha=(Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if($Dispatch -and ($ApprovedHandoffSha256 -cnotmatch '^[a-f0-9]{64}$' -or $ApprovedHandoffSha256 -cne $thisScriptSha)) { Hold 'HANDOFF_BYTES_NOT_ADMITTED' }
     if($Dispatch) {
-        if($CaFile -cne 'C:\\Users\\ADMIN\\Downloads\\prod-ca-2021.crt' -or !(Test-Path -LiteralPath $CaFile -PathType Leaf)) { Hold 'APPROVED_CA_FILE_REQUIRED' }
+        if($CaFile -cne 'C:\Users\ADMIN\Downloads\prod-ca-2021.crt' -or !(Test-Path -LiteralPath $CaFile -PathType Leaf)) { Hold 'APPROVED_CA_FILE_REQUIRED' }
         [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
         $admissionUrl='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/comments/'+$AdmissionCommentId
         $admissionComment=Invoke-RestMethod -Uri $admissionUrl -Headers @{'User-Agent'='PR701-AP04-Admission';'Accept'='application/vnd.github+json'} -TimeoutSec 8
