@@ -147,3 +147,24 @@ ZIP-Grenzen: komprimierte Datei höchstens 2 MiB, höchstens 100 Einträge, höc
 MISTRAL ist ausschließlich der feste UNC-Pfad \\192.168.178.179\Mistral_450; weder Laufwerksbuchstabe M: noch Volume-Label-Suche sind erlaubt.
 
 In künftigen Chats zuerst die bereits verbundene GitHub-Verbindung und diesen vorhandenen eingeschränkten Dateipfad nutzen. Ein Chat besitzt dadurch keinen direkten SMB-/Windows-Dateisystemzugriff. GitHub-Task-PASS, heruntergeladenes Artefakt und unabhängige SHA256-Prüfung der enthaltenen Datei sind getrennte Beweise. Ein Source-Merge belegt noch keinen ZIP-Originalhost-E2E und erteilt keinerlei V3-/Stage4-/STOP-/CAS-/Paper-/Trading-Freigabe. Ein nicht zulässiges ZIP bleibt ohne Sicherheitsumgehung gesperrt.
+
+
+## Neun zusätzlich freigegebene V3-Quellordner (Originalhost-ACL-Quittierung 10.11.2026)
+
+Der Owner hat auf dem MINI-PC für die neun explizit ausgewählten Ordner unter `C:\Users\ADMIN` nur `CryptoSupportSvc` Lese-/Ausführungsrechte (Container- und Objektvererbung, bestehende Schutzvererbung unverändert) erteilt. Mini-PC-Ausgabe: `MINIPC_V3_FOLDERS_ACL_PASS`, `FOLDERS=9`; Backup: `C:\ProgramData\CryptoSupport-V3-ACL-20261110-142446`. Das ist eine lokale ACL-Rückprüfung, **noch kein echter Lesetest der neun neuen Root-Aliase**.
+
+Die bereits bestehende Datei-Anfrage `MINIPC_FILE_V1` erlaubt für SEARCH und den separat SHA256-/Owner-gebundenen EXPORT künftig genau folgende weitere Root-Schlüssel (keine direkten Benutzerpfade im Kommentar und **kein** generischer Home-Root):
+
+| Schlüssel | Exakter Originalhost-Ordner |
+|---|---|
+| `V3Q1` | `C:\Users\ADMIN\V3Paper-Quelle-46c5abbd6af1` |
+| `V3Q2` | `C:\Users\ADMIN\V3Paper-Quelle-5fd60d0e9dc2` |
+| `V3Q3` | `C:\Users\ADMIN\V3Paper-Quelle-985ed3230bb4` |
+| `V3QR` | `C:\Users\ADMIN\V3Paper-ReleaseSource-306aad033f16` |
+| `V3P680` | `C:\Users\ADMIN\V3-PR680-SOURCE-16d40540f7d8` |
+| `V3P681` | `C:\Users\ADMIN\V3-PR681-SOURCE-3ee5ea3cda54` |
+| `V3P682` | `C:\Users\ADMIN\V3-PR682-SOURCE-53dbcf6d8276` |
+| `V3RS1` | `C:\Users\ADMIN\V3-Release-Source-a40e93f7` |
+| `V3RS2` | `C:\Users\ADMIN\V3-Release-Source-b019448331df` |
+
+Der bisherige MISTRAL-Root bleibt exakt `\\192.168.178.179\Mistral_450`; TRADING und DOWNLOADS behalten ihre bisherige Root-Bindung. Die **öffentliche Taskquelle, lokale pre_job.ps1 und private Workflow-Grammatik müssen gemeinsam** aktualisiert und in den physischen privaten SHA-Pin übernommen werden. Bis zur gezielten Originalhost-Installation ist `V3_EXTRA_ROOTS_E2E=HOLD`; bereits bestandene alte Root- und SafePause-Nachweise nicht erneut durchführen. Kein neuer Runner, Cloud-Recht, AP04-/Stage4- oder Trading-Eingriff.

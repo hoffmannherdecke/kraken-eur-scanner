@@ -6,11 +6,12 @@ $req=[string]$env:MINI_PC_FILE_REQUEST
 $id=[Security.Principal.WindowsIdentity]::GetCurrent()
 $principal=New-Object Security.Principal.WindowsPrincipal($id)
 if($id.Name -notmatch '(?i)\\CryptoSupportSvc$' -or $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) -or $env:RUNNER_NAME -cne 'MINI-PC-CryptoSupport'){throw 'FILE_ACCESS_DENIED:IDENTITY'}
-if($req -cnotmatch '^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'){throw 'FILE_ACCESS_DENIED:REQUEST'}
+if($req -cnotmatch '^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL|V3Q1|V3Q2|V3Q3|V3QR|V3P680|V3P681|V3P682|V3RS1|V3RS2) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'){throw 'FILE_ACCESS_DENIED:REQUEST'}
 $sourceSha=[string]$Matches[1];$mode=[string]$Matches[2];$key=[string]$Matches[3];$selector=[string]$Matches[4];$expected=[string]$Matches[5]
 if(($mode -ceq 'SEARCH' -and ($expected -or $selector -cnotmatch '^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$')) -or
    ($mode -ceq 'EXPORT' -and (!$expected -or $selector -cnotmatch '^[A-Za-z0-9_-]{4,512}$'))){throw 'FILE_ACCESS_DENIED:REQUEST_MODE'}
-$roots=@{TRADING='C:\Users\ADMIN\Trading';DOWNLOADS='C:\Users\ADMIN\Downloads';MISTRAL='\\192.168.178.179\Mistral_450'}
+# Exact approved V3 source roots; do not descend through C:\Users\ADMIN as a generic root.
+$roots=@{TRADING='C:\Users\ADMIN\Trading';DOWNLOADS='C:\Users\ADMIN\Downloads';MISTRAL='\\192.168.178.179\Mistral_450';V3Q1='C:\Users\ADMIN\V3Paper-Quelle-46c5abbd6af1';V3Q2='C:\Users\ADMIN\V3Paper-Quelle-5fd60d0e9dc2';V3Q3='C:\Users\ADMIN\V3Paper-Quelle-985ed3230bb4';V3QR='C:\Users\ADMIN\V3Paper-ReleaseSource-306aad033f16';V3P680='C:\Users\ADMIN\V3-PR680-SOURCE-16d40540f7d8';V3P681='C:\Users\ADMIN\V3-PR681-SOURCE-3ee5ea3cda54';V3P682='C:\Users\ADMIN\V3-PR682-SOURCE-53dbcf6d8276';V3RS1='C:\Users\ADMIN\V3-Release-Source-a40e93f7';V3RS2='C:\Users\ADMIN\V3-Release-Source-b019448331df'}
 $root=[string]$roots[$key]
 $deadline=[DateTime]::UtcNow.AddSeconds(75)
 function Check-Time {if([DateTime]::UtcNow -gt $deadline){throw 'FILE_UNAVAILABLE:TIME_LIMIT'}}

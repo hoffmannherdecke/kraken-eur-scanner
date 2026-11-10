@@ -111,7 +111,7 @@ jobs:
           foreach($marker in @('MINIPC_FILE_V1','MINIPC_TASK_V1','expired_request','wrong_connector')){
             if(-not $guard.Contains($marker)){throw "MINIPC_FILE_GUARD_MISSING:$marker"}
           }
-          $syntax='^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'
+          $syntax='^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL|V3Q1|V3Q2|V3Q3|V3QR|V3P680|V3P681|V3P682|V3RS1|V3RS2) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'
           $pin='a'*40;$digest='b'*64
           foreach($valid in @("MINIPC_FILE_V1 | $pin | SEARCH | MISTRAL | fixture","MINIPC_FILE_V1 | $pin | EXPORT | DOWNLOADS | Zml4dHVyZS50eHQ | $digest")){
             if($valid -cnotmatch $syntax){throw 'MINIPC_FILE_POSITIVE_SYNTAX_DENIED'}
@@ -119,6 +119,17 @@ jobs:
           foreach($invalid in @("MINIPC_FILE_V1 | $pin | SEARCH | C: | fixture","MINIPC_FILE_V1 | $pin | SEARCH | TRADING | ..\secret","MINIPC_FILE_V1 | $pin | SEARCH | M: | fixture")){
             if($invalid -cmatch $syntax){throw 'MINIPC_FILE_NEGATIVE_SYNTAX_DENIED'}
           }
+          # Real static roots are exact selected V3 sources, never the ADMIN profile as a root.
+          $source=Get-Content 'tools/minipc_runner_tasks/file_access_bounded.ps1' -Raw
+          $guard=Get-Content 'tools/minipc_runner_guard/pre_job.ps1' -Raw
+          foreach($entry in @('V3Q1=','V3Paper-Quelle-46c5abbd6af1','V3Q2=','V3Paper-Quelle-5fd60d0e9dc2','V3Q3=','V3Paper-Quelle-985ed3230bb4','V3QR=','V3Paper-ReleaseSource-306aad033f16','V3P680=','V3-PR680-SOURCE-16d40540f7d8','V3P681=','V3-PR681-SOURCE-3ee5ea3cda54','V3P682=','V3-PR682-SOURCE-53dbcf6d8276','V3RS1=','V3-Release-Source-a40e93f7','V3RS2=','V3-Release-Source-b019448331df')){
+            if(-not $source.Contains($entry)){throw "V3_ROOT_MISSING_SOURCE:$entry"}
+          }
+          foreach($alias in @('V3Q1','V3Q2','V3Q3','V3QR','V3P680','V3P681','V3P682','V3RS1','V3RS2')){
+            if("MINIPC_FILE_V1 | $pin | SEARCH | $alias | source" -cnotmatch $syntax){throw "V3_ROOT_SYNTAX_FAILED:$alias"}
+            if(-not $guard.Contains($alias)){throw "V3_ROOT_LOCAL_PREJOB_MISSING:$alias"}
+          }
+          Write-Output 'MINIPC_V3_NINE_EXACT_ROOTS_SOURCE_PASS'
           Write-Output 'MINIPC_FILE_ACCESS_SOURCE_SYNTAX_AND_BOUNDARY_PASS'
 
       - name: Validate bounded ZIP handoff with positive and fail-closed Windows fixtures
