@@ -168,7 +168,7 @@ jobs:
           Assert-ZipRejected (New-ZipFixture 'archive/binary.json' ([byte[]](255,254,253))) 'invalid_utf8'
           Assert-ZipRejected ([byte[]](1,2,3,4)) 'invalid_zip'
           $source=Get-Content -LiteralPath $p -Raw
-          foreach($marker in @("'.zip'","2097152","Assert-SafeZip $body","minipc-authorized-","+$extension")){
+          foreach($marker in @("'.zip'","2097152",'Assert-SafeZip $body',"minipc-authorized-","+$extension")){
             if(-not $source.Contains($marker)){throw "ZIP_HANDOFF_MISSING_BOUND:$marker"}
           }
           Write-Output 'MINIPC_ZIP_HANDOFF_POSITIVE_AND_NEGATIVE_PASS'
