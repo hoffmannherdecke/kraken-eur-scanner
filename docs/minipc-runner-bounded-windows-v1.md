@@ -131,3 +131,19 @@ Im Rahmen der ohnehin offenen Abnahme hat der Nutzer **außerhalb eines aktiven 
 **Abnahme:** Für genau dieses **natürlich gestartete** Scheduler-Fenster ist `FIRST_UNATTENDED_PERIODIC_WINDOW_POST_WINDOW_STOPPED_DISABLED_ORIGINAL_HOST_ACK=PASS`. Der frühere unter Nichtadmin tatsächlich lesbare TaskScheduler-Ereignis-201-Ergebniscode 0 für vorherige Fenster [Run 39260569090](https://github.com/hoffmannherdecke/kraken-readonly-bridge/actions/runs/39260569090) war lediglich ein Zusatzindiz; der eigenständige jetzt vorliegende **Dienst-Endzustand** ist die entscheidende Ergänzung. Die ursprünglichen `PENDING`-Angaben zu älteren innerhalb aktiver Fenster entstandenen Snapshots bleiben historisch richtig und dürfen nicht den neueren Windows-Originalbeleg übersteuern. Die erste unbeaufsichtigte Runner-Fenster-Abnahme ist damit **abgeschlossen**, nicht länger bei jedem Chat neu zu testen.
 
 **Sicherheitsgrenzen weiterhin verbindlich:** Keine dauerhafte Garantie für alle kommenden Zeitfenster. Beim zukünftigen kontrollierten i7-8700T-Einbau/Windows-Update-Neustart muss die Scheduler-Aufgabe aktiv deaktiviert, ein etwaiger Worker beendet und der **dann aktuelle** Runner wieder `Stopped/Disabled` nachgewiesen werden; PR419-/Windows-Update-/V3-Release-Gates werden durch diesen historischen Erfolg **nicht** freigegeben. Kein zweiter Monitoring-Task, neuer Dienst oder Rechteausbau; übrige unabhängige Diagnostik-Nachweise bleiben separat geführt.
+
+
+## ZIP-Originaldatei-Export: bestehende eingeschränkte Dateibrücke (10.11.2026)
+
+Die einzige zulässige Mini-PC-Dateibrücke bleibt CryptoSupportSvc über das vorhandene private GitHub-Issue kraken-readonly-bridge#13, den lokal gepinnten privaten Workflow, die zehnminütige Auftrags-TTL, das begrenzte Runner-Fenster und den SHA-gepinnten öffentlichen Task tools/minipc_runner_tasks/file_access_bounded.ps1. Kein neuer Dienst, Scheduler, freier PowerShell-Kanal, allgemeines Ordnerarchiv oder Netzlaufwerk.
+
+Für ZIP-Archive gilt weiterhin der zweistufige Einzeldateivertrag:
+
+1. MINIPC_FILE_V1 | <gemergter-public-sha> | SEARCH | <TRADING|DOWNLOADS|MISTRAL> | <Filter> – nur Pfad, Länge, SHA256; PARTIAL_LIMIT ist keine Vollinventur.
+2. Nach ausdrücklicher Owner-Freigabe genau dieser Datei: MINIPC_FILE_V1 | <gemergter-public-sha> | EXPORT | <ROOT> | <base64url-exakter-relativer-Pfad-ohne-Padding> | <vorher-gesehener-sha256>. Der private Workflow authentisiert den Kommentar erneut und veröffentlicht höchstens eine geprüfte Datei als ein Tag verfügbares Artefakt.
+
+ZIP-Grenzen: komprimierte Datei höchstens 2 MiB, höchstens 100 Einträge, höchstens 2 MiB je Eintrag und 8 MiB insgesamt entpackt. Nur ausdrücklich erlaubte, unkritische UTF-8-Text-/Quellformate. Sensible Pfadnamen, Geheimnismuster, verschachtelte Archive, Symlinks, absolute Pfade, Traversal, Binärdaten, verschlüsselte/kaputte ZIP-Dateien und überschrittene Limits werden verweigert. Der Runner entpackt oder startet keine Archivdatei und schreibt ausschließlich eine temporäre, SHA256-geprüfte Übergabekopie in RUNNER_TEMP.
+
+MISTRAL ist ausschließlich der feste UNC-Pfad \\192.168.178.179\Mistral_450; weder Laufwerksbuchstabe M: noch Volume-Label-Suche sind erlaubt.
+
+In künftigen Chats zuerst die bereits verbundene GitHub-Verbindung und diesen vorhandenen eingeschränkten Dateipfad nutzen. Ein Chat besitzt dadurch keinen direkten SMB-/Windows-Dateisystemzugriff. GitHub-Task-PASS, heruntergeladenes Artefakt und unabhängige SHA256-Prüfung der enthaltenen Datei sind getrennte Beweise. Ein Source-Merge belegt noch keinen ZIP-Originalhost-E2E und erteilt keinerlei V3-/Stage4-/STOP-/CAS-/Paper-/Trading-Freigabe. Ein nicht zulässiges ZIP bleibt ohne Sicherheitsumgehung gesperrt.
