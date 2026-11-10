@@ -8,6 +8,7 @@ param(
     [string]$ArchivePath = 'C:\Users\ADMIN\Downloads\KRYPTO-V3-PR701-Fenster.zip',
     [string]$StarterPath = 'C:\Users\ADMIN\Downloads\KRYPTO-V3-PR701-Freigabeuebergabe\Start-PR701-FromWindowArchive.ps1',
     [string]$ApprovedHandoffSha256 = '',
+    [Parameter(ParameterSetName='Dispatch',Mandatory=$true)][string]$CaFile,
     [Parameter(ParameterSetName='Dispatch',Mandatory=$true)][long]$AdmissionCommentId,
     [int]$MaxPollSeconds = 15
 )
@@ -52,6 +53,7 @@ try {
     $thisScriptSha=(Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if($Dispatch -and ($ApprovedHandoffSha256 -cnotmatch '^[a-f0-9]{64}$' -or $ApprovedHandoffSha256 -cne $thisScriptSha)) { Hold 'HANDOFF_BYTES_NOT_ADMITTED' }
     if($Dispatch) {
+        if($CaFile -cne 'C:\\Users\\ADMIN\\Downloads\\prod-ca-2021.crt' -or !(Test-Path -LiteralPath $CaFile -PathType Leaf)) { Hold 'APPROVED_CA_FILE_REQUIRED' }
         [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
         $admissionUrl='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/comments/'+$AdmissionCommentId
         $admissionComment=Invoke-RestMethod -Uri $admissionUrl -Headers @{'User-Agent'='PR701-AP04-Admission';'Accept'='application/vnd.github+json'} -TimeoutSec 8
@@ -151,6 +153,7 @@ try {
     $zip.Dispose();$zip=$null
     if([DateTime]::UtcNow -ge $cutoff) { Hold 'INSUFFICIENT_WINDOW_BUDGET_BEFORE_DISPATCH' }
     $argsBound=@{Role='MiniPC';WindowArchiveSha256=$archiveSha;DecisionCommentId=[long]$selected.id}
+    if($Dispatch) { $argsBound.CaFile=$CaFile }
     $clock.Stop()
     Write-Output 'AP04_GITHUB_DISPATCH_HANDOFF_PREPARED'
     Write-Output ('COMMENT_ID='+$selected.id)
