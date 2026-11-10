@@ -54,7 +54,7 @@ function Assert-SafeZip([byte[]]$archiveBytes) {
   try {
     $archive=[IO.Compression.ZipArchive]::new($inputStream,[IO.Compression.ZipArchiveMode]::Read,$false)
     if($archive.Entries.Count -lt 1 -or $archive.Entries.Count -gt 100){throw 'FILE_ACCESS_DENIED:ZIP_ENTRY_COUNT'}
-    $seen=New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    $seen=[System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $total=0L;$regularFiles=0
     $utf8=[Text.UTF8Encoding]::new($false,$true)
     foreach($entry in $archive.Entries) {
