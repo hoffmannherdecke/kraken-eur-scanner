@@ -46,6 +46,74 @@ function Safe-Name([string]$name) {
   if($name -match '(?i)(secret|password|passwd|token|credential|private|\.env|\.key|\.pem|\.pfx|\.p12|id_rsa|cert|auth|apikey|api.key|wallet|seed)'){return $false}
   return $name -cmatch '^[A-Za-z0-9_. -]{1,100}$' -and $name -notmatch '^\.' 
 }
+# ZIP is inspected entirely in memory; no archive member is extracted or executed.
+function Assert-SafeZip([byte[]]$archiveBytes) {
+  Add-Type -AssemblyName System.IO.Compression -ErrorAction Stop
+  $inputStream=[IO.MemoryStream]::new($archiveBytes,$false)
+  $archive=$null
+  try {
+    $archive=[IO.Compression.ZipArchive]::new($inputStream,[IO.Compression.ZipArchiveMode]::Read,$false)
+    if($archive.Entries.Count -lt 1 -or $archive.Entries.Count -gt 100){throw 'FILE_ACCESS_DENIED:ZIP_ENTRY_COUNT'}
+    $seen=[System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $total=0L;$regularFiles=0
+    $utf8=[Text.UTF8Encoding]::new($false,$true)
+    foreach($entry in $archive.Entries) {
+      Check-Time
+      $name=[string]$entry.FullName
+      if(-not $name -or $name.Length -gt 260 -or $name.StartsWith('/') -or
+         $name.Contains('\') -or $name.Contains(':') -or $name.Contains('//') -or
+         $name -match '[\x00-\x1f]' -or -not $seen.Add($name)){throw 'FILE_ACCESS_DENIED:ZIP_PATH'}
+      $segments=$name.TrimEnd('/').Split('/')
+      if(@($segments | Where-Object {-not (Safe-Name $_)}).Count -gt 0){throw 'FILE_ACCESS_DENIED:ZIP_NAME'}
+      $unixType=($entry.ExternalAttributes -shr 16) -band 61440
+      if($unixType -eq 40960){throw 'FILE_ACCESS_DENIED:ZIP_SYMLINK'}
+      if($name.EndsWith('/')) {
+        if($entry.Length -ne 0){throw 'FILE_ACCESS_DENIED:ZIP_DIRECTORY'}
+        continue
+      }
+      $regularFiles++
+      if([IO.Path]::GetExtension($entry.Name).ToLowerInvariant() -cnotin @(
+        '.txt','.md','.csv','.json','.ps1','.py','.yml','.yaml','.xml',
+        '.toml','.ini','.cfg','.sh','.sql','.log'
+      )){throw 'FILE_ACCESS_DENIED:ZIP_TYPE'}
+      if($entry.Length -lt 1 -or $entry.Length -gt 2097152 -or
+         $entry.CompressedLength -lt 0){throw 'FILE_ACCESS_DENIED:ZIP_ENTRY_SIZE'}
+      $total += $entry.Length
+      if($total -gt 8388608){throw 'FILE_ACCESS_DENIED:ZIP_EXPANSION'}
+      $source=$null;$memory=$null
+      try {
+        $source=$entry.Open()
+        $memory=[IO.MemoryStream]::new()
+        $buffer=[byte[]]::new(8192)
+        $count=0L
+        while(($read=$source.Read($buffer,0,$buffer.Length)) -gt 0) {
+          Check-Time
+          $count += $read
+          if($count -gt $entry.Length -or $count -gt 2097152){throw 'FILE_ACCESS_DENIED:ZIP_EXPANSION'}
+          $memory.Write($buffer,0,$read)
+        }
+        if($count -ne $entry.Length){throw 'FILE_ACCESS_DENIED:ZIP_LENGTH'}
+        try { $decoded=$utf8.GetString($memory.ToArray()) }
+        catch {throw 'FILE_ACCESS_DENIED:ZIP_BINARY'}
+        if($decoded -match '(?i)(password|passwd|secret|api[_-]?key|token|authorization|bearer|private.key|BEGIN [A-Z ]*PRIVATE KEY|postgres(?:ql)?://|SUPABASE_|sk-[A-Za-z0-9]{10})'){
+          throw 'FILE_ACCESS_DENIED:ZIP_SENSITIVE_CONTENT'
+        }
+      } finally {
+        if($source){$source.Dispose()}
+        if($memory){$memory.Dispose()}
+      }
+    }
+    if($regularFiles -lt 1){throw 'FILE_ACCESS_DENIED:ZIP_EMPTY'}
+  } catch {
+    if(([string]$_.Exception.Message).StartsWith('FILE_ACCESS_DENIED:') -or
+       ([string]$_.Exception.Message).StartsWith('FILE_UNAVAILABLE:')){throw}
+    throw 'FILE_ACCESS_DENIED:ZIP_INVALID'
+  } finally {
+    if($archive){$archive.Dispose()}
+    $inputStream.Dispose()
+  }
+}
+
 function Result([string]$state,[object[]]$files,[string]$exportFile) {
   # Reuse the single original runner ACK. File outcome is a bounded detail, not a second ACK protocol.
   [pscustomobject][ordered]@{
@@ -116,18 +184,24 @@ try {
     $segments=$rel.Split('\')
     if(@($segments | Where-Object {-not (Safe-Name $_)}).Count -gt 0){throw 'FILE_ACCESS_DENIED:SENSITIVE_NAME'}
     $file=Assert-Path $rel
-    if($file.Length -gt 65536 -or $file.Length -lt 1){throw 'FILE_ACCESS_DENIED:EXPORT_SIZE'}
-    if([IO.Path]::GetExtension($file.Name).ToLowerInvariant() -cnotin @('.txt','.md','.csv','.json')){throw 'FILE_ACCESS_DENIED:EXPORT_TYPE'}
+    $extension=[IO.Path]::GetExtension($file.Name).ToLowerInvariant()
+    if($extension -cnotin @('.txt','.md','.csv','.json','.zip')){throw 'FILE_ACCESS_DENIED:EXPORT_TYPE'}
+    $maxSize=if($extension -ceq '.zip'){2097152}else{65536}
+    if($file.Length -gt $maxSize -or $file.Length -lt 1){throw 'FILE_ACCESS_DENIED:EXPORT_SIZE'}
     $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
     if($hash -cne $expected){throw 'FILE_HASH_MISMATCH'}
     $body=[IO.File]::ReadAllBytes($file.FullName)
     if($body.Length -ne $file.Length -or [BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($body)).Replace('-','').ToLowerInvariant() -cne $expected){throw 'FILE_HASH_MISMATCH'}
-    $text = [Text.UTF8Encoding]::new($false,$true)
-    try{$decoded=$text.GetString($body)}catch{throw 'FILE_ACCESS_DENIED:BINARY'}
-    if($decoded -match '(?i)(password|passwd|secret|api[_-]?key|token|authorization|bearer|private.key|BEGIN [A-Z ]*PRIVATE KEY|postgres(?:ql)?://|SUPABASE_|sk-[A-Za-z0-9]{10})'){throw 'FILE_ACCESS_DENIED:SENSITIVE_CONTENT'}
+    if($extension -ceq '.zip') {
+      Assert-SafeZip $body
+    }else{
+      $text = [Text.UTF8Encoding]::new($false,$true)
+      try{$decoded=$text.GetString($body)}catch{throw 'FILE_ACCESS_DENIED:BINARY'}
+      if($decoded -match '(?i)(password|passwd|secret|api[_-]?key|token|authorization|bearer|private.key|BEGIN [A-Z ]*PRIVATE KEY|postgres(?:ql)?://|SUPABASE_|sk-[A-Za-z0-9]{10})'){throw 'FILE_ACCESS_DENIED:SENSITIVE_CONTENT'}
+    }
     $temp=[string]$env:RUNNER_TEMP
     if(-not $temp -or -not (Test-Path -LiteralPath $temp -PathType Container)){throw 'FILE_UNAVAILABLE:TEMP'}
-    $dest=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N')+'.txt')
+    $dest=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N')+$extension)
     [IO.File]::WriteAllBytes($dest,$body)
     if((Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected){
       Remove-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue;throw 'FILE_HASH_MISMATCH'
