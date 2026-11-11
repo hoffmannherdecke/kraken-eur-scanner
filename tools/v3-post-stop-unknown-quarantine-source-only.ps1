@@ -56,3 +56,141 @@ function Assert-V3PostStopUnknownQuarantineSourceContract([object]$Evidence) {
  }
 }
 
+
+# Separate, CURRENT, independently signed Host and Cloud evidence.
+# The reviewer pins every expected SHA256 outside the supplied evidence.
+# Never interprets UNKNOWN as a successful historical STOP.
+# The routine is deliberately pure and never performs the next transaction.
+function Assert-V3PostStopUnknownCurrentCustody(
+ [byte[]]$HostPayload,[byte[]]$HostCms,
+ [byte[]]$CloudPayload,[byte[]]$CloudCms,
+ [object]$Pins,[datetimeoffset]$Now=[datetimeoffset]::UtcNow) {
+ if($null -eq $Pins){throw 'V3_POSTSTOP_CURRENT_PINS_REQUIRED_HOLD'}
+ $required=@('series_id','epoch_id','source_sha256','epoch_fence_sha256',
+  'caller_acl_sha256','local_fence_file_sha256','candidates_xml_sha256',
+  'wait_xml_sha256','cloudsync_xml_sha256','writer_xml_sha256',
+  'host_certificate_sha256','cloud_certificate_sha256',
+  'host_payload_sha256','cloud_payload_sha256','owner_review_sha256',
+  'observation_nonce')
+ $fields=@($Pins.PSObject.Properties.Name)
+ if($fields.Count -ne $required.Count -or
+    @($fields|Where-Object {$_ -cnotin $required}).Count){
+  throw 'V3_POSTSTOP_CURRENT_PINS_SCOPE_HOLD'
+ }
+ if([string]$Pins.series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$Pins.local_fence_file_sha256 -cne
+      '4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef' -or
+    [string]$Pins.observation_nonce -cnotmatch '^[a-f0-9]{32}$'){
+  throw 'V3_POSTSTOP_CURRENT_HISTORICAL_PIN_HOLD'
+ }
+ foreach($name in $required|Where-Object {$_ -notin @('series_id','epoch_id','observation_nonce')}){
+  if([string]$Pins.$name -cnotmatch '^[a-f0-9]{64}$'){
+   throw 'V3_POSTSTOP_CURRENT_SHA_PIN_HOLD'
+  }
+ }
+ if([string]$Pins.host_certificate_sha256 -ceq [string]$Pins.cloud_certificate_sha256 -or
+    [string]$Pins.host_payload_sha256 -ceq [string]$Pins.cloud_payload_sha256){
+  throw 'V3_POSTSTOP_READER_INDEPENDENCE_HOLD'
+ }
+ # Reuse the exact existing detached-CMS and anti-duplicate JSON primitives.
+ # Trust pins come from independently admitted owner material, never receipts.
+ Assert-V3ReleaseCms -Payload $HostPayload -Cms $HostCms -ReviewedAuthorityCertificateSha256 $Pins.host_certificate_sha256
+ Assert-V3ReleaseCms -Payload $CloudPayload -Cms $CloudCms -ReviewedAuthorityCertificateSha256 $Pins.cloud_certificate_sha256
+ if((Get-V3ReleaseSha256 $HostPayload) -cne [string]$Pins.host_payload_sha256 -or
+    (Get-V3ReleaseSha256 $CloudPayload) -cne [string]$Pins.cloud_payload_sha256){
+  throw 'V3_POSTSTOP_CURRENT_RECEIPT_BYTE_DRIFT_HOLD'
+ }
+ $host=Read-V3ReleaseJson $HostPayload
+ $cloud=Read-V3ReleaseJson $CloudPayload
+ $hostRequired=@('kind','series_id','epoch_id','source_sha256',
+  'observation_nonce','observed_at_utc','original_fence_sha256',
+  'local_fence_file_sha256','fence_phase','candidates_xml_sha256',
+  'wait_xml_sha256','cloudsync_xml_sha256','writer_xml_sha256',
+  'candidates_enabled','wait_enabled','cloudsync_enabled','writer_enabled',
+  'writer_process_count','other_writer_authorities_closed',
+  'native_stop_outcome','current_host_custody_verified')
+ $cloudRequired=@('kind','series_id','epoch_id','source_sha256',
+  'observation_nonce','observed_at_utc','original_fence_sha256',
+  'caller_acl_sha256','inhibit_state','sealed','next_ordinal',
+  'intent_count','attempt_count','abort_count','executor_login_closed',
+  'executor_sessions_count','v3_active_series_count','v2r4_active_series_count',
+  'cloud_cas_rpc_count','reader_role','current_cloud_custody_verified')
+ if(@($host.PSObject.Properties).Count -ne $hostRequired.Count -or
+    @($host.PSObject.Properties.Name|Where-Object {$_ -cnotin $hostRequired}).Count -or
+    @($cloud.PSObject.Properties).Count -ne $cloudRequired.Count -or
+    @($cloud.PSObject.Properties.Name|Where-Object {$_ -cnotin $cloudRequired}).Count){
+  throw 'V3_POSTSTOP_CURRENT_RECEIPT_FIELDS_HOLD'
+ }
+ if([string]$host.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1' -or
+    [string]$cloud.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1' -or
+    [string]$cloud.reader_role -cne 'v3_cas_audit_reader' -or
+    [string]$host.series_id -cne [string]$Pins.series_id -or
+    [string]$cloud.series_id -cne [string]$Pins.series_id -or
+    [string]$host.epoch_id -cne [string]$Pins.epoch_id -or
+    [string]$cloud.epoch_id -cne [string]$Pins.epoch_id -or
+    [string]$host.source_sha256 -cne [string]$Pins.source_sha256 -or
+    [string]$cloud.source_sha256 -cne [string]$Pins.source_sha256 -or
+    [string]$host.observation_nonce -cne [string]$Pins.observation_nonce -or
+    [string]$cloud.observation_nonce -cne [string]$Pins.observation_nonce -or
+    [string]$host.original_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
+    [string]$cloud.original_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
+    [string]$cloud.caller_acl_sha256 -cne [string]$Pins.caller_acl_sha256 -or
+    [string]$host.local_fence_file_sha256 -cne [string]$Pins.local_fence_file_sha256 -or
+    [string]$host.fence_phase -cne 'ARMED' -or
+    [string]$host.candidates_xml_sha256 -cne [string]$Pins.candidates_xml_sha256 -or
+    [string]$host.wait_xml_sha256 -cne [string]$Pins.wait_xml_sha256 -or
+    [string]$host.cloudsync_xml_sha256 -cne [string]$Pins.cloudsync_xml_sha256 -or
+    [string]$host.writer_xml_sha256 -cne [string]$Pins.writer_xml_sha256 -or
+    $host.candidates_enabled -isnot [bool] -or $host.candidates_enabled -ne $true -or
+    $host.wait_enabled -isnot [bool] -or $host.wait_enabled -ne $true -or
+    $host.cloudsync_enabled -isnot [bool] -or $host.cloudsync_enabled -ne $true -or
+    $host.writer_enabled -isnot [bool] -or $host.writer_enabled -ne $false -or
+    $host.writer_process_count -isnot [int] -or $host.writer_process_count -ne 0 -or
+    $host.other_writer_authorities_closed -isnot [bool] -or $host.other_writer_authorities_closed -ne $true -or
+    [string]$host.native_stop_outcome -cne 'UNKNOWN' -or
+    $host.current_host_custody_verified -isnot [bool] -or $host.current_host_custody_verified -ne $true -or
+    [string]$cloud.inhibit_state -cne 'INHIBITED' -or
+    $cloud.sealed -isnot [bool] -or $cloud.sealed -ne $false -or
+    $cloud.next_ordinal -isnot [int] -or $cloud.next_ordinal -ne 1 -or
+    $cloud.intent_count -isnot [int] -or $cloud.intent_count -ne 0 -or
+    $cloud.attempt_count -isnot [int] -or $cloud.attempt_count -ne 0 -or
+    $cloud.abort_count -isnot [int] -or $cloud.abort_count -ne 0 -or
+    $cloud.executor_login_closed -isnot [bool] -or $cloud.executor_login_closed -ne $true -or
+    $cloud.executor_sessions_count -isnot [int] -or $cloud.executor_sessions_count -ne 0 -or
+    $cloud.v3_active_series_count -isnot [int] -or $cloud.v3_active_series_count -ne 0 -or
+    $cloud.v2r4_active_series_count -isnot [int] -or $cloud.v2r4_active_series_count -ne 1 -or
+    $cloud.cloud_cas_rpc_count -isnot [int] -or $cloud.cloud_cas_rpc_count -ne 0 -or
+    $cloud.current_cloud_custody_verified -isnot [bool] -or $cloud.current_cloud_custody_verified -ne $true){
+  throw 'V3_POSTSTOP_CURRENT_HOST_CLOUD_SAFETY_HOLD'
+ }
+ try{
+  $ht=[datetimeoffset]::ParseExact([string]$host.observed_at_utc,
+   "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
+   [Globalization.DateTimeStyles]::AssumeUniversal)
+  $ct=[datetimeoffset]::ParseExact([string]$cloud.observed_at_utc,
+   "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
+   [Globalization.DateTimeStyles]::AssumeUniversal)
+ }catch{throw 'V3_POSTSTOP_CURRENT_RECEIPT_TIMESTAMP_HOLD'}
+ if($ht -gt $Now.AddSeconds(5) -or $ct -gt $Now.AddSeconds(5) -or
+    ($Now-$ht).TotalSeconds -gt 60 -or ($Now-$ct).TotalSeconds -gt 60 -or
+    [math]::Abs(($ht-$ct).TotalSeconds) -gt 15){
+  throw 'V3_POSTSTOP_CURRENT_RECEIPT_STALE_OR_DRIFT_HOLD'
+ }
+ return [pscustomobject]@{
+  kind='V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1'
+  series_id=[string]$Pins.series_id;epoch_id=[string]$Pins.epoch_id
+  host_payload_sha256=[string]$Pins.host_payload_sha256
+  cloud_payload_sha256=[string]$Pins.cloud_payload_sha256
+  owner_review_sha256=[string]$Pins.owner_review_sha256
+  independently_signed_current_custody=$true
+  historical_stop_reconstructed=$false
+  historical_stop_success_claimed=$false
+  terminal_cloud_abort_confirmed=$false
+  terminal_host_recovery_confirmed=$false
+  production_authorized=$false
+  repeat_authorized=$false
+  writer_authorized=$false
+  disposition='SOURCE_REVIEW_CANDIDATE_ONLY'
+ }
+}
