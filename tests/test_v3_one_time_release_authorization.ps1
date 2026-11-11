@@ -305,6 +305,8 @@ Write-Output 'V3_GATE_A_EXACT_BYTES_REAL_CMS_NEGATIVE_TESTS_PASS'
 }finally{$cert.Dispose();$rsa.Dispose()}
 
 
+# Historical quarantine source is deliberately NOT packaged or imported by the production launcher.
+. (Join-Path $root 'tools/v3-post-stop-unknown-quarantine-source-only.ps1')
 # Historical post-STOP-UNKNOWN quarantine: source-only guard, no actor or host access.
 $historical=[pscustomobject]@{
  kind='V3_POST_STOP_UNKNOWN_READONLY_STATE_V1'
