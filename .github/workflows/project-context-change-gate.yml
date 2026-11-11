@@ -44,3 +44,7 @@ jobs:
             }
           }
           Write-Output 'MINIPC_ALL_REVIEWED_TASKS_PARSE_PASS'
+      - name: Review exact AP04 LOCKFIX release-source bytes and unchanged guards (source only)
+        shell: pwsh
+        run: |
+          ./tests/test_ap04_lockfix_pinned_source_ci.ps1
