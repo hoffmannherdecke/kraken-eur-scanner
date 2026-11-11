@@ -464,7 +464,7 @@ Write-Output ('V3_POSTSTOP_SOURCE_ONLY_SHA256='+(Get-V3ReleaseSha256 ([IO.File]:
 
 
 # Post-STOP cloud candidate and disposable transport ambiguity.
-$custody=[pscustomobject]@{kind='V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1';series_id='PAPER-V3-20261111T105211Z';epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901';independently_signed_current_custody=$true;production_authorized=$false;host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64)}
+$custody=[pscustomobject]@{kind='V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1';series_id='PAPER-V3-20261111T105211Z';epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901';independently_signed_current_custody=$true;production_authorized=$false;host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
 $pins=[pscustomobject]@{host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
 $plan=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -OriginalReceiptSha256 ('f'*64) -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))
 if($plan.execution_authorized -ne $false -or $plan.terminal_readback_required -ne $true -or ([regex]::Matches($plan.sql,'record_prepared_fence_abort_v1')).Count -ne 1 -or $plan.sql -match 'SET ROLE|ALTER ROLE|DELETE |UPDATE '){throw 'V3_POSTSTOP_CLOUD_TRANSACTION_UNSAFE'}
