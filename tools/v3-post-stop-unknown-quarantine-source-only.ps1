@@ -198,3 +198,187 @@ function Assert-V3PostStopUnknownCurrentCustody(
   disposition='SOURCE_REVIEW_CANDIDATE_ONLY'
  }
 }
+
+# Candidate-only cloud transaction. This source is not imported by the launcher.
+# The installed SQL function is already constrained to one terminal abort row.
+function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
+ [string]$OriginalReceiptSha256,[datetimeoffset]$Expiry) {
+ if($null -eq $Pins -or $null -eq $Custody -or
+    [string]$Custody.kind -cne 'V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1' -or
+    $Custody.independently_signed_current_custody -ne $true -or
+    $Custody.production_authorized -ne $false -or
+    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$Custody.series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$Custody.host_payload_sha256 -cne [string]$Pins.host_payload_sha256 -or
+    [string]$Custody.cloud_payload_sha256 -cne [string]$Pins.cloud_payload_sha256 -or
+    [string]$OriginalReceiptSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $Expiry -le [datetimeoffset]::UtcNow -or
+    $Expiry -gt [datetimeoffset]::UtcNow.AddMinutes(2)) {
+  throw 'V3_POSTSTOP_CLOUD_CANDIDATE_PRECONDITION_HOLD'
+ }
+ foreach($key in @('source_sha256','epoch_fence_sha256','caller_acl_sha256')) {
+  if([string]$Pins.$key -cnotmatch '^[a-f0-9]{64}$') {
+   throw 'V3_POSTSTOP_CLOUD_CANDIDATE_PIN_HOLD'
+  }
+ }
+ $until=$Expiry.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+ $sql=@(
+  'BEGIN;'
+  "SET LOCAL statement_timeout='15s';"
+  "SET LOCAL lock_timeout='5s';"
+  "SELECT v3_cas_audit.record_prepared_fence_abort_v1("
+  " 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901',"
+  " '$($Pins.source_sha256)',"
+  " '$($Pins.epoch_fence_sha256)',"
+  " '$($Pins.caller_acl_sha256)',"
+  " '$OriginalReceiptSha256');"
+  'COMMIT;'
+ ) -join [Environment]::NewLine
+ # The expiry is an independently admitted maximum deadline, NOT a waiver.
+ # This builder is SOURCE ONLY; effectful caller must check expiry inside DB
+ # against the same bound clock before invoking this SQL.
+ return [pscustomobject]@{
+  kind='V3_POSTSTOP_CLOUD_ABORT_SQL_CANDIDATE_V1'
+  epoch_id=[string]$Custody.epoch_id
+  series_id=[string]$Custody.series_id
+  admission_expires_at_utc=$until
+  sql=$sql
+  execution_authorized=$false
+  stop_success_claimed=$false
+  terminal_readback_required=$true
+ }
+}
+
+# Durable CreateNew latch precedes any potential issuer transport.
+# Callback is injectable only in an isolated reviewer harness; no production
+# transport, credential or issuer is registered in this source-only candidate.
+function Invoke-V3PostStopCloudOnceCandidate([string]$LatchPath,
+ [byte[]]$PlanBytes,[scriptblock]$Transport) {
+ if($null -eq $Transport -or $null -eq $PlanBytes -or
+    $PlanBytes.Length -lt 32 -or $PlanBytes.Length -gt 32768 -or
+    -not [IO.Path]::IsPathRooted($LatchPath) -or
+    [IO.Path]::GetFileName($LatchPath) -cne
+      'poststop-f27cce0ba68043b480e4f97698dd2901-attempted') {
+  throw 'V3_POSTSTOP_CLOUD_ONCE_SCOPE_HOLD'
+ }
+ $digest=Get-V3ReleaseSha256 $PlanBytes
+ $stream=[IO.File]::Open($LatchPath,[IO.FileMode]::CreateNew,
+  [IO.FileAccess]::Write,[IO.FileShare]::None)
+ try {
+  $mark=[Text.Encoding]::ASCII.GetBytes(
+   'V3_POSTSTOP_UNKNOWN_CLOUD_ATTEMPT_V1 '+$digest)
+  $stream.Write($mark,0,$mark.Length);$stream.Flush($true)
+ } finally {$stream.Dispose()}
+ try {& $Transport $PlanBytes}
+ catch {throw 'V3_POSTSTOP_CLOUD_DISPATCH_UNKNOWN_NO_RETRY'}
+ return [pscustomobject]@{
+  kind='V3_POSTSTOP_CLOUD_DISPATCH_RESULT_UNCONFIRMED_V1'
+  plan_sha256=$digest
+  cloud_terminal_abort_confirmed=$false
+  independent_terminal_reader_required=$true
+  retry_authorized=$false
+  host_terminal_confirmed=$false
+  production_authorized=$false
+ }
+}
+
+# Signed cloud abort cannot be inferred from a successful dispatch.
+function Assert-V3PostStopSignedTerminalCloud(
+ [byte[]]$Payload,[byte[]]$Cms,[object]$Pins,
+ [string]$OriginalReceiptSha256,[datetimeoffset]$Now=[datetimeoffset]::UtcNow) {
+ if($null -eq $Pins -or [string]$OriginalReceiptSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_POSTSTOP_TERMINAL_PINS_HOLD'
+ }
+ Assert-V3ReleaseCms -Payload $Payload -Cms $Cms -ReviewedAuthorityCertificateSha256 $Pins.cloud_certificate_sha256
+ $row=Read-V3ReleaseJson $Payload
+ if([string]$row.kind -cne 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1' -or
+    [string]$row.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$row.source_sha256 -cne [string]$Pins.source_sha256 -or
+    [string]$row.prepared_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
+    [string]$row.caller_acl_sha256 -cne [string]$Pins.caller_acl_sha256 -or
+    [string]$row.receipt_sha256 -cne $OriginalReceiptSha256 -or
+    [string]$row.state -cne 'ABORT_RECORDED_NOT_RELEASED' -or
+    [string]$row.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
+    $row.cloud_cas_rpc_count -ne 0 -or
+    $row.cloud_executor_can_login -ne $false -or
+    $row.cloud_active_series_count -ne 1 -or
+    $row.cloud_original_active_series_count -ne 1) {
+  throw 'V3_POSTSTOP_TERMINAL_CLOUD_READBACK_HOLD'
+ }
+ $m=[regex]::Match([Text.Encoding]::UTF8.GetString($Payload),
+   '"observed_at_utc"\s*:\s*"(?<time>[^"]+)"')
+ try {
+  if(-not $m.Success){throw 'missing'}
+  $at=[datetimeoffset]::ParseExact($m.Groups['time'].Value,
+    "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+    [Globalization.CultureInfo]::InvariantCulture,
+    [Globalization.DateTimeStyles]::AssumeUniversal)
+ } catch {throw 'V3_POSTSTOP_TERMINAL_CLOUD_TIMESTAMP_HOLD'}
+ if($at -gt $Now.AddSeconds(5) -or ($Now-$at).TotalSeconds -gt 60) {
+  throw 'V3_POSTSTOP_TERMINAL_CLOUD_STALE_HOLD'
+ }
+ return [pscustomobject]@{
+  kind='V3_POSTSTOP_INDEPENDENT_TERMINAL_CLOUD_VERIFIED_V1'
+  epoch_id=[string]$row.epoch_id
+  reader_sha256=(Get-V3ReleaseSha256 $Payload)
+  terminal_cloud_abort_confirmed=$true
+  host_quarantine_confirmed=$false
+  historical_stop_success_claimed=$false
+  ap05a_authorized=$false
+ }
+}
+
+# The host quarantine is by preservation of the exact ARMED fence and
+# disabled V3 writer. No task mutation, restore, enable or archive is claimed.
+function Assert-V3PostStopSignedHostQuarantine(
+ [object]$Terminal,[byte[]]$HostPayload,[byte[]]$HostCms,
+ [object]$Pins,[datetimeoffset]$Now=[datetimeoffset]::UtcNow) {
+ if($null -eq $Terminal -or
+    [string]$Terminal.kind -cne 'V3_POSTSTOP_INDEPENDENT_TERMINAL_CLOUD_VERIFIED_V1' -or
+    $Terminal.terminal_cloud_abort_confirmed -ne $true -or
+    [string]$Terminal.epoch_id -cne [string]$Pins.epoch_id){
+  throw 'V3_POSTSTOP_HOST_CLOUD_TERMINAL_FIRST_HOLD'
+ }
+ Assert-V3ReleaseCms -Payload $HostPayload -Cms $HostCms -ReviewedAuthorityCertificateSha256 $Pins.host_certificate_sha256
+ $row=Read-V3ReleaseJson $HostPayload
+ if([string]$row.kind -cne 'V3_POSTSTOP_INDEPENDENT_HOST_QUARANTINE_V1' -or
+    [string]$row.epoch_id -cne [string]$Pins.epoch_id -or
+    [string]$row.series_id -cne [string]$Pins.series_id -or
+    [string]$row.terminal_cloud_reader_sha256 -cne [string]$Terminal.reader_sha256 -or
+    [string]$row.local_fence_file_sha256 -cne [string]$Pins.local_fence_file_sha256 -or
+    [string]$row.fence_phase -cne 'ARMED' -or
+    [string]$row.candidates_xml_sha256 -cne [string]$Pins.candidates_xml_sha256 -or
+    [string]$row.wait_xml_sha256 -cne [string]$Pins.wait_xml_sha256 -or
+    [string]$row.cloudsync_xml_sha256 -cne [string]$Pins.cloudsync_xml_sha256 -or
+    [string]$row.writer_xml_sha256 -cne [string]$Pins.writer_xml_sha256 -or
+    $row.candidates_enabled -ne $true -or $row.wait_enabled -ne $true -or
+    $row.cloudsync_enabled -ne $true -or $row.writer_enabled -ne $false -or
+    $row.writer_process_count -ne 0 -or
+    $row.other_writer_authorities_closed -ne $true -or
+    [string]$row.native_stop_outcome -cne 'UNKNOWN'){
+  throw 'V3_POSTSTOP_HOST_QUARANTINE_READBACK_HOLD'
+ }
+ $m=[regex]::Match([Text.Encoding]::UTF8.GetString($HostPayload),
+   '"observed_at_utc"\s*:\s*"(?<time>[^"]+)"')
+ try {
+  if(-not $m.Success){throw 'missing'}
+  $at=[datetimeoffset]::ParseExact($m.Groups['time'].Value,
+    "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+    [Globalization.CultureInfo]::InvariantCulture,
+    [Globalization.DateTimeStyles]::AssumeUniversal)
+ } catch {throw 'V3_POSTSTOP_HOST_QUARANTINE_TIMESTAMP_HOLD'}
+ if($at -gt $Now.AddSeconds(5) -or ($Now-$at).TotalSeconds -gt 60){
+  throw 'V3_POSTSTOP_HOST_QUARANTINE_STALE_HOLD'
+ }
+ return [pscustomobject]@{
+  kind='V3_POSTSTOP_HOST_QUARANTINE_CUSTODY_VERIFIED_V1'
+  epoch_id=[string]$Pins.epoch_id
+  terminal_cloud_reader_sha256=[string]$Terminal.reader_sha256
+  terminal_host_reader_sha256=(Get-V3ReleaseSha256 $HostPayload)
+  quarantine_preserved=$true
+  historical_native_stop_success_claimed=$false
+  new_writer_authorized=$false
+  inhibit_lift_authorized=$false
+  ap05a_authorized=$false
+ }
+}
