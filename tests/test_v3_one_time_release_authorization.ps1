@@ -462,5 +462,63 @@ try {
 }
 Write-Output ('V3_POSTSTOP_SOURCE_ONLY_SHA256='+(Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes((Join-Path $root 'tools/v3-post-stop-unknown-quarantine-source-only.ps1')))))
 
+
+# Post-STOP cloud candidate and disposable transport ambiguity.
+$custody=[pscustomobject]@{kind='V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1';series_id='PAPER-V3-20261111T105211Z';epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901';independently_signed_current_custody=$true;production_authorized=$false;host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64)}
+$pins=[pscustomobject]@{host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
+$plan=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -OriginalReceiptSha256 ('f'*64) -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))
+if($plan.execution_authorized -ne $false -or $plan.terminal_readback_required -ne $true -or ([regex]::Matches($plan.sql,'record_prepared_fence_abort_v1')).Count -ne 1 -or $plan.sql -match 'SET ROLE|ALTER ROLE|DELETE |UPDATE '){throw 'V3_POSTSTOP_CLOUD_TRANSACTION_UNSAFE'}
+$pins.source_sha256=('0'*64)
+$held=$false
+try{$null=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -OriginalReceiptSha256 ('f'*64) -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))}catch{$held=$true}
+if(-not $held){throw 'V3_POSTSTOP_CLOUD_WRONG_PIN_ACCEPTED'}
+$pins.source_sha256=('c'*64)
+$tempDir=Join-Path ([IO.Path]::GetTempPath()) ('poststop-once-'+[guid]::NewGuid().ToString('N'))
+[IO.Directory]::CreateDirectory($tempDir)|Out-Null
+try{
+ $latch=Join-Path $tempDir 'poststop-f27cce0ba68043b480e4f97698dd2901-attempted'
+ $script:attemptCount=0
+ $transport={param([byte[]]$p) $script:attemptCount++;throw 'SIMULATED_LOST_COMMIT'}
+ $payload=[Text.Encoding]::UTF8.GetBytes($plan.sql)
+ for($i=0;$i -lt 2;$i++){
+  $held=$false
+  try{$null=Invoke-V3PostStopCloudOnceCandidate -LatchPath $latch -PlanBytes $payload -Transport $transport}catch{$held=$true}
+  if(-not $held){throw 'V3_POSTSTOP_RETRY_ACCEPTED'}
+ }
+ if($script:attemptCount -ne 1 -or -not [IO.File]::Exists($latch)){throw 'V3_POSTSTOP_LATCH_NOT_DURABLE'}
+}finally{[IO.Directory]::Delete($tempDir,$true)}
+Write-Output 'V3_POSTSTOP_CLOUD_ONCE_AND_AMBIGUOUS_COMMIT_PASS'
+
+# Detached CMS terminal Cloud evidence followed by independently signed Host custody.
+$k1=[Security.Cryptography.RSA]::Create(2048)
+$k2=[Security.Cryptography.RSA]::Create(2048)
+$q1=[Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=TERMINAL-CLOUD-TEST',$k1,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)
+$q2=[Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=TERMINAL-HOST-TEST',$k2,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)
+$c1=$q1.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddMinutes(5))
+$c2=$q2.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddMinutes(5))
+try{
+ $timestamp=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+ $cloudRow=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1';epoch_id=$custody.epoch_id;source_sha256=('c'*64);prepared_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);receipt_sha256=('f'*64);state='ABORT_RECORDED_NOT_RELEASED';issuer_actor='v3_cas_inhibit_issuer_actor';observed_at_utc=$timestamp;cloud_cas_rpc_count=0;cloud_executor_can_login=$false;cloud_active_series_count=1;cloud_original_active_series_count=1}
+ $cs=New-TestSignedCurrent $cloudRow $c1
+ $reviewPins=[pscustomobject]@{epoch_id=$custody.epoch_id;series_id=$custody.series_id;source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);cloud_certificate_sha256=(Get-V3ReleaseSha256 $c1.RawData);host_certificate_sha256=(Get-V3ReleaseSha256 $c2.RawData);local_fence_file_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64)}
+ $verified=Assert-V3PostStopSignedTerminalCloud -Payload $cs.Payload -Cms $cs.Cms -Pins $reviewPins -OriginalReceiptSha256 ('f'*64)
+ if($verified.terminal_cloud_abort_confirmed -ne $true -or $verified.host_quarantined -ne $false){throw 'V3_POSTSTOP_CLOUD_FALSE_HOST_PASS'}
+ $hostRow=[ordered]@{kind='V3_POSTSTOP_INDEPENDENT_HOST_QUARANTINE_V1';epoch_id=$custody.epoch_id;series_id=$custody.series_id;observed_at_utc=$timestamp;terminal_cloud_reader_sha256=$verified.reader_sha256;local_fence_file_sha256=$reviewPins.local_fence_file_sha256;fence_phase='ARMED';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64);candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true;writer_enabled=$false;writer_process_count=0;other_writer_authorities_closed=$true;native_stop_outcome='UNKNOWN'}
+ $hs=New-TestSignedCurrent $hostRow $c2
+ $finished=Assert-V3PostStopSignedHostQuarantine -Terminal $verified -HostPayload $hs.Payload -HostCms $hs.Cms -Pins $reviewPins
+ if($finished.quarantine_preserved -ne $true -or $finished.ap05a_authorized -ne $false){throw 'V3_POSTSTOP_HOST_FALSE_RELEASE'}
+ $reviewPins.cloud_certificate_sha256=('0'*64)
+ $held=$false
+ try{$null=Assert-V3PostStopSignedTerminalCloud -Payload $cs.Payload -Cms $cs.Cms -Pins $reviewPins -OriginalReceiptSha256 ('f'*64)}catch{$held=$true}
+ if(-not $held){throw 'V3_POSTSTOP_UNTRUSTED_CLOUD_ACCEPTED'}
+ $reviewPins.cloud_certificate_sha256=Get-V3ReleaseSha256 $c1.RawData
+ $hostRow.writer_process_count=1
+ $badHost=New-TestSignedCurrent $hostRow $c2
+ $held=$false
+ try{$null=Assert-V3PostStopSignedHostQuarantine -Terminal $verified -HostPayload $badHost.Payload -HostCms $badHost.Cms -Pins $reviewPins}catch{$held=$true}
+ if(-not $held){throw 'V3_POSTSTOP_ACTIVE_WRITER_ACCEPTED'}
+ Write-Output 'V3_POSTSTOP_SEPARATE_SIGNED_CLOUD_HOST_TERMINAL_READERS_PASS'
+}finally{$c1.Dispose();$c2.Dispose();$k1.Dispose();$k2.Dispose()}
+
 # Reuse this existing Linux/Windows CI entry; no new workflow or runtime task.
 & (Join-Path $PSScriptRoot 'test_v3_one_time_reconciliation.ps1')
