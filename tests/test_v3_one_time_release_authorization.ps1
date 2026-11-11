@@ -357,5 +357,110 @@ try{$null=Assert-V3PostStopUnknownQuarantineSourceContract $missing}catch{$held=
 if(-not $held){throw 'V3_POSTSTOP_MISSING_ORIGINAL_ACCEPTED'}
 Write-Output 'V3_POSTSTOP_HISTORICAL_SOURCE_ONLY_QUARANTINE_NEGATIVES_PASS'
 
+
+# Current host/cloud proof test: two independent disposable CMS signers only.
+$hkey=[Security.Cryptography.RSA]::Create(2048)
+$ckey=[Security.Cryptography.RSA]::Create(2048)
+$hreq=[Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=HOST-TEST-NOT-TRUST',$hkey,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)
+$creq=[Security.Cryptography.X509Certificates.CertificateRequest]::new('CN=CLOUD-TEST-NOT-TRUST',$ckey,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)
+$hc=$hreq.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddMinutes(5))
+$cc=$creq.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddMinutes(5))
+try {
+ $timestamp=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+ $hr=[ordered]@{
+  kind='V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
+  series_id='PAPER-V3-20261111T105211Z'
+  epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+  source_sha256=('a'*64);observation_nonce=('b'*32);observed_at_utc=$timestamp
+  original_fence_sha256=('c'*64)
+  local_fence_file_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef'
+  fence_phase='ARMED';candidates_xml_sha256=('d'*64);wait_xml_sha256=('e'*64)
+  cloudsync_xml_sha256=('f'*64);writer_xml_sha256=('1'*64)
+  candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true
+  writer_enabled=$false;writer_process_count=0;other_writer_authorities_closed=$true
+  native_stop_outcome='UNKNOWN';current_host_custody_verified=$true
+ }
+ $cr=[ordered]@{
+  kind='V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'
+  series_id=$hr.series_id;epoch_id=$hr.epoch_id;source_sha256=('a'*64)
+  observation_nonce=('b'*32);observed_at_utc=$timestamp
+  original_fence_sha256=('c'*64);caller_acl_sha256=('2'*64)
+  inhibit_state='INHIBITED';sealed=$false;next_ordinal=1
+  intent_count=0;attempt_count=0;abort_count=0
+  executor_login_closed=$true;executor_sessions_count=0
+  v3_active_series_count=0;v2r4_active_series_count=1;cloud_cas_rpc_count=0
+  reader_role='v3_cas_audit_reader';current_cloud_custody_verified=$true
+ }
+ function New-TestSignedCurrent($record,$certificate) {
+  $raw=[Text.Encoding]::UTF8.GetBytes(($record|ConvertTo-Json -Depth 5 -Compress))
+  $cms=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new($raw),$true)
+  $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($certificate)
+  $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+  $cms.ComputeSignature($signer)
+  return @{Payload=$raw;Cms=[byte[]]$cms.Encode()}
+ }
+ $hs=New-TestSignedCurrent $hr $hc
+ $cs=New-TestSignedCurrent $cr $cc
+ $binding=[pscustomobject]@{
+  series_id=$hr.series_id;epoch_id=$hr.epoch_id
+  source_sha256=('a'*64);epoch_fence_sha256=('c'*64);caller_acl_sha256=('2'*64)
+  local_fence_file_sha256=$hr.local_fence_file_sha256
+  candidates_xml_sha256=('d'*64);wait_xml_sha256=('e'*64)
+  cloudsync_xml_sha256=('f'*64);writer_xml_sha256=('1'*64)
+  host_certificate_sha256=(Get-V3ReleaseSha256 $hc.RawData)
+  cloud_certificate_sha256=(Get-V3ReleaseSha256 $cc.RawData)
+  host_payload_sha256=(Get-V3ReleaseSha256 $hs.Payload)
+  cloud_payload_sha256=(Get-V3ReleaseSha256 $cs.Payload)
+  owner_review_sha256=('3'*64);observation_nonce=('b'*32)
+ }
+ function Check-Custody($hp,$hcBytes,$cp,$ccBytes,$pins,$clock) {
+  return Assert-V3PostStopUnknownCurrentCustody -HostPayload $hp -HostCms $hcBytes -CloudPayload $cp -CloudCms $ccBytes -Pins $pins -Now $clock
+ }
+ $now=[datetimeoffset]::UtcNow
+ $good=Check-Custody $hs.Payload $hs.Cms $cs.Payload $cs.Cms $binding $now
+ if($good.disposition -cne 'SOURCE_REVIEW_CANDIDATE_ONLY' -or $good.production_authorized -ne $false -or $good.historical_stop_success_claimed -ne $false -or $good.terminal_host_recovery_confirmed -ne $false){
+   throw 'V3_POSTSTOP_PROOF_WRONG_RELEASE_CLAIM'
+ }
+ function Expect-CurrentHold($hostRec,$cloudRec,$b,$clock) {
+  $fail=$false
+  try { $null=Check-Custody $hostRec.Payload $hostRec.Cms $cloudRec.Payload $cloudRec.Cms $b $clock }
+  catch { $fail=$true }
+  if(-not $fail){throw 'V3_POSTSTOP_CURRENT_NEGATIVE_ACCEPTED'}
+ }
+ foreach($mut in @(@('writer_enabled',$true),@('writer_process_count',1),@('other_writer_authorities_closed',$false),@('native_stop_outcome','SUCCESS'),@('fence_phase','CLOSED'),@('wait_xml_sha256',('0'*64)),@('current_host_custody_verified',$false))) {
+  $edit=($hr|ConvertTo-Json -Compress)|ConvertFrom-Json
+  $edit.($mut[0])=$mut[1]
+  $alter=New-TestSignedCurrent $edit $hc
+  $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
+  $b.host_payload_sha256=Get-V3ReleaseSha256 $alter.Payload
+  Expect-CurrentHold $alter $cs $b $now
+ }
+ foreach($mut in @(@('inhibit_state','RELEASED'),@('v3_active_series_count',1),@('executor_login_closed',$false),@('attempt_count',1),@('cloud_cas_rpc_count',1),@('current_cloud_custody_verified',$false))) {
+  $edit=($cr|ConvertTo-Json -Compress)|ConvertFrom-Json
+  $edit.($mut[0])=$mut[1]
+  $alter=New-TestSignedCurrent $edit $cc
+  $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
+  $b.cloud_payload_sha256=Get-V3ReleaseSha256 $alter.Payload
+  Expect-CurrentHold $hs $alter $b $now
+ }
+ $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
+ $b.host_certificate_sha256=$binding.cloud_certificate_sha256
+ Expect-CurrentHold $hs $cs $b $now
+ $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
+ $b.source_sha256=('0'*64)
+ Expect-CurrentHold $hs $cs $b $now
+ $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
+ $b.host_payload_sha256=('0'*64)
+ Expect-CurrentHold $hs $cs $b $now
+ $damaged=[byte[]]$hs.Payload.Clone()
+ $damaged[0]=0
+ Expect-CurrentHold @{Payload=$damaged;Cms=$hs.Cms} $cs $binding $now
+ Expect-CurrentHold $hs $cs $binding $now.AddSeconds(90)
+ Write-Output 'V3_POSTSTOP_INDEPENDENT_CURRENT_HOST_CLOUD_CMS_NEGATIVES_PASS'
+} finally {
+ $hc.Dispose();$cc.Dispose();$hkey.Dispose();$ckey.Dispose()
+}
+Write-Output ('V3_POSTSTOP_SOURCE_ONLY_SHA256='+(Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes((Join-Path $root 'tools/v3-post-stop-unknown-quarantine-source-only.ps1')))))
+
 # Reuse this existing Linux/Windows CI entry; no new workflow or runtime task.
 & (Join-Path $PSScriptRoot 'test_v3_one_time_reconciliation.ps1')
