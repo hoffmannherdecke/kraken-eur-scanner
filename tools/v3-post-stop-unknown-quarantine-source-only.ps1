@@ -165,10 +165,14 @@ function Assert-V3PostStopUnknownCurrentCustody(
   throw 'V3_POSTSTOP_CURRENT_HOST_CLOUD_SAFETY_HOLD'
  }
  try{
-  $ht=[datetimeoffset]::ParseExact([string]$hostRow.observed_at_utc,
+  # Read the signed JSON timestamp literals: PowerShell 7 otherwise coerces ISO strings into DateTime.
+  $hm=[regex]::Match([Text.Encoding]::UTF8.GetString($HostPayload),'"observed_at_utc"\\s*:\\s*"(?<t>[^"\\\\]*)"')
+  $cm=[regex]::Match([Text.Encoding]::UTF8.GetString($CloudPayload),'"observed_at_utc"\\s*:\\s*"(?<t>[^"\\\\]*)"')
+  if(-not $hm.Success -or -not $cm.Success){throw 'V3_POSTSTOP_TIMESTAMP_LITERAL_MISSING'}
+  $ht=[datetimeoffset]::ParseExact($hm.Groups['t'].Value,
    "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
    [Globalization.DateTimeStyles]::AssumeUniversal)
-  $ct=[datetimeoffset]::ParseExact([string]$cloud.observed_at_utc,
+  $ct=[datetimeoffset]::ParseExact($cm.Groups['t'].Value,
    "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
    [Globalization.DateTimeStyles]::AssumeUniversal)
  }catch{throw 'V3_POSTSTOP_CURRENT_RECEIPT_TIMESTAMP_HOLD'}
