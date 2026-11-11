@@ -101,7 +101,7 @@ function Assert-V3PostStopUnknownCurrentCustody(
     (Get-V3ReleaseSha256 $CloudPayload) -cne [string]$Pins.cloud_payload_sha256){
   throw 'V3_POSTSTOP_CURRENT_RECEIPT_BYTE_DRIFT_HOLD'
  }
- $host=Read-V3ReleaseJson $HostPayload
+ $hostRow=Read-V3ReleaseJson $HostPayload
  $cloud=Read-V3ReleaseJson $CloudPayload
  $hostRequired=@('kind','series_id','epoch_id','source_sha256',
   'observation_nonce','observed_at_utc','original_fence_sha256',
@@ -116,40 +116,40 @@ function Assert-V3PostStopUnknownCurrentCustody(
   'intent_count','attempt_count','abort_count','executor_login_closed',
   'executor_sessions_count','v3_active_series_count','v2r4_active_series_count',
   'cloud_cas_rpc_count','reader_role','current_cloud_custody_verified')
- if(@($host.PSObject.Properties).Count -ne $hostRequired.Count -or
-    @($host.PSObject.Properties.Name|Where-Object {$_ -cnotin $hostRequired}).Count -or
+ if(@($hostRow.PSObject.Properties).Count -ne $hostRequired.Count -or
+    @($hostRow.PSObject.Properties.Name|Where-Object {$_ -cnotin $hostRequired}).Count -or
     @($cloud.PSObject.Properties).Count -ne $cloudRequired.Count -or
     @($cloud.PSObject.Properties.Name|Where-Object {$_ -cnotin $cloudRequired}).Count){
   throw 'V3_POSTSTOP_CURRENT_RECEIPT_FIELDS_HOLD'
  }
- if([string]$host.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1' -or
+ if([string]$hostRow.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1' -or
     [string]$cloud.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1' -or
     [string]$cloud.reader_role -cne 'v3_cas_audit_reader' -or
-    [string]$host.series_id -cne [string]$Pins.series_id -or
+    [string]$hostRow.series_id -cne [string]$Pins.series_id -or
     [string]$cloud.series_id -cne [string]$Pins.series_id -or
-    [string]$host.epoch_id -cne [string]$Pins.epoch_id -or
+    [string]$hostRow.epoch_id -cne [string]$Pins.epoch_id -or
     [string]$cloud.epoch_id -cne [string]$Pins.epoch_id -or
-    [string]$host.source_sha256 -cne [string]$Pins.source_sha256 -or
+    [string]$hostRow.source_sha256 -cne [string]$Pins.source_sha256 -or
     [string]$cloud.source_sha256 -cne [string]$Pins.source_sha256 -or
-    [string]$host.observation_nonce -cne [string]$Pins.observation_nonce -or
+    [string]$hostRow.observation_nonce -cne [string]$Pins.observation_nonce -or
     [string]$cloud.observation_nonce -cne [string]$Pins.observation_nonce -or
-    [string]$host.original_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
+    [string]$hostRow.original_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
     [string]$cloud.original_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
     [string]$cloud.caller_acl_sha256 -cne [string]$Pins.caller_acl_sha256 -or
-    [string]$host.local_fence_file_sha256 -cne [string]$Pins.local_fence_file_sha256 -or
-    [string]$host.fence_phase -cne 'ARMED' -or
-    [string]$host.candidates_xml_sha256 -cne [string]$Pins.candidates_xml_sha256 -or
-    [string]$host.wait_xml_sha256 -cne [string]$Pins.wait_xml_sha256 -or
-    [string]$host.cloudsync_xml_sha256 -cne [string]$Pins.cloudsync_xml_sha256 -or
-    [string]$host.writer_xml_sha256 -cne [string]$Pins.writer_xml_sha256 -or
-    $host.candidates_enabled -isnot [bool] -or $host.candidates_enabled -ne $true -or
-    $host.wait_enabled -isnot [bool] -or $host.wait_enabled -ne $true -or
-    $host.cloudsync_enabled -isnot [bool] -or $host.cloudsync_enabled -ne $true -or
-    $host.writer_enabled -isnot [bool] -or $host.writer_enabled -ne $false -or
-    $host.writer_process_count -isnot [int] -or $host.writer_process_count -ne 0 -or
-    $host.other_writer_authorities_closed -isnot [bool] -or $host.other_writer_authorities_closed -ne $true -or
-    [string]$host.native_stop_outcome -cne 'UNKNOWN' -or
-    $host.current_host_custody_verified -isnot [bool] -or $host.current_host_custody_verified -ne $true -or
+    [string]$hostRow.local_fence_file_sha256 -cne [string]$Pins.local_fence_file_sha256 -or
+    [string]$hostRow.fence_phase -cne 'ARMED' -or
+    [string]$hostRow.candidates_xml_sha256 -cne [string]$Pins.candidates_xml_sha256 -or
+    [string]$hostRow.wait_xml_sha256 -cne [string]$Pins.wait_xml_sha256 -or
+    [string]$hostRow.cloudsync_xml_sha256 -cne [string]$Pins.cloudsync_xml_sha256 -or
+    [string]$hostRow.writer_xml_sha256 -cne [string]$Pins.writer_xml_sha256 -or
+    $hostRow.candidates_enabled -isnot [bool] -or $hostRow.candidates_enabled -ne $true -or
+    $hostRow.wait_enabled -isnot [bool] -or $hostRow.wait_enabled -ne $true -or
+    $hostRow.cloudsync_enabled -isnot [bool] -or $hostRow.cloudsync_enabled -ne $true -or
+    $hostRow.writer_enabled -isnot [bool] -or $hostRow.writer_enabled -ne $false -or
+    $hostRow.writer_process_count -isnot [int] -or $hostRow.writer_process_count -ne 0 -or
+    $hostRow.other_writer_authorities_closed -isnot [bool] -or $hostRow.other_writer_authorities_closed -ne $true -or
+    [string]$hostRow.native_stop_outcome -cne 'UNKNOWN' -or
+    $hostRow.current_host_custody_verified -isnot [bool] -or $hostRow.current_host_custody_verified -ne $true -or
     [string]$cloud.inhibit_state -cne 'INHIBITED' -or
     $cloud.sealed -isnot [bool] -or $cloud.sealed -ne $false -or
     $cloud.next_ordinal -isnot [int] -or $cloud.next_ordinal -ne 1 -or
@@ -165,7 +165,7 @@ function Assert-V3PostStopUnknownCurrentCustody(
   throw 'V3_POSTSTOP_CURRENT_HOST_CLOUD_SAFETY_HOLD'
  }
  try{
-  $ht=[datetimeoffset]::ParseExact([string]$host.observed_at_utc,
+  $ht=[datetimeoffset]::ParseExact([string]$hostRow.observed_at_utc,
    "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
    [Globalization.DateTimeStyles]::AssumeUniversal)
   $ct=[datetimeoffset]::ParseExact([string]$cloud.observed_at_utc,
