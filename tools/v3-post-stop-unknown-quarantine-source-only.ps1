@@ -166,8 +166,8 @@ function Assert-V3PostStopUnknownCurrentCustody(
  }
  try{
   # Read the signed JSON timestamp literals: PowerShell 7 otherwise coerces ISO strings into DateTime.
-  $hm=[regex]::Match([Text.Encoding]::UTF8.GetString($HostPayload),'"observed_at_utc"\\s*:\\s*"(?<t>[^"\\\\]*)"')
-  $cm=[regex]::Match([Text.Encoding]::UTF8.GetString($CloudPayload),'"observed_at_utc"\\s*:\\s*"(?<t>[^"\\\\]*)"')
+  $hm=[regex]::Match([Text.Encoding]::UTF8.GetString($HostPayload),'"observed_at_utc"\s*:\s*"(?<t>[^"]+)"')
+  $cm=[regex]::Match([Text.Encoding]::UTF8.GetString($CloudPayload),'"observed_at_utc"\s*:\s*"(?<t>[^"]+)"')
   if(-not $hm.Success -or -not $cm.Success){throw 'V3_POSTSTOP_TIMESTAMP_LITERAL_MISSING'}
   $ht=[datetimeoffset]::ParseExact($hm.Groups['t'].Value,
    "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
