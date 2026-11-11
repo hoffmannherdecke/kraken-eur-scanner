@@ -212,7 +212,17 @@ function Get-V3PostStopCurrentCustodyReceiptSha256([object]$Custody) {
   throw 'V3_POSTSTOP_CURRENT_RECEIPT_SOURCE_HOLD'
  }
  foreach($field in @('host_payload_sha256','cloud_payload_sha256','owner_review_sha256')) {
-  if([string]$Custody.$field -cnotmatch '^[a-f0-9]{64}
+  if([string]$Custody.$field -cnotmatch '^[a-f0-9]{64}\z') {
+   throw 'V3_POSTSTOP_CURRENT_RECEIPT_SHA_HOLD'
+  }
+ }
+ $material='V3_POSTSTOP_CURRENT_CUSTODY_RECEIPT_V1|'+
+  [string]$Custody.epoch_id+'|'+[string]$Custody.host_payload_sha256+'|'+
+  [string]$Custody.cloud_payload_sha256+'|'+[string]$Custody.owner_review_sha256
+ return Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($material))
+}
+
+# Candidate-only cloud transaction. This source is not imported by the launcher.
 # The installed SQL function is already constrained to one terminal abort row.
 function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
  [string]$CurrentCustodyReceiptSha256,[datetimeoffset]$Expiry) {
@@ -227,7 +237,8 @@ function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
     [string]$Custody.source_sha256 -cne [string]$Pins.source_sha256 -or
     [string]$Custody.epoch_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
     [string]$Custody.caller_acl_sha256 -cne [string]$Pins.caller_acl_sha256 -or
-    [string]$CurrentCustodyReceiptSha256 -cnotmatch '^[a-f0-9]{64}
+    [string]$CurrentCustodyReceiptSha256 -cnotmatch '^[a-f0-9]{64}\z' -or
+    [string]$CurrentCustodyReceiptSha256 -cne (Get-V3PostStopCurrentCustodyReceiptSha256 $Custody) -or
     $Expiry -le [datetimeoffset]::UtcNow -or
     $Expiry -gt [datetimeoffset]::UtcNow.AddMinutes(2)) {
   throw 'V3_POSTSTOP_CLOUD_CANDIDATE_PRECONDITION_HOLD'
