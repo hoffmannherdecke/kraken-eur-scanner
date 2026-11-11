@@ -187,6 +187,9 @@ function Assert-V3PostStopUnknownCurrentCustody(
   host_payload_sha256=[string]$Pins.host_payload_sha256
   cloud_payload_sha256=[string]$Pins.cloud_payload_sha256
   owner_review_sha256=[string]$Pins.owner_review_sha256
+  source_sha256=[string]$Pins.source_sha256
+  epoch_fence_sha256=[string]$Pins.epoch_fence_sha256
+  caller_acl_sha256=[string]$Pins.caller_acl_sha256
   independently_signed_current_custody=$true
   historical_stop_reconstructed=$false
   historical_stop_success_claimed=$false
@@ -211,6 +214,9 @@ function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
     [string]$Custody.series_id -cne 'PAPER-V3-20261111T105211Z' -or
     [string]$Custody.host_payload_sha256 -cne [string]$Pins.host_payload_sha256 -or
     [string]$Custody.cloud_payload_sha256 -cne [string]$Pins.cloud_payload_sha256 -or
+    [string]$Custody.source_sha256 -cne [string]$Pins.source_sha256 -or
+    [string]$Custody.epoch_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
+    [string]$Custody.caller_acl_sha256 -cne [string]$Pins.caller_acl_sha256 -or
     [string]$OriginalReceiptSha256 -cnotmatch '^[a-f0-9]{64}$' -or
     $Expiry -le [datetimeoffset]::UtcNow -or
     $Expiry -gt [datetimeoffset]::UtcNow.AddMinutes(2)) {
