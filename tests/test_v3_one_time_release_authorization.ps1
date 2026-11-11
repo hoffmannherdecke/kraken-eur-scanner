@@ -304,5 +304,56 @@ Write-Output 'V3_GATE_A_EXACT_BYTES_REAL_CMS_NEGATIVE_TESTS_PASS'
 
 }finally{$cert.Dispose();$rsa.Dispose()}
 
+
+# Historical post-STOP-UNKNOWN quarantine: source-only guard, no actor or host access.
+$historical=[pscustomobject]@{
+ kind='V3_POST_STOP_UNKNOWN_READONLY_STATE_V1'
+ series_id='PAPER-V3-20261111T105211Z'
+ epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+ fence_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef'
+ fence_phase='ARMED';cloud_inhibit_state='INHIBITED'
+ cloud_epoch_sealed=$false;cloud_next_ordinal=1
+ cloud_intent_count=0;cloud_attempt_count=0;cloud_abort_count=0
+ candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true
+ v3_writer_enabled=$false;native_stop_outcome='UNKNOWN'
+ originalhost_journal_present=$false
+ independent_host_custody_verified=$false
+ independent_cloud_reader_verified=$false
+}
+$decision=Assert-V3PostStopUnknownQuarantineSourceContract $historical
+if($decision.production_authorized -ne $false -or
+   $decision.cloud_terminal_abort_confirmed -ne $false -or
+   $decision.originalhost_recovered -ne $false -or
+   $decision.historical_stop_success_claimed -ne $false -or
+   $decision.retry_authorized -ne $false -or
+   $decision.new_writer_authorized -ne $false -or
+   $decision.disposition -cne 'SOURCE_ONLY_NO_PRODUCTION_EFFECT'){
+ throw 'V3_POSTSTOP_SOURCE_GATE_CLAIMED_EXECUTION'
+}
+foreach($negative in @(
+ @('series_id','PAPER-V3-20261111T105212Z'),
+ @('epoch_id','V3CAS-AUDIT-'+('0'*32)),
+ @('fence_sha256',('0'*64)),@('fence_phase','CLOSED'),
+ @('cloud_inhibit_state','RELEASED'),@('cloud_epoch_sealed',$true),
+ @('cloud_next_ordinal',2),@('cloud_intent_count',1),@('cloud_attempt_count',1),
+ @('cloud_abort_count',1),@('candidates_enabled',$false),
+ @('wait_enabled',$false),@('cloudsync_enabled',$false),
+ @('v3_writer_enabled',$true),@('native_stop_outcome','SUCCESS'),
+ @('originalhost_journal_present',$true)
+)){
+ $clone=([Text.Encoding]::UTF8.GetString([Text.Encoding]::UTF8.GetBytes(
+   ($historical|ConvertTo-Json -Compress -Depth 5))))|ConvertFrom-Json
+ $clone.($negative[0])=$negative[1]
+ $held=$false
+ try{ $null=Assert-V3PostStopUnknownQuarantineSourceContract $clone }catch{$held=$true}
+ if(-not $held){throw ('V3_POSTSTOP_NEGATIVE_ACCEPTED_'+$negative[0])}
+}
+$missing=$historical|ConvertTo-Json -Compress|ConvertFrom-Json
+$missing.PSObject.Properties.Remove('native_stop_outcome')
+$held=$false
+try{$null=Assert-V3PostStopUnknownQuarantineSourceContract $missing}catch{$held=$true}
+if(-not $held){throw 'V3_POSTSTOP_MISSING_ORIGINAL_ACCEPTED'}
+Write-Output 'V3_POSTSTOP_HISTORICAL_SOURCE_ONLY_QUARANTINE_NEGATIVES_PASS'
+
 # Reuse this existing Linux/Windows CI entry; no new workflow or runtime task.
 & (Join-Path $PSScriptRoot 'test_v3_one_time_reconciliation.ps1')
