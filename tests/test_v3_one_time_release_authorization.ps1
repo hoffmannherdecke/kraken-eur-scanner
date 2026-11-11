@@ -465,12 +465,14 @@ Write-Output ('V3_POSTSTOP_SOURCE_ONLY_SHA256='+(Get-V3ReleaseSha256 ([IO.File]:
 
 # Post-STOP cloud candidate and disposable transport ambiguity.
 $custody=[pscustomobject]@{kind='V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1';series_id='PAPER-V3-20261111T105211Z';epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901';independently_signed_current_custody=$true;production_authorized=$false;host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
+$custody|Add-Member -NotePropertyName owner_review_sha256 -NotePropertyValue ('7'*64)
+$receiptHash=Get-V3PostStopCurrentCustodyReceiptSha256 $custody
 $pins=[pscustomobject]@{host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
-$plan=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -OriginalReceiptSha256 ('f'*64) -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))
+$plan=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -CurrentCustodyReceiptSha256 $receiptHash -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))
 if($plan.execution_authorized -ne $false -or $plan.terminal_readback_required -ne $true -or ([regex]::Matches($plan.sql,'record_prepared_fence_abort_v1')).Count -ne 1 -or $plan.sql -match 'SET ROLE|ALTER ROLE|DELETE |UPDATE '){throw 'V3_POSTSTOP_CLOUD_TRANSACTION_UNSAFE'}
 $pins.source_sha256=('0'*64)
 $held=$false
-try{$null=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -OriginalReceiptSha256 ('f'*64) -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))}catch{$held=$true}
+try{$null=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -CurrentCustodyReceiptSha256 $receiptHash -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))}catch{$held=$true}
 if(-not $held){throw 'V3_POSTSTOP_CLOUD_WRONG_PIN_ACCEPTED'}
 $pins.source_sha256=('c'*64)
 $tempDir=Join-Path ([IO.Path]::GetTempPath()) ('poststop-once-'+[guid]::NewGuid().ToString('N'))
@@ -498,10 +500,10 @@ $c1=$q1.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset
 $c2=$q2.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddMinutes(5))
 try{
  $timestamp=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
- $cloudRow=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1';epoch_id=$custody.epoch_id;source_sha256=('c'*64);prepared_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);receipt_sha256=('f'*64);state='ABORT_RECORDED_NOT_RELEASED';issuer_actor='v3_cas_inhibit_issuer_actor';observed_at_utc=$timestamp;cloud_cas_rpc_count=0;cloud_executor_can_login=$false;cloud_active_series_count=1;cloud_original_active_series_count=1}
+ $cloudRow=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1';epoch_id=$custody.epoch_id;source_sha256=('c'*64);prepared_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);receipt_sha256=$receiptHash;state='ABORT_RECORDED_NOT_RELEASED';issuer_actor='v3_cas_inhibit_issuer_actor';observed_at_utc=$timestamp;cloud_cas_rpc_count=0;cloud_executor_can_login=$false;cloud_active_series_count=1;cloud_original_active_series_count=1}
  $cs=New-TestSignedCurrent $cloudRow $c1
  $reviewPins=[pscustomobject]@{epoch_id=$custody.epoch_id;series_id=$custody.series_id;source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);cloud_certificate_sha256=(Get-V3ReleaseSha256 $c1.RawData);host_certificate_sha256=(Get-V3ReleaseSha256 $c2.RawData);local_fence_file_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64)}
- $verified=Assert-V3PostStopSignedTerminalCloud -Payload $cs.Payload -Cms $cs.Cms -Pins $reviewPins -OriginalReceiptSha256 ('f'*64)
+ $verified=Assert-V3PostStopSignedTerminalCloud -Payload $cs.Payload -Cms $cs.Cms -Pins $reviewPins -CurrentCustodyReceiptSha256 $receiptHash
  if($verified.terminal_cloud_abort_confirmed -ne $true -or $verified.host_quarantine_confirmed -ne $false){throw 'V3_POSTSTOP_CLOUD_FALSE_HOST_PASS'}
  $hostRow=[ordered]@{kind='V3_POSTSTOP_INDEPENDENT_HOST_QUARANTINE_V1';epoch_id=$custody.epoch_id;series_id=$custody.series_id;observed_at_utc=$timestamp;terminal_cloud_reader_sha256=$verified.reader_sha256;local_fence_file_sha256=$reviewPins.local_fence_file_sha256;fence_phase='ARMED';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64);candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true;writer_enabled=$false;writer_process_count=0;other_writer_authorities_closed=$true;native_stop_outcome='UNKNOWN'}
  $hs=New-TestSignedCurrent $hostRow $c2
@@ -509,7 +511,7 @@ try{
  if($finished.quarantine_preserved -ne $true -or $finished.ap05a_authorized -ne $false){throw 'V3_POSTSTOP_HOST_FALSE_RELEASE'}
  $reviewPins.cloud_certificate_sha256=('0'*64)
  $held=$false
- try{$null=Assert-V3PostStopSignedTerminalCloud -Payload $cs.Payload -Cms $cs.Cms -Pins $reviewPins -OriginalReceiptSha256 ('f'*64)}catch{$held=$true}
+ try{$null=Assert-V3PostStopSignedTerminalCloud -Payload $cs.Payload -Cms $cs.Cms -Pins $reviewPins -CurrentCustodyReceiptSha256 $receiptHash}catch{$held=$true}
  if(-not $held){throw 'V3_POSTSTOP_UNTRUSTED_CLOUD_ACCEPTED'}
  $reviewPins.cloud_certificate_sha256=Get-V3ReleaseSha256 $c1.RawData
  $hostRow.writer_process_count=1
