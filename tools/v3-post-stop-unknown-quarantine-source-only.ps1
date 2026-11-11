@@ -146,21 +146,21 @@ function Assert-V3PostStopUnknownCurrentCustody(
     $hostRow.wait_enabled -isnot [bool] -or $hostRow.wait_enabled -ne $true -or
     $hostRow.cloudsync_enabled -isnot [bool] -or $hostRow.cloudsync_enabled -ne $true -or
     $hostRow.writer_enabled -isnot [bool] -or $hostRow.writer_enabled -ne $false -or
-    $hostRow.writer_process_count -isnot [int] -or $hostRow.writer_process_count -ne 0 -or
+    ($hostRow.writer_process_count -isnot [int] -and $hostRow.writer_process_count -isnot [long]) -or $hostRow.writer_process_count -ne 0 -or
     $hostRow.other_writer_authorities_closed -isnot [bool] -or $hostRow.other_writer_authorities_closed -ne $true -or
     [string]$hostRow.native_stop_outcome -cne 'UNKNOWN' -or
     $hostRow.current_host_custody_verified -isnot [bool] -or $hostRow.current_host_custody_verified -ne $true -or
     [string]$cloud.inhibit_state -cne 'INHIBITED' -or
     $cloud.sealed -isnot [bool] -or $cloud.sealed -ne $false -or
-    $cloud.next_ordinal -isnot [int] -or $cloud.next_ordinal -ne 1 -or
-    $cloud.intent_count -isnot [int] -or $cloud.intent_count -ne 0 -or
-    $cloud.attempt_count -isnot [int] -or $cloud.attempt_count -ne 0 -or
-    $cloud.abort_count -isnot [int] -or $cloud.abort_count -ne 0 -or
+    ($cloud.next_ordinal -isnot [int] -and $cloud.next_ordinal -isnot [long]) -or $cloud.next_ordinal -ne 1 -or
+    ($cloud.intent_count -isnot [int] -and $cloud.intent_count -isnot [long]) -or $cloud.intent_count -ne 0 -or
+    ($cloud.attempt_count -isnot [int] -and $cloud.attempt_count -isnot [long]) -or $cloud.attempt_count -ne 0 -or
+    ($cloud.abort_count -isnot [int] -and $cloud.abort_count -isnot [long]) -or $cloud.abort_count -ne 0 -or
     $cloud.executor_login_closed -isnot [bool] -or $cloud.executor_login_closed -ne $true -or
-    $cloud.executor_sessions_count -isnot [int] -or $cloud.executor_sessions_count -ne 0 -or
-    $cloud.v3_active_series_count -isnot [int] -or $cloud.v3_active_series_count -ne 0 -or
-    $cloud.v2r4_active_series_count -isnot [int] -or $cloud.v2r4_active_series_count -ne 1 -or
-    $cloud.cloud_cas_rpc_count -isnot [int] -or $cloud.cloud_cas_rpc_count -ne 0 -or
+    ($cloud.executor_sessions_count -isnot [int] -and $cloud.executor_sessions_count -isnot [long]) -or $cloud.executor_sessions_count -ne 0 -or
+    ($cloud.v3_active_series_count -isnot [int] -and $cloud.v3_active_series_count -isnot [long]) -or $cloud.v3_active_series_count -ne 0 -or
+    ($cloud.v2r4_active_series_count -isnot [int] -and $cloud.v2r4_active_series_count -isnot [long]) -or $cloud.v2r4_active_series_count -ne 1 -or
+    ($cloud.cloud_cas_rpc_count -isnot [int] -and $cloud.cloud_cas_rpc_count -isnot [long]) -or $cloud.cloud_cas_rpc_count -ne 0 -or
     $cloud.current_cloud_custody_verified -isnot [bool] -or $cloud.current_cloud_custody_verified -ne $true){
   throw 'V3_POSTSTOP_CURRENT_HOST_CLOUD_SAFETY_HOLD'
  }
