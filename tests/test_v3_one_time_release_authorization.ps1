@@ -502,7 +502,7 @@ try{
  $cs=New-TestSignedCurrent $cloudRow $c1
  $reviewPins=[pscustomobject]@{epoch_id=$custody.epoch_id;series_id=$custody.series_id;source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);cloud_certificate_sha256=(Get-V3ReleaseSha256 $c1.RawData);host_certificate_sha256=(Get-V3ReleaseSha256 $c2.RawData);local_fence_file_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64)}
  $verified=Assert-V3PostStopSignedTerminalCloud -Payload $cs.Payload -Cms $cs.Cms -Pins $reviewPins -OriginalReceiptSha256 ('f'*64)
- if($verified.terminal_cloud_abort_confirmed -ne $true -or $verified.host_quarantined -ne $false){throw 'V3_POSTSTOP_CLOUD_FALSE_HOST_PASS'}
+ if($verified.terminal_cloud_abort_confirmed -ne $true -or $verified.host_quarantine_confirmed -ne $false){throw 'V3_POSTSTOP_CLOUD_FALSE_HOST_PASS'}
  $hostRow=[ordered]@{kind='V3_POSTSTOP_INDEPENDENT_HOST_QUARANTINE_V1';epoch_id=$custody.epoch_id;series_id=$custody.series_id;observed_at_utc=$timestamp;terminal_cloud_reader_sha256=$verified.reader_sha256;local_fence_file_sha256=$reviewPins.local_fence_file_sha256;fence_phase='ARMED';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64);candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true;writer_enabled=$false;writer_process_count=0;other_writer_authorities_closed=$true;native_stop_outcome='UNKNOWN'}
  $hs=New-TestSignedCurrent $hostRow $c2
  $finished=Assert-V3PostStopSignedHostQuarantine -Terminal $verified -HostPayload $hs.Payload -HostCms $hs.Cms -Pins $reviewPins
