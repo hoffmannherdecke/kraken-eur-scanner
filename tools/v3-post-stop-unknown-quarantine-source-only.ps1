@@ -226,14 +226,19 @@ function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
   'BEGIN;'
   "SET LOCAL statement_timeout='15s';"
   "SET LOCAL lock_timeout='5s';"
-  'DO $poststop
+  'DO $poststop$'
+  'BEGIN'
+  " IF session_user <> 'v3_cas_inhibit_issuer_actor' OR clock_timestamp() >= '$until'::timestamptz THEN"
+  "  RAISE EXCEPTION 'V3_POSTSTOP_OWNER_OR_WINDOW_HOLD';"
+  ' END IF;'
+  'END $poststop$;'
+  'SELECT v3_cas_audit.record_prepared_fence_abort_v1('
   " 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901',"
   " '$($Pins.source_sha256)',"
   " '$($Pins.epoch_fence_sha256)',"
   " '$($Pins.caller_acl_sha256)',"
   " '$OriginalReceiptSha256');"
-  'COMMIT;'
- ) -join [Environment]::NewLine
+  'COMMIT;' ) -join [Environment]::NewLine
  # The expiry is an independently admitted maximum deadline, NOT a waiver.
  # This builder is SOURCE ONLY; effectful caller must check expiry inside DB
  # against the same bound clock before invoking this SQL.
