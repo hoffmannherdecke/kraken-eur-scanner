@@ -20,7 +20,7 @@ function Assert-V3PostStopUnknownQuarantineSourceContract([object]$Evidence) {
  if([string]$Evidence.kind -cne 'V3_POST_STOP_UNKNOWN_READONLY_STATE_V1' -or
     [string]$Evidence.series_id -cne 'PAPER-V3-20261111T105211Z' -or
     [string]$Evidence.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
-    [string]$Evidence.fence_sha256 -cne '4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef' -or
+    [string]$Evidence.fence_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
     [string]$Evidence.fence_phase -cne 'ARMED' -or
     [string]$Evidence.cloud_inhibit_state -cne 'INHIBITED' -or
     $Evidence.cloud_epoch_sealed -isnot [bool] -or $Evidence.cloud_epoch_sealed -ne $false -or
@@ -57,7 +57,7 @@ function Assert-V3PostStopUnknownQuarantineSourceContract([object]$Evidence) {
 }
 
 
-# The legacy logical epoch/marker digest and physical 627-byte local fence file digest\n# are different admissible values. Do not derive or replace epoch_fence_sha256\n# from file bytes. Exact historic owner/Cloud epoch binding remains independently required.\n# Separate, CURRENT, independently signed Host and Cloud evidence.
+# Original Cloud epoch_v1 read-only ACK for this exact epoch independently pins\n# the same SHA256 as the 627-byte original ARMED fence. The previously cited\n# similar-looking digest was a transcription error, not an admitted epoch pin.\n# Host and Cloud custody still require independent current CMS and source pins.
 # The reviewer pins every expected SHA256 outside the supplied evidence.
 # Never interprets UNKNOWN as a successful historical STOP.
 # The routine is deliberately pure and never performs the next transaction.
@@ -79,6 +79,12 @@ function Assert-V3PostStopUnknownCurrentCustody(
  }
  if([string]$Pins.series_id -cne 'PAPER-V3-20261111T105211Z' -or
     [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$Pins.source_sha256 -cne
+      '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
+    [string]$Pins.epoch_fence_sha256 -cne
+      '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
+    [string]$Pins.caller_acl_sha256 -cne
+      '6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0' -or
     [string]$Pins.local_fence_file_sha256 -cne
       '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
     [string]$Pins.observation_nonce -cnotmatch '^[a-f0-9]{32}$'){
