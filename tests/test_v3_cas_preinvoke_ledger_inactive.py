@@ -938,11 +938,11 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         # Reader-only snapshots (current empty, future intent, CAS custody,
         # signed forward T0, signed PREPARED abort, signed issuer pre-STOP,\n        # and the signed follow-up release epoch).
         # Still the SAME two actors, no third credentials or CAS authority.
-        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 10)
-        self.assertEqual(src.count("COMMIT;"), 10)
+        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 9)
+        self.assertEqual(src.count("COMMIT;"), 9)
         self.assertIn("[switch]$PrecommitCloudInventory", src)
         self.assertIn("[switch]$PostcommitDurableIntent", src)
-        self.assertIn("+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent+[int]$PaperReleaseSignedCurrent.IsPresent+[int]$PostStopHostReader.IsPresent+[int]$PostStopCloudReader.IsPresent) -gt 1", src)
+        self.assertIn("+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent+[int]$PaperReleaseSignedCurrent.IsPresent) -gt 1", src)
         self.assertIn("V3_PRECOMMIT_CUSTODY_EXPLICIT_SIGNER_AND_FENCE_PINS_REQUIRED", src)
         self.assertIn("V3_NOTEBOOK_CURRENT_NO_CAS_CAPABILITY_CUSTODY_V1", src)
         self.assertIn("Save-V3SignedNotebookReaderSnapshot -RawJson $signed", src)
@@ -964,7 +964,7 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         # PRE- and POST-COMMIT Reader modes enforce CA + hostname.
         self.assertIn("sslmode=require", src)
         self.assertIn("$tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}", src)
-        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent -or $PaperReleaseSignedCurrent -or $PostStopCloudReader)", src)
+        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent -or $PaperReleaseSignedCurrent)", src)
         self.assertIn("$postcommitTlsRoot='system'", src)
         self.assertIn("[string]$CaFile=''", src)
         self.assertIn("V3_READER_CA_FILE_DECISION_MODE_ONLY", src)
@@ -987,7 +987,7 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         # PostgreSQL emits a canonical UTC literal without relying on nested
         # double quotes surviving Windows PowerShell 5.1 native -c arguments.
         # Same one clock_timestamp per row, no split timestamp at midnight.
-        self.assertEqual(src.count("pg_catalog.replace(pg_catalog.to_char("), 8)
+        self.assertEqual(src.count("pg_catalog.replace(pg_catalog.to_char("), 7)
         self.assertIn("'YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z'", src)
         self.assertNotIn('YYYY-MM-DD"T"HH24:MI:SS.US"Z"', src)
         self.assertIn("([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -gt 90", src)
