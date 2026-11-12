@@ -229,7 +229,8 @@ function Get-V3PostStopCurrentCustodyReceiptSha256([object]$Custody) {
 }
 
 # Candidate-only cloud transaction. This source is not imported by the launcher.
-# The installed SQL function is already constrained to one terminal abort row.
+# The installed post-Stage4 six-parameter issuer RPC accepts the existing ACL-restricted CAS function.
+# The old five-parameter RPC explicitly rejects this installed CAS state.
 function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
  [string]$CurrentCustodyReceiptSha256,[datetimeoffset]$Expiry) {
  if($null -eq $Pins -or $null -eq $Custody -or
@@ -265,8 +266,9 @@ function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
   "  RAISE EXCEPTION 'V3_POSTSTOP_OWNER_OR_WINDOW_HOLD';"
   ' END IF;'
   'END $poststop$;'
-  'SELECT v3_cas_audit.record_prepared_fence_abort_v1('
+  'SELECT v3_cas_audit.record_paper_release_abort_v1('
   " 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901',"
+  " '46c5abbd6af16266c1229943db973dc9d6b2fb4f',"
   " '$($Pins.source_sha256)',"
   " '$($Pins.epoch_fence_sha256)',"
   " '$($Pins.caller_acl_sha256)',"
@@ -337,7 +339,7 @@ function Assert-V3PostStopSignedTerminalCloud(
     [string]$row.receipt_sha256 -cne $CurrentCustodyReceiptSha256 -or
     [string]$row.state -cne 'ABORT_RECORDED_NOT_RELEASED' -or
     [string]$row.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
-    $row.cloud_cas_rpc_count -ne 0 -or
+    ($row.cloud_cas_rpc_count -ne 1 -or $row.cloud_cas_rpc_acl_restricted -ne $true) -or
     $row.cloud_executor_can_login -ne $false -or
     $row.cloud_active_series_count -ne 1 -or
     $row.cloud_original_active_series_count -ne 1) {
