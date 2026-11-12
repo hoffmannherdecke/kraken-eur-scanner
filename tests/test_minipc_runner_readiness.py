@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch
 from tools.minipc_runner_guard.runner_readiness import (
-    RUNNER_NAME, classify_runner_payload, query_runner_status,
+    RUNNER_NAME, classify_runner_payload, query_runner_status, authorized_file_handoff,
 )
 
 
@@ -31,6 +31,13 @@ class StatusTests(unittest.TestCase):
         with patch("urllib.request.urlopen") as fetch:
             self.assertEqual(query_runner_status("")["state"], "UNAVAILABLE")
             fetch.assert_not_called()
+
+    def test_file_export_requires_approval_and_idle(self):
+        self.assertEqual(authorized_file_handoff("IDLE", True)["action"], "DISPATCH_EXISTING_EXPORT")
+        self.assertEqual(authorized_file_handoff("IDLE", False)["action"], "HOLD")
+        self.assertEqual(authorized_file_handoff("BUSY", True)["action"], "HOLD")
+        self.assertEqual(authorized_file_handoff("OFFLINE", True)["action"], "START_EXISTING_BOUNDED_WINDOW")
+        self.assertEqual(authorized_file_handoff("UNAVAILABLE", True)["action"], "HOLD")
 
     def test_no_token_in_failure_output(self):
         with patch("urllib.request.urlopen", side_effect=OSError("private auth error")):
