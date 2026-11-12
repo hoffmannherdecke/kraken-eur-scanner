@@ -7,6 +7,48 @@ param([Parameter(Mandatory=$true)][string]$ObservationNonce,
  [string]$CaFile='', [ValidateRange(1,120)][int]$MaxWaitSeconds=90)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
+# Fixed independent static approval first, verified live bytes afterwards.
+function Get-V3PostStopVerifiedLivePins([object]$Approved,
+ [byte[]]$HostPayload,[byte[]]$OriginalHostCms,[byte[]]$NotebookHostCms,
+ [byte[]]$CloudPayload,[byte[]]$CloudCms){
+ $fields=@('series_id','epoch_id','source_sha256','epoch_fence_sha256',
+ 'caller_acl_sha256','local_fence_file_sha256','candidates_xml_sha256',
+ 'wait_xml_sha256','cloudsync_xml_sha256','writer_xml_sha256',
+ 'host_certificate_sha256','cloud_certificate_sha256',
+ 'owner_review_sha256','observation_nonce')
+ if($null -eq $Approved -or
+    @($Approved.PSObject.Properties.Name).Count -ne $fields.Count -or
+    @($Approved.PSObject.Properties.Name | Where-Object {$_ -cnotin $fields}).Count){
+  throw 'PR710_POLICY_FIELDS_OR_UNTRUSTED_LIVE_SHA_HOLD'
+ }
+ foreach($field in $fields | Where-Object {$_ -notin @('series_id','epoch_id','observation_nonce')}){
+  if([string]$Approved.$field -cnotmatch '^[a-f0-9]{64}$'){throw 'PR710_POLICY_SHA_HOLD'}
+ }
+ if([string]$Approved.observation_nonce -cnotmatch '^[a-f0-9]{32}$' -or
+    [string]$Approved.host_certificate_sha256 -ceq [string]$Approved.cloud_certificate_sha256){
+  throw 'PR710_POLICY_NONCE_OR_SIGNER_HOLD'
+ }
+ foreach($payload in @($HostPayload,$CloudPayload)){
+  if($null -eq $payload -or $payload.Length -lt 400 -or $payload.Length -gt 8192){
+   throw 'PR710_LIVE_PAYLOAD_SIZE_HOLD'
+  }
+ }
+ Assert-V3ReleaseCms -Payload $HostPayload -Cms $OriginalHostCms `
+  -ReviewedAuthorityCertificateSha256 'ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'
+ Assert-V3ReleaseCms -Payload $HostPayload -Cms $NotebookHostCms `
+  -ReviewedAuthorityCertificateSha256 $Approved.host_certificate_sha256
+ Assert-V3ReleaseCms -Payload $CloudPayload -Cms $CloudCms `
+  -ReviewedAuthorityCertificateSha256 $Approved.cloud_certificate_sha256
+ $values=[ordered]@{}
+ foreach($field in $fields){$values[$field]=[string]$Approved.$field}
+ $values['host_payload_sha256']=Get-V3ReleaseSha256 $HostPayload
+ $values['cloud_payload_sha256']=Get-V3ReleaseSha256 $CloudPayload
+ if($values['host_payload_sha256'] -ceq $values['cloud_payload_sha256']){
+  throw 'PR710_LIVE_ORIGINALS_NOT_DISTINCT_HOLD'
+ }
+ return [pscustomobject]$values
+}
+
 if($env:OS -cne 'Windows_NT' -or $env:GITHUB_ACTIONS -eq 'true' -or
  -not [Environment]::UserInteractive){throw 'PR710_WINDOW_INTERACTIVE_NOTEBOOK_ONLY'}
 if($ObservationNonce -cnotmatch '^[a-f0-9]{32}$' -or
