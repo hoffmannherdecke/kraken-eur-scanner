@@ -32,7 +32,7 @@ class LocalUserHandoffContract(unittest.TestCase):
             "Assert-NoReparse $full",
             "Assert-SafeFileName $file.Name",
             "Assert-SafeContent $bytes",
-            "new-object" if False else "New-Object System.Text.UTF8Encoding($false,$true)",
+            "[Text.UTF8Encoding]::new($false,$true)",
             "Get-FileHash -LiteralPath $full",
             "Get-FileHash -LiteralPath $dest",
             "MINIPC_USER_HANDOFF_EXPORT_PASS",
