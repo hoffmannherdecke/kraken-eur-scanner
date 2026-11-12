@@ -14,6 +14,7 @@ class DirectFileHandoffContract(unittest.TestCase):
         self.assertIn("if($mode -ceq 'SEARCH')",SRC)
         self.assertIn("MINIPC_FILE_PROVENANCE_V1",SRC)
         self.assertIn("origin-sha256.json",SRC)
+        self.assertIn("FILE_ACCESS_DENIED:RESERVED_NAME",SRC)
         self.assertIn("original_modified=$false",SRC)
     def test_original_guardrails_still_apply(self):
         for x in (
