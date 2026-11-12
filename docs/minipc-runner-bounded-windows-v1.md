@@ -216,3 +216,58 @@ Status lesen und SafePause separat bestätigen. Kein blindes Dispatch bei Offlin
 keine Wiederholung bestandener Dateizugriffstests. Neue Quell-/Private-Workflow-
 SHAs erfordern zunächst geschützte lokale Pin-/Prejob-/Window-Installation
 mit Backup und Owner-Quittierung. **Source-Merge ist kein Originalhost-E2E.**
+
+
+## Automatische Bereitschaftsprüfung und gezielter Dateiabruf (12.11.2026)
+
+Die bestehende Dateibrücke `kraken-readonly-bridge` Issue #13 mit
+`MINIPC_FILE_V1` ist und bleibt der einzige zugelassene Weg für
+zielgerichtete Mini-PC-Dateien. Bereits vorhanden: exakte Root-Aliase,
+separate owner-authentifizierte SEARCH- und SHA256-gebundene EXPORT-Aufträge,
+ZIP-/Text-Sicherheitsgrenzen, privates Tagesartefakt, aktueller Prejob-SHA-Pin,
+600-s-Frischefenster und SafePause nach zeitbegrenztem Start.
+
+**Status**: Der offizielle GitHub-Endpunkt
+`GET /repos/hoffmannherdecke/kraken-readonly-bridge/actions/runners`
+liefert pro Runner `status=online|offline` und
+`busy=true|false`. Der vorhandene rein lesende
+`tools/minipc_runner_guard/runner_readiness.py` klassifiziert **exakt**
+`IDLE` (online/nicht busy), `BUSY`
+(online/busy) und `OFFLINE` (offline), unabhängig von
+früheren Runner-Fenstern. Fehlende Rechte, Netzfehler, fehlende Identität oder
+ungültige Felder liefern ausschließlich `UNAVAILABLE` – niemals
+ein geratenes Online/Idle. Ein gestarteter GitHub-Job beweist die tatsächliche
+Ausführbarkeit, nicht einen vorherigen Idle-Zustand.
+
+**Zugriffsgrenze der GitHub-App:** Für die offizielle Runnerliste ist
+Repository-Administration **read** nötig; die derzeitige ChatGPT-GitHub-
+Schnittstelle erlaubt bisher nur Actions-Run-/Jobstatus und verweigert den
+direkten Runnerlisten-Endpunkt. Das Skript schafft **keine** Berechtigung,
+kein PAT, keinen gespeicherten Schlüssel und keinen neuen Agenten. Ohne
+bereits befugten Aufrufer ist die echte Vier-Zustands-Abfrage **noch nicht
+E2E-proven**. Der finale Berechtigungspunkt muss ausdrücklich vom Owner
+geklärt werden; niemals fehlende Runnerberechtigung umgehen.
+
+**Statusgebundene Übergabe:** `authorized_file_handoff` liefert nur
+eine Entscheidung; ein konkreter EXPORT erfolgt ausschließlich über den
+vorhandenen GitHub-App-Connector nach Owner-Freigabe genau dieses relativen
+Pfads und des beobachteten SHA256:
+- `IDLE`: den vorhandenen frischen `MINIPC_FILE_V1 | SHA | EXPORT | ROOT | base64url(path) | SHA256`-Auftrag posten, GitHub-Job/ACK prüfen, privates 1-Tages-Artefakt
+  herunterladen, enthaltene Datei unabhängig SHA256-rückprüfen
+- `BUSY`: keinen konkurrierenden neuen Auftrag auslösen
+- `OFFLINE`: **einmal** das vorhandene begrenzte Windows-
+  Runner-Fenster öffnen; danach Status neu prüfen, niemals dauerhaft aktivieren
+- `UNAVAILABLE`: keine Online-/Idle-Behauptung und keine
+  unfreigegebene Anfrage erzeugen
+
+Die vorhandene GitHub-Actions-Selbsthosted-Queue ist bereits serialisiert;
+der CryptoSupport-Runner führt nur einen Job gleichzeitig aus. Jobs dürfen
+bei Offline oder Busy warten, sind aber **keine** gültige Idle-/Offline-Probe;
+die 600-s-TTL muss auch beim späten Ausführen eingehalten werden.
+Ein erfolgreich hochgeladenes GitHub-Artefakt ist noch kein unabhängig
+sha-verifizierter Download.
+
+Die lokale Quelle für den Zustand kann die gesicherte GitHub-Schnittstelle
+nutzen, ohne den Mini-PC zu starten. Nur tatsächlicher Datei-EXPORT erfordert
+das zeitbegrenzte Runnerfenster. Keine Änderung an Windows-ACL, STOP, CAS,
+Stage4, PR #710 oder Trading-Zuständen.
