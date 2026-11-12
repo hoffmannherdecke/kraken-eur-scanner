@@ -183,7 +183,7 @@ def require_release_work_necessity(paths: list[str], receipt: dict) -> None:
         "V3 release requires a concrete new defect, missing capability or owner step")
     evidence = delta.get("owner_evidence_url")
     require(isinstance(evidence, str) and re.fullmatch(
-        r"https://github\\.com/hoffmannherdecke/kraken-eur-scanner/issues/(99|353)(?:#issuecomment-[0-9]+)?",
+        r"https://github\.com/hoffmannherdecke/kraken-eur-scanner/issues/(99|353)(?:#issuecomment-[0-9]+)?",
         evidence) is not None,
         "V3 release work needs original owner evidence from issue 99 or 353")
     require(meaningful(delta.get("why_existing_pass_is_insufficient")),
