@@ -92,16 +92,16 @@ $hostArgs=@{PostStopHostReader=$true;ObservationNonce=$ObservationNonce;
  ReviewedNotebookCertificateSha256='2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'}
 $hostLines=@(& $reader @hostArgs)
 if($hostLines.Count -ne 1){throw 'PR710_WINDOW_HOST_HOLD'}
-$host=$hostLines[0]|ConvertFrom-Json -ErrorAction Stop
-if([string]$host.kind -cne 'V3_POSTSTOP_NOTEBOOK_HOST_CMS_V1' -or
- $host.no_production_effect -ne $true){throw 'PR710_WINDOW_HOST_OUTPUT_HOLD'}
+$hostReceipt=$hostLines[0]|ConvertFrom-Json -ErrorAction Stop
+if([string]$hostReceipt.kind -cne 'V3_POSTSTOP_NOTEBOOK_HOST_CMS_V1' -or
+ $hostReceipt.no_production_effect -ne $true){throw 'PR710_WINDOW_HOST_OUTPUT_HOLD'}
 $cloudJson=Join-Path $cloud.local_directory 'reader.json'
 Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Force
 . (Join-Path $PSScriptRoot 'v3-post-stop-unknown-quarantine-source-only.ps1')
 $inputs=@{
  HostPayload=[IO.File]::ReadAllBytes($json)
  OriginalHostCms=[IO.File]::ReadAllBytes($cms)
- NotebookHostCms=[IO.File]::ReadAllBytes((Join-Path $host.notebook_directory 'reader.cms'))
+ NotebookHostCms=[IO.File]::ReadAllBytes((Join-Path $hostReceipt.notebook_directory 'reader.cms'))
  CloudPayload=[IO.File]::ReadAllBytes($cloudJson)
  CloudCms=[IO.File]::ReadAllBytes((Join-Path $cloud.local_directory 'reader.cms'))
  Now=[datetimeoffset]::UtcNow
