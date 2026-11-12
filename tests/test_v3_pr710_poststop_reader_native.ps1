@@ -75,13 +75,45 @@ foreach($required in @(
  'PostStopHostReader','PostStopCloudReader','ObservationNonce',
  'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1',
  'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1',
- 'read_forward_t0_current_v1','read_committed_pre_stop_inhibit_v1',
+ 'read_forward_t0_current_v1','read_paper_release_epoch_v1',
  'BEGIN TRANSACTION READ ONLY','verify-full',
  'CheckSignature($true)','ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40',
  '2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57',
  '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55',
  'V3_POSTSTOP_HOST_BYTE_HOLD','V3_POSTSTOP_READER_FRESHNESS_HOLD'
 )){if(-not $raw.Contains($required)){throw "PR710_READER_CONTRACT_MISSING: $required"}}
+# PR710: the deployed current epoch scope reader proves EVERY foreign
+# epoch is exactly abort-bound; merely dropping global epoch_count=1 would
+# accept a second un-terminated authority. Enforce the source contract here.
+foreach($required in @(
+ "p->>'state'='PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS'",
+ "p->>'epoch_id'=e.epoch_id",
+ "p->>'source_sha256'=e.source_sha256",
+ "p->>'fence_sha256'=e.original_fence_sha256",
+ "p->>'caller_acl_sha256'=e.approved_caller_acl_sha256",
+ "(c->>'cas_rpc_count')::integer=1",
+ "('v3_cas_executor','v3_cas_executor_actor','v3_cas_audit_writer_actor')",
+ "NOT EXISTS (SELECT 1 FROM v3_cas_audit.prepared_fence_abort_v1 a WHERE a.epoch_id=e.epoch_id)",
+ "BEGIN TRANSACTION READ ONLY",
+ "session_user='v3_cas_audit_reader_actor'",
+ "current_user='v3_cas_audit_reader'"
+)){
+ if(-not $raw.Contains($required)){
+  throw "PR710_SCOPED_CLOUD_AUTHORITY_PROOF_MISSING: $required"
+ }
+}
+if($raw.Contains('read_committed_pre_stop_inhibit_v1') -or
+   $raw.Contains("(c->>'epoch_count')::integer=1") -or
+   $raw.Contains("$"+"row.cloud_cas_rpc_count -ne 0")){
+ throw 'PR710_OLD_SINGLE_GLOBAL_EPOCH_PRECONDITION_REINTRODUCED'
+}
+$validator=Join-Path $PSScriptRoot '../tools/v3-post-stop-unknown-quarantine-source-only.ps1'
+$validatorRaw=[IO.File]::ReadAllText($validator)
+if(-not $validatorRaw.Contains('$cloud.cloud_cas_rpc_count -ne 1') -or
+    $validatorRaw.Contains('$cloud.cloud_cas_rpc_count -ne 0')){
+ throw 'PR710_SCOPE_CAS_RPC_NOT_TIED_TO_CURRENT_GATE'
+}
+
 if($raw.Contains('ForwardT0SignedCurrent -and $PostStopCloudReader')){
  throw 'PR710_WRONG_RECEIPT_MODE_REUSED'
 }
