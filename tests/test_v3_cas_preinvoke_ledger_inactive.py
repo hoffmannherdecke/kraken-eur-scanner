@@ -987,7 +987,7 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         # PostgreSQL emits a canonical UTC literal without relying on nested
         # double quotes surviving Windows PowerShell 5.1 native -c arguments.
         # Same one clock_timestamp per row, no split timestamp at midnight.
-        self.assertEqual(src.count("pg_catalog.replace(pg_catalog.to_char("), 7)
+        self.assertEqual(src.count("pg_catalog.replace(pg_catalog.to_char("), 8)
         self.assertIn("'YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z'", src)
         self.assertNotIn('YYYY-MM-DD"T"HH24:MI:SS.US"Z"', src)
         self.assertIn("([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -gt 90", src)
