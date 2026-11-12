@@ -167,6 +167,34 @@ def verify_architecture_integrity(root: Path, paths: list[str], receipt: dict) -
         "semantic_impact_proven": False,
     }
 
+def require_release_work_necessity(paths: list[str], receipt: dict) -> None:
+    """Fail closed on new V3 release source work without a concrete owner-linked delta.
+
+    This checks review admission, not live system safety or the truth of an issue.
+    """
+    release_paths = tuple(p for p in paths if
+        p.startswith(("tools/v3-", "paper_evaluator/v3_", "docs/v3-", "tests/test_v3_")))
+    if not release_paths:
+        return
+    delta = receipt.get("release_work_necessity")
+    require(isinstance(delta, dict), "V3 release work needs explicit new operational necessity")
+    require(delta.get("reason") in (
+        "PROVEN_NEW_DEFECT", "MISSING_LIVE_CAPABILITY", "EXPLICIT_OWNER_RELEASE_STEP"),
+        "V3 release requires a concrete new defect, missing capability or owner step")
+    evidence = delta.get("owner_evidence_url")
+    require(isinstance(evidence, str) and re.fullmatch(
+        r"https://github\\.com/hoffmannherdecke/kraken-eur-scanner/issues/(99|353)(?:#issuecomment-[0-9]+)?",
+        evidence) is not None,
+        "V3 release work needs original owner evidence from issue 99 or 353")
+    require(meaningful(delta.get("why_existing_pass_is_insufficient")),
+            "V3 release work must explain the precise gap not covered by existing PASS")
+    require(meaningful(delta.get("smallest_operational_delta")),
+            "V3 release work must name the smallest actual operational change")
+    require(delta.get("reuse_existing_passes") is True
+            and delta.get("no_historical_reconstruction") is True,
+            "V3 release forbids repeating completed proof and historical reconstruction")
+
+
 def check(root: Path, paths: list[str], receipt: dict) -> dict:
     scopes = classify(paths)
     require(bool(paths), "no changed paths; review must not silently pass")
@@ -195,6 +223,7 @@ def check(root: Path, paths: list[str], receipt: dict) -> dict:
         require(item.get("source_fingerprint") == packet["fingerprint"],
                 scope + " fingerprint stale; rerun context_before_action.py on PR HEAD")
         counts[scope] = len(packet["source_index"])
+    require_release_work_necessity(paths, receipt)
     architecture = verify_architecture_integrity(root, paths, receipt)
     commitment_intake = receipt.get("commitment_intake")
     require(isinstance(commitment_intake,dict),
@@ -237,6 +266,14 @@ def template(root: Path, paths: list[str]) -> dict:
     """Convenient scaffold only. Placeholders MUST be replaced with real review."""
     return {
         "kind": "PROJECT_CONTEXT_REVIEW_V1",
+        "release_work_necessity": {
+            "reason": "MISSING_LIVE_CAPABILITY",
+            "owner_evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99",
+            "why_existing_pass_is_insufficient": "REPLACE with the specific new operational gap beyond all previous accepted proof.",
+            "smallest_operational_delta": "REPLACE with the smallest justified operation or code change to close that gap.",
+            "reuse_existing_passes": True,
+            "no_historical_reconstruction": True,
+        },
         "commitment_intake": {"disposition":"REGISTERED_OR_REUSED",
             "commitment_ids":[],
             "rationale":"REPLACE with actual newly accepted commitments or explain why none arise",
