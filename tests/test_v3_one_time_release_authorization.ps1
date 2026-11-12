@@ -583,11 +583,22 @@ $c1=$q1.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset
 $c2=$q2.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddMinutes(5))
 try{
  $timestamp=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
- $cloudRow=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1';epoch_id=$custody.epoch_id;source_sha256=('c'*64);prepared_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);receipt_sha256=$receiptHash;state='ABORT_RECORDED_NOT_RELEASED';issuer_actor='v3_cas_inhibit_issuer_actor';observed_at_utc=$timestamp;cloud_cas_rpc_count=0;cloud_executor_can_login=$false;cloud_active_series_count=1;cloud_original_active_series_count=1}
+ $cloudRow=[ordered]@{kind='V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1';epoch_id=$custody.epoch_id;source_sha256=('c'*64);prepared_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);receipt_sha256=$receiptHash;state='ABORT_RECORDED_NOT_RELEASED';issuer_actor='v3_cas_inhibit_issuer_actor';observed_at_utc=$timestamp;cloud_cas_rpc_count=1;cloud_cas_rpc_acl_restricted=$true;cloud_executor_can_login=$false;cloud_active_series_count=1;cloud_original_active_series_count=1}
  $cs=New-TestSignedCurrent $cloudRow $c1
  $reviewPins=[pscustomobject]@{epoch_id=$custody.epoch_id;series_id=$custody.series_id;source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64);cloud_certificate_sha256=(Get-V3ReleaseSha256 $c1.RawData);host_certificate_sha256=(Get-V3ReleaseSha256 $c2.RawData);local_fence_file_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64)}
  $verified=Assert-V3PostStopSignedTerminalCloud -Payload $cs.Payload -Cms $cs.Cms -Pins $reviewPins -CurrentCustodyReceiptSha256 $receiptHash
  if($verified.terminal_cloud_abort_confirmed -ne $true -or $verified.host_quarantine_confirmed -ne $false){throw 'V3_POSTSTOP_CLOUD_FALSE_HOST_PASS'}
+ $restricted=[ordered]@{};foreach($key in $cloudRow.Keys){$restricted[$key]=$cloudRow[$key]}
+ $restricted.cloud_cas_rpc_acl_restricted=$false
+ $badAcl=New-TestSignedCurrent $restricted $c1
+ $held=$false
+ try{$null=Assert-V3PostStopSignedTerminalCloud -Payload $badAcl.Payload -Cms $badAcl.Cms -Pins $reviewPins -CurrentCustodyReceiptSha256 $receiptHash}catch{$held=$true}
+ if(-not $held){throw 'V3_POSTSTOP_UNRESTRICTED_CAS_RPC_ACCEPTED'}
+ $restricted.cloud_cas_rpc_acl_restricted=$true;$restricted.cloud_cas_rpc_count=0
+ $badCount=New-TestSignedCurrent $restricted $c1
+ $held=$false
+ try{$null=Assert-V3PostStopSignedTerminalCloud -Payload $badCount.Payload -Cms $badCount.Cms -Pins $reviewPins -CurrentCustodyReceiptSha256 $receiptHash}catch{$held=$true}
+ if(-not $held){throw 'V3_POSTSTOP_CAS_RPC_DRIFT_ACCEPTED'}
  $hostRow=[ordered]@{kind='V3_POSTSTOP_INDEPENDENT_HOST_QUARANTINE_V1';epoch_id=$custody.epoch_id;series_id=$custody.series_id;observed_at_utc=$timestamp;terminal_cloud_reader_sha256=$verified.reader_sha256;local_fence_file_sha256=$reviewPins.local_fence_file_sha256;fence_phase='ARMED';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64);candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true;writer_enabled=$false;writer_process_count=0;other_writer_authorities_closed=$true;native_stop_outcome='UNKNOWN'}
  $hs=New-TestSignedCurrent $hostRow $c2
  $finished=Assert-V3PostStopSignedHostQuarantine -Terminal $verified -HostPayload $hs.Payload -HostCms $hs.Cms -Pins $reviewPins
