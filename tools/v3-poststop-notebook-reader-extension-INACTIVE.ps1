@@ -270,7 +270,7 @@ try{
   $row.next_ordinal -ne 1 -or $row.intent_count -ne 0 -or $row.attempt_count -ne 0 -or
   $row.abort_count -ne 0 -or $row.executor_login_closed -ne $true -or
   $row.executor_sessions_count -ne 0 -or $row.v3_active_series_count -ne 0 -or
-  $row.v2r4_active_series_count -ne 1 -or $row.cloud_cas_rpc_count -ne 0){
+  $row.v2r4_active_series_count -ne 1 -or $row.cloud_cas_rpc_count -ne 1){
   throw 'PR710_CLOUD_STATE_HOLD'
  }
  $signed=Save-V3SignedNotebookReaderSnapshot $wire $ReviewedNotebookCertificateSha256
