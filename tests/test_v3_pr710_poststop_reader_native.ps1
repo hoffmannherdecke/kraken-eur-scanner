@@ -1,6 +1,6 @@
 # PR710: native Windows PowerShell 5.1 offline read-only Reader tests.
 $ErrorActionPreference='Stop'
-$source=Join-Path $PSScriptRoot '../tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1'
+$source=Join-Path $PSScriptRoot '../tools/v3-poststop-notebook-reader-extension-INACTIVE.ps1'
 $tokens=$null;$errors=$null
 $ast=[System.Management.Automation.Language.Parser]::ParseFile($source,[ref]$tokens,[ref]$errors)
 if(@($errors).Count -ne 0){throw ('PR710_NOTEBOOK_SYNTAX_HOLD: '+($errors|Select-Object -First 1).Message)}
