@@ -15,6 +15,8 @@ if(($mode -ceq 'SEARCH' -and ($expected -or $selector -cnotmatch '^[A-Za-z0-9][A
 $roots=@{TRADING='C:\Users\ADMIN\Trading';DOWNLOADS='C:\Users\ADMIN\Downloads';MISTRAL='\\192.168.178.179\Mistral_450';V3Q1='C:\Users\ADMIN\V3Paper-Quelle-46c5abbd6af1';V3Q2='C:\Users\ADMIN\V3Paper-Quelle-5fd60d0e9dc2';V3Q3='C:\Users\ADMIN\V3Paper-Quelle-985ed3230bb4';V3QR='C:\Users\ADMIN\V3Paper-ReleaseSource-306aad033f16';V3P680='C:\Users\ADMIN\V3-PR680-SOURCE-16d40540f7d8';V3P681='C:\Users\ADMIN\V3-PR681-SOURCE-3ee5ea3cda54';V3P682='C:\Users\ADMIN\V3-PR682-SOURCE-53dbcf6d8276';V3RS1='C:\Users\ADMIN\V3-Release-Source-a40e93f7';V3RS2='C:\Users\ADMIN\V3-Release-Source-b019448331df'}
 $root=[string]$roots[$key]
 $deadline=[DateTime]::UtcNow.AddSeconds(75)
+# Fixed diagnostic stages only; do not expose exception strings, paths or content.
+$script:stage='ROOT_CHECK'
 function Check-Time {if([DateTime]::UtcNow -gt $deadline){throw 'FILE_UNAVAILABLE:TIME_LIMIT'}}
 function Assert-RealDirectory([string]$path) {
   # The share root itself is never skipped by the ancestor walk (UNC root equals PathRoot).
@@ -126,6 +128,7 @@ function Result([string]$state,[object[]]$files,[string]$exportFile) {
     checked_at_utc = [DateTimeOffset]::UtcNow.ToString('o')
     reviewed_git_sha = $sourceSha
     file_status = $state
+    failure_stage = $(if($state -cin @('UNAVAILABLE','ACCESS_DENIED','NOT_FOUND','HASH_MISMATCH')){$script:stage}else{'NONE'})
     mode = $mode
     root_key = $key
     files = @($files)
@@ -142,7 +145,8 @@ function Result([string]$state,[object[]]$files,[string]$exportFile) {
 }
 try {
   Assert-RealDirectory $root
-  if($mode -ceq 'SEARCH'){
+  if($mode -ceq 'SEARCH'){ 
+    $script:stage='SEARCH_SCAN'
     $queue=New-Object 'System.Collections.Generic.Queue[string]'
     $queue.Enqueue($root)
     $visited=0;$found=New-Object System.Collections.ArrayList
@@ -178,6 +182,7 @@ try {
     $state=if($found.Count -eq 0){'NOT_FOUND'}elseif($queue.Count -gt 0 -or $visited -ge 1200){'PARTIAL_LIMIT'}else{'FOUND'}
     Result $state @($found.ToArray()) ''
   }else{
+    $script:stage='PATH_DECODE'
     # EXPORT binds observed SHA; DIRECT binds an explicitly selected path and hashes the source inside the guarded job.
     $bytes=$selector.Replace('-','+').Replace('_','/')
     $bytes=$bytes+('='*((4-($bytes.Length%4))%4))
@@ -185,16 +190,19 @@ try {
     if(-not $rel -or $rel -match '[^\x20-\x7e]' -or $rel -match '[^A-Za-z0-9_. \\-]'){throw 'FILE_ACCESS_DENIED:ENCODING'}
     $segments=$rel.Split('\')
     if(@($segments | Where-Object {-not (Safe-Name $_)}).Count -gt 0){throw 'FILE_ACCESS_DENIED:SENSITIVE_NAME'}
+    $script:stage='SOURCE_PATH'
     $file=Assert-Path $rel
     $extension=[IO.Path]::GetExtension($file.Name).ToLowerInvariant()
     if($extension -cnotin @('.txt','.md','.csv','.json','.zip')){throw 'FILE_ACCESS_DENIED:EXPORT_TYPE'}
     $maxSize=if($extension -ceq '.zip'){2097152}else{65536}
     if($file.Length -gt $maxSize -or $file.Length -lt 1){throw 'FILE_ACCESS_DENIED:EXPORT_SIZE'}
+    $script:stage='SOURCE_READ'
     $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
     if($mode -ceq 'EXPORT' -and $hash -cne $expected){throw 'FILE_HASH_MISMATCH'}
     if($mode -ceq 'DIRECT'){$expected=$hash}
     $body=[IO.File]::ReadAllBytes($file.FullName)
     if($body.Length -ne $file.Length -or [BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($body)).Replace('-','').ToLowerInvariant() -cne $expected){throw 'FILE_HASH_MISMATCH'}
+    $script:stage='CONTENT_SCREEN'
     if($extension -ceq '.zip') {
       Assert-SafeZip $body
     }else{
@@ -202,6 +210,7 @@ try {
       try{$decoded=$text.GetString($body)}catch{throw 'FILE_ACCESS_DENIED:BINARY'}
       if($decoded -match '(?i)(password|passwd|secret|api[_-]?key|token|authorization|bearer|private.key|BEGIN [A-Z ]*PRIVATE KEY|postgres(?:ql)?://|SUPABASE_|sk-[A-Za-z0-9]{10})'){throw 'FILE_ACCESS_DENIED:SENSITIVE_CONTENT'}
     }
+    $script:stage='TEMP_STAGE'
     $temp=[string]$env:RUNNER_TEMP
     if(-not $temp -or -not (Test-Path -LiteralPath $temp -PathType Container)){throw 'FILE_UNAVAILABLE:TEMP'}
     if($mode -ceq 'DIRECT') {
@@ -217,6 +226,7 @@ try {
       Remove-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue;throw 'FILE_HASH_MISMATCH'
     }
     if($mode -ceq 'DIRECT') {
+      $script:stage='PROVENANCE'
       $receipt=[pscustomobject][ordered]@{
         kind='MINIPC_FILE_PROVENANCE_V1'
         root_key=$key
@@ -230,6 +240,7 @@ try {
         source_identity='CryptoSupportSvc'
       }
       [IO.File]::WriteAllText((Join-Path $package 'origin-sha256.json'),($receipt|ConvertTo-Json -Depth 4),[Text.UTF8Encoding]::new($false))
+      $script:stage='COMPLETE'
       Result 'EXPORT_STAGED' @([pscustomobject]@{relative_path=$rel;size=[long]$file.Length;sha256=$hash}) $package
     } else {
       Result 'EXPORT_STAGED' @([pscustomobject]@{relative_path=$rel;size=[long]$file.Length;sha256=$hash}) $dest

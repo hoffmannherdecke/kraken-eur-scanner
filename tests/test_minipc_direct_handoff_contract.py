@@ -16,6 +16,11 @@ class DirectFileHandoffContract(unittest.TestCase):
         self.assertIn("origin-sha256.json",SRC)
         self.assertIn("FILE_ACCESS_DENIED:RESERVED_NAME",SRC)
         self.assertIn("original_modified=$false",SRC)
+    def test_non_sensitive_diagnostic_stages(self):
+        for stage in ("ROOT_CHECK","PATH_DECODE","SOURCE_PATH","SOURCE_READ","CONTENT_SCREEN","TEMP_STAGE","PROVENANCE","COMPLETE"):
+            self.assertIn(stage,SRC)
+        self.assertIn("failure_stage =",SRC)
+        self.assertNotIn("Exception.Message) | Write-Output",SRC)
     def test_original_guardrails_still_apply(self):
         for x in (
             "CryptoSupportSvc", "WindowsBuiltInRole]::Administrator",
