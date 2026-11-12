@@ -111,6 +111,37 @@ class ManualTPMKeySourceContract(unittest.TestCase):
   self.assertNotIn("Invoke-RestMethod",self.s)
   self.assertNotIn("Set-Acl",self.s)
 
+
+ def test_scoped_poststop_current_host_signer_addition(self):
+  # Existing preinvoke execution remains intact, with a separate admitted mode.
+  for x in (
+    "[switch]$SignCurrentHost",
+    "V3_SIGNER_SIGN_MODES_MUTUALLY_EXCLUSIVE",
+    "SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY",
+    "function Test-V3OriginalhostFreshCurrentReader",
+    "V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1",
+    "ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40",
+    "V3_SIGNER_CURRENT_HOST_OWNER_DER_PIN_HOLD",
+    "V3_SIGNER_CURRENT_HOST_DUPLICATE_FIELD_HOLD",
+    "V3_SIGNER_CURRENT_HOST_NOT_FRESH_HOLD",
+    "V3_SIGNER_CURRENT_HOST_TASK_OR_XML_DRIFT_HOLD",
+    "Get-ScheduledTask", "Export-ScheduledTask",
+    "Get-FileHash", "Get-CimInstance Win32_Process",
+    "Test-V3OriginalhostFreshCurrentReader $raw",
+    "current_host_signature_scope_only=$SignCurrentHost",
+    "physical_snapshot_not_exclusive_lease=$true",
+    "recovery_authorized=$false",
+    "issuer_authorized=$false",
+    "Test-V3UnsignedPreinvokeCandidate $raw",
+  ):
+   with self.subTest(x=x): self.assertIn(x,self.s)
+  self.assertEqual(self.s.count("function Test-V3OriginalhostFreshCurrentReader"),1)
+  self.assertEqual(self.s.count("function Assert-V3CmsLocalPath"),1)
+  self.assertEqual(self.s.count("$cms.ComputeSignature($signer)"),1)
+  self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
+  self.assertNotIn("Register-ScheduledTask",self.s)
+  self.assertNotIn("Invoke-V3PostStopCloudOnceCandidate",self.s)
+
  def test_public_pin_not_release_authority(self):
   for x in ("certificate_der_sha256_public_pin_unapproved",
             "originalhost_signed_receipt_generated=$false",
