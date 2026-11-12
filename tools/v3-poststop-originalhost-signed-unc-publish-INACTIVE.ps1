@@ -8,10 +8,21 @@ $ErrorActionPreference='Stop'
 if($env:COMPUTERNAME -ine 'MINI-PC' -or $env:GITHUB_ACTIONS -eq 'true' -or
  -not [Environment]::UserInteractive){throw 'PR710_ORIGINALHOST_INTERACTIVE_ONLY_HOLD'}
 if($ObservationNonce -cnotmatch '^[a-f0-9]{32}$'){throw 'PR710_ORIGINALHOST_NONCE_HOLD'}
-$root='\\192.168.178.179\Mistral_450'
-$final=[IO.Path]::GetFullPath($HostDirectory).TrimEnd('\')
-if($final -cne ($root+'\PR710-'+$ObservationNonce) -or
- [IO.Directory]::Exists($final) -or [IO.File]::Exists($final)){
+# Same physical location: the Mini-PC writes through its already admitted
+# local owner identity; the independent Notebook reads the signed pair via UNC.
+# Do not grant the TPM owner a new SMB account/share permission.
+$uncRoot='\\192.168.178.179\Mistral_450'
+$expectedUnc=$uncRoot+'\PR710-'+$ObservationNonce
+$received=[IO.Path]::GetFullPath($HostDirectory).TrimEnd('\')
+$share=Get-SmbShare -Name 'Mistral_450' -ErrorAction Stop
+if($env:COMPUTERNAME -ine 'MINI-PC' -or
+   [IO.Path]::GetFullPath([string]$share.Path).TrimEnd('\') -cne 'D:' -or
+   $received -cne $expectedUnc){
+ throw 'PR710_ORIGINALHOST_FIXED_SHARE_MAP_HOLD'
+}
+$root='D:\'
+$final=Join-Path $root ('PR710-'+$ObservationNonce)
+if([IO.Directory]::Exists($final) -or [IO.File]::Exists($final)){
  throw 'PR710_ORIGINALHOST_DESTINATION_OR_REPLAY_HOLD'
 }
 # The existing TPM signer explicitly requires local non-network output.
@@ -61,6 +72,6 @@ if($finalJsonSha -cne (Get-V3ReleaseSha256 $payload) -or
  observation_nonce=$ObservationNonce
  originalhost_payload_sha256=(Get-V3ReleaseSha256 $payload)
  originalhost_cms_sha256=(Get-V3ReleaseSha256 $signature)
- originalhost_unc_directory=$final
+ originalhost_unc_directory=$expectedUnc
  recovery_authorized=$false;writer_authorized=$false
 }|ConvertTo-Json -Compress
