@@ -21,8 +21,13 @@ if($pinFile.PSIsContainer -or $pinFile.Length -lt 100 -or $pinFile.Length -gt 81
  (Get-FileHash -LiteralPath $pinFile.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ApprovedPinsSha256){
  throw 'PR710_WINDOW_APPROVED_PINS_ORIGINAL_HOLD'
 }
-$pins=([Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($pinFile.FullName)))|ConvertFrom-Json -ErrorAction Stop
-if([string]$pins.observation_nonce -cne $ObservationNonce){throw 'PR710_WINDOW_NONCE_MISMATCH'}
+$approvedBytes=[IO.File]::ReadAllBytes($pinFile.FullName)
+$approvedHash=[Security.Cryptography.SHA256]::Create()
+try{$actualApproved=([BitConverter]::ToString($approvedHash.ComputeHash($approvedBytes))).Replace('-','').ToLowerInvariant()}
+finally{$approvedHash.Dispose()}
+if($actualApproved -cne $ApprovedPinsSha256){throw 'PR710_OWNER_POLICY_FILE_CHANGED_HOLD'}
+$approved=([Text.UTF8Encoding]::new($false,$true).GetString($approvedBytes))|ConvertFrom-Json -ErrorAction Stop
+if([string]$approved.observation_nonce -cne $ObservationNonce){throw 'PR710_WINDOW_NONCE_MISMATCH'}
 $json=Join-Path $folder 'current-host-original.json'
 $cms=Join-Path $folder 'current-host-original.cms'
 if([IO.File]::Exists($json) -or [IO.File]::Exists($cms)){throw 'PR710_WINDOW_STALE_ORIGINAL_HOLD'}
