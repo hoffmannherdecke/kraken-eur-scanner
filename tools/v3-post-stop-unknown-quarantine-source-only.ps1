@@ -420,3 +420,55 @@ function Assert-V3PostStopSignedHostQuarantine(
   ap05a_authorized=$false
  }
 }
+
+
+# Binds the *same unmodified observed Host bytes* to two different admitted
+# signatures: an originalhost-origin CMS and the separately owner-approved
+# Notebook Host-Reader CMS. The Cloud reader remains a third independent CMS.
+# CRYPTO-ONLY: a key signature does not by itself establish a genuine Windows
+# observation, signer ACL isolation, or admission of a new TPM signing scope.
+# No host TPM signing capability or dispatch is introduced by this function.
+function Assert-V3PostStopCurrentCustodyWithOriginalHostCms(
+ [byte[]]$HostPayload,[byte[]]$OriginalHostCms,[string]$AdmittedOriginalHostCertificateSha256,
+ [byte[]]$HostReaderCms,[byte[]]$CloudPayload,[byte[]]$CloudCms,
+ [object]$Pins,[datetimeoffset]$Now=[datetimeoffset]::UtcNow) {
+ if($null -eq $Pins -or $null -eq $HostPayload -or
+    $null -eq $OriginalHostCms -or
+    [string]$AdmittedOriginalHostCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    [string]$AdmittedOriginalHostCertificateSha256 -ceq [string]$Pins.host_certificate_sha256 -or
+    [string]$AdmittedOriginalHostCertificateSha256 -ceq [string]$Pins.cloud_certificate_sha256) {
+  throw 'V3_POSTSTOP_ORIGINALHOST_DISTINCT_SIGNER_ADMISSION_HOLD'
+ }
+ # The originalhost signer pin must come from independently admitted material,
+ # never from the signed payload. SignedCms checks exact original bytes.
+ Assert-V3ReleaseCms -Payload $HostPayload -Cms $OriginalHostCms -ReviewedAuthorityCertificateSha256 $AdmittedOriginalHostCertificateSha256
+ # Reuse the previously tested full contract: separate Notebook/Cloud CMS,
+ # real source/epoch/ACL/fence pins, 60s timestamps, 15s overlap and nonce.
+ $review=Assert-V3PostStopUnknownCurrentCustody -HostPayload $HostPayload `
+  -HostCms $HostReaderCms -CloudPayload $CloudPayload -CloudCms $CloudCms `
+  -Pins $Pins -Now $Now
+ if([string]$review.disposition -cne 'SOURCE_REVIEW_CANDIDATE_ONLY' -or
+    $review.independently_signed_current_custody -ne $true -or
+    $review.production_authorized -ne $false) {
+  throw 'V3_POSTSTOP_ORIGINALHOST_REVIEW_UNEXPECTED_AUTHORITY_HOLD'
+ }
+ return [pscustomobject]@{
+  kind='V3_POSTSTOP_TRIPLE_CMS_CRYPTO_SOURCE_REVIEW_V1'
+  epoch_id=[string]$Pins.epoch_id
+  host_payload_sha256=[string]$Pins.host_payload_sha256
+  cloud_payload_sha256=[string]$Pins.cloud_payload_sha256
+  originalhost_certificate_sha256=$AdmittedOriginalHostCertificateSha256
+  notebook_host_certificate_sha256=[string]$Pins.host_certificate_sha256
+  cloud_reader_certificate_sha256=[string]$Pins.cloud_certificate_sha256
+  distinct_exact_host_byte_signatures_valid=$true
+  current_custody_contract_verified=$true
+  physical_originalhost_observation_independently_proven_here=$false
+  originalhost_tpm_role_admitted_here=$false
+  issuer_transport_registered=$false
+  recovery_authorized=$false
+  cloud_abort_authorized=$false
+  historical_stop_success_claimed=$false
+  writer_authorized=$false
+  disposition='CRYPTO_SOURCE_REVIEW_ONLY_NEEDS_ORIGINALHOST_PRODUCER_AND_OWNER_EXECUTION'
+ }
+}
