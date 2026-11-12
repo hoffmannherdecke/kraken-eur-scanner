@@ -939,7 +939,7 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         # signed forward T0, signed PREPARED abort, signed issuer pre-STOP,\n        # and the signed follow-up release epoch).
         # Still the SAME two actors, no third credentials or CAS authority.
         self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 10)
-        self.assertEqual(src.count("COMMIT;"), 9)
+        self.assertEqual(src.count("COMMIT;"), 10)
         self.assertIn("[switch]$PrecommitCloudInventory", src)
         self.assertIn("[switch]$PostcommitDurableIntent", src)
         self.assertIn("+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent+[int]$PaperReleaseSignedCurrent.IsPresent) -gt 1", src)
