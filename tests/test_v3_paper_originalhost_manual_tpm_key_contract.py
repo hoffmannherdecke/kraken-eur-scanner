@@ -183,6 +183,16 @@ class ManualTPMKeySourceContract(unittest.TestCase):
   self.assertIn("[int][char]$raw[0] -eq 0xFEFF",self.s)
   self.assertNotIn("$raw.StartsWith([char]0xFEFF)",self.s)
 
+ def test_native_windows_powershell_pkcs_assembly_must_be_loaded(self):
+  # The interactive originalhost uses Windows PowerShell 5.1, where
+  # SignedCms lives in System.Security and need not be pre-loaded.
+  self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop",self.s)
+  self.assertIn("System.Security.Cryptography.Pkcs.ContentInfo' -as [type]",self.s)
+  self.assertIn("System.Security.Cryptography.Pkcs.SignedCms' -as [type]",self.s)
+  self.assertIn("V3_SIGNER_PKCS_FRAMEWORK_ASSEMBLY_HOLD",self.s)
+  self.assertLess(self.s.index("Add-Type -AssemblyName System.Security"),
+                  self.s.index("$msg=[Security.Cryptography.Pkcs.ContentInfo]::new($raw)"))
+
  def test_public_pin_not_release_authority(self):
   for x in ("certificate_der_sha256_public_pin_unapproved",
             "originalhost_signed_receipt_generated=$false",
