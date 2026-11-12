@@ -32,3 +32,21 @@ Fehlerzustände: `ACCESS_DENIED`, `NOT_FOUND`, `UNAVAILABLE`, `HASH_MISMATCH`; u
 5. SafePause-Stopp/Disabled und das Fehlen jeder neuen Runtime-/Rechteänderung prüfen. Nur danach `MINIPC_FILE_ACCESS_E2E_PASS` und den Original-Run in #353 dokumentieren.
 
 Die vorhandenen Basisabnahmen von Runner, USV, V3 und Workspace werden nicht wiederholt.
+## Ein-Schritt-Direktexport (ab PR #715/#716, privater Bridge-PR #23)
+
+Zusätzlich zum unveränderten zweistufigen SEARCH/EXPORT unterstützt die vorhandene Bridge
+`MINIPC_FILE_V1 | <public-main-sha> | DIRECT | <root-key> | <base64url-relative-path>`.
+Die ausgewählte einzelne Datei muss durch das eingeschränkte Dienstkonto lesbar sein und
+alle unveränderten Pfad-, Typ-, Größen-, UTF-8-/ZIP- und Secret-Prüfungen bestehen.
+`DIRECT` benötigt keine vorherige SEARCH-Runde, vergibt aber auch keine neuen Rechte.
+Im bestehenden kurzlebigen privaten GitHub-Artefakt liegen die byteidentische Datei
+unter ihrem Originalnamen und `origin-sha256.json` mit Root-Alias, relativem Pfad,
+SHA256, Größe, Quell-Commit und UTC-Kopierzeit. Ein kollidierender Quelldateiname
+`origin-sha256.json` wird zurückgewiesen. Der Bericht ist ein Herkunftsbeleg,
+keine unabhängige digitale Signatur und keine Garantie auf Geheimnisfreiheit.
+
+Die authentisierte private Issue-#13-Berechtigung, die begrenzte Runner-Verfügbarkeit,
+der lokale pin-gebundene Prejob und SafePause bleiben erforderlich.
+Für eine spätere Geräteinstallation müssen der lokale Prejob, die Workflow-Pin-Datei
+und die im Fensteroperator fest hinterlegte private SHA konsistent auf der
+genehmigten privaten Merge-Revision liegen. Quell-CI allein ist kein Host-E2E-Nachweis.
