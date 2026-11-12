@@ -49,8 +49,10 @@ foreach($row in @(@('current-host-original.json',$payload),@('current-host-origi
 }
 if([IO.Directory]::Exists($final)){throw 'PR710_ORIGINALHOST_FINAL_REPLAY_HOLD'}
 [IO.Directory]::Move($staging,$final)
-if((Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes((Join-Path $final 'current-host-original.json'))) -cne (Get-V3ReleaseSha256 $payload) -or
-   (Get-V3ReleaseSha256 ([IO.File]::ReadAllBytes((Join-Path $final 'current-host-original.cms'))) -cne (Get-V3ReleaseSha256 $signature)){
+$finalJsonSha=(Get-FileHash -LiteralPath (Join-Path $final 'current-host-original.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+$finalCmsSha=(Get-FileHash -LiteralPath (Join-Path $final 'current-host-original.cms') -Algorithm SHA256).Hash.ToLowerInvariant()
+if($finalJsonSha -cne (Get-V3ReleaseSha256 $payload) -or
+   $finalCmsSha -cne (Get-V3ReleaseSha256 $signature)){
  throw 'PR710_ORIGINALHOST_FINAL_BYTE_DRIFT_HOLD'
 }
 [pscustomobject]@{
