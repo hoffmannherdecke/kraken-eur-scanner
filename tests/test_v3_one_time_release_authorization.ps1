@@ -470,6 +470,28 @@ try {
      -Pins $binding -Now $now
   }catch{$held=$true}
   if(-not $held){throw 'V3_POSTSTOP_TRIPLE_CMS_MUTATED_ORIGINAL_ACCEPTED'}
+  # A synthetic originalhost signer cannot satisfy the *real* owner-admitted
+  # TPM scope even when all three disposable CMS signatures are valid.
+  $held=$false
+  try {
+   $null=Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms `
+    -HostPayload $hs.Payload -OriginalHostCms $originSigner.Cms `
+    -NotebookHostCms $hs.Cms -CloudPayload $cs.Payload -CloudCms $cs.Cms `
+    -Pins $binding -Now $now
+  }catch{$held=$true}
+  if(-not $held){throw 'V3_POSTSTOP_UNADMITTED_TPM_CERT_WAS_ACCEPTED'}
+  # The owner binding must fail before trusting attacker-supplied source pins.
+  $badPins=$binding|ConvertTo-Json -Depth 8|ConvertFrom-Json
+  $badPins.source_sha256=('0'*64)
+  $held=$false
+  try {
+   $null=Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms `
+    -HostPayload $hs.Payload -OriginalHostCms $originSigner.Cms `
+    -NotebookHostCms $hs.Cms -CloudPayload $cs.Payload -CloudCms $cs.Cms `
+    -Pins $badPins -Now $now
+  }catch{$held=$true}
+  if(-not $held){throw 'V3_POSTSTOP_OWNER_SOURCE_DRIFT_ACCEPTED'}
+  Write-Output 'V3_POSTSTOP_OWNER_TPM_SCOPE_PIN_NEGATIVES_PASS'
   Write-Output 'V3_POSTSTOP_TRIPLE_CMS_EXACT_HOST_BYTES_SOURCE_ONLY_PASS'
  }finally{$originCert.Dispose();$originKey.Dispose()}
  function Expect-CurrentHold($hostRec,$cloudRec,$b,$clock) {
