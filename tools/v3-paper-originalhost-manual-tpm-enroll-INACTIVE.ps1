@@ -2,6 +2,7 @@ param(
  [switch]$Enroll,
  [switch]$InspectProvider,
  [switch]$SignPreinvoke,
+ [switch]$SignCurrentHost,
  [string]$UnsignedPayloadPath='',
  [string]$DetachedCmsOutputPath='',
  [string]$SignApproval='',
@@ -27,13 +28,17 @@ $confirmation='ENROLL_MANUAL_TPM_SIGNING_KEY_NO_V3_RELEASE'
 if($InspectProvider -and $Enroll){
  throw 'V3_SIGNER_PROVIDER_READONLY_CANNOT_ENROLL'
 }
-if($SignPreinvoke -and ($Enroll -or $InspectProvider)){
+if($SignPreinvoke -and $SignCurrentHost){throw 'V3_SIGNER_SIGN_MODES_MUTUALLY_EXCLUSIVE'}
+if(($SignPreinvoke -or $SignCurrentHost) -and ($Enroll -or $InspectProvider)){
  throw 'V3_SIGNER_ONE_MODE_ONLY_NO_ENROLL_OR_PROBE'
 }
 if($SignPreinvoke -and $SignApproval -cne 'SIGN_ONE_UNSIGNED_PREINVOKE_CANDIDATE_NO_RELEASE'){
  throw 'V3_SIGNER_CMS_EXPLICIT_MANUAL_APPROVAL_REQUIRED'
 }
-if(-not $SignPreinvoke -and ($UnsignedPayloadPath -or $DetachedCmsOutputPath -or $SignApproval)){
+if($SignCurrentHost -and $SignApproval -cne 'SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY'){
+ throw 'V3_SIGNER_CURRENT_HOST_EXPLICIT_APPROVAL_REQUIRED'
+}
+if(-not ($SignPreinvoke -or $SignCurrentHost) -and ($UnsignedPayloadPath -or $DetachedCmsOutputPath -or $SignApproval)){
  throw 'V3_SIGNER_CMS_ARGS_WITHOUT_SIGN_MODE_HOLD'
 }
 if($Enroll -and $Approval -cne $confirmation){
@@ -122,7 +127,7 @@ $providerReadOnly = $false
 $providerExactPlatform = $false
 $userScopedKey = $false
 $exportPolicyNonExportable = $false
-if($InspectProvider -or $SignPreinvoke){
+if($InspectProvider -or $SignPreinvoke -or $SignCurrentHost){
  if($null -eq $cert){throw 'V3_SIGNER_PROVIDER_READONLY_CERT_MISSING'}
  if(-not $tpmReady){throw 'V3_SIGNER_PROVIDER_READONLY_TPM_NOT_READY'}
  $rsa=$null
@@ -208,6 +213,539 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
  }
  return $obj
 }
+
+# Only freshly read ORIGINAL Mini-PC state can be signed for PR #710. The
+# provided receipt is not allowed to supply trusted hashes or signer pins.
+# Recheck actual fence bytes, native task XML/Enabled state and V3 process
+# candidates; no STOP/CAS/issuer/Cloud/task writes. This is a snapshot,
+# not an OS-level exclusive lease or proof of every possible writer authority.
+function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
+ if($null -eq $Payload -or $Payload.Length -lt 450 -or $Payload.Length -gt 8192){
+  throw 'V3_SIGNER_CURRENT_HOST_PAYLOAD_SIZE_HOLD'
+ }
+ $raw=[Text.UTF8Encoding]::new($false,$true).GetString($Payload)
+ if($raw.Contains([char]0) -or $raw.StartsWith([char]0xFEFF)){
+  throw 'V3_SIGNER_CURRENT_HOST_UTF8_HOLD'
+ }
+ try {$v=$raw|ConvertFrom-Json -ErrorAction Stop}
+ catch {throw 'V3_SIGNER_CURRENT_HOST_JSON_HOLD'}
+ $names=@('kind','series_id','epoch_id','source_sha256',
+  'observation_nonce','observed_at_utc','original_fence_sha256',
+  'local_fence_file_sha256','fence_phase','candidates_xml_sha256',
+  'wait_xml_sha256','cloudsync_xml_sha256','writer_xml_sha256',
+  'candidates_enabled','wait_enabled','cloudsync_enabled','writer_enabled',
+  'writer_process_count','other_writer_authorities_closed',
+  'native_stop_outcome','current_host_custody_verified')
+ if($null -eq $v -or $v -isnot [pscustomobject] -or
+    @($v.PSObject.Properties.Name).Count -ne $names.Count -or
+    @($v.PSObject.Properties.Name|Where-Object {$_ -cnotin $names}).Count -ne 0){
+  throw 'V3_SIGNER_CURRENT_HOST_FIELDS_HOLD'
+ }
+ foreach($field in $names){
+  if(@([regex]::Matches($raw,'"' + $field + '"\\s*:')).Count -ne 1){
+   throw 'V3_SIGNER_CURRENT_HOST_DUPLICATE_FIELD_HOLD'
+  }
+ }
+ $knownFence='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ if([string]$v.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1' -or
+    [string]$v.series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$v.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$v.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
+    [string]$v.original_fence_sha256 -cne $knownFence -or
+    [string]$v.local_fence_file_sha256 -cne $knownFence -or
+    [string]$v.fence_phase -cne 'ARMED' -or
+    [string]$v.native_stop_outcome -cne 'UNKNOWN' -or
+    [string]$v.observation_nonce -cnotmatch '^[a-f0-9]{32}
+# overwrite mistakes. This does not assert administrator-independent ACLs.
+function Assert-V3CmsLocalPath([string]$Path,[bool]$ExistingLeaf){
+ if([string]::IsNullOrWhiteSpace($Path) -or
+    -not [IO.Path]::IsPathRooted($Path)){throw 'V3_SIGNER_CMS_ABSOLUTE_PATH_REQUIRED'}
+ $p=[IO.Path]::GetFullPath($Path)
+ if($p.StartsWith('\\') -or $p.StartsWith('//')){
+  throw 'V3_SIGNER_CMS_NETWORK_PATH_DENIED'
+ }
+ if($ExistingLeaf -and -not [IO.File]::Exists($p)){
+  throw 'V3_SIGNER_CMS_INPUT_MISSING'
+ }
+ if(-not $ExistingLeaf -and [IO.File]::Exists($p)){
+  throw 'V3_SIGNER_CMS_OUTPUT_REPLAY_NO_OVERWRITE'
+ }
+ $cursor=if($ExistingLeaf){$p}else{[IO.Path]::GetDirectoryName($p)}
+ if(-not [IO.Directory]::Exists([IO.Path]::GetDirectoryName($p))){
+  throw 'V3_SIGNER_CMS_PARENT_DIRECTORY_MISSING'
+ }
+ while(-not [string]::IsNullOrEmpty($cursor)){
+  if([IO.File]::Exists($cursor) -or [IO.Directory]::Exists($cursor)){
+   $info=Get-Item -LiteralPath $cursor -Force -ErrorAction Stop
+   if(([int]$info.Attributes -band [int][IO.FileAttributes]::ReparsePoint) -ne 0){
+    throw 'V3_SIGNER_CMS_REPARSE_PATH_DENIED'
+   }
+  }
+  $parent=[IO.Path]::GetDirectoryName($cursor.TrimEnd('\'))
+  if([string]::IsNullOrEmpty($parent) -or $parent -ceq $cursor){break}
+  $cursor=$parent
+ }
+ return $p
+}
+if($SignPreinvoke -or $SignCurrentHost){
+ if(-not $providerReadOnly -or -not $tpmReady -or $null -eq $cert){
+  throw 'V3_SIGNER_CMS_ORIGINAL_PROVIDER_NOT_VERIFIED'
+ }
+ if([IO.Path]::GetExtension($UnsignedPayloadPath) -cne '.json' -or
+    [IO.Path]::GetExtension($DetachedCmsOutputPath) -cne '.cms'){
+  throw 'V3_SIGNER_CMS_FILE_TYPE_HOLD'
+ }
+ $in=Assert-V3CmsLocalPath $UnsignedPayloadPath $true
+ $out=Assert-V3CmsLocalPath $DetachedCmsOutputPath $false
+ if($in -ceq $out){throw 'V3_SIGNER_CMS_INPUT_EQUALS_OUTPUT'}
+ $length=(Get-Item -LiteralPath $in -ErrorAction Stop).Length
+ if($length -lt 200 -or $length -gt $(if($SignCurrentHost){8192}else{2048})){
+  throw 'V3_SIGNER_CMS_INPUT_FILE_BOUNDS'
+ }
+ $raw=[IO.File]::ReadAllBytes($in)
+ if($SignCurrentHost){
+  if($pin -cne 'ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'){
+   throw 'V3_SIGNER_CURRENT_HOST_OWNER_DER_PIN_HOLD'
+  }
+  $null=Test-V3OriginalhostFreshCurrentReader $raw
+ }else{
+  $null=Test-V3UnsignedPreinvokeCandidate $raw
+ }
+ # Exactly the pre-existing CurrentUser TPM key; no export or second key.
+ # The CMS proves signing math only; no Cloud COMMIT/Reader/attempts/caller.
+ $msg=[Security.Cryptography.Pkcs.ContentInfo]::new($raw)
+ $cms=[Security.Cryptography.Pkcs.SignedCms]::new($msg,$true)
+ $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+ $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+ $signer.IncludeOption=[Security.Cryptography.X509Certificates.X509IncludeOption]::EndCertOnly
+ try{$cms.ComputeSignature($signer)}
+ catch{throw 'V3_SIGNER_CMS_TPM_SIGNATURE_FAILURE_KEEP_ORIGINAL_KEY'}
+ $encoded=[byte[]]$cms.Encode()
+ if($encoded.Length -lt 64 -or $encoded.Length -gt 32768 -or
+    $cms.SignerInfos.Count -ne 1){
+  throw 'V3_SIGNER_CMS_SIGNATURE_SIZE_OR_SIGNER_COUNT_HOLD'
+ }
+ try{
+  $verify=[Security.Cryptography.Pkcs.SignedCms]::new(
+   [Security.Cryptography.Pkcs.ContentInfo]::new($raw),$true)
+  $verify.Decode($encoded)
+  if(-not $verify.Detached -or $verify.SignerInfos.Count -ne 1 -or
+     [string]$verify.SignerInfos[0].DigestAlgorithm.Value -cne
+       '2.16.840.1.101.3.4.2.1'){
+   throw 'V3_SIGNER_CMS_READBACK_MISMATCH'
+  }
+  $verify.CheckSignature($true)
+ }catch{throw 'V3_SIGNER_CMS_SELF_VERIFY_FAILURE_NO_FILE'}
+ # Exclusive, one-shot output. Partial files intentionally remain on crash:
+ # never silently remove, repair, overwrite or retry an uncertain attempt.
+ try{
+  $stream=[IO.FileStream]::new($out,[IO.FileMode]::CreateNew,
+     [IO.FileAccess]::Write,[IO.FileShare]::None)
+  try{$stream.Write($encoded,0,$encoded.Length);$stream.Flush($true)}
+  finally{$stream.Dispose()}
+ }catch{throw 'V3_SIGNER_CMS_OUTPUT_INCOMPLETE_OR_REPLAY_HOLD'}
+ $h=[Security.Cryptography.SHA256]::Create()
+ try{
+  $payloadHash=([BitConverter]::ToString($h.ComputeHash($raw))).Replace('-','').ToLowerInvariant()
+  $cmsHash=([BitConverter]::ToString($h.ComputeHash($encoded))).Replace('-','').ToLowerInvariant()
+ }finally{$h.Dispose()}
+ [pscustomobject][ordered]@{
+  kind=$(if($SignCurrentHost){'V3_ORIGINALHOST_TPM_CURRENT_READER_ORIGIN_CMS_V1'}else{'V3_ORIGINALHOST_MANUAL_TPM_PREINVOKE_CMS_CANDIDATE_V1'})
+  status=$(if($SignCurrentHost){'CURRENT_ORIGINALHOST_ORIGIN_CMS_SIGNED_NO_RECOVERY_AUTHORITY'}else{'ORIGINALHOST_CMS_SIGNED_CANDIDATE_NO_CLOUD_OR_CAS_AUTHORITY'})
+  payload_sha256=$payloadHash
+  detached_cms_sha256=$cmsHash
+  certificate_der_sha256_public_pin_unapproved=$pin
+  existing_key_platform_provider_matches=$providerExactPlatform
+  existing_key_current_user_scope_matches=$userScopedKey
+  existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
+  originalhost_signed_cms_candidate_generated=$true
+  original_reader_commit_authenticated_by_this_action=$false
+  current_host_signature_scope_only=$SignCurrentHost
+  physical_snapshot_not_exclusive_lease=$true
+  recovery_authorized=$false
+  issuer_authorized=$false
+  independent_offhost_custody_proven=$false
+  cas_attempt_coverage_proven=$false
+  precommit_restore_authorized=$false
+  cloud_cas_authorized=$false
+  old_writer_auto_rearm_allowed=$false
+  v3_paper_activated=$false
+ }|ConvertTo-Json -Depth 3
+ return
+}
+
+[pscustomobject][ordered]@{
+ kind='V3_ORIGINALHOST_MANUAL_TPM_PUBLIC_IDENTITY_V1'
+ status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
+  'READONLY_CERT_PRESENT_NOT_TRUSTED_FOR_RELEASE'
+ }else{'READONLY_NO_CERT_ENROLLED'}
+ interactive_account_matches_local_admin=($account -ieq $expected -and
+   [string]$identity.User.Value -ceq $expectedSid -and
+   $who.IsInRole($adminRole) -and $sessionId -gt 0)
+ windows_tpm_ready=$tpmReady
+ provider_requested=$provider
+ provider_metadata_readonly_checked=$providerReadOnly
+ existing_key_platform_provider_matches=$providerExactPlatform
+ existing_key_current_user_scope_matches=$userScopedKey
+ existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
+ provider_metadata_not_external_attestation=$true
+ store_location=$store
+ certificate_present=($null -ne $cert)
+ certificate_thumbprint_sha1=if($null -ne $cert){[string]$cert.Thumbprint}else{$null}
+ certificate_der_sha256_public_pin_unapproved=$pin
+ certificate_expires_utc=if($null -ne $cert){$cert.NotAfter.ToUniversalTime().ToString('o')}else{$null}
+ private_key_exported=$false
+ private_key_acl_independently_verified=$false
+ tpm_hardware_attestation_independently_verified=$false
+ originalhost_signed_receipt_generated=$false
+ pin_externally_reviewed_and_approved=$false
+ originalhost_runtime_identity_verified=$false
+ six_e2e_release_proofs_credited=0
+ cloud_cas_authorized=$false
+ v3_task_modified=$false
+ v2r4_modified=$false
+ v3_paper_activated=$false
+} | ConvertTo-Json -Depth 3
+ -or
+    $v.writer_process_count -isnot [int] -or $v.writer_process_count -ne 0 -or
+    $v.other_writer_authorities_closed -isnot [bool] -or
+    $v.other_writer_authorities_closed -ne $true -or
+    $v.current_host_custody_verified -isnot [bool] -or
+    $v.current_host_custody_verified -ne $true){
+  throw 'V3_SIGNER_CURRENT_HOST_SCOPE_OR_STATE_HOLD'
+ }
+ $m=[regex]::Match($raw,'"observed_at_utc"\\s*:\\s*"(?<t>[^"]+)"')
+ if(-not $m.Success -or $m.Groups['t'].Value -cnotmatch
+    '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z
+# overwrite mistakes. This does not assert administrator-independent ACLs.
+function Assert-V3CmsLocalPath([string]$Path,[bool]$ExistingLeaf){
+ if([string]::IsNullOrWhiteSpace($Path) -or
+    -not [IO.Path]::IsPathRooted($Path)){throw 'V3_SIGNER_CMS_ABSOLUTE_PATH_REQUIRED'}
+ $p=[IO.Path]::GetFullPath($Path)
+ if($p.StartsWith('\\') -or $p.StartsWith('//')){
+  throw 'V3_SIGNER_CMS_NETWORK_PATH_DENIED'
+ }
+ if($ExistingLeaf -and -not [IO.File]::Exists($p)){
+  throw 'V3_SIGNER_CMS_INPUT_MISSING'
+ }
+ if(-not $ExistingLeaf -and [IO.File]::Exists($p)){
+  throw 'V3_SIGNER_CMS_OUTPUT_REPLAY_NO_OVERWRITE'
+ }
+ $cursor=if($ExistingLeaf){$p}else{[IO.Path]::GetDirectoryName($p)}
+ if(-not [IO.Directory]::Exists([IO.Path]::GetDirectoryName($p))){
+  throw 'V3_SIGNER_CMS_PARENT_DIRECTORY_MISSING'
+ }
+ while(-not [string]::IsNullOrEmpty($cursor)){
+  if([IO.File]::Exists($cursor) -or [IO.Directory]::Exists($cursor)){
+   $info=Get-Item -LiteralPath $cursor -Force -ErrorAction Stop
+   if(([int]$info.Attributes -band [int][IO.FileAttributes]::ReparsePoint) -ne 0){
+    throw 'V3_SIGNER_CMS_REPARSE_PATH_DENIED'
+   }
+  }
+  $parent=[IO.Path]::GetDirectoryName($cursor.TrimEnd('\'))
+  if([string]::IsNullOrEmpty($parent) -or $parent -ceq $cursor){break}
+  $cursor=$parent
+ }
+ return $p
+}
+if($SignPreinvoke){
+ if(-not $providerReadOnly -or -not $tpmReady -or $null -eq $cert){
+  throw 'V3_SIGNER_CMS_ORIGINAL_PROVIDER_NOT_VERIFIED'
+ }
+ if([IO.Path]::GetExtension($UnsignedPayloadPath) -cne '.json' -or
+    [IO.Path]::GetExtension($DetachedCmsOutputPath) -cne '.cms'){
+  throw 'V3_SIGNER_CMS_FILE_TYPE_HOLD'
+ }
+ $in=Assert-V3CmsLocalPath $UnsignedPayloadPath $true
+ $out=Assert-V3CmsLocalPath $DetachedCmsOutputPath $false
+ if($in -ceq $out){throw 'V3_SIGNER_CMS_INPUT_EQUALS_OUTPUT'}
+ $length=(Get-Item -LiteralPath $in -ErrorAction Stop).Length
+ if($length -lt 200 -or $length -gt 2048){
+  throw 'V3_SIGNER_CMS_INPUT_FILE_BOUNDS'
+ }
+ $raw=[IO.File]::ReadAllBytes($in)
+ $null=Test-V3UnsignedPreinvokeCandidate $raw
+ # Exactly the pre-existing CurrentUser TPM key; no export or second key.
+ # The CMS proves signing math only; no Cloud COMMIT/Reader/attempts/caller.
+ $msg=[Security.Cryptography.Pkcs.ContentInfo]::new($raw)
+ $cms=[Security.Cryptography.Pkcs.SignedCms]::new($msg,$true)
+ $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+ $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+ $signer.IncludeOption=[Security.Cryptography.X509Certificates.X509IncludeOption]::EndCertOnly
+ try{$cms.ComputeSignature($signer)}
+ catch{throw 'V3_SIGNER_CMS_TPM_SIGNATURE_FAILURE_KEEP_ORIGINAL_KEY'}
+ $encoded=[byte[]]$cms.Encode()
+ if($encoded.Length -lt 64 -or $encoded.Length -gt 32768 -or
+    $cms.SignerInfos.Count -ne 1){
+  throw 'V3_SIGNER_CMS_SIGNATURE_SIZE_OR_SIGNER_COUNT_HOLD'
+ }
+ try{
+  $verify=[Security.Cryptography.Pkcs.SignedCms]::new(
+   [Security.Cryptography.Pkcs.ContentInfo]::new($raw),$true)
+  $verify.Decode($encoded)
+  if(-not $verify.Detached -or $verify.SignerInfos.Count -ne 1 -or
+     [string]$verify.SignerInfos[0].DigestAlgorithm.Value -cne
+       '2.16.840.1.101.3.4.2.1'){
+   throw 'V3_SIGNER_CMS_READBACK_MISMATCH'
+  }
+  $verify.CheckSignature($true)
+ }catch{throw 'V3_SIGNER_CMS_SELF_VERIFY_FAILURE_NO_FILE'}
+ # Exclusive, one-shot output. Partial files intentionally remain on crash:
+ # never silently remove, repair, overwrite or retry an uncertain attempt.
+ try{
+  $stream=[IO.FileStream]::new($out,[IO.FileMode]::CreateNew,
+     [IO.FileAccess]::Write,[IO.FileShare]::None)
+  try{$stream.Write($encoded,0,$encoded.Length);$stream.Flush($true)}
+  finally{$stream.Dispose()}
+ }catch{throw 'V3_SIGNER_CMS_OUTPUT_INCOMPLETE_OR_REPLAY_HOLD'}
+ $h=[Security.Cryptography.SHA256]::Create()
+ try{
+  $payloadHash=([BitConverter]::ToString($h.ComputeHash($raw))).Replace('-','').ToLowerInvariant()
+  $cmsHash=([BitConverter]::ToString($h.ComputeHash($encoded))).Replace('-','').ToLowerInvariant()
+ }finally{$h.Dispose()}
+ [pscustomobject][ordered]@{
+  kind='V3_ORIGINALHOST_MANUAL_TPM_PREINVOKE_CMS_CANDIDATE_V1'
+  status='ORIGINALHOST_CMS_SIGNED_CANDIDATE_NO_CLOUD_OR_CAS_AUTHORITY'
+  payload_sha256=$payloadHash
+  detached_cms_sha256=$cmsHash
+  certificate_der_sha256_public_pin_unapproved=$pin
+  existing_key_platform_provider_matches=$providerExactPlatform
+  existing_key_current_user_scope_matches=$userScopedKey
+  existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
+  originalhost_signed_cms_candidate_generated=$true
+  original_reader_commit_authenticated_by_this_action=$false
+  independent_offhost_custody_proven=$false
+  cas_attempt_coverage_proven=$false
+  precommit_restore_authorized=$false
+  cloud_cas_authorized=$false
+  old_writer_auto_rearm_allowed=$false
+  v3_paper_activated=$false
+ }|ConvertTo-Json -Depth 3
+ return
+}
+
+[pscustomobject][ordered]@{
+ kind='V3_ORIGINALHOST_MANUAL_TPM_PUBLIC_IDENTITY_V1'
+ status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
+  'READONLY_CERT_PRESENT_NOT_TRUSTED_FOR_RELEASE'
+ }else{'READONLY_NO_CERT_ENROLLED'}
+ interactive_account_matches_local_admin=($account -ieq $expected -and
+   [string]$identity.User.Value -ceq $expectedSid -and
+   $who.IsInRole($adminRole) -and $sessionId -gt 0)
+ windows_tpm_ready=$tpmReady
+ provider_requested=$provider
+ provider_metadata_readonly_checked=$providerReadOnly
+ existing_key_platform_provider_matches=$providerExactPlatform
+ existing_key_current_user_scope_matches=$userScopedKey
+ existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
+ provider_metadata_not_external_attestation=$true
+ store_location=$store
+ certificate_present=($null -ne $cert)
+ certificate_thumbprint_sha1=if($null -ne $cert){[string]$cert.Thumbprint}else{$null}
+ certificate_der_sha256_public_pin_unapproved=$pin
+ certificate_expires_utc=if($null -ne $cert){$cert.NotAfter.ToUniversalTime().ToString('o')}else{$null}
+ private_key_exported=$false
+ private_key_acl_independently_verified=$false
+ tpm_hardware_attestation_independently_verified=$false
+ originalhost_signed_receipt_generated=$false
+ pin_externally_reviewed_and_approved=$false
+ originalhost_runtime_identity_verified=$false
+ six_e2e_release_proofs_credited=0
+ cloud_cas_authorized=$false
+ v3_task_modified=$false
+ v2r4_modified=$false
+ v3_paper_activated=$false
+} | ConvertTo-Json -Depth 3
+){
+  throw 'V3_SIGNER_CURRENT_HOST_TIME_LITERAL_HOLD'
+ }
+ try {
+  $at=[datetimeoffset]::ParseExact($m.Groups['t'].Value,
+   "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+   [Globalization.CultureInfo]::InvariantCulture,
+   [Globalization.DateTimeStyles]::AssumeUniversal)
+ }catch{throw 'V3_SIGNER_CURRENT_HOST_TIME_INVALID_HOLD'}
+ $now=[datetimeoffset]::UtcNow
+ if($at -gt $now.AddSeconds(5) -or ($now-$at).TotalSeconds -gt 30){
+  throw 'V3_SIGNER_CURRENT_HOST_NOT_FRESH_HOLD'
+ }
+ # Original fence file and exact registered task definitions, not old JSON.
+ $fence='C:\\Users\\ADMIN\\Trading\\State\\v3-experimental-paper-old-intake-fence.json'
+ $fi=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($fi.PSIsContainer -or $fi.Length -ne 627 -or
+    [bool]($fi.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne $knownFence){
+  throw 'V3_SIGNER_CURRENT_HOST_FENCE_ORIGINAL_HOLD'
+ }
+ $mapping=@(
+  @('CryptoMiniPC-V2R4PaperCandidates','candidates_xml_sha256','candidates_enabled',$true),
+  @('CryptoMiniPC-V2R4PaperWait','wait_xml_sha256','wait_enabled',$true),
+  @('CryptoMiniPC-V2R4PaperCloudSync','cloudsync_xml_sha256','cloudsync_enabled',$true),
+  @('CryptoMiniPC-V3PaperSingleWriter','writer_xml_sha256','writer_enabled',$false)
+ )
+ foreach($item in $mapping){
+  $task=Get-ScheduledTask -TaskName $item[0] -TaskPath '\\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $item[0] -TaskPath '\\' -ErrorAction Stop)
+  $h=[Security.Cryptography.SHA256]::Create()
+  try{
+   $actual=([BitConverter]::ToString($h.ComputeHash(
+    [Text.UTF8Encoding]::new($false).GetBytes($xml)))).Replace('-','').ToLowerInvariant()
+  }finally{$h.Dispose()}
+  if($actual -cne [string]$v.($item[1]) -or
+     $v.($item[2]) -isnot [bool] -or
+     $v.($item[2]) -ne $item[3] -or
+     ([string]$task.State -ceq 'Disabled') -ne (-not $item[3])){
+   throw 'V3_SIGNER_CURRENT_HOST_TASK_OR_XML_DRIFT_HOLD'
+  }
+ }
+ $v3=@(Get-CimInstance Win32_Process -ErrorAction Stop|Where-Object {
+   [string]$_.Name -match '^(?i:pythonw?\\.exe|powershell\\.exe|pwsh\\.exe)
+# overwrite mistakes. This does not assert administrator-independent ACLs.
+function Assert-V3CmsLocalPath([string]$Path,[bool]$ExistingLeaf){
+ if([string]::IsNullOrWhiteSpace($Path) -or
+    -not [IO.Path]::IsPathRooted($Path)){throw 'V3_SIGNER_CMS_ABSOLUTE_PATH_REQUIRED'}
+ $p=[IO.Path]::GetFullPath($Path)
+ if($p.StartsWith('\\') -or $p.StartsWith('//')){
+  throw 'V3_SIGNER_CMS_NETWORK_PATH_DENIED'
+ }
+ if($ExistingLeaf -and -not [IO.File]::Exists($p)){
+  throw 'V3_SIGNER_CMS_INPUT_MISSING'
+ }
+ if(-not $ExistingLeaf -and [IO.File]::Exists($p)){
+  throw 'V3_SIGNER_CMS_OUTPUT_REPLAY_NO_OVERWRITE'
+ }
+ $cursor=if($ExistingLeaf){$p}else{[IO.Path]::GetDirectoryName($p)}
+ if(-not [IO.Directory]::Exists([IO.Path]::GetDirectoryName($p))){
+  throw 'V3_SIGNER_CMS_PARENT_DIRECTORY_MISSING'
+ }
+ while(-not [string]::IsNullOrEmpty($cursor)){
+  if([IO.File]::Exists($cursor) -or [IO.Directory]::Exists($cursor)){
+   $info=Get-Item -LiteralPath $cursor -Force -ErrorAction Stop
+   if(([int]$info.Attributes -band [int][IO.FileAttributes]::ReparsePoint) -ne 0){
+    throw 'V3_SIGNER_CMS_REPARSE_PATH_DENIED'
+   }
+  }
+  $parent=[IO.Path]::GetDirectoryName($cursor.TrimEnd('\'))
+  if([string]::IsNullOrEmpty($parent) -or $parent -ceq $cursor){break}
+  $cursor=$parent
+ }
+ return $p
+}
+if($SignPreinvoke){
+ if(-not $providerReadOnly -or -not $tpmReady -or $null -eq $cert){
+  throw 'V3_SIGNER_CMS_ORIGINAL_PROVIDER_NOT_VERIFIED'
+ }
+ if([IO.Path]::GetExtension($UnsignedPayloadPath) -cne '.json' -or
+    [IO.Path]::GetExtension($DetachedCmsOutputPath) -cne '.cms'){
+  throw 'V3_SIGNER_CMS_FILE_TYPE_HOLD'
+ }
+ $in=Assert-V3CmsLocalPath $UnsignedPayloadPath $true
+ $out=Assert-V3CmsLocalPath $DetachedCmsOutputPath $false
+ if($in -ceq $out){throw 'V3_SIGNER_CMS_INPUT_EQUALS_OUTPUT'}
+ $length=(Get-Item -LiteralPath $in -ErrorAction Stop).Length
+ if($length -lt 200 -or $length -gt 2048){
+  throw 'V3_SIGNER_CMS_INPUT_FILE_BOUNDS'
+ }
+ $raw=[IO.File]::ReadAllBytes($in)
+ $null=Test-V3UnsignedPreinvokeCandidate $raw
+ # Exactly the pre-existing CurrentUser TPM key; no export or second key.
+ # The CMS proves signing math only; no Cloud COMMIT/Reader/attempts/caller.
+ $msg=[Security.Cryptography.Pkcs.ContentInfo]::new($raw)
+ $cms=[Security.Cryptography.Pkcs.SignedCms]::new($msg,$true)
+ $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+ $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+ $signer.IncludeOption=[Security.Cryptography.X509Certificates.X509IncludeOption]::EndCertOnly
+ try{$cms.ComputeSignature($signer)}
+ catch{throw 'V3_SIGNER_CMS_TPM_SIGNATURE_FAILURE_KEEP_ORIGINAL_KEY'}
+ $encoded=[byte[]]$cms.Encode()
+ if($encoded.Length -lt 64 -or $encoded.Length -gt 32768 -or
+    $cms.SignerInfos.Count -ne 1){
+  throw 'V3_SIGNER_CMS_SIGNATURE_SIZE_OR_SIGNER_COUNT_HOLD'
+ }
+ try{
+  $verify=[Security.Cryptography.Pkcs.SignedCms]::new(
+   [Security.Cryptography.Pkcs.ContentInfo]::new($raw),$true)
+  $verify.Decode($encoded)
+  if(-not $verify.Detached -or $verify.SignerInfos.Count -ne 1 -or
+     [string]$verify.SignerInfos[0].DigestAlgorithm.Value -cne
+       '2.16.840.1.101.3.4.2.1'){
+   throw 'V3_SIGNER_CMS_READBACK_MISMATCH'
+  }
+  $verify.CheckSignature($true)
+ }catch{throw 'V3_SIGNER_CMS_SELF_VERIFY_FAILURE_NO_FILE'}
+ # Exclusive, one-shot output. Partial files intentionally remain on crash:
+ # never silently remove, repair, overwrite or retry an uncertain attempt.
+ try{
+  $stream=[IO.FileStream]::new($out,[IO.FileMode]::CreateNew,
+     [IO.FileAccess]::Write,[IO.FileShare]::None)
+  try{$stream.Write($encoded,0,$encoded.Length);$stream.Flush($true)}
+  finally{$stream.Dispose()}
+ }catch{throw 'V3_SIGNER_CMS_OUTPUT_INCOMPLETE_OR_REPLAY_HOLD'}
+ $h=[Security.Cryptography.SHA256]::Create()
+ try{
+  $payloadHash=([BitConverter]::ToString($h.ComputeHash($raw))).Replace('-','').ToLowerInvariant()
+  $cmsHash=([BitConverter]::ToString($h.ComputeHash($encoded))).Replace('-','').ToLowerInvariant()
+ }finally{$h.Dispose()}
+ [pscustomobject][ordered]@{
+  kind='V3_ORIGINALHOST_MANUAL_TPM_PREINVOKE_CMS_CANDIDATE_V1'
+  status='ORIGINALHOST_CMS_SIGNED_CANDIDATE_NO_CLOUD_OR_CAS_AUTHORITY'
+  payload_sha256=$payloadHash
+  detached_cms_sha256=$cmsHash
+  certificate_der_sha256_public_pin_unapproved=$pin
+  existing_key_platform_provider_matches=$providerExactPlatform
+  existing_key_current_user_scope_matches=$userScopedKey
+  existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
+  originalhost_signed_cms_candidate_generated=$true
+  original_reader_commit_authenticated_by_this_action=$false
+  independent_offhost_custody_proven=$false
+  cas_attempt_coverage_proven=$false
+  precommit_restore_authorized=$false
+  cloud_cas_authorized=$false
+  old_writer_auto_rearm_allowed=$false
+  v3_paper_activated=$false
+ }|ConvertTo-Json -Depth 3
+ return
+}
+
+[pscustomobject][ordered]@{
+ kind='V3_ORIGINALHOST_MANUAL_TPM_PUBLIC_IDENTITY_V1'
+ status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
+  'READONLY_CERT_PRESENT_NOT_TRUSTED_FOR_RELEASE'
+ }else{'READONLY_NO_CERT_ENROLLED'}
+ interactive_account_matches_local_admin=($account -ieq $expected -and
+   [string]$identity.User.Value -ceq $expectedSid -and
+   $who.IsInRole($adminRole) -and $sessionId -gt 0)
+ windows_tpm_ready=$tpmReady
+ provider_requested=$provider
+ provider_metadata_readonly_checked=$providerReadOnly
+ existing_key_platform_provider_matches=$providerExactPlatform
+ existing_key_current_user_scope_matches=$userScopedKey
+ existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
+ provider_metadata_not_external_attestation=$true
+ store_location=$store
+ certificate_present=($null -ne $cert)
+ certificate_thumbprint_sha1=if($null -ne $cert){[string]$cert.Thumbprint}else{$null}
+ certificate_der_sha256_public_pin_unapproved=$pin
+ certificate_expires_utc=if($null -ne $cert){$cert.NotAfter.ToUniversalTime().ToString('o')}else{$null}
+ private_key_exported=$false
+ private_key_acl_independently_verified=$false
+ tpm_hardware_attestation_independently_verified=$false
+ originalhost_signed_receipt_generated=$false
+ pin_externally_reviewed_and_approved=$false
+ originalhost_runtime_identity_verified=$false
+ six_e2e_release_proofs_credited=0
+ cloud_cas_authorized=$false
+ v3_task_modified=$false
+ v2r4_modified=$false
+ v3_paper_activated=$false
+} | ConvertTo-Json -Depth 3
+ -and
+   [string]$_.CommandLine -match '(?i)v3.paper|v3_paper|v3-one-time|single.writer'
+ })
+ if($v3.Count -ne 0){throw 'V3_SIGNER_CURRENT_HOST_POSSIBLE_WRITER_PROCESS_HOLD'}
+ return $v
+}
+
 # Protect the existing original Windows user account from UNC, reparse and
 # overwrite mistakes. This does not assert administrator-independent ACLs.
 function Assert-V3CmsLocalPath([string]$Path,[bool]$ExistingLeaf){
