@@ -166,7 +166,7 @@ foreach($file in @($entry,$validator)){
 $entryRaw=[IO.File]::ReadAllText($entry)
 foreach($required in @(
  'CLOUD_POSTSTOP_TERMINAL_ABORT','Assert-V3ReleaseAuthorityAdmission',
- 'Assert-V3PostStopScopedAuthorization','v3_cas_inhibit_issuer_actor',
+ 'V3_POSTSTOP_SIGNED_SCOPE_OR_IDENTITY_HOLD','v3_cas_inhibit_issuer_actor',
  'issuer-currentuser.dpapi','DataProtectionScope]::CurrentUser',
  'Invoke-V3PostStopCloudOnceCandidate','Get-V3PostStopCloudAbortCandidate',
  'Assert-V3PostStopSignedTerminalCloud','TARGET_EPOCH_TERMINALIZED',
