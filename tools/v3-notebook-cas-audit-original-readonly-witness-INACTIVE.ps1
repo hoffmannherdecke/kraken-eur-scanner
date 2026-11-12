@@ -272,7 +272,7 @@ SELECT pg_catalog.jsonb_build_object(
  'series_id','PAPER-V3-20261111T105211Z',
  'epoch_id',e.epoch_id,'source_sha256',e.source_sha256,
  'observation_nonce','__NONCE__',
- 'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'observed_at_utc',pg_catalog.replace(pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
  'original_fence_sha256',e.original_fence_sha256,
  'caller_acl_sha256',e.approved_caller_acl_sha256,
  'inhibit_state',i->>'state','sealed',e.sealed,
