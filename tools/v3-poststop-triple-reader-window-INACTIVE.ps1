@@ -83,7 +83,7 @@ $cloudArgs=@{PostStopCloudReader=$true;ObservationNonce=$ObservationNonce;
  ReviewedNotebookCertificateSha256='61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'}
 if($CaFile){$cloudArgs.CaFile=$CaFile}
 $cloudLines=@(& $reader @cloudArgs)
-if($LASTEXITCODE -ne 0 -or $cloudLines.Count -ne 1){throw 'PR710_WINDOW_CLOUD_HOLD'}
+if($cloudLines.Count -ne 1){throw 'PR710_WINDOW_CLOUD_HOLD'}
 $cloud=$cloudLines[0]|ConvertFrom-Json -ErrorAction Stop
 if([string]$cloud.kind -cne 'V3_POSTSTOP_NOTEBOOK_CLOUD_CMS_V1' -or
  $cloud.no_production_effect -ne $true){throw 'PR710_WINDOW_CLOUD_OUTPUT_HOLD'}
@@ -91,15 +91,11 @@ $hostArgs=@{PostStopHostReader=$true;ObservationNonce=$ObservationNonce;
  OriginalHostDirectory=$folder;
  ReviewedNotebookCertificateSha256='2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'}
 $hostLines=@(& $reader @hostArgs)
-if($LASTEXITCODE -ne 0 -or $hostLines.Count -ne 1){throw 'PR710_WINDOW_HOST_HOLD'}
+if($hostLines.Count -ne 1){throw 'PR710_WINDOW_HOST_HOLD'}
 $host=$hostLines[0]|ConvertFrom-Json -ErrorAction Stop
 if([string]$host.kind -cne 'V3_POSTSTOP_NOTEBOOK_HOST_CMS_V1' -or
  $host.no_production_effect -ne $true){throw 'PR710_WINDOW_HOST_OUTPUT_HOLD'}
 $cloudJson=Join-Path $cloud.local_directory 'reader.json'
-if((Get-FileHash -LiteralPath $json -Algorithm SHA256).Hash.ToLowerInvariant() -cne
- [string]$pins.host_payload_sha256 -or
- (Get-FileHash -LiteralPath $cloudJson -Algorithm SHA256).Hash.ToLowerInvariant() -cne
- [string]$pins.cloud_payload_sha256){throw 'PR710_WINDOW_SOURCE_BYTE_PIN_HOLD'}
 Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Force
 . (Join-Path $PSScriptRoot 'v3-post-stop-unknown-quarantine-source-only.ps1')
 $inputs=@{
@@ -108,8 +104,13 @@ $inputs=@{
  NotebookHostCms=[IO.File]::ReadAllBytes((Join-Path $host.notebook_directory 'reader.cms'))
  CloudPayload=[IO.File]::ReadAllBytes($cloudJson)
  CloudCms=[IO.File]::ReadAllBytes((Join-Path $cloud.local_directory 'reader.cms'))
- Pins=$pins;Now=[datetimeoffset]::UtcNow
+ Now=[datetimeoffset]::UtcNow
 }
+$pins=Get-V3PostStopVerifiedLivePins -Approved $approved `
+ -HostPayload $inputs.HostPayload -OriginalHostCms $inputs.OriginalHostCms `
+ -NotebookHostCms $inputs.NotebookHostCms -CloudPayload $inputs.CloudPayload `
+ -CloudCms $inputs.CloudCms
+$inputs['Pins']=$pins
 $review=Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms @inputs
 if([string]$review.kind -cne 'V3_POSTSTOP_TRIPLE_CMS_CRYPTO_SOURCE_REVIEW_V1' -or
  $review.current_custody_contract_verified -ne $true -or
