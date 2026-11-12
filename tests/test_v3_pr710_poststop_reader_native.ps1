@@ -25,14 +25,14 @@ foreach($required in @('SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY'
 foreach($required in @(
  "Get-SmbShare -Name 'Mistral_450'",
  "PR710_ORIGINALHOST_FIXED_SHARE_MAP_HOLD",
- "$"+"root='D:\'",
- "originalhost_unc_directory=$"+"expectedUnc"
+ '$root=' + [char]39 + 'D:\' + [char]39,
+ 'originalhost_unc_directory=$expectedUnc'
 )){
  if(-not $publisherSource.Contains($required)){
   throw "PR710_ORIGINALHOST_LOCAL_BACKING_CONTRACT_MISSING: $required"
  }
 }
-if($publisherSource.Contains("$"+"root='\\192.168.178.179\Mistral_450'")){
+if($publisherSource.Contains('$root=' + [char]39 + '\\192.168.178.179\Mistral_450' + [char]39)){
  throw 'PR710_ORIGINALHOST_UNAUTHORIZED_SMB_WRITE_PATH_HOLD'
 }
 
