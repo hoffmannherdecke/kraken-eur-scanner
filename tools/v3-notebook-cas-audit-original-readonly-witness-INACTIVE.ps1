@@ -32,8 +32,10 @@ param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]
  [switch]$PrecommitRestoreCustody,[string]$ReviewedOriginalFenceSha256='',
  [switch]$ForwardT0SignedCurrent,[switch]$PreparedAbortSignedCurrent,
  [switch]$IssuerPrestopSignedCurrent,[switch]$PaperReleaseSignedCurrent,
- [string]$PaperPlanJson='', [string]$PaperReleaseId='')
-if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent+[int]$PaperReleaseSignedCurrent.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
+ [string]$PaperPlanJson='', [string]$PaperReleaseId='',
+ [switch]$PostStopHostReader,[switch]$PostStopCloudReader,
+ [string]$ObservationNonce='',[string]$OriginalHostDirectory='')
+if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent+[int]$PaperReleaseSignedCurrent.IsPresent+[int]$PostStopHostReader.IsPresent+[int]$PostStopCloudReader.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
 if($PrecommitRestoreCustody -and
    ($ExportSignedPrecommitCloudInventory -or
     $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
@@ -60,10 +62,10 @@ if(-not $PaperReleaseSignedCurrent -and ($PaperPlanJson -or $PaperReleaseId)){
  throw 'V3_PAPER_RELEASE_READER_INPUT_OUTSIDE_MODE'
 }
 if($IssuerPrestopSignedCurrent -and $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_ISSUER_PRESTOP_SIGNER_PIN_REQUIRED'}
-if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and -not $ForwardT0SignedCurrent -and -not $PreparedAbortSignedCurrent -and -not $IssuerPrestopSignedCurrent -and -not $PaperReleaseSignedCurrent -and $ReviewedNotebookCertificateSha256){
+if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and -not $ForwardT0SignedCurrent -and -not $PreparedAbortSignedCurrent -and -not $IssuerPrestopSignedCurrent -and -not $PaperReleaseSignedCurrent -and -not $PostStopHostReader -and -not $PostStopCloudReader -and $ReviewedNotebookCertificateSha256){
  throw 'V3_SIGNED_READER_PIN_WITHOUT_EXPORT'
 }
-$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent -or $PaperReleaseSignedCurrent)
+$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent -or $PaperReleaseSignedCurrent -or $PostStopCloudReader)
 if(-not $decisionReaderMode -and $CaFile){throw 'V3_READER_CA_FILE_DECISION_MODE_ONLY'}
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -137,6 +139,7 @@ COMMIT;
 )
 # The only new mode is a private, immutable current snapshot. No actor grants,
 # independent signer approval, historical coverage or Cloud write occurs.
+if($PostStopHostReader){$checks=@()}
 if($PaperReleaseSignedCurrent){
  $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
  if($checks.Count -ne 1){throw 'V3_PAPER_RELEASE_READER_AMBIGUOUS'}
