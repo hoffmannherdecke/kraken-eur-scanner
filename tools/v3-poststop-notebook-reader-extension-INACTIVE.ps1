@@ -1,12 +1,12 @@
 # PR710 source-only POSTSTOP extension; original staged Reader bytes immutable.
 [CmdletBinding()]
-param([switch]$PostStopHostReader,[switch]$PostStopCloudReader,
+param([switch]$PostStopHostReader,[switch]$PostStopCloudReader,[switch]$PostStopTerminalReader,
  [Parameter(Mandatory=$true)][string]$ObservationNonce,
  [Parameter(Mandatory=$true)][string]$ReviewedNotebookCertificateSha256,
  [string]$OriginalHostDirectory='',[string]$CaFile='')
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
-if(([int]$PostStopHostReader.IsPresent+[int]$PostStopCloudReader.IsPresent) -ne 1){throw 'PR710_READER_MODE_HOLD'}
+if(([int]$PostStopHostReader.IsPresent+[int]$PostStopCloudReader.IsPresent+[int]$PostStopTerminalReader.IsPresent) -ne 1){throw 'PR710_READER_MODE_HOLD'}
 $pin=if($PostStopHostReader){'2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'}else{'61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'}
 if($ObservationNonce -cnotmatch '^[a-f0-9]{32}$' -or $ReviewedNotebookCertificateSha256 -cne $pin){throw 'PR710_READER_PIN_HOLD'}
 if($PostStopHostReader -and (-not $OriginalHostDirectory -or $CaFile)){throw 'PR710_HOST_INPUT_HOLD'}
@@ -168,14 +168,14 @@ if($PostStopHostReader){
  return
 }
 
-if(-not $PostStopCloudReader){throw 'PR710_UNKNOWN_MODE_HOLD'}
+if(-not ($PostStopCloudReader -or $PostStopTerminalReader)){throw 'PR710_UNKNOWN_MODE_HOLD'}
 if(-not [IO.File]::Exists($psql)){throw 'PR710_PG17_REQUIRED'}
 $checks=@(@{Name='READER';File='reader.dpapi';Login='v3_cas_audit_reader_actor';Sql=''})
 
 # PR710: One atomic read-only SQL statement through the existing PG17 TLS Reader.
 # State is derived from original Catalog and the existing independently
 # scoped Paper release epoch Reader (including all historical abort bindings).
-if($PostStopCloudReader){
+if($PostStopCloudReader -or $PostStopTerminalReader){
  $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
  if($checks.Count -ne 1){throw 'V3_POSTSTOP_CLOUD_ROLE_HOLD'}
  $checks[0].Sql=@'
@@ -240,6 +240,84 @@ WHERE session_user='v3_cas_audit_reader_actor'
 COMMIT;
 '@
  $checks[0].Sql=$checks[0].Sql.Replace('__NONCE__',$ObservationNonce)
+
+ if($PostStopTerminalReader){
+  # Dedicated post-abort contract: six bound historical epochs, exact target
+  # aborted once; the existing CAS RPC remains ACL-isolated and never called.
+  $checks[0].Sql=@'
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+WITH c AS MATERIALIZED (SELECT v3_cas_audit.read_forward_t0_current_v1() AS j),
+ e AS MATERIALIZED (
+ SELECT epoch_id,source_sha256,original_fence_sha256,approved_caller_acl_sha256
+ FROM v3_cas_audit.epoch_v1
+ WHERE epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+ ), target AS MATERIALIZED (
+ SELECT a.* FROM v3_cas_audit.prepared_fence_abort_v1 a
+ WHERE a.epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+ )
+SELECT pg_catalog.jsonb_build_object(
+ 'kind','V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1',
+ 'observation_nonce','__NONCE__',
+ 'observed_at_utc',pg_catalog.replace(pg_catalog.to_char(
+ pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
+ 'cloud_observed_at_utc',(c.j->>'observed_at_utc'),
+ 'epoch_id',e.epoch_id,'source_sha256',a.source_sha256,
+ 'prepared_fence_sha256',a.prepared_fence_sha256,
+ 'caller_acl_sha256',a.caller_acl_sha256,
+ 'issuer_actor',a.issuer_actor,'receipt_sha256',a.receipt_sha256,
+ 'state',a.state,'cloud_active_series_count',(c.j->>'active_series_count')::integer,
+ 'cloud_original_active_series_count',(c.j->>'original_active_series_count')::integer,
+ 'cloud_cas_rpc_count',(c.j->>'cas_rpc_count')::integer,
+ 'cloud_cas_rpc_acl_restricted',true,
+ 'cloud_executor_can_login',false
+)::text
+FROM c CROSS JOIN e CROSS JOIN target a
+WHERE session_user='v3_cas_audit_reader_actor'
+ AND current_user='v3_cas_audit_reader'
+ AND a.epoch_id=e.epoch_id AND a.source_sha256=e.source_sha256
+ AND a.prepared_fence_sha256=e.original_fence_sha256
+ AND a.caller_acl_sha256=e.approved_caller_acl_sha256
+ AND a.issuer_actor='v3_cas_inhibit_issuer_actor'
+ AND a.state='ABORT_RECORDED_NOT_RELEASED'
+ AND e.source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+ AND e.original_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ AND e.approved_caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+ AND (SELECT count(*) FROM v3_cas_audit.epoch_v1)=6
+ AND (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1)=6
+ AND NOT EXISTS (
+  SELECT 1 FROM v3_cas_audit.epoch_v1 other
+  LEFT JOIN v3_cas_audit.prepared_fence_abort_v1 historical ON historical.epoch_id=other.epoch_id
+  WHERE other.epoch_id<>e.epoch_id
+    AND (historical.state IS DISTINCT FROM 'ABORT_RECORDED_NOT_RELEASED'
+      OR historical.source_sha256 IS DISTINCT FROM other.source_sha256
+      OR historical.prepared_fence_sha256 IS DISTINCT FROM other.original_fence_sha256
+      OR historical.caller_acl_sha256 IS DISTINCT FROM other.approved_caller_acl_sha256)
+ )
+ AND (c.j->>'active_series_count')::integer=1
+ AND (c.j->>'original_active_series_count')::integer=1
+ AND (c.j->>'cas_rpc_count')::integer=1
+ AND (c.j->>'intent_count')::integer=0
+ AND (c.j->>'attempt_count')::integer=0
+ AND (c.j->>'dispatch_unknown_count')::integer=0
+ AND (SELECT count(*) FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+     WHERE n.nspname='public' AND p.proname='rotate_v2r4_to_v3_experimental_paper')=1
+ AND pg_catalog.has_function_privilege('v3_cas_executor',
+   'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)','EXECUTE')
+ AND NOT EXISTS (SELECT 1 FROM pg_catalog.unnest(ARRAY[
+    'anon','authenticated','service_role','v3_cas_executor_actor',
+    'v3_cas_audit_reader','v3_cas_audit_writer']) AS r(role_name)
+  WHERE pg_catalog.has_function_privilege(r.role_name,
+   'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)','EXECUTE'))
+ AND (SELECT count(*) FROM pg_catalog.pg_roles WHERE rolname IN
+    ('v3_cas_executor','v3_cas_executor_actor','v3_cas_audit_writer_actor') AND NOT rolcanlogin)=3
+ AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_stat_activity WHERE usename IN
+    ('v3_cas_executor','v3_cas_executor_actor','v3_cas_audit_writer_actor'))
+ AND NOT pg_catalog.pg_has_role(session_user,'v3_cas_audit_writer','SET');
+COMMIT;
+'@
+  $checks[0].Sql=$checks[0].Sql.Replace('__NONCE__',$ObservationNonce)
+ }
 }
 
 $plain=$null
@@ -264,7 +342,26 @@ try{
  if($LASTEXITCODE -ne 0){throw 'PR710_CLOUD_QUERY_HOLD'}
  $wire=($output|Out-String).Trim()
  if($wire.Length -lt 400 -or $wire.Length -gt 4096){throw 'PR710_CLOUD_WIRE_HOLD'}
- $row=Assert-V3PostStopFreshReader $wire $ObservationNonce 'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'
+ $receiptKind=if($PostStopTerminalReader){'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1'}else{'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'}
+ $row=Assert-V3PostStopFreshReader $wire $ObservationNonce $receiptKind
+ if($PostStopTerminalReader){
+  if([string]$row.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+   [string]$row.state -cne 'ABORT_RECORDED_NOT_RELEASED' -or
+   [string]$row.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
+   $row.cloud_cas_rpc_count -ne 1 -or
+   $row.cloud_cas_rpc_acl_restricted -ne $true -or
+   $row.cloud_executor_can_login -ne $false -or
+   $row.cloud_active_series_count -ne 1 -or
+   $row.cloud_original_active_series_count -ne 1){
+    throw 'V3_POSTSTOP_TERMINAL_READER_SCOPE_HOLD'
+  }
+  $signed=Save-V3SignedNotebookReaderSnapshot $wire $ReviewedNotebookCertificateSha256
+  [pscustomobject]@{kind='V3_POSTSTOP_TERMINAL_NOTEBOOK_CLOUD_CMS_V1';status='SIGNED_TERMINAL_READER_NO_RUNTIME_AUTH'
+   observation_nonce=$ObservationNonce;local_directory=$signed.local_directory
+   receipt='reader.json';signature='reader.cms';no_production_effect=$true}|ConvertTo-Json -Compress
+  return
+ }
+ # $row=Assert-V3PostStopFreshReader $wire $ObservationNonce 'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'
  if([string]$row.reader_role -cne 'v3_cas_audit_reader' -or $row.inhibit_state -cne 'INHIBITED' -or
   $row.current_cloud_custody_verified -ne $true -or $row.sealed -ne $false -or
   $row.next_ordinal -ne 1 -or $row.intent_count -ne 0 -or $row.attempt_count -ne 0 -or
