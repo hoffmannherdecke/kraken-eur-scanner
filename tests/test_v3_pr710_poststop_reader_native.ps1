@@ -11,7 +11,7 @@ if(@($otherErrors).Count -ne 0){throw ('PR710_COORDINATOR_PARSE_HOLD: '+($otherE
 $publisher=Join-Path $PSScriptRoot '../tools/v3-poststop-originalhost-signed-unc-publish-INACTIVE.ps1'
 $pubTokens=$null;$pubErrors=$null
 $null=[System.Management.Automation.Language.Parser]::ParseFile($publisher,[ref]$pubTokens,[ref]$pubErrors)
-if(@($pubErrors).Count -ne 0){throw 'PR710_ORIGINALHOST_UNC_PUBLISHER_PARSE_HOLD'}
+if(@($pubErrors).Count -ne 0){throw ('PR710_ORIGINALHOST_UNC_PUBLISHER_PARSE_HOLD: '+(($pubErrors | ForEach-Object {$_.Message}) -join '; '))}
 $publisherSource=[IO.File]::ReadAllText($publisher)
 foreach($required in @('SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY',
  'v3-paper-originalhost-manual-tpm-enroll-INACTIVE.ps1',
