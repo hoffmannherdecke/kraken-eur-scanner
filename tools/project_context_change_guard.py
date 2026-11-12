@@ -179,13 +179,21 @@ def require_release_work_necessity(paths: list[str], receipt: dict) -> None:
     delta = receipt.get("release_work_necessity")
     require(isinstance(delta, dict), "V3 release work needs explicit new operational necessity")
     require(delta.get("reason") in (
-        "PROVEN_NEW_DEFECT", "MISSING_LIVE_CAPABILITY", "EXPLICIT_OWNER_RELEASE_STEP"),
+        "PROVEN_NEW_DEFECT", "MISSING_LIVE_CAPABILITY"),
         "V3 release requires a concrete new defect, missing capability or owner step")
     evidence = delta.get("owner_evidence_url")
     require(isinstance(evidence, str) and re.fullmatch(
-        r"https://github\.com/hoffmannherdecke/kraken-eur-scanner/issues/(99|353)(?:#issuecomment-[0-9]+)?",
+        r"https://github\.com/hoffmannherdecke/kraken-eur-scanner/issues/(99|353)#issuecomment-[0-9]+",
         evidence) is not None,
         "V3 release work needs original owner evidence from issue 99 or 353")
+    require(delta.get("work_kind") == "FIX_MISSING_OPERATING_FUNCTION",
+            "V3 release PR cannot be documentation-only, historical proof or repeat validation work")
+    require(delta.get("operational_failure_or_missing_function") not in (None, "", "NONE"),
+            "V3 release requires a named missing operating function or real defect")
+    require(meaningful(delta.get("operational_failure_or_missing_function")),
+            "V3 release must state a concrete operating fault, not a general check")
+    require(not all(p.startswith(("docs/", "research/", "tests/")) for p in release_paths),
+            "V3 release rejects pure documentation, audit and test-only PR work")
     require(meaningful(delta.get("why_existing_pass_is_insufficient")),
             "V3 release work must explain the precise gap not covered by existing PASS")
     require(meaningful(delta.get("smallest_operational_delta")),
@@ -268,7 +276,9 @@ def template(root: Path, paths: list[str]) -> dict:
         "kind": "PROJECT_CONTEXT_REVIEW_V1",
         "release_work_necessity": {
             "reason": "MISSING_LIVE_CAPABILITY",
-            "owner_evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99",
+            "work_kind": "FIX_MISSING_OPERATING_FUNCTION",
+            "operational_failure_or_missing_function": "REPLACE with concrete missing operational functionality and exact evidence.",
+            "owner_evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6834144939",
             "why_existing_pass_is_insufficient": "REPLACE with the specific new operational gap beyond all previous accepted proof.",
             "smallest_operational_delta": "REPLACE with the smallest justified operation or code change to close that gap.",
             "reuse_existing_passes": True,

@@ -32,6 +32,8 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
             x[field] = "Checked the original project decision and actual component before changing this."
         x["release_work_necessity"] = {
             "reason": "MISSING_LIVE_CAPABILITY",
+            "work_kind": "FIX_MISSING_OPERATING_FUNCTION",
+            "operational_failure_or_missing_function": "A new runtime defect stops the release operator from completing its actual operation.",
             "owner_evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6834144939",
             "why_existing_pass_is_insufficient": "A genuinely new runtime behavior requires its own single minimal functional observation.",
             "smallest_operational_delta": "Only the previously missing executable source behavior is changed in this patch.",
@@ -74,6 +76,11 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
         for mutate in (
             lambda x: x.pop("release_work_necessity"),
             lambda x: x["release_work_necessity"].update(owner_evidence_url="https://example.com/claim"),
+            lambda x: x["release_work_necessity"].update(owner_evidence_url="https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99"),
+            lambda x: x["release_work_necessity"].update(reason="EXPLICIT_OWNER_RELEASE_STEP"),
+            lambda x: x["release_work_necessity"].update(work_kind="AUDIT_ONLY"),
+            lambda x: x["release_work_necessity"].update(operational_failure_or_missing_function=""),
+
             lambda x: x["release_work_necessity"].update(reuse_existing_passes=False),
             lambda x: x["release_work_necessity"].update(no_historical_reconstruction=False),
             lambda x: x["release_work_necessity"].update(smallest_operational_delta="repeat it"),
@@ -82,6 +89,12 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
             mutate(value)
             with self.assertRaises(ChangeGateError):
                 check(ROOT, paths, value)
+
+    def test_release_documentation_only_changes_are_not_an_operational_defect(self):
+        for path in ("docs/v3-unused-audit.md", "tests/test_v3_repeat_proof.py"):
+            with self.subTest(path=path):
+                with self.assertRaisesRegex(ChangeGateError, "pure documentation"):
+                    check(ROOT, [path], self.good([path]))
 
     def test_future_followthrough_must_be_registered_or_explicitly_disposed(self):
         paths=["tools/source-inspector.py"]
