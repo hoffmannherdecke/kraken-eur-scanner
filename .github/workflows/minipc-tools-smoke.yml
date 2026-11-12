@@ -9,6 +9,8 @@ name: MINI-PC tools smoke
       - 'tools/minipc_runner_tasks/file_access_bounded.ps1'
       - 'tools/minipc_runner_tasks/host_state_readonly.ps1'
       - 'tools/minipc_runner_guard/pre_job.ps1'
+      - 'tools/minipc_runner_guard/local_file_handoff.ps1'
+      - 'tests/test_minipc_user_handoff_contract.py'
       - 'tools/minipc_runner_guard/runner_readiness.py'
       - 'tests/test_minipc_runner_readiness.py'
       - 'tools/*minipc*.py'
@@ -26,6 +28,8 @@ name: MINI-PC tools smoke
       - 'tools/minipc_runner_tasks/file_access_bounded.ps1'
       - 'tools/minipc_runner_tasks/host_state_readonly.ps1'
       - 'tools/minipc_runner_guard/pre_job.ps1'
+      - 'tools/minipc_runner_guard/local_file_handoff.ps1'
+      - 'tests/test_minipc_user_handoff_contract.py'
       - 'tools/minipc_runner_guard/runner_readiness.py'
       - 'tests/test_minipc_runner_readiness.py'
       - 'tools/install-minipc-baseline-tasks.ps1'
@@ -107,6 +111,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'MINIPC_STATUS_PYTHON_PARSE_FAILED' }
           python -m unittest tests.test_minipc_runner_readiness -v
           if ($LASTEXITCODE -ne 0) { throw 'MINIPC_RUNNER_STATUS_AND_HANDOFF_TEST_FAILED' }
+
+      - name: Validate local selected-file SendTo handoff and security contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $p='tools/minipc_runner_guard/local_file_handoff.ps1'
+          $tokens=$null;$parseErrors=$null
+          [void][Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$parseErrors)
+          if(@($parseErrors).Count -gt 0){throw ('MINIPC_USER_HANDOFF_POWERSHELL_PARSE_FAILED:'+@($parseErrors)[0].Message)}
+          python -m unittest tests.test_minipc_user_handoff_contract -v
+          if($LASTEXITCODE -ne 0){throw 'MINIPC_USER_HANDOFF_CONTRACT_FAILED'}
+          Write-Output 'MINIPC_USER_HANDOFF_SOURCE_AND_SYNTAX_PASS'
 
       - name: Validate generic bounded read-only host snapshot source
         shell: powershell
