@@ -9,10 +9,12 @@ class DirectFileHandoffContract(unittest.TestCase):
     def test_explicit_single_file_only(self):
         self.assertIn("(SEARCH|EXPORT|DIRECT)",SRC)
         self.assertIn("$mode -ceq 'DIRECT' -and ($expected",SRC)
-        self.assertIn("($mode -ceq 'DIRECT'){$expected=$hash}",SRC)
+        self.assertIn("if($mode -ceq 'DIRECT'){$expected=$hash}",SRC)
         self.assertIn("$mode -ceq 'EXPORT' -and $hash -cne $expected",SRC)
         self.assertIn("if($mode -ceq 'SEARCH')",SRC)
-        self.assertIn("if($mode -ceq 'DIRECT')",SRC)
+        self.assertIn("MINIPC_FILE_PROVENANCE_V1",SRC)
+        self.assertIn("origin-sha256.json",SRC)
+        self.assertIn("original_modified=$false",SRC)
     def test_original_guardrails_still_apply(self):
         for x in (
             "CryptoSupportSvc", "WindowsBuiltInRole]::Administrator",
