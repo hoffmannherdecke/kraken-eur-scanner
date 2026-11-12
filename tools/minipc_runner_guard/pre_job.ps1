@@ -48,25 +48,9 @@ if ($fileRequest) {
          $fileSelector -cmatch '^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$') -or
         ($fileMode -ceq 'EXPORT' -and
          $fileDigest -cmatch '^[a-f0-9]{64}$' -and
-         $fileSelector -cmatch '^[A-Za-z0-9_-]{4,512}
-}
-Assert-Gate ($legacy -or $fileRequest) 'wrong_request_type'
-$created = [DateTimeOffset]::MinValue
-Assert-Gate ([DateTimeOffset]::TryParse([string]$eventData.comment.created_at, [ref]$created)) 'timestamp_invalid'
-$age = ([DateTimeOffset]::UtcNow - $created.ToUniversalTime()).TotalSeconds
-Assert-Gate ($age -ge -60 -and $age -le 600) 'expired_request'
-Write-Output 'LOCAL_PREJOB_V1_APPROVED: pinned workflow and authenticated fresh reviewed task'
-) -or
+         $fileSelector -cmatch '^[A-Za-z0-9_-]{4,512}$') -or
         ($fileMode -ceq 'DIRECT' -and -not $fileDigest -and
-         $fileSelector -cmatch '^[A-Za-z0-9_-]{4,512}
-}
-Assert-Gate ($legacy -or $fileRequest) 'wrong_request_type'
-$created = [DateTimeOffset]::MinValue
-Assert-Gate ([DateTimeOffset]::TryParse([string]$eventData.comment.created_at, [ref]$created)) 'timestamp_invalid'
-$age = ([DateTimeOffset]::UtcNow - $created.ToUniversalTime()).TotalSeconds
-Assert-Gate ($age -ge -60 -and $age -le 600) 'expired_request'
-Write-Output 'LOCAL_PREJOB_V1_APPROVED: pinned workflow and authenticated fresh reviewed task'
-)
+         $fileSelector -cmatch '^[A-Za-z0-9_-]{4,512}$')
     )
 }
 Assert-Gate ($legacy -or $fileRequest) 'wrong_request_type'
