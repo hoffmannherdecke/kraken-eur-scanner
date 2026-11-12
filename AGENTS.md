@@ -1,17 +1,5 @@
 <!-- V3_RELEASE_AP04_AP06B_OWNER_OVERRIDE_20261112 -->
-## Verbindliche V3-Release-Ausführung ab 12.11.2026 (eng begrenzter Vorrang)
-
-**Gilt für strategy_release V3 AP04–AP06B vor älteren widersprechenden Ein-AP-pro-Chat-, Vollinventur-, Historienrekonstruktions- und datierten NEXT-/Pausenregeln dieser Datei und älterer Releasepläne.** Projektweiter Owner #353: https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6818585252 ; Fachowner #99 bleibt für alle Release-/Sicherheitsvertragsentscheidungen zuständig.
-
-1. Das aktuelle tatsächlich releasekritische Hindernis gezielt bearbeiten; nach Teil-PASS selbstständig im selben autorisierten Durchgang fortsetzen bis zum echten Owner-/Gerätegate, nicht je AP einen separaten Kleinstauftrag erzeugen.
-2. Bestehende gültige PASS-/SHA-/CMS-/CI-/Runtime-Nachweise wiederverwenden. Weitere Prüfung nur für konkret neue relevante Byte-, Rollen-, Geräte-, Zeit-, Serien- oder Sicherheitsabweichungen. Keine vollständige Alt-PID-Rekonstruktion oder zusätzliche Dokumentation ohne notwendigen Sicherheitszweck.
-3. HOLD nur mit konkretem Sicherheitsrisiko, fehlender zwingender Voraussetzung oder neuer unabdingbarer Ownerentscheidung; fehlenden Beleg, minimalen Auflösungsschritt und betroffene Befugnis exakt nennen. Separat AP04-Fachabnahme, historische STOP-UNKNOWN-Recovery und AP05A-Ausführungsbefugnis ausweisen.
-4. **Unverändert zwingend**: originalgetreue Stage4-/STOP-/Cloud-/Host-/Notebook-Nachweise soweit im jeweils wirksamen #99-Vertrag gefordert; signierte unabhängige Current-Custody- und Terminal-Reader; exakte Epoch-/Datei-SHA-Semantik, CMS, Frische, Nonce, Task-/Writer-CAS-/Single-Writer-Grenzen, INHIBITED und NO RETRY. Jegliche Änderung zwingender Sicherheitsverträge erfordert die gesonderte ausdrückliche #99-Autorisierung. Keine produktive Post-STOP-Recovery ohne gesonderte exakte Owner-Ausführungsentscheidung.
-5. Keine neuen Manager, Audits, Scheduler, parallelen Freigabewege oder implizite Runtimewirkung. Source-/CI-/Merge-PASS nie als physisches Original-ACK ausgeben. Für PR #710 die nachgewiesene Originalhost-Fence-Datei-SHA gesondert von historisch serialisiertem Marker-/Epoch-Digest prüfen (siehe #99/6818544695), nicht einen Wert stillschweigend durch den anderen ersetzen.
-
-**Geltungsgrenze:** Alle anderen Projektbereiche und geltenden Sicherheits-/PR-/Governance-Checks bleiben unverändert. Untenstehende ältere überbreite Arbeitsvorschriften dürfen in diesem V3-Release-Scope nicht länger ein unbedingtes Zusatz-HOLD erzeugen.
-
----
+**V3 strategy_release AP04–AP06B, vorrangig vor älteren Ein-AP-, pauschalen Vollinventur-/PID-Rekonstruktions- und historischen NEXT-Pflichten:** Unmittelbar releasekritische Hürden bis zum echten Owner-/Gerätegate eigenständig abarbeiten; gültige PASS wiederverwenden; nur notwendige Risiken/Abweichungen gezielt testen. HOLD nur bei konkretem Sicherheitsrisiko, fehlender Pflichtvoraussetzung oder erforderlicher Ownerentscheidung. Keine neuen Manager/Audits/Scheduler. Unverändert strikt: #99-Sicherheits- und Freigabeverträge, STOP UNKNOWN/NO RETRY, Stage4, Reader, CMS, Cloud INHIBITED, CAS, Single-Writer, separate exakte Recovery-Owner-Ausführungsfreigabe. Source/CI ≠ Betriebsquittung. Fach-/Safety-/AP05A-Status trennen. Owner: #353/6818585252; Fence-Prüfung: #99/6818544695. Für andere Scopes unverändert.
 
 <!-- V3_LIVE_AP_20261109 -->
 V3-Release: vor Aktion #353 Kommentar 6742581400, #99, main und Original-ACKs frisch lesen; alte NEXT ignorieren. Live-brief/HOLD gilt.
@@ -60,16 +48,9 @@ Detaillierter Vertrag: `docs/project-cross-session-handoff-v1.md`. Vorhandene fa
 
 
 
-## Verbindlicher Effizienz- und Vollständigkeitsstandard (Nutzerbeschluss 19.10.2026)
+## Projektweiter Effizienz- und Vollständigkeitsstandard (19.10.2026)
 
-Diese vier Regeln konkretisieren den **bestehenden** Kontext-vor-Aktion-Manager; kein zweiter Manager, Scheduler, Runtime-Controller oder neues Freigabegate. Sie gelten projektweit in allen vier Scopes und für interaktive Chat-, GitHub-, Work- und Mini-PC-bezogene Entwicklungsarbeit, soweit die jeweiligen Ausführungsrechte reichen.
-
-1. **Vollständige Voranalyse vor Umsetzung.** Zuerst aktuelle kanonische Quellen, betroffene Owner/Consumer, vorhandene geprüfte Fähigkeiten und Original-ACKs sowie alle relevanten Prüfregeln und Abhängigkeiten lesen. Bei einem CI-Fehler nicht nur die erste Fehlermeldung reparieren: vollständigen Guard-Quellcode, geänderte Dateipfade, erwartete Scopes, Fingerprints, Testkontrakte und nachgelagerte Gates vor dem nächsten Commit abgleichen. Bereits vorliegende Nachweise wiederverwenden, nicht durch neue Vermutungen ersetzen.
-2. **Kürzester sicherer Weg statt Klick-/Screenshot-Schleifen.** Zuerst vorhandene, eingeschränkte GitHub-/Runner-/Cloud-Readbacks und genehmigte gebündelte Abläufe prüfen. Wenn physische Nutzeraktion wirklich nötig ist, nach Rechte-, Pfad-, Wirkungs- und Rollbackprüfung einen möglichst kleinen, konkret begrenzten und nachvollziehbaren Befehlssatz anbieten, soweit vorhandene Freigaben dies erlauben. Keine pauschalen ACLs, freie Remote-Shell, unkontrollierte Skripte oder Privilegienausweitung aus Effizienzgründen.
-3. **Vollständige Vorabvalidierung statt Fehler-Pingpong.** Vor PR-Erstellung oder erneuter CI möglichst alle bekannten Prüfbedingungen gegen den tatsächlichen HEAD/PR-Diff vorprüfen; `PROJECT_CONTEXT_REVIEW_V1` mit **exakt** den durch `tools/project_context_change_guard.py::classify` ermittelten Scopes und **frischen** `context_before_action.py`-Fingerprints aus den tatsächlichen Quellen erzeugen. Nicht einen alten CI-Lauf nach reiner PR-Textänderung als Beweis eines neuen HEAD behandeln. Negative Tests und reale externe/Host-ACKs bleiben eigenständig; niemals Checks überspringen, schwächen oder auf Verdacht grün melden.
-4. **Eigenständig bis zum belegten sinnvollen Abschluss.** Nach jedem Teilschritt nächsten sicheren autorisierten Schritt im selben Arbeitsdurchgang ausführen, Ergebnisse und Fehlerursachen direkt verifizieren, bei Fehlschlägen zuerst Ursachen-/Abhängigkeitsanalyse durchführen und gezielt nachbessern. Nutzer nur für echte Genehmigungen, unzugängliche physische Aktionen oder externe Blocker hinzuziehen; bei Grenzen konkreten belegten Stand und nächsten Owner/Gate übergeben, keinen Erfolg vortäuschen.
-
-**Erfolgsmessung:** weniger wiederholte manuelle Nutzeraktionen und CI-Korrekturschleifen bei unveränderten Sicherheitsgrenzen. Ein Text- oder PR-Merge beweist nicht, dass die Arbeitsweise in künftigen Chats automatisch ausgeführt wurde; dies ist bei der nächsten tatsächlichen Aufgabe anhand des Verlaufs zu prüfen. Kein V3-/Trading-/Windows-Release durch diese Prozessregel.
+Vor wesentlichen Änderungen aktuelle Owner, Originalquellen, Abhängigkeiten, Sicherheitsgrenzen und bestehende Checks gezielt analysieren; vorhandene geprüfte Komponenten vor neuen einsetzen. Für betroffene PRs exakte aktuelle Context-Fingerprints, reale Source-/CI- und bei Bedarf Originalhost-/Cloud-/Notebook-Abnahmen verlangen; nicht auf Verdacht grün melden. Bei Fehlern gezielt Ursache beheben, nach Teil-PASS im autorisierten Scope selbständig fortsetzen. Keine freie Remote-Shell, Rechteausweitung, zusätzliche Manager oder kostenpflichtige Dienste ohne Genehmigung. Ausführliche historische Entscheidung: #353/6240037211.
 
 ## Dialog-Arbeitsmodus: vereinbartes Ziel statt einzelner Arbeitsblock
 
