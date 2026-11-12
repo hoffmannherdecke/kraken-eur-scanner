@@ -510,6 +510,80 @@ function Save-V3SignedNotebookReaderSnapshot([string]$RawJson,[string]$CertSha25
  }
 }
 
+# PR710: exact byte-bound, read-only POSTSTOP Reader extension.
+function Assert-V3PostStopFreshReader([string]$Json,[string]$Nonce,[string]$Kind){
+ $v=$Json|ConvertFrom-Json -ErrorAction Stop
+ if([string]$v.kind -cne $Kind -or [string]$v.observation_nonce -cne $Nonce){
+  throw 'V3_POSTSTOP_READER_NONCE_KIND_HOLD'
+ }
+ $m=[regex]::Matches($Json,'"observed_at_utc"\s*:\s*"(?<t>[^"]+)"')
+ if($m.Count -ne 1){throw 'V3_POSTSTOP_READER_TIME_COUNT_HOLD'}
+ $t=[datetimeoffset]::ParseExact($m[0].Groups['t'].Value,
+   "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+   [Globalization.CultureInfo]::InvariantCulture,
+   [Globalization.DateTimeStyles]::AssumeUniversal)
+ $now=[datetimeoffset]::UtcNow
+ if($t -gt $now.AddSeconds(5) -or ($now-$t).TotalSeconds -gt 60){
+  throw 'V3_POSTSTOP_READER_FRESHNESS_HOLD'
+ }
+ return $v
+}
+if($PostStopHostReader){
+ $prefix='\\192.168.178.179\Mistral_450\'
+ $folder=[IO.Path]::GetFullPath($OriginalHostDirectory)
+ if(-not $folder.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase) -or
+    $OriginalHostDirectory.Contains('..')){throw 'V3_POSTSTOP_HOST_UNC_HOLD'}
+ $jsonPath=Join-Path $folder 'current-host-original.json'
+ $cmsPath=Join-Path $folder 'current-host-original.cms'
+ foreach($filePath in @($jsonPath,$cmsPath)){
+  $fi=Get-Item -LiteralPath $filePath -Force -ErrorAction Stop
+  if($fi.PSIsContainer -or [bool]($fi.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+     $fi.Length -lt 300 -or $fi.Length -gt 32768){
+   throw 'V3_POSTSTOP_HOST_ORIGINAL_FILE_HOLD'
+  }
+ }
+ $bytes=[IO.File]::ReadAllBytes($jsonPath)
+ $raw=[Text.UTF8Encoding]::new($false,$true).GetString($bytes)
+ $host=Assert-V3PostStopFreshReader $raw $ObservationNonce 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
+ if([string]$host.series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$host.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$host.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
+    [string]$host.original_fence_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
+    [string]$host.native_stop_outcome -cne 'UNKNOWN' -or
+    $host.writer_enabled -ne $false -or $host.writer_process_count -ne 0 -or
+    $host.other_writer_authorities_closed -ne $true -or
+    $host.current_host_custody_verified -ne $true){
+  throw 'V3_POSTSTOP_HOST_SCOPE_HOLD'
+ }
+ $cms=[Security.Cryptography.Pkcs.SignedCms]::new(
+    [Security.Cryptography.Pkcs.ContentInfo]::new($bytes),$true)
+ $cms.Decode([IO.File]::ReadAllBytes($cmsPath))
+ if(-not $cms.Detached -or $cms.SignerInfos.Count -ne 1){
+  throw 'V3_POSTSTOP_HOST_ORIGIN_CMS_HOLD'
+ }
+ $cms.CheckSignature($true)
+ $cert=$cms.SignerInfos[0].Certificate
+ if($null -eq $cert){throw 'V3_POSTSTOP_HOST_ORIGIN_CERT_HOLD'}
+ $h=[Security.Cryptography.SHA256]::Create()
+ try{$pin=([BitConverter]::ToString($h.ComputeHash([byte[]]$cert.RawData))).Replace('-','').ToLowerInvariant()}
+ finally{$h.Dispose()}
+ if($pin -cne 'ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'){
+  throw 'V3_POSTSTOP_HOST_ORIGIN_PIN_HOLD'
+ }
+ $reader=Save-V3SignedNotebookReaderSnapshot $raw $ReviewedNotebookCertificateSha256
+ $copy=[IO.File]::ReadAllBytes((Join-Path $reader.local_directory 'reader.json'))
+ if($copy.Length -ne $bytes.Length){throw 'V3_POSTSTOP_HOST_BYTE_HOLD'}
+ for($i=0;$i -lt $bytes.Length;$i++){
+  if($copy[$i] -ne $bytes[$i]){throw 'V3_POSTSTOP_HOST_BYTE_HOLD'}
+ }
+ [pscustomobject]@{kind='V3_POSTSTOP_NOTEBOOK_HOST_CMS_V1';
+  status='READ_ONLY_NO_RECOVERY';observation_nonce=$ObservationNonce
+  originalhost_directory=$folder;notebook_directory=$reader.local_directory
+  originalhost_json='current-host-original.json';originalhost_cms='current-host-original.cms'
+  notebook_json='reader.json';notebook_cms='reader.cms'
+  no_production_effect=$true}|ConvertTo-Json -Compress
+ return
+}
 $passed = 0
 foreach ($check in $checks) {
     $plain = $null
