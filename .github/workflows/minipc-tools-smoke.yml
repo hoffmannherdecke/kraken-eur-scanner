@@ -11,6 +11,7 @@ name: MINI-PC tools smoke
       - 'tools/minipc_runner_guard/pre_job.ps1'
       - 'tools/minipc_runner_guard/local_file_handoff.ps1'
       - 'tests/test_minipc_user_handoff_contract.py'
+      - 'tests/test_minipc_signed_evidence_handoff_contract.py'
       - 'tools/minipc_runner_guard/runner_readiness.py'
       - 'tests/test_minipc_runner_readiness.py'
       - 'tools/*minipc*.py'
@@ -30,6 +31,7 @@ name: MINI-PC tools smoke
       - 'tools/minipc_runner_guard/pre_job.ps1'
       - 'tools/minipc_runner_guard/local_file_handoff.ps1'
       - 'tests/test_minipc_user_handoff_contract.py'
+      - 'tests/test_minipc_signed_evidence_handoff_contract.py'
       - 'tools/minipc_runner_guard/runner_readiness.py'
       - 'tests/test_minipc_runner_readiness.py'
       - 'tools/install-minipc-baseline-tasks.ps1'
@@ -136,7 +138,7 @@ jobs:
           try {Assert-SafeFileName 'private-key.pem';throw 'MINIPC_USER_HANDOFF_NAME_NEGATIVE_FAILED'} catch {
             if($_.Exception.Message -eq 'MINIPC_USER_HANDOFF_NAME_NEGATIVE_FAILED'){throw}
           }
-          python -m unittest tests.test_minipc_user_handoff_contract -v
+          python -m unittest tests.test_minipc_user_handoff_contract tests.test_minipc_signed_evidence_handoff_contract -v
           if($LASTEXITCODE -ne 0){throw 'MINIPC_USER_HANDOFF_CONTRACT_FAILED'}
           Write-Output 'MINIPC_USER_HANDOFF_SOURCE_AND_SYNTAX_PASS'
 
