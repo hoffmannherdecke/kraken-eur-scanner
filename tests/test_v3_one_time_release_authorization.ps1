@@ -388,7 +388,7 @@ try {
   inhibit_state='INHIBITED';sealed=$false;next_ordinal=1
   intent_count=0;attempt_count=0;abort_count=0
   executor_login_closed=$true;executor_sessions_count=0
-  v3_active_series_count=0;v2r4_active_series_count=1;cloud_cas_rpc_count=0
+  v3_active_series_count=0;v2r4_active_series_count=1;cloud_cas_rpc_count=1
   reader_role='v3_cas_audit_reader';current_cloud_custody_verified=$true
  }
  function New-TestSignedCurrent($record,$certificate) {
@@ -508,7 +508,7 @@ try {
   $b.host_payload_sha256=Get-V3ReleaseSha256 $alter.Payload
   Expect-CurrentHold $alter $cs $b $now
  }
- foreach($mut in @(@('inhibit_state','RELEASED'),@('v3_active_series_count',1),@('executor_login_closed',$false),@('attempt_count',1),@('cloud_cas_rpc_count',1),@('current_cloud_custody_verified',$false))) {
+ foreach($mut in @(@('inhibit_state','RELEASED'),@('v3_active_series_count',1),@('executor_login_closed',$false),@('attempt_count',1),@('cloud_cas_rpc_count',0),@('current_cloud_custody_verified',$false))) {
   $edit=($cr|ConvertTo-Json -Compress)|ConvertFrom-Json
   $edit.($mut[0])=$mut[1]
   $alter=New-TestSignedCurrent $edit $cc
