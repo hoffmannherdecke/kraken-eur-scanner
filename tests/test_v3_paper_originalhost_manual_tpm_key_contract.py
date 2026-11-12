@@ -171,6 +171,18 @@ class ManualTPMKeySourceContract(unittest.TestCase):
   self.assertNotIn("Invoke-V3PostStopCloudOnceCandidate",self.s)
   self.assertNotIn("Start-ScheduledTask",self.s)
 
+ def test_utf8_bom_rejection_is_ordinal_not_culture_sensitive(self):
+  # Windows PowerShell 5.1 / .NET Framework can treat U+FEFF as
+  # an ignorable culture-sensitive StartsWith token even for '{' JSON.
+  # Keep BOM and NUL rejection without false HOLD on valid fresh JSON.
+  self.assertIn("$Payload[0] -eq 0xEF",self.s)
+  self.assertIn("$Payload[1] -eq 0xBB",self.s)
+  self.assertIn("$Payload[2] -eq 0xBF",self.s)
+  self.assertIn("V3_SIGNER_CURRENT_HOST_UTF8_BOM_HOLD",self.s)
+  self.assertIn("IndexOf([char]0,[StringComparison]::Ordinal)",self.s)
+  self.assertIn("[int][char]$raw[0] -eq 0xFEFF",self.s)
+  self.assertNotIn("$raw.StartsWith([char]0xFEFF)",self.s)
+
  def test_public_pin_not_release_authority(self):
   for x in ("certificate_der_sha256_public_pin_unapproved",
             "originalhost_signed_receipt_generated=$false",
