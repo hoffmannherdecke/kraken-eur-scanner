@@ -49,26 +49,28 @@ if([string]$pins.epoch_id -cne $epoch -or
  throw 'V3_POSTSTOP_PINS_AUTH_DRIFT_HOLD'
 }
 if($Mode -eq 'Readback'){
- $terminal=Assert-V3PostStopSignedTerminalCloud -Payload (Read-V3ReleaseLocalBytes $TerminalJson 8192) -Cms (Read-V3ReleaseLocalBytes $TerminalCms 32768) -Pins $pins -CurrentCustodyReceiptSha256 ([string]$pins.current_custody_receipt_sha256)
+ $receiptInput=[pscustomobject]@{kind='V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1';independently_signed_current_custody=$true;epoch_id=$epoch;host_payload_sha256=[string]$pins.host_payload_sha256;cloud_payload_sha256=[string]$pins.cloud_payload_sha256;owner_review_sha256=[string]$pins.owner_review_sha256}
+ $receiptSha=Get-V3PostStopCurrentCustodyReceiptSha256 $receiptInput
+ $terminal=Assert-V3PostStopSignedTerminalCloud -Payload (Read-V3ReleaseLocalBytes $TerminalJson 8192) -Cms (Read-V3ReleaseLocalBytes $TerminalCms 32768) -Pins $pins -CurrentCustodyReceiptSha256 $receiptSha
  [pscustomobject]@{kind='TARGET_EPOCH_TERMINALIZED';epoch_id=$epoch;terminal_cloud_abort_confirmed=$terminal.terminal_cloud_abort_confirmed;stage4_authorized=$false;writer_authorized=$false}|ConvertTo-Json -Compress
  return
 }
 $hostBytes=Read-V3ReleaseLocalBytes $HostJson 8192
 $cloudBytes=Read-V3ReleaseLocalBytes $CloudJson 8192
-$input=@{
+$receiptInput=@{
  HostPayload=$hostBytes;OriginalHostCms=(Read-V3ReleaseLocalBytes $OriginalHostCms 32768)
  NotebookHostCms=(Read-V3ReleaseLocalBytes $NotebookHostCms 32768)
  CloudPayload=$cloudBytes;CloudCms=(Read-V3ReleaseLocalBytes $CloudCms 32768)
  Pins=$pins;Now=[datetimeoffset]::UtcNow
 }
-$review=Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms @input
+$review=Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms @receiptInput
 if($review.current_custody_contract_verified -ne $true -or
  $review.recovery_authorized -ne $false -or $review.writer_authorized -ne $false){
  throw 'V3_POSTSTOP_CURRENT_CUSTODY_HOLD'
 }
-$custody=Assert-V3PostStopUnknownCurrentCustody -HostPayload $hostBytes -HostCms $input.NotebookHostCms -CloudPayload $cloudBytes -CloudCms $input.CloudCms -Pins $pins
+$custody=Assert-V3PostStopUnknownCurrentCustody -HostPayload $hostBytes -HostCms $receiptInput.NotebookHostCms -CloudPayload $cloudBytes -CloudCms $receiptInput.CloudCms -Pins $pins
 $receiptSha=Get-V3PostStopCurrentCustodyReceiptSha256 $custody
-if([string]$pins.current_custody_receipt_sha256 -cne $receiptSha){throw 'V3_POSTSTOP_CURRENT_RECEIPT_PIN_HOLD'}
+if([string]$pins.host_payload_sha256 -cne (Get-V3ReleaseSha256 $hostBytes) -or [string]$pins.cloud_payload_sha256 -cne (Get-V3ReleaseSha256 $cloudBytes)){throw 'V3_POSTSTOP_CURRENT_RECEIPT_PIN_HOLD'}
 $plan=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -CurrentCustodyReceiptSha256 $receiptSha -Expiry $auth.expires_at
 if($plan.execution_authorized -ne $false){throw 'V3_POSTSTOP_CANDIDATE_AUTH_CONFUSION_HOLD'}
 $issuerRoot=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer'
