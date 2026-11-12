@@ -6,10 +6,11 @@ $req=[string]$env:MINI_PC_FILE_REQUEST
 $id=[Security.Principal.WindowsIdentity]::GetCurrent()
 $principal=New-Object Security.Principal.WindowsPrincipal($id)
 if($id.Name -notmatch '(?i)\\CryptoSupportSvc$' -or $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) -or $env:RUNNER_NAME -cne 'MINI-PC-CryptoSupport'){throw 'FILE_ACCESS_DENIED:IDENTITY'}
-if($req -cnotmatch '^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT) \| (TRADING|DOWNLOADS|MISTRAL|V3Q1|V3Q2|V3Q3|V3QR|V3P680|V3P681|V3P682|V3RS1|V3RS2) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'){throw 'FILE_ACCESS_DENIED:REQUEST'}
+if($req -cnotmatch '^MINIPC_FILE_V1 \| ([a-f0-9]{40}) \| (SEARCH|EXPORT|DIRECT) \| (TRADING|DOWNLOADS|MISTRAL|V3Q1|V3Q2|V3Q3|V3QR|V3P680|V3P681|V3P682|V3RS1|V3RS2) \| ([A-Za-z0-9_.-]{3,64}|[A-Za-z0-9_-]{4,512})(?: \| ([a-f0-9]{64}))?$'){throw 'FILE_ACCESS_DENIED:REQUEST'}
 $sourceSha=[string]$Matches[1];$mode=[string]$Matches[2];$key=[string]$Matches[3];$selector=[string]$Matches[4];$expected=[string]$Matches[5]
 if(($mode -ceq 'SEARCH' -and ($expected -or $selector -cnotmatch '^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$')) -or
-   ($mode -ceq 'EXPORT' -and (!$expected -or $selector -cnotmatch '^[A-Za-z0-9_-]{4,512}$'))){throw 'FILE_ACCESS_DENIED:REQUEST_MODE'}
+   ($mode -ceq 'EXPORT' -and (!$expected -or $selector -cnotmatch '^[A-Za-z0-9_-]{4,512}$')) -or
+   ($mode -ceq 'DIRECT' -and ($expected -or $selector -cnotmatch '^[A-Za-z0-9_-]{4,512}$'))){throw 'FILE_ACCESS_DENIED:REQUEST_MODE'}
 # Exact approved V3 source roots; do not descend through C:\Users\ADMIN as a generic root.
 $roots=@{TRADING='C:\Users\ADMIN\Trading';DOWNLOADS='C:\Users\ADMIN\Downloads';MISTRAL='\\192.168.178.179\Mistral_450';V3Q1='C:\Users\ADMIN\V3Paper-Quelle-46c5abbd6af1';V3Q2='C:\Users\ADMIN\V3Paper-Quelle-5fd60d0e9dc2';V3Q3='C:\Users\ADMIN\V3Paper-Quelle-985ed3230bb4';V3QR='C:\Users\ADMIN\V3Paper-ReleaseSource-306aad033f16';V3P680='C:\Users\ADMIN\V3-PR680-SOURCE-16d40540f7d8';V3P681='C:\Users\ADMIN\V3-PR681-SOURCE-3ee5ea3cda54';V3P682='C:\Users\ADMIN\V3-PR682-SOURCE-53dbcf6d8276';V3RS1='C:\Users\ADMIN\V3-Release-Source-a40e93f7';V3RS2='C:\Users\ADMIN\V3-Release-Source-b019448331df'}
 $root=[string]$roots[$key]
@@ -177,7 +178,7 @@ try {
     $state=if($found.Count -eq 0){'NOT_FOUND'}elseif($queue.Count -gt 0 -or $visited -ge 1200){'PARTIAL_LIMIT'}else{'FOUND'}
     Result $state @($found.ToArray()) ''
   }else{
-    # A separate authenticated EXPORT request binds one relative path to its previously observed SHA.
+    # EXPORT binds observed SHA; DIRECT binds an explicitly selected path and hashes the source inside the guarded job.
     $bytes=$selector.Replace('-','+').Replace('_','/')
     $bytes=$bytes+('='*((4-($bytes.Length%4))%4))
     $rel=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($bytes))
@@ -190,7 +191,8 @@ try {
     $maxSize=if($extension -ceq '.zip'){2097152}else{65536}
     if($file.Length -gt $maxSize -or $file.Length -lt 1){throw 'FILE_ACCESS_DENIED:EXPORT_SIZE'}
     $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
-    if($hash -cne $expected){throw 'FILE_HASH_MISMATCH'}
+    if($mode -ceq 'EXPORT' -and $hash -cne $expected){throw 'FILE_HASH_MISMATCH'}
+    if($mode -ceq 'DIRECT'){$expected=$hash}
     $body=[IO.File]::ReadAllBytes($file.FullName)
     if($body.Length -ne $file.Length -or [BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($body)).Replace('-','').ToLowerInvariant() -cne $expected){throw 'FILE_HASH_MISMATCH'}
     if($extension -ceq '.zip') {
@@ -202,12 +204,35 @@ try {
     }
     $temp=[string]$env:RUNNER_TEMP
     if(-not $temp -or -not (Test-Path -LiteralPath $temp -PathType Container)){throw 'FILE_UNAVAILABLE:TEMP'}
-    $dest=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N')+$extension)
+    if($mode -ceq 'DIRECT') {
+      $package=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N'))
+      [void][IO.Directory]::CreateDirectory($package)
+      $dest=Join-Path $package $file.Name
+    } else {
+      $dest=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N')+$extension)
+    }
     [IO.File]::WriteAllBytes($dest,$body)
     if((Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected){
       Remove-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue;throw 'FILE_HASH_MISMATCH'
     }
-    Result 'EXPORT_STAGED' @([pscustomobject]@{relative_path=$rel;size=[long]$file.Length;sha256=$hash}) $dest
+    if($mode -ceq 'DIRECT') {
+      $receipt=[pscustomobject][ordered]@{
+        kind='MINIPC_FILE_PROVENANCE_V1'
+        root_key=$key
+        relative_path=$rel
+        filename=$file.Name
+        sha256=$expected
+        size_bytes=[long]$body.Length
+        copied_at_utc=[DateTimeOffset]::UtcNow.ToString('o')
+        reviewed_git_sha=$sourceSha
+        original_modified=$false
+        source_identity='CryptoSupportSvc'
+      }
+      [IO.File]::WriteAllText((Join-Path $package 'origin-sha256.json'),($receipt|ConvertTo-Json -Depth 4),[Text.UTF8Encoding]::new($false))
+      Result 'EXPORT_STAGED' @([pscustomobject]@{relative_path=$rel;size=[long]$file.Length;sha256=$hash}) $package
+    } else {
+      Result 'EXPORT_STAGED' @([pscustomobject]@{relative_path=$rel;size=[long]$file.Length;sha256=$hash}) $dest
+    }
   }
 }catch [System.UnauthorizedAccessException]{Result 'ACCESS_DENIED' @() ''}
  catch [System.Management.Automation.ItemNotFoundException]{Result 'NOT_FOUND' @() ''}
