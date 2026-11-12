@@ -13,7 +13,7 @@ class EvidenceBundleContract(unittest.TestCase):
     def test_cms_hashes_and_original_byte_copy(self):
         for marker in ("'.p7s'","'.p7m'","'.cms'","'.sig'","'.der'","'.cer'","'.crt'",
                        "'.sha256'","'.json'","'.pdf'",
-                       "MINIPC_SIGNED_EVIDENCE_HANDOFF_V1","evidence-manifest-sha256.json",
+                       "MINIPC_SIGNED_EVIDENCE_HANDOFF_V1","evidence-manifest-sha256.json","UPLOAD_PACKAGE.zip","ZipFile]::CreateFromDirectory",
                        "Get-FileHash -LiteralPath $candidate.FullName",
                        "[IO.File]::WriteAllBytes($dest,$entry.bytes)",
                        "Get-FileHash -LiteralPath $dest",
