@@ -3,7 +3,8 @@
 [CmdletBinding(DefaultParameterSetName='Export')]
 param(
   [Parameter(ParameterSetName='Install',Mandatory=$true)][switch]$Install,
-  [Parameter(ParameterSetName='Export',Mandatory=$true)][string]$SourcePath
+  [Parameter(ParameterSetName='Export',Mandatory=$true)][string]$SourcePath,
+  [Parameter(ParameterSetName='Export')][switch]$EvidenceBundle
 )
 $ErrorActionPreference='Stop'
 # SendTo starts a short-lived PowerShell window; display fail-closed errors before exit.
@@ -80,11 +81,157 @@ if($Install){
   $link.Description='Ausgewaehlte Datei unter Benutzerrechten sicher nach Downloads\ChatGPT-Uebergabe exportieren'
   $link.Save()
   if(-not(Test-Path -LiteralPath $shortcut -PathType Leaf)){throw 'HANDOFF_HOLD: SendTo-Verknuepfung fehlt'}
+  $bundleShortcut=Join-Path $sendTo 'ChatGPT - signierte Nachweise.lnk'
+  $bundleLink=$shell.CreateShortcut($bundleShortcut)
+  $bundleLink.TargetPath=$link.TargetPath
+  $bundleLink.Arguments='-NoProfile -ExecutionPolicy Bypass -File "'+$installedScript+'" -EvidenceBundle -SourcePath'
+  $bundleLink.WorkingDirectory=$homeDir
+  $bundleLink.Description='Signierte Originalnachweise und SHA256-Manifest aus einem ausgewaehlten Ordner uebergeben'
+  $bundleLink.Save()
+  if(-not(Test-Path -LiteralPath $bundleShortcut -PathType Leaf)){throw 'HANDOFF_HOLD: Nachweis-Verknuepfung fehlt'}
   Write-Output 'MINIPC_USER_HANDOFF_INSTALLED'
   Write-Output ('SCRIPT_SHA256='+$copyHash.ToLowerInvariant())
   Write-Output ('SENDTO='+$shortcut)
   return
 }
+
+# EVIDENCE BUNDLE: explicit file or selected directory with bounded depth, no
+# implicit traversal outside selection, private keys, network upload or signing.
+function Assert-EvidenceName([string]$name) {
+  if($name -notmatch '^[A-Za-z0-9][A-Za-z0-9_. -]{0,119}$' -or
+     $name -match '(?i)(^\.|(^|[_. -])(secret|password|passwd|token|credential|apikey|wallet|seed|privatekey|id_rsa)([_. -]|$)|\.env|\.key|\.pem|\.pfx|\.p12|\.kdbx|\.asc)' -or
+     $name -ieq 'evidence-manifest-sha256.json'){
+    throw 'HANDOFF_HOLD: Nachweisdateiname gesperrt'
+  }
+}
+function Get-Sha256Bytes([byte[]]$content) {
+  $hash=[Security.Cryptography.SHA256]::Create()
+  try {return ([BitConverter]::ToString($hash.ComputeHash($content))).Replace('-','').ToLowerInvariant()}
+  finally {$hash.Dispose()}
+}
+function Export-EvidenceBundle([string]$selected) {
+  $source=[IO.Path]::GetFullPath($selected)
+  Assert-NoReparse $source
+  $item=Get-Item -LiteralPath $source -Force -ErrorAction Stop
+  $isFolder=[bool]$item.PSIsContainer
+  $root=if($isFolder){$source}else{[IO.Path]::GetDirectoryName($source)}
+  $candidates=New-Object 'System.Collections.Generic.List[object]'
+  if($isFolder) {
+    # Explicitly selected folder, maximum two descendant levels and 80 entries.
+    $pending=New-Object 'System.Collections.Generic.Queue[object]'
+    $pending.Enqueue([pscustomobject]@{path=$source;depth=0})
+    $visited=0
+    while($pending.Count -gt 0){
+      $node=$pending.Dequeue()
+      Assert-NoReparse $node.path
+      foreach($child in [IO.DirectoryInfo]::new($node.path).EnumerateFileSystemInfos()){
+        $visited++
+        if($visited -gt 120){throw 'HANDOFF_HOLD: Nachweisordner zu viele Eintraege'}
+        if($child.Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'HANDOFF_HOLD: Nachweis-Reparse gesperrt'}
+        Assert-EvidenceName $child.Name
+        if($child -is [IO.DirectoryInfo]){
+          if($node.depth -ge 2){throw 'HANDOFF_HOLD: Nachweisordner zu tief'}
+          $pending.Enqueue([pscustomobject]@{path=$child.FullName;depth=$node.depth+1})
+        }else{$candidates.Add($child)}
+      }
+    }
+  }else{$candidates.Add($item)}
+  if($candidates.Count -lt 1 -or $candidates.Count -gt 80){throw 'HANDOFF_HOLD: Nachweisdateienanzahl unzulaessig'}
+
+  $textExtensions=@('.json','.txt','.md','.csv','.log','.xml','.yml','.yaml','.sha256','.sha','.manifest','.ini','.cfg','.sql')
+  $signatureExtensions=@('.p7s','.p7m','.cms','.sig','.der','.cer','.crt')
+  $supportExtensions=@('.pdf')
+  $records=New-Object 'System.Collections.Generic.List[object]'
+  $checked=New-Object 'System.Collections.Generic.List[object]'
+  $total=0L
+  foreach($candidate in $candidates){
+    Assert-NoReparse $candidate.FullName
+    Assert-EvidenceName $candidate.Name
+    $relative=$candidate.FullName.Substring($root.TrimEnd('\').Length).TrimStart('\')
+    foreach($segment in $relative.Split('\')){Assert-EvidenceName $segment}
+    $extension=[IO.Path]::GetExtension($candidate.Name).ToLowerInvariant()
+    if($extension -cnotin ($textExtensions+$signatureExtensions+$supportExtensions)){
+      throw 'HANDOFF_HOLD: Nachweis-Dateityp unzulaessig'
+    }
+    if($candidate.Length -lt 1 -or $candidate.Length -gt 8388608){
+      throw 'HANDOFF_HOLD: Nachweisdatei ueber 8 MiB'
+    }
+    $total += $candidate.Length
+    if($total -gt 33554432){throw 'HANDOFF_HOLD: Nachweispaket ueber 32 MiB'}
+    $before=(Get-FileHash -LiteralPath $candidate.FullName -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    $bytes=[IO.File]::ReadAllBytes($candidate.FullName)
+    if($bytes.Length -ne $candidate.Length -or (Get-Sha256Bytes $bytes) -cne $before){
+      throw 'HANDOFF_HOLD: Nachweisdatei waehrend Lesen veraendert'
+    }
+    if($extension -cin $textExtensions) {
+      # Fail closed on clearly credential-bearing text; no claim of complete PII scanning.
+      $utf8=[Text.UTF8Encoding]::new($false,$true)
+      try{$decoded=$utf8.GetString($bytes)}catch{throw 'HANDOFF_HOLD: Nachweistext nicht UTF-8'}
+      if($decoded.IndexOf([char]0) -ge 0 -or
+         $decoded -match '(?i)(password\s*[:=]|passwd\s*[:=]|secret\s*[:=]|api[_-]?key\s*[:=]|bearer\s+[a-z0-9._-]+|BEGIN [A-Z ]*PRIVATE KEY|postgres(?:ql)?://|SUPABASE_SERVICE_ROLE_KEY|sk-[A-Za-z0-9]{10})'){
+        throw 'HANDOFF_HOLD: Vertrauliche Nachweisdaten erkannt'
+      }
+    }elseif($extension -cin $signatureExtensions) {
+      # Do not sign or assert CMS validity. Allow only signed/certificate-shaped
+      # binary files; reject private-key containers by extension/name above.
+      if($bytes.Length -gt 8388608){throw 'HANDOFF_HOLD: Signatur zu gross'}
+    }
+    $after=(Get-FileHash -LiteralPath $candidate.FullName -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    if($after -cne $before){throw 'HANDOFF_HOLD: Nachweisdatei geaendert'}
+    $checked.Add([pscustomobject]@{relative_path=$relative;bytes=$bytes;sha256=$before;size=[long]$bytes.Length;kind=$(if($extension -cin $signatureExtensions){'SIGNATURE_OR_CERTIFICATE'}elseif($extension -cin $supportExtensions){'SUPPORT_BINARY'}else{'TEXT_EVIDENCE'})})
+  }
+  $downloads=Join-Path $homeDir 'Downloads'
+  Assert-NoReparse $downloads
+  if(-not(Test-Path -LiteralPath $downloads -PathType Container)){throw 'HANDOFF_HOLD: Downloads-Ordner fehlt'}
+  $handoff=Join-Path $downloads 'ChatGPT-Uebergabe'
+  Assert-NoReparse $handoff
+  [void][IO.Directory]::CreateDirectory($handoff)
+  $folder=Join-Path $handoff ('signed-evidence-'+[DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')+'-'+[guid]::NewGuid().ToString('N'))
+  [void][IO.Directory]::CreateDirectory($folder)
+  try {
+    foreach($entry in $checked){
+      $dest=Join-Path $folder $entry.relative_path
+      $parent=[IO.Path]::GetDirectoryName($dest)
+      [void][IO.Directory]::CreateDirectory($parent)
+      [IO.File]::WriteAllBytes($dest,$entry.bytes)
+      if((Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLowerInvariant() -cne $entry.sha256){
+        throw 'HANDOFF_HOLD: Nachweiskopie SHA256 abweichend'
+      }
+      $records.Add([pscustomobject][ordered]@{relative_path=$entry.relative_path;sha256=$entry.sha256;size_bytes=$entry.size;type=$entry.kind})
+    }
+    $manifest=[pscustomobject][ordered]@{
+      kind='MINIPC_SIGNED_EVIDENCE_HANDOFF_V1'
+      source_root=$source
+      source_identity=$identity.Name
+      exported_at_utc=[DateTimeOffset]::UtcNow.ToString('o')
+      entry_count=$records.Count
+      total_bytes=$total
+      files=@($records.ToArray())
+      original_files_modified=$false
+      signatures_verified=$false
+      authenticity_requires_existing_independent_verifier=$true
+      user_review_required=$true
+    }
+    $manifestFile=Join-Path $folder 'evidence-manifest-sha256.json'
+    [IO.File]::WriteAllText($manifestFile,($manifest|ConvertTo-Json -Depth 7),[Text.UTF8Encoding]::new($false))
+    Write-Output 'MINIPC_SIGNED_EVIDENCE_HANDOFF_EXPORT_PASS'
+    Write-Output ('FILES='+$records.Count)
+    Write-Output ('FOLDER='+$folder)
+    Write-Output 'Manifest und Originalkopien pruefen. CMS-Signaturen sind NICHT kryptografisch verifiziert.'
+    & explorer.exe $folder
+  }catch{
+    if(Test-Path -LiteralPath $folder -PathType Container){
+      [IO.Directory]::Delete($folder,$true)
+    }
+    throw
+  }
+}
+if($EvidenceBundle){
+  if(-not(Test-Path -LiteralPath $SourcePath)){throw 'HANDOFF_HOLD: Nachweisdatei oder Ordner fehlt'}
+  Export-EvidenceBundle $SourcePath
+  return
+}
+
 # The normal file-selection entrypoint. No admin, no new service and no source ACL modifications.
 if(-not(Test-Path -LiteralPath $SourcePath -PathType Leaf)){
   throw 'HANDOFF_HOLD: Quelldatei nicht gefunden oder nicht lesbar'
