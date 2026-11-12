@@ -6,6 +6,14 @@ param(
   [Parameter(ParameterSetName='Export',Mandatory=$true)][string]$SourcePath
 )
 $ErrorActionPreference='Stop'
+# SendTo starts a short-lived PowerShell window; display fail-closed errors before exit.
+trap {
+  $message=[string]$_.Exception.Message
+  if(-not $message.StartsWith('HANDOFF_HOLD:')){$message='HANDOFF_HOLD: Windows-Dateizugriff oder Export gescheitert'}
+  try{(New-Object -ComObject WScript.Shell).Popup($message,0,'ChatGPT-Dateiexport',16) | Out-Null}catch{}
+  Write-Error $message -ErrorAction Continue
+  exit 1
+}
 $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 $principal=New-Object Security.Principal.WindowsPrincipal($identity)
 if($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
