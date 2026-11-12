@@ -57,7 +57,7 @@ function Assert-V3PostStopUnknownQuarantineSourceContract([object]$Evidence) {
 }
 
 
-# Separate, CURRENT, independently signed Host and Cloud evidence.
+# The legacy logical epoch/marker digest and physical 627-byte local fence file digest\n# are different admissible values. Do not derive or replace epoch_fence_sha256\n# from file bytes. Exact historic owner/Cloud epoch binding remains independently required.\n# Separate, CURRENT, independently signed Host and Cloud evidence.
 # The reviewer pins every expected SHA256 outside the supplied evidence.
 # Never interprets UNKNOWN as a successful historical STOP.
 # The routine is deliberately pure and never performs the next transaction.
@@ -80,7 +80,7 @@ function Assert-V3PostStopUnknownCurrentCustody(
  if([string]$Pins.series_id -cne 'PAPER-V3-20261111T105211Z' -or
     [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
     [string]$Pins.local_fence_file_sha256 -cne
-      '4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef' -or
+      '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
     [string]$Pins.observation_nonce -cnotmatch '^[a-f0-9]{32}$'){
   throw 'V3_POSTSTOP_CURRENT_HISTORICAL_PIN_HOLD'
  }
