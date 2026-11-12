@@ -230,6 +230,9 @@ function Export-EvidenceBundle([string]$selected) {
     Write-Output 'Manifest und Originalkopien pruefen. CMS-Signaturen sind NICHT kryptografisch verifiziert.'
     & explorer.exe $folder
   }catch{
+    if($archivePath -and (Test-Path -LiteralPath $archivePath -PathType Leaf)){
+      [IO.File]::Delete($archivePath)
+    }
     if(Test-Path -LiteralPath $folder -PathType Container){
       [IO.Directory]::Delete($folder,$true)
     }
