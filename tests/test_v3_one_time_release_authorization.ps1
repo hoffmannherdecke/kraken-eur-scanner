@@ -552,7 +552,7 @@ $custody|Add-Member -NotePropertyName owner_review_sha256 -NotePropertyValue ('7
 $receiptHash=Get-V3PostStopCurrentCustodyReceiptSha256 $custody
 $pins=[pscustomobject]@{host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
 $plan=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -CurrentCustodyReceiptSha256 $receiptHash -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))
-if($plan.execution_authorized -ne $false -or $plan.terminal_readback_required -ne $true -or ([regex]::Matches($plan.sql,'record_prepared_fence_abort_v1')).Count -ne 1 -or $plan.sql -match 'SET ROLE|ALTER ROLE|DELETE |UPDATE '){throw 'V3_POSTSTOP_CLOUD_TRANSACTION_UNSAFE'}
+if($plan.execution_authorized -ne $false -or $plan.terminal_readback_required -ne $true -or ([regex]::Matches($plan.sql,'record_paper_release_abort_v1')).Count -ne 1 -or -not $plan.sql.Contains('46c5abbd6af16266c1229943db973dc9d6b2fb4f') -or $plan.sql -match 'SET ROLE|ALTER ROLE|DELETE |UPDATE '){throw 'V3_POSTSTOP_CLOUD_TRANSACTION_UNSAFE'}
 $pins.source_sha256=('0'*64)
 $held=$false
 try{$null=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -CurrentCustodyReceiptSha256 $receiptHash -Expiry ([datetimeoffset]::UtcNow.AddSeconds(40))}catch{$held=$true}
