@@ -74,7 +74,8 @@ if($Install){
   $shell=New-Object -ComObject WScript.Shell
   $link=$shell.CreateShortcut($shortcut)
   $link.TargetPath=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-  $link.Arguments='-NoProfile -ExecutionPolicy Bypass -File "'+$installedScript+'" -SourcePath "%1"'
+  # Explorer SendTo appends the selected file to shortcut arguments automatically.
+  $link.Arguments='-NoProfile -ExecutionPolicy Bypass -File "'+$installedScript+'" -SourcePath'
   $link.WorkingDirectory=$homeDir
   $link.Description='Ausgewaehlte Datei unter Benutzerrechten sicher nach Downloads\ChatGPT-Uebergabe exportieren'
   $link.Save()
