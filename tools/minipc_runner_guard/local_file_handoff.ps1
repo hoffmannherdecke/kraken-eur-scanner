@@ -50,7 +50,7 @@ function Assert-SafeContent([byte[]]$bytes) {
   if($bytes.Length -lt 1 -or $bytes.Length -gt 2097152){
     throw 'HANDOFF_HOLD: Nur Dateien von 1 Byte bis 2 MiB'
   }
-  $utf8=New-Object System.Text.UTF8Encoding($false,$true)
+  $utf8=[Text.UTF8Encoding]::new($false,$true)
   try{$decoded=$utf8.GetString($bytes)}catch{throw 'HANDOFF_HOLD: Nur gueltiger UTF-8-Text'}
   if($decoded -match '(?i)(password|passwd|secret|api[_-]?key|token|authorization|bearer|private.key|BEGIN [A-Z ]*PRIVATE KEY|postgres(?:ql)?://|SUPABASE_|sk-[A-Za-z0-9]{10})'){
     throw 'HANDOFF_HOLD: Moegliche Zugangsdaten oder vertrauliche Inhalte'
