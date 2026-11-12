@@ -166,7 +166,7 @@ foreach($file in @($entry,$validator)){
 $entryRaw=[IO.File]::ReadAllText($entry)
 foreach($required in @(
  'CLOUD_POSTSTOP_TERMINAL_ABORT','Assert-V3ReleaseAuthorityAdmission',
- 'Assert-V3OneTimeReleaseAuthorization','v3_cas_inhibit_issuer_actor',
+ 'Assert-V3PostStopScopedAuthorization','v3_cas_inhibit_issuer_actor',
  'issuer-currentuser.dpapi','DataProtectionScope]::CurrentUser',
  'Invoke-V3PostStopCloudOnceCandidate','Get-V3PostStopCloudAbortCandidate',
  'Assert-V3PostStopSignedTerminalCloud','TARGET_EPOCH_TERMINALIZED',
@@ -175,7 +175,7 @@ foreach($required in @(
  if(-not $entryRaw.Contains($required)){throw ('AP04_POSTSTOP_OPERATOR_CONTRACT_MISSING: '+$required)}
 }
 if($entryRaw -match "Actor\s+'postgres'" -or
-   $entryRaw.Contains("Remove-Item $latch")){
+   $entryRaw.Contains('Remove-Item $latch')){
  throw 'AP04_POSTSTOP_ADMIN_OR_RETRY_FORBIDDEN'
 }
 foreach($required in @(
