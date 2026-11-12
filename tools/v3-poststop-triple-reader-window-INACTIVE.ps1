@@ -31,7 +31,7 @@ while(-not ([IO.File]::Exists($json) -and [IO.File]::Exists($cms))){
  if([datetimeoffset]::UtcNow -ge $until){throw 'PR710_WINDOW_ORIGINALHOST_TIMEOUT_HOLD'}
  Start-Sleep -Milliseconds 200
 }
-$reader=Join-Path $PSScriptRoot 'v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1'
+$reader=Join-Path $PSScriptRoot 'v3-poststop-notebook-reader-extension-INACTIVE.ps1'
 $cloudArgs=@{PostStopCloudReader=$true;ObservationNonce=$ObservationNonce;
  ReviewedNotebookCertificateSha256='61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'}
 if($CaFile){$cloudArgs.CaFile=$CaFile}
