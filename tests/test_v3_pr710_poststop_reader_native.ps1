@@ -154,3 +154,45 @@ Expect-Hold ($valid|ConvertTo-Json -Compress) $valid.observation_nonce $valid.ki
 $valid.observed_at_utc=([datetime]::UtcNow.AddSeconds(20).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture))
 Expect-Hold ($valid|ConvertTo-Json -Compress) $valid.observation_nonce $valid.kind
 Write-Output 'PR710_POSTSTOP_NATIVE_PS51_READER_PARSE_AND_FRESHNESS_NEGATIVES_PASS'
+
+
+# AP04 post-STOP operational delta: new issuer transport and terminal reader.
+$entry=Join-Path $PSScriptRoot '../tools/v3-poststop-issuer-release.ps1'
+foreach($file in @($entry,$validator)){
+ $tok=$null;$err=$null
+ $null=[Management.Automation.Language.Parser]::ParseFile($file,[ref]$tok,[ref]$err)
+ if(@($err).Count -ne 0){throw ('AP04_POSTSTOP_PARSE_HOLD: '+$file)}
+}
+$entryRaw=[IO.File]::ReadAllText($entry)
+foreach($required in @(
+ 'CLOUD_POSTSTOP_TERMINAL_ABORT','Assert-V3ReleaseAuthorityAdmission',
+ 'Assert-V3OneTimeReleaseAuthorization','v3_cas_inhibit_issuer_actor',
+ 'issuer-currentuser.dpapi','DataProtectionScope]::CurrentUser',
+ 'Invoke-V3PostStopCloudOnceCandidate','Get-V3PostStopCloudAbortCandidate',
+ 'Assert-V3PostStopSignedTerminalCloud','TARGET_EPOCH_TERMINALIZED',
+ 'PostStopUnknownCurrentCustody','poststop-f27cce0ba68043b480e4f97698dd2901-attempted'
+)){
+ if(-not $entryRaw.Contains($required)){throw ('AP04_POSTSTOP_OPERATOR_CONTRACT_MISSING: '+$required)}
+}
+if($entryRaw -match "Actor\s+'postgres'" -or
+   $entryRaw.Contains("Remove-Item $latch")){
+ throw 'AP04_POSTSTOP_ADMIN_OR_RETRY_FORBIDDEN'
+}
+foreach($required in @(
+ 'PostStopTerminalReader',
+ 'cloud_cas_rpc_acl_restricted',
+ 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1',
+ 'historical.source_sha256 IS DISTINCT FROM other.source_sha256',
+ 'historical.prepared_fence_sha256 IS DISTINCT FROM other.original_fence_sha256',
+ 'historical.caller_acl_sha256 IS DISTINCT FROM other.approved_caller_acl_sha256',
+ "pg_catalog.has_function_privilege('v3_cas_executor'",
+ "AND (SELECT count(*) FROM v3_cas_audit.epoch_v1)=6",
+ "AND (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1)=6"
+)){
+ if(-not $raw.Contains($required)){throw ('AP04_POSTSTOP_TERMINAL_READER_GUARD_MISSING: '+$required)}
+}
+if(-not $validatorRaw.Contains('$row.cloud_cas_rpc_acl_restricted -ne $true') -or
+   -not $validatorRaw.Contains('$row.cloud_cas_rpc_count -ne 1')){
+ throw 'AP04_POSTSTOP_TERMINAL_ACL_RPC_GUARD_MISSING'
+}
+Write-Output 'AP04_POSTSTOP_ISSUER_TERMINAL_SOURCE_GATES_PASS'
