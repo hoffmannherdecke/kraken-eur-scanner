@@ -250,6 +250,67 @@ SELECT (v3_cas_audit.read_committed_pre_stop_inhibit_v1() || pg_catalog.jsonb_bu
 COMMIT;
 '@
 }
+# PR710: One atomic read-only SQL statement through the existing PG17 TLS Reader.
+# State is derived from original Catalog and INHIBITED issuer reader output.
+if($PostStopCloudReader){
+ $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
+ if($checks.Count -ne 1){throw 'V3_POSTSTOP_CLOUD_ROLE_HOLD'}
+ $checks[0].Sql=@'
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+WITH catalog AS MATERIALIZED (
+ SELECT v3_cas_audit.read_forward_t0_current_v1() AS c
+), inhibit AS MATERIALIZED (
+ SELECT v3_cas_audit.read_committed_pre_stop_inhibit_v1() AS i
+), epoch AS MATERIALIZED (
+ SELECT epoch_id,source_sha256,original_fence_sha256,approved_caller_acl_sha256,sealed,next_ordinal
+ FROM v3_cas_audit.epoch_v1
+ WHERE epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+)
+SELECT pg_catalog.jsonb_build_object(
+ 'kind','V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1',
+ 'series_id','PAPER-V3-20261111T105211Z',
+ 'epoch_id',e.epoch_id,'source_sha256',e.source_sha256,
+ 'observation_nonce','__NONCE__',
+ 'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'original_fence_sha256',e.original_fence_sha256,
+ 'caller_acl_sha256',e.approved_caller_acl_sha256,
+ 'inhibit_state',i->>'state','sealed',e.sealed,
+ 'next_ordinal',e.next_ordinal,
+ 'intent_count',(c->>'intent_count')::integer,
+ 'attempt_count',(c->>'attempt_count')::integer,
+ 'abort_count',(SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1),
+ 'executor_login_closed',true,'executor_sessions_count',0,
+ 'v3_active_series_count',0,
+ 'v2r4_active_series_count',(c->>'original_active_series_count')::integer,
+ 'cloud_cas_rpc_count',(c->>'cas_rpc_count')::integer,
+ 'reader_role',current_user,'current_cloud_custody_verified',true
+)::text FROM epoch e CROSS JOIN catalog CROSS JOIN inhibit
+WHERE session_user='v3_cas_audit_reader_actor'
+ AND current_user='v3_cas_audit_reader'
+ AND (c->>'epoch_count')::integer=1
+ AND (c->>'active_series_count')::integer=1
+ AND (c->>'original_active_series_count')::integer=1
+ AND (c->>'intent_count')::integer=0
+ AND (c->>'attempt_count')::integer=0
+ AND (c->>'dispatch_unknown_count')::integer=0
+ AND (c->>'cas_rpc_count')::integer=0
+ AND i->>'state'='INHIBITED' AND i->>'epoch_id'=e.epoch_id
+ AND i->>'source_sha256'=e.source_sha256
+ AND i->>'original_fence_sha256'=e.original_fence_sha256
+ AND i->>'caller_acl_sha256'=e.approved_caller_acl_sha256
+ AND e.source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+ AND e.original_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ AND e.approved_caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+ AND NOT e.sealed AND e.next_ordinal=1
+ AND (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1)=0
+ AND (SELECT count(*) FROM pg_catalog.pg_roles WHERE rolname IN ('v3_cas_executor','v3_cas_executor_actor') AND NOT rolcanlogin)=2
+ AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_stat_activity WHERE usename IN ('v3_cas_executor','v3_cas_executor_actor'))
+ AND NOT pg_catalog.pg_has_role(session_user,'v3_cas_audit_writer','SET');
+COMMIT;
+'@
+ $checks[0].Sql=$checks[0].Sql.Replace('__NONCE__',$ObservationNonce)
+}
 # Optional read-only ORIGINAL Reader identity, not a CAS historical never-proof.
 if($PrecommitCloudInventory){
  $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
