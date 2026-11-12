@@ -60,7 +60,7 @@ class ManualTPMKeySourceContract(unittest.TestCase):
     "[switch]$InspectProvider",
     "if($InspectProvider -and $Enroll)",
     "V3_SIGNER_PROVIDER_READONLY_CANNOT_ENROLL",
-    "if($InspectProvider -or $SignPreinvoke){",
+    "if($InspectProvider -or $SignPreinvoke -or $SignCurrentHost){",
     "if($null -eq $cert){throw 'V3_SIGNER_PROVIDER_READONLY_CERT_MISSING'}",
     "RSACertificateExtensions]::GetRSAPrivateKey($cert)",
     "Security.Cryptography.RSACng",
@@ -80,7 +80,7 @@ class ManualTPMKeySourceContract(unittest.TestCase):
    with self.subTest(field=x): self.assertIn(x,self.s)
   self.assertLess(self.s.index("if($InspectProvider -and $Enroll)"),
                   self.s.index("if($Enroll){"))
-  self.assertLess(self.s.index("if($InspectProvider -or $SignPreinvoke){"),
+  self.assertLess(self.s.index("if($InspectProvider -or $SignPreinvoke -or $SignCurrentHost){"),
                   self.s.index("[pscustomobject][ordered]@{"))
   self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
   self.assertNotIn("Export-CngKey",self.s)
