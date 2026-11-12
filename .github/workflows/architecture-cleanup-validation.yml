@@ -644,6 +644,18 @@ jobs:
       - name: Release authorization on native Windows PowerShell 5.1
         shell: pwsh
         run: ./tests/test_v3_one_time_release_authorization.ps1
+      - name: PR710 native Windows PowerShell 5.1 PKCS assembly and detached CMS smoke
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Add-Type -AssemblyName System.Security -ErrorAction Stop
+          foreach ($n in @('System.Security.Cryptography.Pkcs.ContentInfo','System.Security.Cryptography.Pkcs.SignedCms','System.Security.Cryptography.Pkcs.CmsSigner')) {
+            if ($null -eq ($n -as [type])) { throw "PR710_NATIVE_PKCS_TYPE_MISSING_$n" }
+          }
+          $content = [Security.Cryptography.Pkcs.ContentInfo]::new([Text.Encoding]::UTF8.GetBytes('PR710_OFFLINE_PKCS_SMOKE'))
+          $cms = [Security.Cryptography.Pkcs.SignedCms]::new($content,$true)
+          if (-not $cms.Detached) { throw 'PR710_NATIVE_PKCS_DETACHED_CONSTRUCTOR_HOLD' }
+          Write-Output 'PR710_NATIVE_PS51_PKCS_ASSEMBLY_SMOKE_PASS'
       - name: Productive Paper operator on Windows PowerShell 5.1 (offline)
         shell: powershell
         run: ./tests/test_v3_one_time_paper_release.ps1
