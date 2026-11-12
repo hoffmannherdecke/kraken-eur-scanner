@@ -472,3 +472,36 @@ function Assert-V3PostStopCurrentCustodyWithOriginalHostCms(
   disposition='CRYPTO_SOURCE_REVIEW_ONLY_NEEDS_ORIGINALHOST_PRODUCER_AND_OWNER_EXECUTION'
  }
 }
+
+# Owner #99/6822375128: exact existing Mini-PC TPM certificate is additionally
+# admitted ONLY for the fresh CURRENT HOST origin signature. This is not an
+# admission for terminal host quarantine or effectful recovery execution.
+# Do not use an untrusted caller-supplied certificate pin as an admission.
+function Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms(
+ [byte[]]$HostPayload,[byte[]]$OriginalHostCms,[byte[]]$NotebookHostCms,
+ [byte[]]$CloudPayload,[byte[]]$CloudCms,[object]$Pins,
+ [datetimeoffset]$Now=[datetimeoffset]::UtcNow) {
+ $tpmPin='ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'
+ if($null -eq $Pins -or
+    [string]$Pins.series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$Pins.host_certificate_sha256 -cne '2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57' -or
+    [string]$Pins.cloud_certificate_sha256 -cne '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55' -or
+    [string]$Pins.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
+    [string]$Pins.epoch_fence_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
+    [string]$Pins.local_fence_file_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
+    [string]$Pins.caller_acl_sha256 -cne '6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0') {
+  throw 'V3_POSTSTOP_OWNER_ADMITTED_SCOPE_AND_SOURCE_HOLD'
+ }
+ $review=Assert-V3PostStopCurrentCustodyWithOriginalHostCms `
+  -HostPayload $HostPayload -OriginalHostCms $OriginalHostCms `
+  -AdmittedOriginalHostCertificateSha256 $tpmPin `
+  -HostReaderCms $NotebookHostCms -CloudPayload $CloudPayload -CloudCms $CloudCms `
+  -Pins $Pins -Now $Now
+ if($review.recovery_authorized -ne $false -or
+    $review.issuer_transport_registered -ne $false -or
+    $review.writer_authorized -ne $false) {
+  throw 'V3_POSTSTOP_OWNER_ORIGIN_CMS_CANNOT_GRANT_EXECUTION'
+ }
+ return $review
+}
