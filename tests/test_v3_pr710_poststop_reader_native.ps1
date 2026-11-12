@@ -4,6 +4,16 @@ $source=Join-Path $PSScriptRoot '../tools/v3-notebook-cas-audit-original-readonl
 $tokens=$null;$errors=$null
 $ast=[System.Management.Automation.Language.Parser]::ParseFile($source,[ref]$tokens,[ref]$errors)
 if(@($errors).Count -ne 0){throw ('PR710_NOTEBOOK_SYNTAX_HOLD: '+($errors|Select-Object -First 1).Message)}
+$coordinator=Join-Path $PSScriptRoot '../tools/v3-poststop-triple-reader-window-INACTIVE.ps1'
+$otherTokens=$null;$otherErrors=$null
+$null=[System.Management.Automation.Language.Parser]::ParseFile($coordinator,[ref]$otherTokens,[ref]$otherErrors)
+if(@($otherErrors).Count -ne 0){throw ('PR710_COORDINATOR_PARSE_HOLD: '+($otherErrors|Select-Object -First 1).Message)}
+$coordinatorSource=[IO.File]::ReadAllText($coordinator)
+foreach($required in @('Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms',
+ 'ApprovedPinsSha256','Start-Sleep -Milliseconds 200','PR710_WINDOW_SOURCE_BYTE_PIN_HOLD',
+ 'PR710_WINDOW_STALE_ORIGINAL_HOLD','NO_PRODUCTION_EFFECT')){
+ if(-not $coordinatorSource.Contains($required)){throw "PR710_COORDINATOR_CONTRACT_MISSING: $required"}
+}
 $raw=[IO.File]::ReadAllText($source)
 foreach($required in @(
  'PostStopHostReader','PostStopCloudReader','ObservationNonce',
