@@ -490,6 +490,19 @@ if($SignPreinvoke -or $SignCurrentHost){
  }else{
   $null=Test-V3UnsignedPreinvokeCandidate $raw
  }
+ # Windows PowerShell 5.1 does not necessarily pre-load the .NET Framework
+ # System.Security assembly containing SignedCms/ContentInfo. Load the
+ # framework assembly explicitly BEFORE any cryptographic type resolution.
+ try {
+  Add-Type -AssemblyName System.Security -ErrorAction Stop
+  if($null -eq ('System.Security.Cryptography.Pkcs.ContentInfo' -as [type]) -or
+     $null -eq ('System.Security.Cryptography.Pkcs.SignedCms' -as [type]) -or
+     $null -eq ('System.Security.Cryptography.Pkcs.CmsSigner' -as [type])){
+   throw 'V3_SIGNER_PKCS_TYPE_UNAVAILABLE'
+  }
+ }catch{
+  throw 'V3_SIGNER_PKCS_FRAMEWORK_ASSEMBLY_HOLD'
+ }
  # Exactly the pre-existing CurrentUser TPM key; no export or second key.
  # The CMS proves signing math only; no Cloud COMMIT/Reader/attempts/caller.
  $msg=[Security.Cryptography.Pkcs.ContentInfo]::new($raw)
