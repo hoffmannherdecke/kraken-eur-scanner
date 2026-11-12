@@ -373,7 +373,7 @@ try {
   epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
   source_sha256=('a'*64);observation_nonce=('b'*32);observed_at_utc=$timestamp
   original_fence_sha256=('c'*64)
-  local_fence_file_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef'
+  local_fence_file_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
   fence_phase='ARMED';candidates_xml_sha256=('d'*64);wait_xml_sha256=('e'*64)
   cloudsync_xml_sha256=('f'*64);writer_xml_sha256=('1'*64)
   candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true
@@ -451,6 +451,13 @@ try {
  Expect-CurrentHold $hs $cs $b $now
  $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
  $b.host_payload_sha256=('0'*64)
+ Expect-CurrentHold $hs $cs $b $now
+ # Physical fence bytes and logical epoch marker digest are not interchangeable.
+ $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
+ $b.local_fence_file_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef'
+ Expect-CurrentHold $hs $cs $b $now
+ $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
+ $b.epoch_fence_sha256=$binding.local_fence_file_sha256
  Expect-CurrentHold $hs $cs $b $now
  $damaged=[byte[]]$hs.Payload.Clone()
  $damaged[0]=0
