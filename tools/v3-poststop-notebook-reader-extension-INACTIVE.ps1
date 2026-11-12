@@ -127,15 +127,15 @@ if($PostStopHostReader){
  }
  $bytes=[IO.File]::ReadAllBytes($jsonPath)
  $raw=[Text.UTF8Encoding]::new($false,$true).GetString($bytes)
- $host=Assert-V3PostStopFreshReader $raw $ObservationNonce 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
- if([string]$host.series_id -cne 'PAPER-V3-20261111T105211Z' -or
-    [string]$host.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
-    [string]$host.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
-    [string]$host.original_fence_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
-    [string]$host.native_stop_outcome -cne 'UNKNOWN' -or
-    $host.writer_enabled -ne $false -or $host.writer_process_count -ne 0 -or
-    $host.other_writer_authorities_closed -ne $true -or
-    $host.current_host_custody_verified -ne $true){
+ $hostReceipt=Assert-V3PostStopFreshReader $raw $ObservationNonce 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
+ if([string]$hostReceipt.series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$hostReceipt.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$hostReceipt.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
+    [string]$hostReceipt.original_fence_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
+    [string]$hostReceipt.native_stop_outcome -cne 'UNKNOWN' -or
+    $hostReceipt.writer_enabled -ne $false -or $hostReceipt.writer_process_count -ne 0 -or
+    $hostReceipt.other_writer_authorities_closed -ne $true -or
+    $hostReceipt.current_host_custody_verified -ne $true){
   throw 'V3_POSTSTOP_HOST_SCOPE_HOLD'
  }
  $cms=[Security.Cryptography.Pkcs.SignedCms]::new(
