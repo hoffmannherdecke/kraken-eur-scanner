@@ -2,7 +2,7 @@
 # Default is local inventory only. No implicit installation, STOP, CAS or Paper.
 [CmdletBinding()]
 param(
- [ValidateSet('Inventory','PaperInventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','PaperOpenEpoch','PaperSealEpoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperRuntimeBootstrap','PaperResume','PostStopAbort','PostStopReadback')][string]$Mode='Inventory',
+ [ValidateSet('Inventory','PaperInventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','PaperOpenEpoch','PaperSealEpoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperHostReadback','PaperRuntimeBootstrap','PaperResume')][string]$Mode='Inventory',
  [string]$PackageRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$ApprovalJson='', [string]$ApprovalCms='', [string]$ExpectedReleaseCommit='',
  [string]$AuthorityAdmissionJson='', [string]$ExpectedAuthorityAdmissionSha256='',
@@ -16,23 +16,11 @@ param(
  [string]$CoordinatedPostArchiveRequestPath='', [string]$CoordinatedPostArchiveEnvelopePath='',
  [string]$CoordinatedHandoffNonce='',
  [string]$PaperPlanJson='', [string]$RuntimeSpecJson='',
- [string]$HostReceiptJson='', [string]$HostReceiptCms='',
- [string]$PostStopPinsJson='', [string]$PostStopHostJson='',
- [string]$PostStopOriginalHostCms='', [string]$PostStopNotebookHostCms='',
- [string]$PostStopCloudJson='', [string]$PostStopCloudCms=''
+ [string]$HostReceiptJson='', [string]$HostReceiptCms=''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Force
-
-if($Mode -in @('PostStopAbort','PostStopReadback')){
- # The single existing release entrypoint delegates to the Notebook-only,
- # separately CMS-authorized POST-STOP transport. Not GateA/PRESTOP.
- $modeName=if($Mode -eq 'PostStopAbort'){'Abort'}else{'Readback'}
- & (Join-Path $PSScriptRoot 'v3-poststop-issuer-release.ps1') -Mode $modeName -PackageRoot $PackageRoot -ApprovalJson $ApprovalJson -ApprovalCms $ApprovalCms -AuthorityAdmissionJson $AuthorityAdmissionJson -ExpectedAuthorityAdmissionSha256 $ExpectedAuthorityAdmissionSha256 -ExpectedReleaseCommit $ExpectedReleaseCommit -ApprovedPinsJson $PostStopPinsJson -HostJson $PostStopHostJson -OriginalHostCms $PostStopOriginalHostCms -NotebookHostCms $PostStopNotebookHostCms -CloudJson $PostStopCloudJson -CloudCms $PostStopCloudCms -TerminalJson $TerminalAbortJson -TerminalCms $TerminalAbortCms -CaFile $CaFile
- return
-}
-
 
 function Assert-V3OriginalInteractiveOwner {
  if($env:OS -cne 'Windows_NT' -or $env:COMPUTERNAME -cne 'MINI-PC' -or
