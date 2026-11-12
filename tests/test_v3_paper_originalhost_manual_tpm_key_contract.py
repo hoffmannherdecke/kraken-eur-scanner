@@ -142,6 +142,35 @@ class ManualTPMKeySourceContract(unittest.TestCase):
   self.assertNotIn("Register-ScheduledTask",self.s)
   self.assertNotIn("Invoke-V3PostStopCloudOnceCandidate",self.s)
 
+
+ def test_current_host_capture_once_is_reused_by_existing_cms_signer(self):
+  # No second sign implementation, no extra keys; capture and sign share
+  # the exact persisted UTF-8 bytes in one interactive originalhost run.
+  for x in (
+    "[switch]$CaptureCurrentHost", "ObservationNonce",
+    "V3_POSTSTOP_CAPTURE_MODE_NONCE_HOLD",
+    "function New-V3PostStopHostCurrentBytes",
+    "Get-ScheduledTask", "Export-ScheduledTask",
+    "Get-CimInstance Win32_Process", "Get-CimInstance Win32_Service",
+    "Get-CimInstance Win32_StartupCommand",
+    "V3_POSTSTOP_PRODUCER_EXTRA_V3_TASK_HOLD",
+    "V3_POSTSTOP_PRODUCER_UNREADABLE_PROCESS_HOLD",
+    "[IO.FileMode]::CreateNew",
+    "V3_POSTSTOP_CAPTURE_CREATE_NEW_HOLD",
+    "(-not $CaptureCurrentHost)",
+    "Test-V3OriginalhostFreshCurrentReader $bytes",
+    "Test-V3OriginalhostFreshCurrentReader $raw",
+    "SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY",
+    "current_host_signature_scope_only=$SignCurrentHost",
+    "physical_snapshot_not_exclusive_lease=$true",
+  ):
+   with self.subTest(x=x):self.assertIn(x,self.s)
+  self.assertEqual(self.s.count("function New-V3PostStopHostCurrentBytes"),1)
+  self.assertEqual(self.s.count("$cms.ComputeSignature($signer)"),1)
+  self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
+  self.assertNotIn("Invoke-V3PostStopCloudOnceCandidate",self.s)
+  self.assertNotIn("Start-ScheduledTask",self.s)
+
  def test_public_pin_not_release_authority(self):
   for x in ("certificate_der_sha256_public_pin_unapproved",
             "originalhost_signed_receipt_generated=$false",
