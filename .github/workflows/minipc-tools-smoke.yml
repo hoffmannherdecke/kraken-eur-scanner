@@ -9,6 +9,8 @@ name: MINI-PC tools smoke
       - 'tools/minipc_runner_tasks/file_access_bounded.ps1'
       - 'tools/minipc_runner_tasks/host_state_readonly.ps1'
       - 'tools/minipc_runner_guard/pre_job.ps1'
+      - 'tools/minipc_runner_guard/runner_readiness.py'
+      - 'tests/test_minipc_runner_readiness.py'
       - 'tools/*minipc*.py'
       - 'tools/v2r4-shadow-cloud-sync.py'
       - 'tools/v2r4-ws-shadow-*.py'
@@ -24,6 +26,8 @@ name: MINI-PC tools smoke
       - 'tools/minipc_runner_tasks/file_access_bounded.ps1'
       - 'tools/minipc_runner_tasks/host_state_readonly.ps1'
       - 'tools/minipc_runner_guard/pre_job.ps1'
+      - 'tools/minipc_runner_guard/runner_readiness.py'
+      - 'tests/test_minipc_runner_readiness.py'
       - 'tools/install-minipc-baseline-tasks.ps1'
       - 'tools/uninstall-minipc-baseline-tasks.ps1'
       - 'tools/minipc-altrady-poller.py'
@@ -95,6 +99,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WS_SHADOW_FIX_REGRESSIONS_FAILED' }
           python .\tools\minipc-github-cadence-guard.py --self-test
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
+
+      - name: Test GitHub runner readiness and fail-closed export gating
+        shell: powershell
+        run: |
+          python -m py_compile tools/minipc_runner_guard/runner_readiness.py tests/test_minipc_runner_readiness.py
+          if ($LASTEXITCODE -ne 0) { throw 'MINIPC_STATUS_PYTHON_PARSE_FAILED' }
+          python -m unittest tests.test_minipc_runner_readiness -v
+          if ($LASTEXITCODE -ne 0) { throw 'MINIPC_RUNNER_STATUS_AND_HANDOFF_TEST_FAILED' }
 
       - name: Validate generic bounded read-only host snapshot source
         shell: powershell
