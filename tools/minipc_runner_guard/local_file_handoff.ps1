@@ -214,6 +214,16 @@ function Export-EvidenceBundle([string]$selected) {
     }
     $manifestFile=Join-Path $folder 'evidence-manifest-sha256.json'
     [IO.File]::WriteAllText($manifestFile,($manifest|ConvertTo-Json -Depth 7),[Text.UTF8Encoding]::new($false))
+    # Convenience archive of the already checked copies + manifest. It does not
+    # add authority and is never auto-uploaded or sent to GitHub.
+    Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
+    $archivePath=Join-Path $handoff ('signed-evidence-'+[guid]::NewGuid().ToString('N')+'.zip')
+    [IO.Compression.ZipFile]::CreateFromDirectory($folder,$archivePath,[IO.Compression.CompressionLevel]::Optimal,$false)
+    if((Get-Item -LiteralPath $archivePath -ErrorAction Stop).Length -lt 1){
+      throw 'HANDOFF_HOLD: Nachweis-ZIP ist leer'
+    }
+    [IO.File]::Copy($archivePath,(Join-Path $folder 'UPLOAD_PACKAGE.zip'))
+    [IO.File]::Delete($archivePath)
     Write-Output 'MINIPC_SIGNED_EVIDENCE_HANDOFF_EXPORT_PASS'
     Write-Output ('FILES='+$records.Count)
     Write-Output ('FOLDER='+$folder)
