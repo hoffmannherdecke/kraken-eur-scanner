@@ -7,7 +7,13 @@ name: MINI-PC tools smoke
     paths:
       - 'tools/minipc-*.ps1'
       - 'tools/minipc_runner_tasks/file_access_bounded.ps1'
+      - 'tools/minipc_runner_tasks/host_state_readonly.ps1'
       - 'tools/minipc_runner_guard/pre_job.ps1'
+      - 'tools/minipc_runner_guard/local_file_handoff.ps1'
+      - 'tests/test_minipc_user_handoff_contract.py'
+      - 'tests/test_minipc_signed_evidence_handoff_contract.py'
+      - 'tools/minipc_runner_guard/runner_readiness.py'
+      - 'tests/test_minipc_runner_readiness.py'
       - 'tools/*minipc*.py'
       - 'tools/v2r4-shadow-cloud-sync.py'
       - 'tools/v2r4-ws-shadow-*.py'
@@ -21,7 +27,13 @@ name: MINI-PC tools smoke
     paths:
       - 'tools/minipc-*.ps1'
       - 'tools/minipc_runner_tasks/file_access_bounded.ps1'
+      - 'tools/minipc_runner_tasks/host_state_readonly.ps1'
       - 'tools/minipc_runner_guard/pre_job.ps1'
+      - 'tools/minipc_runner_guard/local_file_handoff.ps1'
+      - 'tests/test_minipc_user_handoff_contract.py'
+      - 'tests/test_minipc_signed_evidence_handoff_contract.py'
+      - 'tools/minipc_runner_guard/runner_readiness.py'
+      - 'tests/test_minipc_runner_readiness.py'
       - 'tools/install-minipc-baseline-tasks.ps1'
       - 'tools/uninstall-minipc-baseline-tasks.ps1'
       - 'tools/minipc-altrady-poller.py'
@@ -93,6 +105,90 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WS_SHADOW_FIX_REGRESSIONS_FAILED' }
           python .\tools\minipc-github-cadence-guard.py --self-test
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
+
+      - name: Test GitHub runner readiness and fail-closed export gating
+        shell: powershell
+        run: |
+          python -m py_compile tools/minipc_runner_guard/runner_readiness.py tests/test_minipc_runner_readiness.py
+          if ($LASTEXITCODE -ne 0) { throw 'MINIPC_STATUS_PYTHON_PARSE_FAILED' }
+          python -m unittest tests.test_minipc_runner_readiness -v
+          if ($LASTEXITCODE -ne 0) { throw 'MINIPC_RUNNER_STATUS_AND_HANDOFF_TEST_FAILED' }
+
+      - name: Validate local selected-file SendTo handoff and security contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $p='tools/minipc_runner_guard/local_file_handoff.ps1'
+          $tokens=$null;$parseErrors=$null
+          [void][Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$parseErrors)
+          if(@($parseErrors).Count -gt 0){throw ('MINIPC_USER_HANDOFF_POWERSHELL_PARSE_FAILED:'+@($parseErrors)[0].Message)}
+          $ast=[Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$parseErrors)
+          foreach($name in @('Assert-SafeContent','Assert-SafeFileName')){
+            $fn=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true)
+            if(-not $fn){throw ('MINIPC_USER_HANDOFF_MISSING_FUNCTION:'+$name)}
+            . ([ScriptBlock]::Create($fn.Extent.Text))
+          }
+          Assert-SafeContent ([Text.Encoding]::UTF8.GetBytes('neutral test'))
+          Assert-SafeFileName 'neutral.json'
+          $reject=0
+          foreach($payload in @('api_key=example','password=example','token=example')){
+            try {Assert-SafeContent ([Text.Encoding]::UTF8.GetBytes($payload))}catch{$reject++}
+          }
+          if($reject -ne 3){throw 'MINIPC_USER_HANDOFF_SENSITIVE_NEGATIVE_FAILED'}
+          try {Assert-SafeFileName 'private-key.pem';throw 'MINIPC_USER_HANDOFF_NAME_NEGATIVE_FAILED'} catch {
+            if($_.Exception.Message -eq 'MINIPC_USER_HANDOFF_NAME_NEGATIVE_FAILED'){throw}
+          }
+          python -m unittest tests.test_minipc_user_handoff_contract tests.test_minipc_signed_evidence_handoff_contract -v
+          if($LASTEXITCODE -ne 0){throw 'MINIPC_USER_HANDOFF_CONTRACT_FAILED'}
+          Write-Output 'MINIPC_USER_HANDOFF_SOURCE_AND_SYNTAX_PASS'
+
+      - name: Validate generic bounded read-only host snapshot source
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $path='tools/minipc_runner_tasks/host_state_readonly.ps1'
+          $tokens=$null;$errors=$null
+          $ast=[Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path),[ref]$tokens,[ref]$errors)
+          if(@($errors).Count -gt 0){throw 'HOST_SNAPSHOT_PARSE_FAILED'}
+          $text=Get-Content -LiteralPath $path -Raw
+          if(-not $text.StartsWith('# MINIPC_REVIEWED_TASK_V1')){throw 'HOST_SNAPSHOT_BAD_HEADER'}
+          foreach($marker in @(
+            'CryptoSupportSvc','OBSERVED_BOUNDED','PARTIAL_LIMIT','UNAVAILABLE',
+            'independent_custody_verified=$false','complete_writer_inventory_verified=$false',
+            'host_recovery_authorized=$false','changed_host_state=$false',
+            'Get-CimInstance Win32_Process','Get-ScheduledTask','Export-ScheduledTask',
+            'Get-CimInstance Win32_Service','AddSeconds(35)'
+          )){
+            if(-not $text.Contains($marker)){throw "HOST_SNAPSHOT_MISSING:$marker"}
+          }
+          $prohibited=@(
+            'Set-Service','Stop-Service','Start-Service','Stop-Process','Start-Process',
+            'Start-ScheduledTask','Stop-ScheduledTask','Register-ScheduledTask',
+            'Unregister-ScheduledTask','Set-ScheduledTask','Disable-ScheduledTask',
+            'Enable-ScheduledTask','Invoke-Expression','Invoke-RestMethod',
+            'Invoke-WebRequest','Set-Content','Out-File','Copy-Item','Move-Item',
+            'Remove-Item','New-Item','Set-Acl','icacls'
+          )
+          $commands=@($ast.FindAll({
+            param($node) $node -is [Management.Automation.Language.CommandAst]
+          },$true) | ForEach-Object {$_.GetCommandName()})
+          foreach($name in $commands){
+            if($name -cin $prohibited){throw "HOST_SNAPSHOT_PROHIBITED_VERB:$name"}
+          }
+          foreach($noLeak in @('.CommandLine','.ExecutablePath','.EnvironmentVariables',
+            'Get-Content','Get-ChildItem','TaskXml=')){
+            if($text.Contains($noLeak)){throw "HOST_SNAPSHOT_SENSITIVE_FIELD:$noLeak"}
+          }
+          $functionAst=$ast.Find({
+            param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -ceq 'Sha256-Text'
+          },$true)
+          if(-not $functionAst){throw 'HOST_SNAPSHOT_SHA_FUNCTION_MISSING'}
+          . ([ScriptBlock]::Create($functionAst.Extent.Text))
+          if((Sha256-Text 'abc') -cne 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'){
+            throw 'HOST_SNAPSHOT_SHA_NEGATIVE'
+          }
+          Write-Output 'MINIPC_GENERIC_HOST_SNAPSHOT_SOURCE_AND_NEGATIVE_GATES_PASS'
 
       - name: Validate typed Mini-PC file request syntax and fail-closed source contract
         shell: powershell

@@ -57,6 +57,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             sorted(FOLDER.glob("*.ps1")),
             [FOLDER / "access_boundary_probe.ps1",
              FOLDER / "file_access_bounded.ps1", SCRIPT,
+             FOLDER / "host_state_readonly.ps1",
              FOLDER / "log_status_summary.ps1",
              FOLDER / "operations_readonly_bundle.ps1",
              FOLDER / "v3_cas_log_readonly_triage.ps1",
