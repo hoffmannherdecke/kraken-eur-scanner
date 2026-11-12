@@ -249,7 +249,7 @@ SET ROLE v3_cas_audit_reader;
 BEGIN TRANSACTION READ ONLY;
 WITH c AS MATERIALIZED (SELECT v3_cas_audit.read_forward_t0_current_v1() AS j),
  e AS MATERIALIZED (
- SELECT epoch_id,source_sha256,original_fence_sha256,approved_caller_acl_sha256
+ SELECT epoch_id,source_sha256,original_fence_sha256,approved_caller_acl_sha256,sealed,next_ordinal
  FROM v3_cas_audit.epoch_v1
  WHERE epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
  ), target AS MATERIALIZED (
@@ -273,7 +273,15 @@ SELECT pg_catalog.jsonb_build_object(
  'cloud_executor_can_login',false
 )::text
 FROM c CROSS JOIN e CROSS JOIN target a
+ CROSS JOIN LATERAL (SELECT v3_cas_audit.read_paper_release_epoch_v1(e.epoch_id) AS p) scoped
 WHERE session_user='v3_cas_audit_reader_actor'
+ AND scoped.p->>'kind'='V3_PAPER_RELEASE_EPOCH_READER_V1'
+ AND scoped.p->>'state'='PRECAS_ABORT_SEALED_OLD_ONLY_ZERO_ATTEMPTS'
+ AND scoped.p->>'epoch_id'=e.epoch_id
+ AND scoped.p->>'source_sha256'=e.source_sha256
+ AND scoped.p->>'fence_sha256'=e.original_fence_sha256
+ AND scoped.p->>'caller_acl_sha256'=e.approved_caller_acl_sha256
+ AND e.sealed IS FALSE AND e.next_ordinal=1
  AND current_user='v3_cas_audit_reader'
  AND a.epoch_id=e.epoch_id AND a.source_sha256=e.source_sha256
  AND a.prepared_fence_sha256=e.original_fence_sha256
