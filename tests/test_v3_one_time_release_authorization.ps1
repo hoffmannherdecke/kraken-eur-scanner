@@ -421,6 +421,57 @@ try {
  if($good.disposition -cne 'SOURCE_REVIEW_CANDIDATE_ONLY' -or $good.production_authorized -ne $false -or $good.historical_stop_success_claimed -ne $false -or $good.terminal_host_recovery_confirmed -ne $false){
    throw 'V3_POSTSTOP_PROOF_WRONG_RELEASE_CLAIM'
  }
+ # New source-only triple-CMS origin binding: exact Host bytes must have
+ # an additional distinct independently pinned originalhost signer.
+ $originKey=[Security.Cryptography.RSA]::Create(2048)
+ $originReq=[Security.Cryptography.X509Certificates.CertificateRequest]::new(
+  'CN=ORIGINALHOST-TEST-NOT-TRUST',$originKey,
+  [Security.Cryptography.HashAlgorithmName]::SHA256,
+  [Security.Cryptography.RSASignaturePadding]::Pkcs1)
+ $originCert=$originReq.CreateSelfSigned(
+  [datetimeoffset]::UtcNow.AddMinutes(-1),[datetimeoffset]::UtcNow.AddMinutes(5))
+ try {
+  $originSigner=New-TestSignedCurrent $hr $originCert
+  $originPin=Get-V3ReleaseSha256 $originCert.RawData
+  $triple=Assert-V3PostStopCurrentCustodyWithOriginalHostCms `
+    -HostPayload $hs.Payload -OriginalHostCms $originSigner.Cms `
+    -AdmittedOriginalHostCertificateSha256 $originPin `
+    -HostReaderCms $hs.Cms -CloudPayload $cs.Payload -CloudCms $cs.Cms `
+    -Pins $binding -Now $now
+  if($triple.distinct_exact_host_byte_signatures_valid -ne $true -or
+     $triple.current_custody_contract_verified -ne $true -or
+     $triple.recovery_authorized -ne $false -or
+     $triple.physical_originalhost_observation_independently_proven_here -ne $false -or
+     $triple.originalhost_tpm_role_admitted_here -ne $false -or
+     $triple.issuer_transport_registered -ne $false){
+    throw 'V3_POSTSTOP_TRIPLE_CMS_FALSE_OPERATIONAL_ACK'
+  }
+  # Cloud/Host notebook signer reused as source is forbidden.
+  foreach($untrusted in @($binding.host_certificate_sha256,
+                         $binding.cloud_certificate_sha256,('0'*64))) {
+   $held=$false
+   try {
+    $null=Assert-V3PostStopCurrentCustodyWithOriginalHostCms `
+      -HostPayload $hs.Payload -OriginalHostCms $originSigner.Cms `
+      -AdmittedOriginalHostCertificateSha256 $untrusted `
+      -HostReaderCms $hs.Cms -CloudPayload $cs.Payload -CloudCms $cs.Cms `
+      -Pins $binding -Now $now
+   }catch{$held=$true}
+   if(-not $held){throw 'V3_POSTSTOP_TRIPLE_CMS_UNADMITTED_SOURCE_ACCEPTED'}
+  }
+  $tampered=[byte[]]$hs.Payload.Clone()
+  $tampered[0]=0
+  $held=$false
+  try {
+   $null=Assert-V3PostStopCurrentCustodyWithOriginalHostCms `
+     -HostPayload $tampered -OriginalHostCms $originSigner.Cms `
+     -AdmittedOriginalHostCertificateSha256 $originPin `
+     -HostReaderCms $hs.Cms -CloudPayload $cs.Payload -CloudCms $cs.Cms `
+     -Pins $binding -Now $now
+  }catch{$held=$true}
+  if(-not $held){throw 'V3_POSTSTOP_TRIPLE_CMS_MUTATED_ORIGINAL_ACCEPTED'}
+  Write-Output 'V3_POSTSTOP_TRIPLE_CMS_EXACT_HOST_BYTES_SOURCE_ONLY_PASS'
+ }finally{$originCert.Dispose();$originKey.Dispose()}
  function Expect-CurrentHold($hostRec,$cloudRec,$b,$clock) {
   $fail=$false
   try { $null=Check-Custody $hostRec.Payload $hostRec.Cms $cloudRec.Payload $cloudRec.Cms $b $clock }
