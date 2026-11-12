@@ -30,6 +30,14 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
                       "change_and_evidence", "existing_owner", "approval_boundary",
                       "followthrough_and_ack", "remaining_unknowns"):
             x[field] = "Checked the original project decision and actual component before changing this."
+        x["release_work_necessity"] = {
+            "reason": "MISSING_LIVE_CAPABILITY",
+            "owner_evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6834144939",
+            "why_existing_pass_is_insufficient": "A genuinely new runtime behavior requires its own single minimal functional observation.",
+            "smallest_operational_delta": "Only the previously missing executable source behavior is changed in this patch.",
+            "reuse_existing_passes": True,
+            "no_historical_reconstruction": True,
+        }
         x["commitment_intake"]={
             "disposition":"REGISTERED_OR_REUSED",
             "commitment_ids":["V3_EXPERIMENTAL_PAPER_SIX_PROOFS"],
@@ -57,6 +65,23 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
             item["conflicts_and_gates"] = "Any remaining runtime and financial permissions stay separately gated."
         return x
 
+
+    def test_v3_release_work_without_new_necessity_is_blocked(self):
+        paths = ["tools/v3-poststop-reader-INACTIVE.ps1"]
+        baseline = self.good(paths)
+        self.assertEqual(check(ROOT, paths, baseline)["status"],
+                         "RECEIPT_AND_SOURCE_ROUTING_VERIFIED_NOT_SEMANTIC_OR_RUNTIME_PROOF")
+        for mutate in (
+            lambda x: x.pop("release_work_necessity"),
+            lambda x: x["release_work_necessity"].update(owner_evidence_url="https://example.com/claim"),
+            lambda x: x["release_work_necessity"].update(reuse_existing_passes=False),
+            lambda x: x["release_work_necessity"].update(no_historical_reconstruction=False),
+            lambda x: x["release_work_necessity"].update(smallest_operational_delta="repeat it"),
+        ):
+            value = copy.deepcopy(baseline)
+            mutate(value)
+            with self.assertRaises(ChangeGateError):
+                check(ROOT, paths, value)
 
     def test_future_followthrough_must_be_registered_or_explicitly_disposed(self):
         paths=["tools/source-inspector.py"]
