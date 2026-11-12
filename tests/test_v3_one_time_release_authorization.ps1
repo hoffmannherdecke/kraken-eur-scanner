@@ -312,7 +312,7 @@ $historical=[pscustomobject]@{
  kind='V3_POST_STOP_UNKNOWN_READONLY_STATE_V1'
  series_id='PAPER-V3-20261111T105211Z'
  epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
- fence_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef'
+ fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
  fence_phase='ARMED';cloud_inhibit_state='INHIBITED'
  cloud_epoch_sealed=$false;cloud_next_ordinal=1
  cloud_intent_count=0;cloud_attempt_count=0;cloud_abort_count=0
@@ -371,8 +371,8 @@ try {
   kind='V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
   series_id='PAPER-V3-20261111T105211Z'
   epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
-  source_sha256=('a'*64);observation_nonce=('b'*32);observed_at_utc=$timestamp
-  original_fence_sha256=('c'*64)
+  source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251';observation_nonce=('b'*32);observed_at_utc=$timestamp
+  original_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
   local_fence_file_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
   fence_phase='ARMED';candidates_xml_sha256=('d'*64);wait_xml_sha256=('e'*64)
   cloudsync_xml_sha256=('f'*64);writer_xml_sha256=('1'*64)
@@ -382,9 +382,9 @@ try {
  }
  $cr=[ordered]@{
   kind='V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'
-  series_id=$hr.series_id;epoch_id=$hr.epoch_id;source_sha256=('a'*64)
+  series_id=$hr.series_id;epoch_id=$hr.epoch_id;source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
   observation_nonce=('b'*32);observed_at_utc=$timestamp
-  original_fence_sha256=('c'*64);caller_acl_sha256=('2'*64)
+  original_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef';caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
   inhibit_state='INHIBITED';sealed=$false;next_ordinal=1
   intent_count=0;attempt_count=0;abort_count=0
   executor_login_closed=$true;executor_sessions_count=0
@@ -403,7 +403,7 @@ try {
  $cs=New-TestSignedCurrent $cr $cc
  $binding=[pscustomobject]@{
   series_id=$hr.series_id;epoch_id=$hr.epoch_id
-  source_sha256=('a'*64);epoch_fence_sha256=('c'*64);caller_acl_sha256=('2'*64)
+  source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251';epoch_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef';caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
   local_fence_file_sha256=$hr.local_fence_file_sha256
   candidates_xml_sha256=('d'*64);wait_xml_sha256=('e'*64)
   cloudsync_xml_sha256=('f'*64);writer_xml_sha256=('1'*64)
@@ -452,12 +452,15 @@ try {
  $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
  $b.host_payload_sha256=('0'*64)
  Expect-CurrentHold $hs $cs $b $now
- # Physical fence bytes and logical epoch marker digest are not interchangeable.
+ # Reject the previously miscopied legacy epoch pin; Cloud original is authoritative.
  $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
  $b.local_fence_file_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef'
  Expect-CurrentHold $hs $cs $b $now
  $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
- $b.epoch_fence_sha256=$binding.local_fence_file_sha256
+ $b.epoch_fence_sha256='4f01704d20375f201f87c56eb3350a67c1a91f82535296b28ae318768aa213ef'
+ Expect-CurrentHold $hs $cs $b $now
+ $b=($binding|ConvertTo-Json -Compress)|ConvertFrom-Json
+ $b.caller_acl_sha256=('0'*64)
  Expect-CurrentHold $hs $cs $b $now
  $damaged=[byte[]]$hs.Payload.Clone()
  $damaged[0]=0
