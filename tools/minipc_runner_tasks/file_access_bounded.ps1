@@ -205,6 +205,7 @@ try {
     $temp=[string]$env:RUNNER_TEMP
     if(-not $temp -or -not (Test-Path -LiteralPath $temp -PathType Container)){throw 'FILE_UNAVAILABLE:TEMP'}
     if($mode -ceq 'DIRECT') {
+      if($file.Name -ieq 'origin-sha256.json'){throw 'FILE_ACCESS_DENIED:RESERVED_NAME'}
       $package=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N'))
       [void][IO.Directory]::CreateDirectory($package)
       $dest=Join-Path $package $file.Name
