@@ -166,7 +166,7 @@ function Assert-V3PostStopUnknownCurrentCustody(
     ($cloud.executor_sessions_count -isnot [int] -and $cloud.executor_sessions_count -isnot [long]) -or $cloud.executor_sessions_count -ne 0 -or
     ($cloud.v3_active_series_count -isnot [int] -and $cloud.v3_active_series_count -isnot [long]) -or $cloud.v3_active_series_count -ne 0 -or
     ($cloud.v2r4_active_series_count -isnot [int] -and $cloud.v2r4_active_series_count -isnot [long]) -or $cloud.v2r4_active_series_count -ne 1 -or
-    ($cloud.cloud_cas_rpc_count -isnot [int] -and $cloud.cloud_cas_rpc_count -isnot [long]) -or $cloud.cloud_cas_rpc_count -ne 0 -or
+    ($cloud.cloud_cas_rpc_count -isnot [int] -and $cloud.cloud_cas_rpc_count -isnot [long]) -or $cloud.cloud_cas_rpc_count -ne 1 -or
     $cloud.current_cloud_custody_verified -isnot [bool] -or $cloud.current_cloud_custody_verified -ne $true){
   throw 'V3_POSTSTOP_CURRENT_HOST_CLOUD_SAFETY_HOLD'
  }
