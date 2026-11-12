@@ -611,6 +611,30 @@ foreach ($check in $checks) {
         $tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}
         $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=$tlsMode connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
+        if($PostStopCloudReader){
+            if($LASTEXITCODE -ne 0){throw 'V3_POSTSTOP_CLOUD_PG17_HOLD'}
+            $wire=($output|Out-String).Trim()
+            if($wire.Length -lt 400 -or $wire.Length -gt 4096){throw 'V3_POSTSTOP_CLOUD_WIRE_HOLD'}
+            $row=Assert-V3PostStopFreshReader $wire $ObservationNonce 'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'
+            if([string]$row.reader_role -cne 'v3_cas_audit_reader' -or
+               [string]$row.inhibit_state -cne 'INHIBITED' -or
+               $row.current_cloud_custody_verified -ne $true -or
+               $row.sealed -ne $false -or $row.next_ordinal -ne 1 -or
+               $row.intent_count -ne 0 -or $row.attempt_count -ne 0 -or
+               $row.abort_count -ne 0 -or $row.executor_login_closed -ne $true -or
+               $row.executor_sessions_count -ne 0 -or $row.v3_active_series_count -ne 0 -or
+               $row.v2r4_active_series_count -ne 1 -or $row.cloud_cas_rpc_count -ne 0){
+                throw 'V3_POSTSTOP_CLOUD_STATE_HOLD'
+            }
+            $signed=Save-V3SignedNotebookReaderSnapshot $wire $ReviewedNotebookCertificateSha256
+            [pscustomobject]@{kind='V3_POSTSTOP_NOTEBOOK_CLOUD_CMS_V1'
+              status='READ_ONLY_NO_RECOVERY';observation_nonce=$ObservationNonce
+              local_directory=$signed.local_directory
+              receipt='reader.json';signature='reader.cms'
+              no_production_effect=$true}|ConvertTo-Json -Compress
+            $passed++
+            continue
+        }
         if($PaperReleaseSignedCurrent){
             if($LASTEXITCODE -ne 0){throw 'V3_PAPER_RELEASE_READER_QUERY_HOLD'}
             $holdClass='PAPER_RELEASE_READER_PLAN_AND_EPOCH_PINS'
@@ -1052,6 +1076,7 @@ foreach ($check in $checks) {
         # Report only fixed coarse categories. No raw SQL/stdout/stderr,
         # exception text, username, DPAPI material or other sensitive values.
         Write-Output "$($check.Name)_READONLY_SCOPE_HOLD"
+        if($PostStopCloudReader){Write-Output "READER_POSTSTOP_CLOUD_HOLD_CLASS=$holdClass"}
         if($PrecommitCloudInventory){
             Write-Output "READER_PRECOMMIT_HOLD_CLASS=$holdClass"
         }
@@ -1070,7 +1095,7 @@ foreach ($check in $checks) {
         if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
     }
 }
-if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent -or $PaperReleaseSignedCurrent){
+if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent -or $PreparedAbortSignedCurrent -or $IssuerPrestopSignedCurrent -or $PaperReleaseSignedCurrent -or $PostStopCloudReader){
  if($passed -ne 1){exit 1}
  return
 }
