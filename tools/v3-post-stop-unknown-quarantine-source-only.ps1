@@ -337,7 +337,7 @@ function Assert-V3PostStopSignedTerminalCloud(
     [string]$row.receipt_sha256 -cne $CurrentCustodyReceiptSha256 -or
     [string]$row.state -cne 'ABORT_RECORDED_NOT_RELEASED' -or
     [string]$row.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
-    $row.cloud_cas_rpc_count -ne 0 -or
+    ($row.cloud_cas_rpc_count -ne 1 -or $row.cloud_cas_rpc_acl_restricted -ne $true) -or
     $row.cloud_executor_can_login -ne $false -or
     $row.cloud_active_series_count -ne 1 -or
     $row.cloud_original_active_series_count -ne 1) {
