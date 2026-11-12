@@ -305,7 +305,7 @@ function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
  }
  $v3=@(Get-CimInstance Win32_Process -ErrorAction Stop|Where-Object {
   [int]$_.ProcessId -ne $PID -and
-  [string]$_.Name -match '^(?i:pythonw?\.exe|powershell\.exe|pwsh\.exe)
+  [string]$_.Name -match '^(?i:pythonw?\.exe|powershell\.exe|pwsh\.exe)$' -and
   [string]$_.CommandLine -match '(?i)v3.paper|v3_paper|v3-one-time|single.writer'
  })
  if($v3.Count -ne 0){throw 'V3_SIGNER_CURRENT_HOST_POSSIBLE_WRITER_PROCESS_HOLD'}
