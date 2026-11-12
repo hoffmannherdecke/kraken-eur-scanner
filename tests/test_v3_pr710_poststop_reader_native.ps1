@@ -8,6 +8,18 @@ $coordinator=Join-Path $PSScriptRoot '../tools/v3-poststop-triple-reader-window-
 $otherTokens=$null;$otherErrors=$null
 $null=[System.Management.Automation.Language.Parser]::ParseFile($coordinator,[ref]$otherTokens,[ref]$otherErrors)
 if(@($otherErrors).Count -ne 0){throw ('PR710_COORDINATOR_PARSE_HOLD: '+($otherErrors|Select-Object -First 1).Message)}
+$publisher=Join-Path $PSScriptRoot '../tools/v3-poststop-originalhost-signed-unc-publish-INACTIVE.ps1'
+$pubTokens=$null;$pubErrors=$null
+$null=[System.Management.Automation.Language.Parser]::ParseFile($publisher,[ref]$pubTokens,[ref]$pubErrors)
+if(@($pubErrors).Count -ne 0){throw 'PR710_ORIGINALHOST_UNC_PUBLISHER_PARSE_HOLD'}
+$publisherSource=[IO.File]::ReadAllText($publisher)
+foreach($required in @('SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY',
+ 'v3-paper-originalhost-manual-tpm-enroll-INACTIVE.ps1',
+ 'Assert-V3ReleaseCms','[IO.Directory]::Move($staging,$final)',
+ 'PR710_ORIGINALHOST_FINAL_BYTE_DRIFT_HOLD','FileMode]::CreateNew')){
+ if(-not $publisherSource.Contains($required)){throw "PR710_ORIGINALHOST_PUBLISHER_CONTRACT_MISSING: $required"}
+}
+
 $coordinatorSource=[IO.File]::ReadAllText($coordinator)
 foreach($required in @('Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms',
  'ApprovedPinsSha256','Start-Sleep -Milliseconds 200','PR710_POLICY_FIELDS_OR_UNTRUSTED_LIVE_SHA_HOLD',
