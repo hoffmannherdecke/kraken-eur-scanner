@@ -168,3 +168,51 @@ Die bereits bestehende Datei-Anfrage `MINIPC_FILE_V1` erlaubt für SEARCH und de
 | `V3RS2` | `C:\Users\ADMIN\V3-Release-Source-b019448331df` |
 
 Der bisherige MISTRAL-Root bleibt exakt `\\192.168.178.179\Mistral_450`; TRADING und DOWNLOADS behalten ihre bisherige Root-Bindung. Die **öffentliche Taskquelle, lokale pre_job.ps1 und private Workflow-Grammatik müssen gemeinsam** aktualisiert und in den physischen privaten SHA-Pin übernommen werden. Bis zur gezielten Originalhost-Installation ist `V3_EXTRA_ROOTS_E2E=HOLD`; bereits bestandene alte Root- und SafePause-Nachweise nicht erneut durchführen. Kein neuer Runner, Cloud-Recht, AP04-/Stage4- oder Trading-Eingriff.
+
+
+## Allgemeiner, ausschließlich lesender Hostzustand (MINIPC_TASK_V1)
+
+Für zukünftige Arbeits-Chats steht der **bestehende** GitHub-Issue-#13-Runner
+(`CryptoSupportSvc`) als zugelassene, zeitbegrenzte Zugriffskette zur Verfügung.
+Zusätzlich zur Datei-Brücke gibt es den **fest geprüften** Task
+`tools/minipc_runner_tasks/host_state_readonly.ps1`. Er benötigt keine neuen
+Root-ACLs, keinen neuen Host-Agenten, keinen Scheduler und keine zusätzlichen
+Credentials.
+
+Aufruf innerhalb des bereits existierenden privaten Owner-Kommentarvertrags:
+
+`MINIPC_TASK_V1 | <exakter bereits gemergter öffentlicher SHA> | host_state_readonly`
+
+Nach frischer, authentifizierter Owner-Kommentierung, gültigem lokalen SHA-gepinnten
+Prejob und `Online/Idle`-Bestätigung erfolgt eine begrenzte Abfrage:
+- 24 maximal sichtbar gemeldete Prozesse **nur** aus der dokumentierten festen
+  Interpreter-/Runner-Image-Whitelist; PID und Parent-PID, **keine** CommandLine,
+  Pfade, Environment, Handles oder Geheimnisse
+- 24 maximal sichtbar gemeldete Windows-Scheduler-Tasks mit festen funktionalen
+  Namensfiltern (V3/Kraken/CryptoSupport/Paper/Scanner), Name, TaskPath und Status;
+  Task-XML wird ausschließlich **lesend** über Windows-API abgefragt und nur als
+  UTF-8-SHA256-Fingerprint ausgegeben; kein XML-Inhalt, keine Task-Actions/Args
+- statusgebundener Blick auf den **einen bestehenden** CryptoSupportSvc-Dienst
+- expliziter Beobachtungszeitstempel, sichtbare Limits, `UNAVAILABLE` und
+  `PARTIAL_LIMIT` statt stillschweigendem Vollständigkeitsversprechen
+
+Die private Workflow-Ausgabe prüft den festen Ergebnisvertrag und druckt nur
+validierte, eng begrenzte Felder; andere Aufgaben erhalten **keine** generische
+rohe Konsolenausgabe. Dies ist **allgemeiner Host-Support**, keine PR-spezifische
+Recovery-Implementierung. Kein beliebiger PowerShell-Befehl und kein Verzeichnisdump.
+
+**Beweisgrenze:** Ein Read-only-Snapshot ist *weder* eine unabhängige signierte
+Current-Custody-Quittierung, *noch* eine vollständige Writerinventur, eine
+geprüfte Herkunft beliebiger Fence-Dateien oder eine Task-XML-Bytefreigabe.
+Individuelle Originaldateien bleiben an den vorhandenen SEARCH → ausdrückliche
+Einzeldateifreigabe → SHA256-EXPORT gebunden. Für ein späteres unabhängiges
+CMS-/Nonce-/Freshness-Gate sind die jeweils eigenständigen Zulassungen nötig.
+Kein STOP/Stage4/CAS/Recovery/Writer/Echtgeld, keine Produktivwirkung.
+
+Verwendung: Erst vorhandene aktuelle Dateien und Nachweise aus GitHub/Audit
+heranziehen; falls ein **aktueller** Hostzustand tatsächlich gebraucht wird,
+ein einziges vorbereitetes kurzes Runnerfenster nutzen, nachweisbaren aktuellen
+Status lesen und SafePause separat bestätigen. Kein blindes Dispatch bei Offline,
+keine Wiederholung bestandener Dateizugriffstests. Neue Quell-/Private-Workflow-
+SHAs erfordern zunächst geschützte lokale Pin-/Prejob-/Window-Installation
+mit Backup und Owner-Quittierung. **Source-Merge ist kein Originalhost-E2E.**
