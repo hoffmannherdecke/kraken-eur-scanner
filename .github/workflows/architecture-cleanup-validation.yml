@@ -656,6 +656,9 @@ jobs:
           $cms = [Security.Cryptography.Pkcs.SignedCms]::new($content,$true)
           if (-not $cms.Detached) { throw 'PR710_NATIVE_PKCS_DETACHED_CONSTRUCTOR_HOLD' }
           Write-Output 'PR710_NATIVE_PS51_PKCS_ASSEMBLY_SMOKE_PASS'
+      - name: PR710 POSTSTOP notebook Reader native PS5.1 offline negatives
+        shell: powershell
+        run: ./tests/test_v3_pr710_poststop_reader_native.ps1
       - name: Productive Paper operator on Windows PowerShell 5.1 (offline)
         shell: powershell
         run: ./tests/test_v3_one_time_paper_release.ps1
