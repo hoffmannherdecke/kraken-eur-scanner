@@ -50,3 +50,17 @@ der lokale pin-gebundene Prejob und SafePause bleiben erforderlich.
 Für eine spätere Geräteinstallation müssen der lokale Prejob, die Workflow-Pin-Datei
 und die im Fensteroperator fest hinterlegte private SHA konsistent auf der
 genehmigten privaten Merge-Revision liegen. Quell-CI allein ist kein Host-E2E-Nachweis.
+
+## Dauerhafte Dateiuebergabe unter Windows-Benutzeridentitaet (lokaler Bedienadapter)
+
+Der bestehende Runner-Export MINIPC_FILE_V1 laeuft absichtlich unter CryptoSupportSvc. Der Originalhost-Test #66 (Run 43196668233) meldete SOURCE_READ/UNAVAILABLE, weil das Dienstkonto die Testdatei nicht lesen konnte. Das ist kein Anlass fuer allgemeine Datei-ACL-Erweiterungen.
+
+Der lokale Bedienadapter tools/minipc_runner_guard/local_file_handoff.ps1 ist Teil der bestehenden Datei-Bridge. Er erstellt weder Dienst, Runner, Scheduler, Netzwerkverbindung noch weitere Zugriffsberechtigungen.
+
+Einmalige Installation als normal angemeldeter Windows-Benutzer: einen Source/CI-geprueften gepinnten Skriptstand laden und -Install ausfuehren. Damit wird die bestehende Windows Explorer > Rechtsklick > Senden an-Verknuepfung ChatGPT - gepruefter Dateiexport eingerichtet. Der Adapter liegt unter %LOCALAPPDATA%\CryptoSupport\FileHandoff.
+
+Jeder Export: Eine konkrete Datei im Explorer markieren, Senden an > ChatGPT - gepruefter Dateiexport. Die Kopie und die Herkunftsdatei origin-sha256.json landen in einem zufaelligen Unterordner von %USERPROFILE%\Downloads\ChatGPT-Uebergabe. Der Benutzer kontrolliert die Datei und laedt sie selbst in ChatGPT hoch. Keine automatische Datenuebertragung.
+
+Sicherheitsgrenzen: laufendes normales Benutzerkonto und dessen vorhandene Leserechte; Originaldateien und ACLs unveraendert. Sperren fuer Junction-/Reparse-Pfade, sensible Namen, UTF-8/Binaer-Inhalte, auffaellige Geheimnismuster, bestimmte Text-Endungen, 2-MiB-Grenze. SHA256 wird vor/nach dem Quelllesen sowie am Export verglichen. Herkunftsbeleg enthaelt Quelle, Konto, UTC, Hash und Bytezahl. Vertrauliche Inhalte duerfen nicht hochgeladen werden; Musterpruefung kann weder alle Geheimnisse erkennen noch jede harmlose Datei durchlassen.
+
+Host-Abnahme: Nach CI, genau einmaliger lokaler Installation, Testexport einer neutralen Textdatei, Quell-/Export-SHA256-Gleichheit und Nutzerpruefung des Pakets erst MINIPC_USER_HANDOFF_E2E_PASS. Runner-Bridge-E2E und Benutzer-Handoff-E2E bleiben getrennte Nachweise; Source-CI ist kein Installationsbeleg.
