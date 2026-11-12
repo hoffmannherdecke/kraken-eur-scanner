@@ -204,12 +204,37 @@ try {
     }
     $temp=[string]$env:RUNNER_TEMP
     if(-not $temp -or -not (Test-Path -LiteralPath $temp -PathType Container)){throw 'FILE_UNAVAILABLE:TEMP'}
-    $dest=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N')+$extension)
+    if($mode -ceq 'DIRECT') {
+      # Keep the original filename for easy selection. Package only this file and
+      # its provenance sidecar inside the runner's isolated disposable workspace.
+      $package=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N'))
+      [void][IO.Directory]::CreateDirectory($package)
+      $dest=Join-Path $package $file.Name
+    } else {
+      $dest=Join-Path $temp ('minipc-authorized-'+[guid]::NewGuid().ToString('N')+$extension)
+    }
     [IO.File]::WriteAllBytes($dest,$body)
     if((Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected){
       Remove-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue;throw 'FILE_HASH_MISMATCH'
     }
-    Result 'EXPORT_STAGED' @([pscustomobject]@{relative_path=$rel;size=[long]$file.Length;sha256=$hash}) $dest
+    if($mode -ceq 'DIRECT') {
+      $receipt=[pscustomobject][ordered]@{
+        kind='MINIPC_FILE_PROVENANCE_V1'
+        root_key=$key
+        relative_path=$rel
+        filename=$file.Name
+        sha256=$expected
+        size_bytes=[long]$body.Length
+        copied_at_utc=[DateTimeOffset]::UtcNow.ToString('o')
+        reviewed_git_sha=$sourceSha
+        original_modified=$false
+        source_identity='CryptoSupportSvc'
+      }
+      [IO.File]::WriteAllText((Join-Path $package 'origin-sha256.json'),($receipt|ConvertTo-Json -Depth 4),[Text.UTF8Encoding]::new($false))
+      Result 'EXPORT_STAGED' @([pscustomobject]@{relative_path=$rel;size=[long]$file.Length;sha256=$hash}) $package
+    } else {
+      Result 'EXPORT_STAGED' @([pscustomobject]@{relative_path=$rel;size=[long]$file.Length;sha256=$hash}) $dest
+    }
   }
 }catch [System.UnauthorizedAccessException]{Result 'ACCESS_DENIED' @() ''}
  catch [System.Management.Automation.ItemNotFoundException]{Result 'NOT_FOUND' @() ''}
