@@ -71,7 +71,9 @@ if($review.current_custody_contract_verified -ne $true -or
 $custody=Assert-V3PostStopUnknownCurrentCustody -HostPayload $hostBytes -HostCms $receiptInput.NotebookHostCms -CloudPayload $cloudBytes -CloudCms $receiptInput.CloudCms -Pins $pins
 $receiptSha=Get-V3PostStopCurrentCustodyReceiptSha256 $custody
 if([string]$pins.host_payload_sha256 -cne (Get-V3ReleaseSha256 $hostBytes) -or [string]$pins.cloud_payload_sha256 -cne (Get-V3ReleaseSha256 $cloudBytes)){throw 'V3_POSTSTOP_CURRENT_RECEIPT_PIN_HOLD'}
-$plan=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -CurrentCustodyReceiptSha256 $receiptSha -Expiry $auth.expires_at
+$expiry=[datetimeoffset]::UtcNow.AddSeconds(90)
+if($auth.expires_at -lt $expiry){$expiry=$auth.expires_at}
+$plan=Get-V3PostStopCloudAbortCandidate -Custody $custody -Pins $pins -CurrentCustodyReceiptSha256 $receiptSha -Expiry $expiry
 if($plan.execution_authorized -ne $false){throw 'V3_POSTSTOP_CANDIDATE_AUTH_CONFUSION_HOLD'}
 $issuerRoot=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer'
 Add-Type -AssemblyName System.Security
