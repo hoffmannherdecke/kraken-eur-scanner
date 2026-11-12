@@ -592,7 +592,7 @@ $signerPath=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/v3-paper-origina
 $st=$null;$se=$null
 $sa=[System.Management.Automation.Language.Parser]::ParseFile(
  (Resolve-Path $signerPath),[ref]$st,[ref]$se)
-if(@($se).Count -ne 0){throw 'V3_TPM_SIGNER_CANDIDATE_AST_INVALID'}
+if(@($se).Count -ne 0){throw ('V3_TPM_SIGNER_CANDIDATE_AST_INVALID: '+(@($se|ForEach-Object {$_.ToString()+' at '+$_.Extent.StartLineNumber}) -join '; '))}
 $checkFn=@($sa.FindAll({
  param($n)
  $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and

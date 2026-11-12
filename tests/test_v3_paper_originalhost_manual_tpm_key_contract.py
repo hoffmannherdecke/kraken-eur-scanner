@@ -60,7 +60,7 @@ class ManualTPMKeySourceContract(unittest.TestCase):
     "[switch]$InspectProvider",
     "if($InspectProvider -and $Enroll)",
     "V3_SIGNER_PROVIDER_READONLY_CANNOT_ENROLL",
-    "if($InspectProvider -or $SignPreinvoke){",
+    "if($InspectProvider -or $SignPreinvoke -or $SignCurrentHost){",
     "if($null -eq $cert){throw 'V3_SIGNER_PROVIDER_READONLY_CERT_MISSING'}",
     "RSACertificateExtensions]::GetRSAPrivateKey($cert)",
     "Security.Cryptography.RSACng",
@@ -80,7 +80,7 @@ class ManualTPMKeySourceContract(unittest.TestCase):
    with self.subTest(field=x): self.assertIn(x,self.s)
   self.assertLess(self.s.index("if($InspectProvider -and $Enroll)"),
                   self.s.index("if($Enroll){"))
-  self.assertLess(self.s.index("if($InspectProvider -or $SignPreinvoke){"),
+  self.assertLess(self.s.index("if($InspectProvider -or $SignPreinvoke -or $SignCurrentHost){"),
                   self.s.index("[pscustomobject][ordered]@{"))
   self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
   self.assertNotIn("Export-CngKey",self.s)
@@ -110,6 +110,88 @@ class ManualTPMKeySourceContract(unittest.TestCase):
   self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
   self.assertNotIn("Invoke-RestMethod",self.s)
   self.assertNotIn("Set-Acl",self.s)
+
+
+ def test_scoped_poststop_current_host_signer_addition(self):
+  # Existing preinvoke execution remains intact, with a separate admitted mode.
+  for x in (
+    "[switch]$SignCurrentHost",
+    "V3_SIGNER_SIGN_MODES_MUTUALLY_EXCLUSIVE",
+    "SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY",
+    "function Test-V3OriginalhostFreshCurrentReader",
+    "V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1",
+    "ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40",
+    "V3_SIGNER_CURRENT_HOST_OWNER_DER_PIN_HOLD",
+    "V3_SIGNER_CURRENT_HOST_DUPLICATE_FIELD_HOLD",
+    "V3_SIGNER_CURRENT_HOST_NOT_FRESH_HOLD",
+    "V3_SIGNER_CURRENT_HOST_TASK_OR_XML_DRIFT_HOLD",
+    "Get-ScheduledTask", "Export-ScheduledTask",
+    "Get-FileHash", "Get-CimInstance Win32_Process",
+    "Test-V3OriginalhostFreshCurrentReader $raw",
+    "current_host_signature_scope_only=$SignCurrentHost",
+    "physical_snapshot_not_exclusive_lease=$true",
+    "recovery_authorized=$false",
+    "issuer_authorized=$false",
+    "Test-V3UnsignedPreinvokeCandidate $raw",
+  ):
+   with self.subTest(x=x): self.assertIn(x,self.s)
+  self.assertEqual(self.s.count("function Test-V3OriginalhostFreshCurrentReader"),1)
+  self.assertEqual(self.s.count("function Assert-V3CmsLocalPath"),1)
+  self.assertEqual(self.s.count("$cms.ComputeSignature($signer)"),1)
+  self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
+  self.assertNotIn("Register-ScheduledTask",self.s)
+  self.assertNotIn("Invoke-V3PostStopCloudOnceCandidate",self.s)
+
+
+ def test_current_host_capture_once_is_reused_by_existing_cms_signer(self):
+  # No second sign implementation, no extra keys; capture and sign share
+  # the exact persisted UTF-8 bytes in one interactive originalhost run.
+  for x in (
+    "[switch]$CaptureCurrentHost", "ObservationNonce",
+    "V3_POSTSTOP_CAPTURE_MODE_NONCE_HOLD",
+    "function New-V3PostStopHostCurrentBytes",
+    "Get-ScheduledTask", "Export-ScheduledTask",
+    "Get-CimInstance Win32_Process", "Get-CimInstance Win32_Service",
+    "Get-CimInstance Win32_StartupCommand",
+    "V3_POSTSTOP_PRODUCER_EXTRA_V3_TASK_HOLD",
+    "V3_POSTSTOP_PRODUCER_UNREADABLE_PROCESS_HOLD",
+    "[IO.FileMode]::CreateNew",
+    "V3_POSTSTOP_CAPTURE_CREATE_NEW_HOLD",
+    "(-not $CaptureCurrentHost)",
+    "Test-V3OriginalhostFreshCurrentReader $bytes",
+    "Test-V3OriginalhostFreshCurrentReader $raw",
+    "SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY",
+    "current_host_signature_scope_only=$SignCurrentHost",
+    "physical_snapshot_not_exclusive_lease=$true",
+  ):
+   with self.subTest(x=x):self.assertIn(x,self.s)
+  self.assertEqual(self.s.count("function New-V3PostStopHostCurrentBytes"),1)
+  self.assertEqual(self.s.count("$cms.ComputeSignature($signer)"),1)
+  self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
+  self.assertNotIn("Invoke-V3PostStopCloudOnceCandidate",self.s)
+  self.assertNotIn("Start-ScheduledTask",self.s)
+
+ def test_utf8_bom_rejection_is_ordinal_not_culture_sensitive(self):
+  # Windows PowerShell 5.1 / .NET Framework can treat U+FEFF as
+  # an ignorable culture-sensitive StartsWith token even for '{' JSON.
+  # Keep BOM and NUL rejection without false HOLD on valid fresh JSON.
+  self.assertIn("$Payload[0] -eq 0xEF",self.s)
+  self.assertIn("$Payload[1] -eq 0xBB",self.s)
+  self.assertIn("$Payload[2] -eq 0xBF",self.s)
+  self.assertIn("V3_SIGNER_CURRENT_HOST_UTF8_BOM_HOLD",self.s)
+  self.assertIn("IndexOf([char]0,[StringComparison]::Ordinal)",self.s)
+  self.assertIn("[int][char]$raw[0] -eq 0xFEFF",self.s)
+  self.assertNotIn("$raw.StartsWith([char]0xFEFF)",self.s)
+
+ def test_native_windows_powershell_pkcs_assembly_must_be_loaded(self):
+  # The interactive originalhost uses Windows PowerShell 5.1, where
+  # SignedCms lives in System.Security and need not be pre-loaded.
+  self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop",self.s)
+  self.assertIn("System.Security.Cryptography.Pkcs.ContentInfo' -as [type]",self.s)
+  self.assertIn("System.Security.Cryptography.Pkcs.SignedCms' -as [type]",self.s)
+  self.assertIn("V3_SIGNER_PKCS_FRAMEWORK_ASSEMBLY_HOLD",self.s)
+  self.assertLess(self.s.index("Add-Type -AssemblyName System.Security"),
+                  self.s.index("$msg=[Security.Cryptography.Pkcs.ContentInfo]::new($raw)"))
 
  def test_public_pin_not_release_authority(self):
   for x in ("certificate_der_sha256_public_pin_unapproved",

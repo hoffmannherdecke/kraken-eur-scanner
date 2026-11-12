@@ -2,6 +2,9 @@ param(
  [switch]$Enroll,
  [switch]$InspectProvider,
  [switch]$SignPreinvoke,
+ [switch]$SignCurrentHost,
+ [switch]$CaptureCurrentHost,
+ [string]$ObservationNonce='',
  [string]$UnsignedPayloadPath='',
  [string]$DetachedCmsOutputPath='',
  [string]$SignApproval='',
@@ -24,16 +27,24 @@ $subject='CN=V3-PAPER-ORIGINALHOST-MANUAL-TPM-20261021'
 $store='Cert:\CurrentUser\My'
 $provider='Microsoft Platform Crypto Provider'
 $confirmation='ENROLL_MANUAL_TPM_SIGNING_KEY_NO_V3_RELEASE'
+if($CaptureCurrentHost -and (-not $SignCurrentHost -or [string]$ObservationNonce -cnotmatch '^[a-f0-9]{32}$')){
+ throw 'V3_POSTSTOP_CAPTURE_MODE_NONCE_HOLD'
+}
+if(-not $CaptureCurrentHost -and $ObservationNonce){throw 'V3_POSTSTOP_CAPTURE_NONCE_OUTSIDE_MODE'}
 if($InspectProvider -and $Enroll){
  throw 'V3_SIGNER_PROVIDER_READONLY_CANNOT_ENROLL'
 }
-if($SignPreinvoke -and ($Enroll -or $InspectProvider)){
+if($SignPreinvoke -and $SignCurrentHost){throw 'V3_SIGNER_SIGN_MODES_MUTUALLY_EXCLUSIVE'}
+if(($SignPreinvoke -or $SignCurrentHost) -and ($Enroll -or $InspectProvider)){
  throw 'V3_SIGNER_ONE_MODE_ONLY_NO_ENROLL_OR_PROBE'
 }
 if($SignPreinvoke -and $SignApproval -cne 'SIGN_ONE_UNSIGNED_PREINVOKE_CANDIDATE_NO_RELEASE'){
  throw 'V3_SIGNER_CMS_EXPLICIT_MANUAL_APPROVAL_REQUIRED'
 }
-if(-not $SignPreinvoke -and ($UnsignedPayloadPath -or $DetachedCmsOutputPath -or $SignApproval)){
+if($SignCurrentHost -and $SignApproval -cne 'SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY'){
+ throw 'V3_SIGNER_CURRENT_HOST_EXPLICIT_APPROVAL_REQUIRED'
+}
+if(-not ($SignPreinvoke -or $SignCurrentHost) -and ($UnsignedPayloadPath -or $DetachedCmsOutputPath -or $SignApproval)){
  throw 'V3_SIGNER_CMS_ARGS_WITHOUT_SIGN_MODE_HOLD'
 }
 if($Enroll -and $Approval -cne $confirmation){
@@ -122,7 +133,7 @@ $providerReadOnly = $false
 $providerExactPlatform = $false
 $userScopedKey = $false
 $exportPolicyNonExportable = $false
-if($InspectProvider -or $SignPreinvoke){
+if($InspectProvider -or $SignPreinvoke -or $SignCurrentHost){
  if($null -eq $cert){throw 'V3_SIGNER_PROVIDER_READONLY_CERT_MISSING'}
  if(-not $tpmReady){throw 'V3_SIGNER_PROVIDER_READONLY_TPM_NOT_READY'}
  $rsa=$null
@@ -208,6 +219,213 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
  }
  return $obj
 }
+
+# PR710 existing TPM signer: exactly the owner-authorized CURRENT host receipt.
+# Read back original Windows bytes immediately before signing the unchanged
+# supplied payload. This is not exclusive writer custody or release authority.
+function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
+ if($null -eq $Payload -or $Payload.Length -lt 450 -or $Payload.Length -gt 8192){
+  throw 'V3_SIGNER_CURRENT_HOST_PAYLOAD_SIZE_HOLD'
+ }
+ # On Windows PowerShell 5.1, culture-sensitive StartsWith(U+FEFF)
+ # can match the ignorable character even when JSON begins with '{'.
+ # Inspect actual bytes for UTF-8 BOM, and use ordinal search for NUL.
+ $hasBom=($Payload.Length -ge 3 -and
+    $Payload[0] -eq 0xEF -and $Payload[1] -eq 0xBB -and $Payload[2] -eq 0xBF)
+ if($hasBom){throw 'V3_SIGNER_CURRENT_HOST_UTF8_BOM_HOLD'}
+ $raw=[Text.UTF8Encoding]::new($false,$true).GetString($Payload)
+ if($raw.IndexOf([char]0,[StringComparison]::Ordinal) -ge 0 -or
+    ($raw.Length -gt 0 -and [int][char]$raw[0] -eq 0xFEFF)){
+  throw 'V3_SIGNER_CURRENT_HOST_UTF8_HOLD'
+ }
+ try{$v=$raw|ConvertFrom-Json -ErrorAction Stop}
+ catch{throw 'V3_SIGNER_CURRENT_HOST_JSON_HOLD'}
+ $names=@('kind','series_id','epoch_id','source_sha256',
+  'observation_nonce','observed_at_utc','original_fence_sha256',
+  'local_fence_file_sha256','fence_phase','candidates_xml_sha256',
+  'wait_xml_sha256','cloudsync_xml_sha256','writer_xml_sha256',
+  'candidates_enabled','wait_enabled','cloudsync_enabled','writer_enabled',
+  'writer_process_count','other_writer_authorities_closed',
+  'native_stop_outcome','current_host_custody_verified')
+ if($null -eq $v -or $v -isnot [pscustomobject] -or
+    @($v.PSObject.Properties.Name).Count -ne $names.Count -or
+    @($v.PSObject.Properties.Name|Where-Object {$_ -cnotin $names}).Count){
+  throw 'V3_SIGNER_CURRENT_HOST_FIELDS_HOLD'
+ }
+ foreach($field in $names){
+  if(@([regex]::Matches($raw,'"'+$field+'"\s*:')).Count -ne 1){
+   throw 'V3_SIGNER_CURRENT_HOST_DUPLICATE_FIELD_HOLD'
+  }
+ }
+ $knownFence='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ if([string]$v.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1' -or
+    [string]$v.series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$v.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$v.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
+    [string]$v.original_fence_sha256 -cne $knownFence -or
+    [string]$v.local_fence_file_sha256 -cne $knownFence -or
+    [string]$v.fence_phase -cne 'ARMED' -or
+    [string]$v.native_stop_outcome -cne 'UNKNOWN' -or
+    [string]$v.observation_nonce -cnotmatch '^[a-f0-9]{32}$' -or
+    $v.writer_process_count -isnot [int] -or $v.writer_process_count -ne 0 -or
+    $v.other_writer_authorities_closed -isnot [bool] -or
+    $v.other_writer_authorities_closed -ne $true -or
+    $v.current_host_custody_verified -isnot [bool] -or
+    $v.current_host_custody_verified -ne $true){
+  throw 'V3_SIGNER_CURRENT_HOST_SCOPE_OR_STATE_HOLD'
+ }
+ $m=[regex]::Match($raw,'"observed_at_utc"\s*:\s*"(?<t>[^"]+)"')
+ if(-not $m.Success -or $m.Groups['t'].Value -cnotmatch
+    '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
+  throw 'V3_SIGNER_CURRENT_HOST_TIME_LITERAL_HOLD'
+ }
+ try{
+  $at=[datetimeoffset]::ParseExact($m.Groups['t'].Value,
+   "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+   [Globalization.CultureInfo]::InvariantCulture,
+   [Globalization.DateTimeStyles]::AssumeUniversal)
+ }catch{throw 'V3_SIGNER_CURRENT_HOST_TIME_INVALID_HOLD'}
+ $now=[datetimeoffset]::UtcNow
+ if($at -gt $now.AddSeconds(5) -or ($now-$at).TotalSeconds -gt 30){
+  throw 'V3_SIGNER_CURRENT_HOST_NOT_FRESH_HOLD'
+ }
+ $fence='C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'
+ $fi=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($fi.PSIsContainer -or $fi.Length -ne 627 -or
+    [bool]($fi.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne $knownFence){
+  throw 'V3_SIGNER_CURRENT_HOST_FENCE_ORIGINAL_HOLD'
+ }
+ $mapping=@(
+  @('CryptoMiniPC-V2R4PaperCandidates','candidates_xml_sha256','candidates_enabled',$true),
+  @('CryptoMiniPC-V2R4PaperWait','wait_xml_sha256','wait_enabled',$true),
+  @('CryptoMiniPC-V2R4PaperCloudSync','cloudsync_xml_sha256','cloudsync_enabled',$true),
+  @('CryptoMiniPC-V3PaperSingleWriter','writer_xml_sha256','writer_enabled',$false)
+ )
+ foreach($item in $mapping){
+  $task=Get-ScheduledTask -TaskName $item[0] -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $item[0] -TaskPath '\' -ErrorAction Stop)
+  $h=[Security.Cryptography.SHA256]::Create()
+  try{
+   $actual=([BitConverter]::ToString($h.ComputeHash(
+    [Text.UTF8Encoding]::new($false).GetBytes($xml)))).Replace('-','').ToLowerInvariant()
+  }finally{$h.Dispose()}
+  if($actual -cne [string]$v.($item[1]) -or
+     $v.($item[2]) -isnot [bool] -or $v.($item[2]) -ne $item[3] -or
+     ([string]$task.State -ceq 'Disabled') -ne (-not $item[3])){
+   throw 'V3_SIGNER_CURRENT_HOST_TASK_OR_XML_DRIFT_HOLD'
+  }
+ }
+ $v3=@(Get-CimInstance Win32_Process -ErrorAction Stop|Where-Object {
+  [int]$_.ProcessId -ne $PID -and
+  [string]$_.Name -match '^(?i:pythonw?\.exe|powershell\.exe|pwsh\.exe)$' -and
+  [string]$_.CommandLine -match '(?i)v3.paper|v3_paper|v3-one-time|single.writer'
+ })
+ if($v3.Count -ne 0){throw 'V3_SIGNER_CURRENT_HOST_POSSIBLE_WRITER_PROCESS_HOLD'}
+ return $v
+}
+
+
+# Existing interactive TPM signer reuses the originalhost read-only primitives:
+# same originalhost, same observation window, exactly one serialization and CMS.
+function New-V3PostStopHostCurrentBytes([string]$Nonce) {
+ if($Nonce -cnotmatch '^[a-f0-9]{32}$'){throw 'V3_POSTSTOP_PRODUCER_NONCE_HOLD'}
+ $f='C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'
+ $expected='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ $item=Get-Item -LiteralPath $f -Force -ErrorAction Stop
+ if($item.PSIsContainer -or $item.Length -ne 627 -or
+    [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected){
+  throw 'V3_POSTSTOP_PRODUCER_FENCE_HOLD'
+ }
+ $fence=([Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($f))) | ConvertFrom-Json -ErrorAction Stop
+ if([string]$fence.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$fence.phase -cne 'ARMED' -or
+    [string]$fence.proposed_successor_series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    $fence.paper_only -ne $true -or $fence.orders_enabled -ne $false -or
+    $fence.real_money_actions -ne $false){
+  throw 'V3_POSTSTOP_PRODUCER_FENCE_FIELDS_HOLD'
+ }
+ $mapping=@(
+  @('CryptoMiniPC-V2R4PaperCandidates','candidates_xml_sha256','candidates_enabled',$true),
+  @('CryptoMiniPC-V2R4PaperWait','wait_xml_sha256','wait_enabled',$true),
+  @('CryptoMiniPC-V2R4PaperCloudSync','cloudsync_xml_sha256','cloudsync_enabled',$true),
+  @('CryptoMiniPC-V3PaperSingleWriter','writer_xml_sha256','writer_enabled',$false)
+ )
+ $v=@{}
+ foreach($m in $mapping){
+  $task=Get-ScheduledTask -TaskName $m[0] -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $m[0] -TaskPath '\' -ErrorAction Stop)
+  if($xml.Length -lt 64){throw 'V3_POSTSTOP_PRODUCER_TASK_XML_HOLD'}
+  $sha=[Security.Cryptography.SHA256]::Create()
+  try{$v[$m[1]]=([BitConverter]::ToString($sha.ComputeHash(
+     [Text.UTF8Encoding]::new($false).GetBytes($xml)))).Replace('-','').ToLowerInvariant()}
+  finally{$sha.Dispose()}
+  $v[$m[2]]=[bool]$task.Settings.Enabled
+  if([bool]$v[$m[2]] -ne [bool]$m[3] -or
+     ([string]$task.State -ceq 'Disabled') -ne (-not [bool]$m[3])){
+   throw 'V3_POSTSTOP_PRODUCER_TASK_STATE_HOLD'
+  }
+ }
+ # All registered Windows tasks are examined for competing V3 Paper authority.
+ # This is still only a local point-in-time scope; no exclusive lease is claimed.
+ $all=@(Get-ScheduledTask -ErrorAction Stop)
+ if($all.Count -lt 4){throw 'V3_POSTSTOP_PRODUCER_TASK_INVENTORY_HOLD'}
+ foreach($task in $all){
+  if([string]$task.TaskName -ceq 'CryptoMiniPC-V3PaperSingleWriter'){continue}
+  if([string]$task.TaskName -match '(?i)(v3.*(paper|writer|release|scanner)|(paper|writer).*v3)' -and
+     [bool]$task.Settings.Enabled){throw 'V3_POSTSTOP_PRODUCER_EXTRA_V3_TASK_HOLD'}
+ }
+ $svc=@(Get-CimInstance Win32_Service -ErrorAction Stop | Where-Object {
+  $_.State -eq 'Running' -and [string]$_.PathName -match '(?i)(v3.*(paper|writer)|(paper|writer).*v3)'
+ })
+ if($svc.Count){throw 'V3_POSTSTOP_PRODUCER_EXTRA_V3_SERVICE_HOLD'}
+ $startup=@(Get-CimInstance Win32_StartupCommand -ErrorAction Stop|Where-Object {
+  [string]$_.Command -match '(?i)(v3.*(paper|writer)|(paper|writer).*v3)'
+ })
+ if($startup.Count){throw 'V3_POSTSTOP_PRODUCER_EXTRA_V3_STARTUP_HOLD'}
+ $processes=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ if(-not $processes.Count){throw 'V3_POSTSTOP_PRODUCER_NO_PROCESS_INVENTORY_HOLD'}
+ $running=@($processes|Where-Object {
+   [int]$_.ProcessId -ne $PID -and
+   [string]$_.Name -match '^(?i:pythonw?\.exe|powershell\.exe|pwsh\.exe)$' -and
+   [string]$_.CommandLine -match '(?i)v3.paper|v3_paper|v3-one-time|single.writer'
+ })
+ if($running.Count){throw 'V3_POSTSTOP_PRODUCER_WRITER_PROCESS_HOLD'}
+ $unknown=@($processes|Where-Object {
+  [int]$_.ProcessId -ne $PID -and
+  [string]$_.Name -match '^(?i:pythonw?\.exe|powershell\.exe|pwsh\.exe)$' -and
+  [string]::IsNullOrWhiteSpace([string]$_.CommandLine)
+ })
+ if($unknown.Count){throw 'V3_POSTSTOP_PRODUCER_UNREADABLE_PROCESS_HOLD'}
+ $record=[ordered]@{
+  kind='V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
+  series_id='PAPER-V3-20261111T105211Z'
+  epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+  source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+  observation_nonce=$Nonce
+  observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
+  original_fence_sha256=$expected
+  local_fence_file_sha256=$expected
+  fence_phase='ARMED'
+  candidates_xml_sha256=[string]$v.candidates_xml_sha256
+  wait_xml_sha256=[string]$v.wait_xml_sha256
+  cloudsync_xml_sha256=[string]$v.cloudsync_xml_sha256
+  writer_xml_sha256=[string]$v.writer_xml_sha256
+  candidates_enabled=[bool]$v.candidates_enabled
+  wait_enabled=[bool]$v.wait_enabled
+  cloudsync_enabled=[bool]$v.cloudsync_enabled
+  writer_enabled=[bool]$v.writer_enabled
+  writer_process_count=0
+  other_writer_authorities_closed=$true
+  native_stop_outcome='UNKNOWN'
+  current_host_custody_verified=$true
+ }
+ $bytes=[Text.UTF8Encoding]::new($false,$true).GetBytes(($record|ConvertTo-Json -Depth 4 -Compress))
+ $null=Test-V3OriginalhostFreshCurrentReader $bytes
+ return ,$bytes
+}
+
 # Protect the existing original Windows user account from UNC, reparse and
 # overwrite mistakes. This does not assert administrator-independent ACLs.
 function Assert-V3CmsLocalPath([string]$Path,[bool]$ExistingLeaf){
@@ -240,7 +458,7 @@ function Assert-V3CmsLocalPath([string]$Path,[bool]$ExistingLeaf){
  }
  return $p
 }
-if($SignPreinvoke){
+if($SignPreinvoke -or $SignCurrentHost){
  if(-not $providerReadOnly -or -not $tpmReady -or $null -eq $cert){
   throw 'V3_SIGNER_CMS_ORIGINAL_PROVIDER_NOT_VERIFIED'
  }
@@ -248,15 +466,43 @@ if($SignPreinvoke){
     [IO.Path]::GetExtension($DetachedCmsOutputPath) -cne '.cms'){
   throw 'V3_SIGNER_CMS_FILE_TYPE_HOLD'
  }
- $in=Assert-V3CmsLocalPath $UnsignedPayloadPath $true
+ $in=Assert-V3CmsLocalPath $UnsignedPayloadPath (-not $CaptureCurrentHost)
  $out=Assert-V3CmsLocalPath $DetachedCmsOutputPath $false
  if($in -ceq $out){throw 'V3_SIGNER_CMS_INPUT_EQUALS_OUTPUT'}
+ if($CaptureCurrentHost){
+  $created=New-V3PostStopHostCurrentBytes -Nonce $ObservationNonce
+  try{
+   $fs=[IO.FileStream]::new($in,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+   try{$fs.Write($created,0,$created.Length);$fs.Flush($true)}
+   finally{$fs.Dispose()}
+  }catch{throw 'V3_POSTSTOP_CAPTURE_CREATE_NEW_HOLD'}
+ }
  $length=(Get-Item -LiteralPath $in -ErrorAction Stop).Length
- if($length -lt 200 -or $length -gt 2048){
+ if($length -lt 200 -or $length -gt $(if($SignCurrentHost){8192}else{2048})){
   throw 'V3_SIGNER_CMS_INPUT_FILE_BOUNDS'
  }
  $raw=[IO.File]::ReadAllBytes($in)
- $null=Test-V3UnsignedPreinvokeCandidate $raw
+ if($SignCurrentHost){
+  if($pin -cne 'ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'){
+   throw 'V3_SIGNER_CURRENT_HOST_OWNER_DER_PIN_HOLD'
+  }
+  $null=Test-V3OriginalhostFreshCurrentReader $raw
+ }else{
+  $null=Test-V3UnsignedPreinvokeCandidate $raw
+ }
+ # Windows PowerShell 5.1 does not necessarily pre-load the .NET Framework
+ # System.Security assembly containing SignedCms/ContentInfo. Load the
+ # framework assembly explicitly BEFORE any cryptographic type resolution.
+ try {
+  Add-Type -AssemblyName System.Security -ErrorAction Stop
+  if($null -eq ('System.Security.Cryptography.Pkcs.ContentInfo' -as [type]) -or
+     $null -eq ('System.Security.Cryptography.Pkcs.SignedCms' -as [type]) -or
+     $null -eq ('System.Security.Cryptography.Pkcs.CmsSigner' -as [type])){
+   throw 'V3_SIGNER_PKCS_TYPE_UNAVAILABLE'
+  }
+ }catch{
+  throw 'V3_SIGNER_PKCS_FRAMEWORK_ASSEMBLY_HOLD'
+ }
  # Exactly the pre-existing CurrentUser TPM key; no export or second key.
  # The CMS proves signing math only; no Cloud COMMIT/Reader/attempts/caller.
  $msg=[Security.Cryptography.Pkcs.ContentInfo]::new($raw)
@@ -296,8 +542,8 @@ if($SignPreinvoke){
   $cmsHash=([BitConverter]::ToString($h.ComputeHash($encoded))).Replace('-','').ToLowerInvariant()
  }finally{$h.Dispose()}
  [pscustomobject][ordered]@{
-  kind='V3_ORIGINALHOST_MANUAL_TPM_PREINVOKE_CMS_CANDIDATE_V1'
-  status='ORIGINALHOST_CMS_SIGNED_CANDIDATE_NO_CLOUD_OR_CAS_AUTHORITY'
+  kind=$(if($SignCurrentHost){'V3_ORIGINALHOST_TPM_CURRENT_READER_ORIGIN_CMS_V1'}else{'V3_ORIGINALHOST_MANUAL_TPM_PREINVOKE_CMS_CANDIDATE_V1'})
+  status=$(if($SignCurrentHost){'CURRENT_ORIGINALHOST_ORIGIN_CMS_SIGNED_NO_RECOVERY_AUTHORITY'}else{'ORIGINALHOST_CMS_SIGNED_CANDIDATE_NO_CLOUD_OR_CAS_AUTHORITY'})
   payload_sha256=$payloadHash
   detached_cms_sha256=$cmsHash
   certificate_der_sha256_public_pin_unapproved=$pin
@@ -306,6 +552,10 @@ if($SignPreinvoke){
   existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
   originalhost_signed_cms_candidate_generated=$true
   original_reader_commit_authenticated_by_this_action=$false
+  current_host_signature_scope_only=$SignCurrentHost
+  physical_snapshot_not_exclusive_lease=$true
+  recovery_authorized=$false
+  issuer_authorized=$false
   independent_offhost_custody_proven=$false
   cas_attempt_coverage_proven=$false
   precommit_restore_authorized=$false
