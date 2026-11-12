@@ -78,6 +78,24 @@ def query_runner_status(token: str) -> dict:
         return {"state": "UNAVAILABLE", "online": None, "busy": None, "reason": "API_UNAVAILABLE"}
 
 
+
+def authorized_file_handoff(state: str, approved: bool) -> dict:
+    """A dispatch decision, not a dispatch. The existing GitHub connector posts.
+
+    An explicit per-file owner approval and pre-observed SHA256 are mandatory.
+    GitHub Actions' existing single-worker queue and TTL remain unchanged.
+    """
+    if not approved:
+        return {"action": "HOLD", "reason": "OWNER_FILE_APPROVAL_REQUIRED"}
+    if state == "IDLE":
+        return {"action": "DISPATCH_EXISTING_EXPORT", "reason": "RUNNER_IDLE"}
+    if state == "BUSY":
+        return {"action": "HOLD", "reason": "RUNNER_BUSY"}
+    if state == "OFFLINE":
+        return {"action": "START_EXISTING_BOUNDED_WINDOW", "reason": "RUNNER_OFFLINE"}
+    return {"action": "HOLD", "reason": "RUNNER_STATUS_NOT_VERIFIED"}
+
+
 def main() -> int:
     status = query_runner_status(os.environ.get("MINIPC_RUNNER_STATUS_TOKEN", ""))
     print(json.dumps({"kind": "MINIPC_RUNNER_STATUS_V1", **status},
