@@ -20,6 +20,22 @@ foreach($required in @('SIGN_FRESH_ORIGINALHOST_CURRENT_READER_ONLY_NO_RECOVERY'
  if(-not $publisherSource.Contains($required)){throw "PR710_ORIGINALHOST_PUBLISHER_CONTRACT_MISSING: $required"}
 }
 
+# The TPM owner's SMB access is intentionally NOT broadened. The existing
+# share maps D: to the notebook UNC; publication is atomic on local D:.
+foreach($required in @(
+ "Get-SmbShare -Name 'Mistral_450'",
+ "PR710_ORIGINALHOST_FIXED_SHARE_MAP_HOLD",
+ "$"+"root='D:\'",
+ "originalhost_unc_directory=$"+"expectedUnc"
+)){
+ if(-not $publisherSource.Contains($required)){
+  throw "PR710_ORIGINALHOST_LOCAL_BACKING_CONTRACT_MISSING: $required"
+ }
+}
+if($publisherSource.Contains("$"+"root='\\192.168.178.179\Mistral_450'")){
+ throw 'PR710_ORIGINALHOST_UNAUTHORIZED_SMB_WRITE_PATH_HOLD'
+}
+
 $coordinatorSource=[IO.File]::ReadAllText($coordinator)
 foreach($required in @('Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms',
  'ApprovedPinsSha256','Start-Sleep -Milliseconds 200','PR710_POLICY_FIELDS_OR_UNTRUSTED_LIVE_SHA_HOLD',
