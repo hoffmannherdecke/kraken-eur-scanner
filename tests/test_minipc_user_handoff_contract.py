@@ -54,7 +54,8 @@ class LocalUserHandoffContract(unittest.TestCase):
                      "HANDOFF_HOLD: Dateityp nicht fuer Direktexport zugelassen",
                      "HANDOFF_HOLD: Datei waehrend der Pruefung veraendert"):
             self.assertIn(item,s)
-        self.assertNotIn("'.zip'",s)
+        # ZIP is an output archive in EvidenceBundle mode, never a source input.
+        self.assertIn("if($ext -cnotin @('.txt','.md','.csv','.json','.log','.xml','.yml','.yaml'))",s)
         self.assertNotIn("GrantAccess",s)
 
 if __name__=="__main__": unittest.main()
