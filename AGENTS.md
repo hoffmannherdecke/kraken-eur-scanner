@@ -1,3 +1,18 @@
+<!-- V3_RELEASE_AP04_AP06B_OWNER_OVERRIDE_20261112 -->
+## Verbindliche V3-Release-Ausführung ab 12.11.2026 (eng begrenzter Vorrang)
+
+**Gilt für strategy_release V3 AP04–AP06B vor älteren widersprechenden Ein-AP-pro-Chat-, Vollinventur-, Historienrekonstruktions- und datierten NEXT-/Pausenregeln dieser Datei und älterer Releasepläne.** Projektweiter Owner #353: https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6818585252 ; Fachowner #99 bleibt für alle Release-/Sicherheitsvertragsentscheidungen zuständig.
+
+1. Das aktuelle tatsächlich releasekritische Hindernis gezielt bearbeiten; nach Teil-PASS selbstständig im selben autorisierten Durchgang fortsetzen bis zum echten Owner-/Gerätegate, nicht je AP einen separaten Kleinstauftrag erzeugen.
+2. Bestehende gültige PASS-/SHA-/CMS-/CI-/Runtime-Nachweise wiederverwenden. Weitere Prüfung nur für konkret neue relevante Byte-, Rollen-, Geräte-, Zeit-, Serien- oder Sicherheitsabweichungen. Keine vollständige Alt-PID-Rekonstruktion oder zusätzliche Dokumentation ohne notwendigen Sicherheitszweck.
+3. HOLD nur mit konkretem Sicherheitsrisiko, fehlender zwingender Voraussetzung oder neuer unabdingbarer Ownerentscheidung; fehlenden Beleg, minimalen Auflösungsschritt und betroffene Befugnis exakt nennen. Separat AP04-Fachabnahme, historische STOP-UNKNOWN-Recovery und AP05A-Ausführungsbefugnis ausweisen.
+4. **Unverändert zwingend**: originalgetreue Stage4-/STOP-/Cloud-/Host-/Notebook-Nachweise soweit im jeweils wirksamen #99-Vertrag gefordert; signierte unabhängige Current-Custody- und Terminal-Reader; exakte Epoch-/Datei-SHA-Semantik, CMS, Frische, Nonce, Task-/Writer-CAS-/Single-Writer-Grenzen, INHIBITED und NO RETRY. Jegliche Änderung zwingender Sicherheitsverträge erfordert die gesonderte ausdrückliche #99-Autorisierung. Keine produktive Post-STOP-Recovery ohne gesonderte exakte Owner-Ausführungsentscheidung.
+5. Keine neuen Manager, Audits, Scheduler, parallelen Freigabewege oder implizite Runtimewirkung. Source-/CI-/Merge-PASS nie als physisches Original-ACK ausgeben. Für PR #710 die nachgewiesene Originalhost-Fence-Datei-SHA gesondert von historisch serialisiertem Marker-/Epoch-Digest prüfen (siehe #99/6818544695), nicht einen Wert stillschweigend durch den anderen ersetzen.
+
+**Geltungsgrenze:** Alle anderen Projektbereiche und geltenden Sicherheits-/PR-/Governance-Checks bleiben unverändert. Untenstehende ältere überbreite Arbeitsvorschriften dürfen in diesem V3-Release-Scope nicht länger ein unbedingtes Zusatz-HOLD erzeugen.
+
+---
+
 <!-- V3_LIVE_AP_20261109 -->
 V3-Release: vor Aktion #353 Kommentar 6742581400, #99, main und Original-ACKs frisch lesen; alte NEXT ignorieren. Live-brief/HOLD gilt.
 
