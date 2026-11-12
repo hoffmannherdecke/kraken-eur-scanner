@@ -227,8 +227,15 @@ function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
  if($null -eq $Payload -or $Payload.Length -lt 450 -or $Payload.Length -gt 8192){
   throw 'V3_SIGNER_CURRENT_HOST_PAYLOAD_SIZE_HOLD'
  }
+ # On Windows PowerShell 5.1, culture-sensitive StartsWith(U+FEFF)
+ # can match the ignorable character even when JSON begins with '{'.
+ # Inspect actual bytes for UTF-8 BOM, and use ordinal search for NUL.
+ $hasBom=($Payload.Length -ge 3 -and
+    $Payload[0] -eq 0xEF -and $Payload[1] -eq 0xBB -and $Payload[2] -eq 0xBF)
+ if($hasBom){throw 'V3_SIGNER_CURRENT_HOST_UTF8_BOM_HOLD'}
  $raw=[Text.UTF8Encoding]::new($false,$true).GetString($Payload)
- if($raw.Contains([char]0) -or $raw.StartsWith([char]0xFEFF)){
+ if($raw.IndexOf([char]0,[StringComparison]::Ordinal) -ge 0 -or
+    ($raw.Length -gt 0 -and [int][char]$raw[0] -eq 0xFEFF)){
   throw 'V3_SIGNER_CURRENT_HOST_UTF8_HOLD'
  }
  try{$v=$raw|ConvertFrom-Json -ErrorAction Stop}
