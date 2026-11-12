@@ -36,6 +36,20 @@ if($publisherSource.Contains('$root=' + [char]39 + '\\192.168.178.179\Mistral_45
  throw 'PR710_ORIGINALHOST_UNAUTHORIZED_SMB_WRITE_PATH_HOLD'
 }
 
+# PowerShell reserves the case-insensitive automatic $Host variable as
+# read-only. Parsing alone does not catch runtime assignment. Reject both
+# extension and coordinator assigning it before any device window can open.
+foreach($file in @($source,$coordinator)){
+ $fileText=[IO.File]::ReadAllText($file)
+ $hostAssignments=[regex]::Matches($fileText,'(?im)^\s*\$host\s*=')
+ if($hostAssignments.Count -ne 0){
+  throw ('PR710_READONLY_AUTOMATIC_HOST_ASSIGNMENT_HOLD: '+$file)
+ }
+ if(-not $fileText.Contains('$hostReceipt')){
+  throw ('PR710_EXPLICIT_HOST_RECEIPT_VAR_MISSING: '+$file)
+ }
+}
+
 $coordinatorSource=[IO.File]::ReadAllText($coordinator)
 foreach($required in @('Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms',
  'ApprovedPinsSha256','Start-Sleep -Milliseconds 200','PR710_POLICY_FIELDS_OR_UNTRUSTED_LIVE_SHA_HOLD',
