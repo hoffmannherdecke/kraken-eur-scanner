@@ -36,6 +36,17 @@ param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]
  [switch]$PostStopHostReader,[switch]$PostStopCloudReader,
  [string]$ObservationNonce='',[string]$OriginalHostDirectory='')
 if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent+[int]$PreparedAbortSignedCurrent.IsPresent+[int]$IssuerPrestopSignedCurrent.IsPresent+[int]$PaperReleaseSignedCurrent.IsPresent+[int]$PostStopHostReader.IsPresent+[int]$PostStopCloudReader.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
+if($PostStopHostReader -or $PostStopCloudReader){
+ $requiredCert=if($PostStopHostReader){'2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'}else{'61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'}
+ if($ObservationNonce -cnotmatch '^[a-f0-9]{32}$' -or
+    $ReviewedNotebookCertificateSha256 -cne $requiredCert){
+  throw 'V3_POSTSTOP_READER_NONCE_CERT_PIN_HOLD'
+ }
+ if($PostStopHostReader -and -not $OriginalHostDirectory){throw 'V3_POSTSTOP_HOST_UNC_REQUIRED'}
+ if($PostStopCloudReader -and $OriginalHostDirectory){throw 'V3_POSTSTOP_CLOUD_HOST_INPUT_HOLD'}
+}elseif($ObservationNonce -or $OriginalHostDirectory){
+ throw 'V3_POSTSTOP_READER_INPUT_OUTSIDE_MODE'
+}
 if($PrecommitRestoreCustody -and
    ($ExportSignedPrecommitCloudInventory -or
     $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
