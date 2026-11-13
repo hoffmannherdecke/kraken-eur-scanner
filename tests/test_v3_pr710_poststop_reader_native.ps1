@@ -218,3 +218,32 @@ if($bridgeText -match '(?i)(ALTER\s+ROLE|CREATE\s+ROLE|DROP\s+ROLE|Remove-Item\s
  throw 'AP04_BRIDGE_FORBIDDEN_AUTHORITY_MUTATION'
 }
 Write-Output 'AP04_POSTSTOP_BRIDGE_NATIVE_PS51_PARSE_AND_GUARDS_PASS'
+
+
+# AP04 Owner-directed current Host/Cloud observation bound: 30 seconds,
+# with each independently signed payload still limited to 60s freshness.
+$sourceContract=Join-Path $PSScriptRoot '../tools/v3-post-stop-unknown-quarantine-source-only.ps1'
+$sourceContractRaw=[IO.File]::ReadAllText($sourceContract)
+$expectedSource='[math]::Abs(($ht-$ct).TotalSeconds) -gt 30'
+$expectedBridge='[Math]::Abs(($hostAt-$cloudAt).TotalSeconds) -gt 30'
+if(-not $sourceContractRaw.Contains($expectedSource) -or
+   -not $bridgeText.Contains($expectedBridge)){
+ throw 'AP04_POSTSTOP_30S_HOST_CLOUD_BOUND_MISSING'
+}
+if($sourceContractRaw.Contains('[math]::Abs(($ht-$ct).TotalSeconds) -gt 15') -or
+   $bridgeText.Contains('[Math]::Abs(($hostAt-$cloudAt).TotalSeconds) -gt 15')){
+ throw 'AP04_POSTSTOP_OLD_15S_BOUND_REMAINS'
+}
+foreach($sample in @(17.95,29.99,30.0)){
+ if([math]::Abs($sample) -gt 30){throw 'AP04_POSTSTOP_30S_ACCEPTANCE_REGRESSION'}
+}
+foreach($sample in @(30.01,45.0)){
+ if(-not ([math]::Abs($sample) -gt 30)){throw 'AP04_POSTSTOP_30S_REJECTION_REGRESSION'}
+}
+if(-not $sourceContractRaw.Contains('($Now-$ht).TotalSeconds -gt 60') -or
+   -not $sourceContractRaw.Contains('($Now-$ct).TotalSeconds -gt 60') -or
+   -not $bridgeText.Contains('($freshAt-$hostAt).TotalSeconds -ge 45') -or
+   -not $bridgeText.Contains('($freshAt-$cloudAt).TotalSeconds -ge 45')){
+ throw 'AP04_POSTSTOP_EXISTING_FRESHNESS_BOUND_CHANGED'
+}
+Write-Output 'AP04_POSTSTOP_30S_OVERLAP_BOUNDARY_AND_FRESHNESS_PASS'

@@ -184,7 +184,7 @@ function Assert-V3PostStopUnknownCurrentCustody(
  }catch{throw 'V3_POSTSTOP_CURRENT_RECEIPT_TIMESTAMP_HOLD'}
  if($ht -gt $Now.AddSeconds(5) -or $ct -gt $Now.AddSeconds(5) -or
     ($Now-$ht).TotalSeconds -gt 60 -or ($Now-$ct).TotalSeconds -gt 60 -or
-    [math]::Abs(($ht-$ct).TotalSeconds) -gt 15){
+    [math]::Abs(($ht-$ct).TotalSeconds) -gt 30){
   throw 'V3_POSTSTOP_CURRENT_RECEIPT_STALE_OR_DRIFT_HOLD'
  }
  return [pscustomobject]@{
@@ -445,7 +445,7 @@ function Assert-V3PostStopCurrentCustodyWithOriginalHostCms(
  # never from the signed payload. SignedCms checks exact original bytes.
  Assert-V3ReleaseCms -Payload $HostPayload -Cms $OriginalHostCms -ReviewedAuthorityCertificateSha256 $AdmittedOriginalHostCertificateSha256
  # Reuse the previously tested full contract: separate Notebook/Cloud CMS,
- # real source/epoch/ACL/fence pins, 60s timestamps, 15s overlap and nonce.
+ # real source/epoch/ACL/fence pins, 60s timestamps, 30s overlap and nonce.
  $review=Assert-V3PostStopUnknownCurrentCustody -HostPayload $HostPayload `
   -HostCms $HostReaderCms -CloudPayload $CloudPayload -CloudCms $CloudCms `
   -Pins $Pins -Now $Now
