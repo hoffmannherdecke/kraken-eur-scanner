@@ -15,6 +15,10 @@ foreach($file in @('tools/v3-one-time-paper-release.ps1','tools/v3-one-time-rele
  $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root $file),[ref]$t,[ref]$e)
  Need ($e.Count -eq 0) 'PAPER_PARSE_FAILURE'
 }
+# The native module reloads authorization, so restore the caller's commands
+# before the archive branch reads its local fence or writes an attempt.
+$archiveSource = (Get-Command Invoke-V3PaperPostStopFenceArchive).ScriptBlock.ToString()
+Need ($archiveSource -match '(?s)Import-Module[^\r\n]*originalhost-release\.psm1[^\r\n]*-Force.*Import-Module[^\r\n]*release-authorization\.psm1[^\r\n]*-Scope Local.*Read-V3ReleaseLocalBytes \$fence') 'POSTSTOP_ARCHIVE_AUTHORIZATION_SCOPE_NOT_RESTORED'
 # Post-STOP archive must reject scope and exact terminal-byte drift before any host effect.
 & {
  $b=[pscustomobject]@{

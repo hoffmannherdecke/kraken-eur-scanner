@@ -533,6 +533,8 @@ function Invoke-V3PaperPostStopFenceArchive($Auth,[string]$TerminalJson,[string]
  $observed=[datetimeoffset]::ParseExact($stamp.Groups['at'].Value,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
   [Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal)
  Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+ # The native module force-reloads authorization into its own scope.
+ Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Scope Local
  $native=Get-Module v3-one-time-originalhost-release
  $mutex=[Threading.Mutex]::new($false,'Global\V3Pr661OriginalhostOneShotOperator')
  $held=$false
