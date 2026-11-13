@@ -45,6 +45,12 @@ foreach($functionName in @('Test-V3IndependentOriginalHostCmsSignature','Test-V3
  . ([scriptblock]::Create($f[0].Extent.Text))
 }
 if($ReleaseVariant){
+ $rename=@($ast.FindAll({param($n)
+  $n -is [Management.Automation.Language.FunctionDefinitionAst] -and
+  $n.Name -ceq 'Invoke-V3ReleasePinnedFenceRename'
+ },$true))
+ if($rename.Count -ne 1){throw 'V3_RELEASE_PINNED_RENAME_HELPER_MISSING'}
+ . ([scriptblock]::Create($rename[0].Extent.Text))
  $enable=@($ast.FindAll({param($n)
   $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Enable-V3ReleaseIntakeDefinition'
  },$true))
