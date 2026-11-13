@@ -43,8 +43,10 @@ function Test-V3Pr661HostedOperatorScope([string]$Root,[string[]]$Tasks) {
          " Assert-V3ReleaseMutationBoundary -Phase 'STOP'\n # Exactly these two native task mutations, never Lifecycle or CloudSync.")
     edit('  # Task definitions cannot be enabled while the held kernel handles exist.',
          "  Assert-V3ReleaseMutationBoundary -Phase 'RESTORE'\n  # Task definitions cannot be enabled while the held kernel handles exist.")
-    edit(" $root=Join-Path ([IO.Path]::GetFullPath($IsolatedRoot).TrimEnd('\\')) 'State'",
-         " Assert-V3ReleaseMutationBoundary -Phase 'ARCHIVE'\n $root=Join-Path ([IO.Path]::GetFullPath($IsolatedRoot).TrimEnd('\\')) 'State'")
+    edit(" if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or\n    $ExpectedSha256 -cnotmatch",
+         " Assert-V3ReleaseMutationBoundary -Phase 'ARCHIVE'\n Invoke-V3ReleasePinnedFenceRename $Source $Archive $ExpectedSha256 $IsolatedRoot\n}\n\n"
+         "function Invoke-V3ReleasePinnedFenceRename([string]$Source,[string]$Archive,[string]$ExpectedSha256,[string]$IsolatedRoot) {\n"
+         " if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or\n    $ExpectedSha256 -cnotmatch")
     # PR661 computed this result but did not reject it before STOP. Release
     # admission must not let lease acquisition extend the 30-second freshness.
     edit(' foreach($name in $tasks){\n  Stop-ScheduledTask',
