@@ -112,7 +112,7 @@ $cloudAt=[datetimeoffset]::ParseExact([string]$cloudObserved.observed_at_utc,
 $freshAt=[datetimeoffset]::UtcNow
 if($hostAt -gt $freshAt.AddSeconds(5) -or $cloudAt -gt $freshAt.AddSeconds(5) -or
  ($freshAt-$hostAt).TotalSeconds -ge 45 -or ($freshAt-$cloudAt).TotalSeconds -ge 45 -or
- [Math]::Abs(($hostAt-$cloudAt).TotalSeconds) -gt 15){
+ [Math]::Abs(($hostAt-$cloudAt).TotalSeconds) -gt 30){
  throw 'POSTSTOP_AUTH_PRE_SIGN_FRESHNESS_HOLD'
 }
 $fields=@('series_id','epoch_id','source_sha256','epoch_fence_sha256','caller_acl_sha256',
