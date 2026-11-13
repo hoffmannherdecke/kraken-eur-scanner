@@ -498,6 +498,116 @@ function Get-V3PaperStateBase([string]$ReleaseId) {
  return ('C:\Users\ADMIN\Trading\State\'+$ReleaseId)
 }
 function Get-V3PaperFencePath {return 'C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'}
+# Exact post-STOP UNKNOWN case. The historical STOP is never replayed.
+function Invoke-V3PaperPostStopFenceArchive($Auth,[string]$TerminalJson,[string]$TerminalCms) {
+ $series='PAPER-V3-20261111T105211Z'
+ $epoch='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+ $localFence='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ $epochFence='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ $terminalReceipt='8a89ded0a2cf482bc47e1f9f848990861ca22cd3748da6f5dc996d05c5a37631'
+ $source='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+ $aclPin='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+ $b=$Auth.claims.bindings
+ if($b.epoch_id -cne $epoch -or $b.series_id -cne $series -or
+    $b.local_fence_file_sha256 -cne $localFence -or $b.epoch_fence_sha256 -cne $epochFence -or
+    $b.terminal_receipt_sha256 -cne $terminalReceipt){
+  throw 'V3_POSTSTOP_ARCHIVE_TARGET_HOLD'
+ }
+ $raw=Read-V3ReleaseLocalBytes $TerminalJson 8192
+ $cms=Read-V3ReleaseLocalBytes $TerminalCms 32768
+ $terminalHash=Get-V3ReleaseSha256 $raw
+ if($terminalHash -cne $b.terminal_reader_sha256){throw 'V3_POSTSTOP_ARCHIVE_TERMINAL_BYTES_HOLD'}
+ Assert-V3ReleaseCms $raw $cms '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'
+ $row=Read-V3ReleaseJson $raw
+ if($row.kind -cne 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1' -or
+    $row.epoch_id -cne $epoch -or $row.prepared_fence_sha256 -cne $epochFence -or
+    $row.source_sha256 -cne $source -or $row.caller_acl_sha256 -cne $aclPin -or
+    $row.receipt_sha256 -cne $terminalReceipt -or $row.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
+    $row.state -cne 'ABORT_RECORDED_NOT_RELEASED' -or
+    $row.cloud_active_series_count -ne 1 -or $row.cloud_original_active_series_count -ne 1 -or
+    $row.cloud_cas_rpc_count -ne 1 -or $row.cloud_cas_rpc_acl_restricted -ne $true -or
+    $row.cloud_executor_can_login -ne $false){
+  throw 'V3_POSTSTOP_ARCHIVE_TERMINAL_STATE_HOLD'
+ }
+ $stamp=[regex]::Match([Text.Encoding]::UTF8.GetString($raw),'"observed_at_utc"\s*:\s*"(?<at>[^"]+)"')
+ $observed=[datetimeoffset]::ParseExact($stamp.Groups['at'].Value,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+  [Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal)
+ Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+ $native=Get-Module v3-one-time-originalhost-release
+ $mutex=[Threading.Mutex]::new($false,'Global\V3Pr661OriginalhostOneShotOperator')
+ $held=$false
+ try{
+  try{$held=$mutex.WaitOne(0)}catch [Threading.AbandonedMutexException]{throw 'V3_POSTSTOP_ARCHIVE_ABANDONED_OPERATOR_HOLD'}
+  if(-not $held){throw 'V3_POSTSTOP_ARCHIVE_CONCURRENT_OPERATOR_HOLD'}
+  $fence=Get-V3PaperFencePath
+  $archive=Join-Path (Split-Path -Parent $fence) "v3-experimental-paper-old-intake-fence.aborted-$epoch.json"
+  $attempt=Join-Path (Split-Path -Parent $fence) "$epoch.poststop-fence-archive.attempted.json"
+  if((Test-Path -LiteralPath $attempt) -or (Test-Path -LiteralPath $archive)){
+   throw 'V3_POSTSTOP_ARCHIVE_ATTEMPT_OR_DESTINATION_EXISTS_NO_RETRY'
+  }
+  if((Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $fence 8192)) -cne $localFence){
+   throw 'V3_POSTSTOP_ARCHIVE_FENCE_BYTES_HOLD'
+  }
+  $tasks=[ordered]@{
+   'CryptoMiniPC-V2R4PaperCandidates'='candidates_xml_sha256'
+   'CryptoMiniPC-V2R4PaperWait'='wait_xml_sha256'
+   'CryptoMiniPC-V2R4PaperLifecycle'='lifecycle_xml_sha256'
+   'CryptoMiniPC-V2R4PaperCloudSync'='cloudsync_xml_sha256'
+   'CryptoMiniPC-V3PaperSingleWriter'='writer_xml_sha256'
+  }
+  foreach($name in $tasks.Keys){
+   $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+   $expectedState=if($name -ceq 'CryptoMiniPC-V3PaperSingleWriter'){'Disabled'}else{'Running'}
+   $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+   $xmlPin=[string]$b.($tasks[$name])
+   if($xmlPin -cnotmatch '^[a-f0-9]{64}$' -or [string]$task.State -cne $expectedState -or
+      (Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($xml))) -cne $xmlPin){
+    throw 'V3_POSTSTOP_ARCHIVE_HOST_TASK_STATE_OR_XML_HOLD'
+   }
+  }
+  $pattern='(?i)(v3.*(paper|writer|release|scanner)|(paper|writer).*v3)'
+  $otherTasks=@(Get-ScheduledTask -ErrorAction Stop | Where-Object {
+   $_.TaskName -match $pattern -and [string]$_.State -cne 'Disabled'
+  })
+  $services=@(Get-CimInstance Win32_Service -ErrorAction Stop | Where-Object {
+   $_.State -eq 'Running' -and [string]$_.PathName -match $pattern
+  })
+  $startup=@(Get-CimInstance Win32_StartupCommand -ErrorAction Stop | Where-Object {
+   [string]$_.Command -match $pattern
+  })
+  $processes=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+  $writers=@($processes | Where-Object {
+   [int]$_.ProcessId -ne $PID -and
+   [string]$_.Name -match '^(?i:pythonw?\.exe|powershell\.exe|pwsh\.exe)$' -and
+   ([string]::IsNullOrWhiteSpace([string]$_.CommandLine) -or
+    [string]$_.CommandLine -match '(?i)v3.paper|v3_paper|v3-one-time|single.writer')
+  })
+  if($otherTasks.Count -or $services.Count -or $startup.Count -or -not $processes.Count -or $writers.Count){
+   throw 'V3_POSTSTOP_ARCHIVE_WRITER_AUTHORITY_HOLD'
+  }
+  $now=[datetimeoffset]::UtcNow
+  if($observed -gt $now -or ($now-$observed).TotalSeconds -gt 60 -or $now -ge $Auth.expires_at){
+   throw 'V3_POSTSTOP_ARCHIVE_FRESHNESS_HOLD'
+  }
+  Write-V3PaperReceipt $attempt @{epoch_id=$epoch;series_id=$series;approval_sha256=$Auth.approval_sha256;
+   terminal_reader_sha256=$terminalHash;local_fence_file_sha256=$localFence;epoch_fence_sha256=$epochFence}
+  if([datetimeoffset]::UtcNow -ge $Auth.expires_at -or
+     ([datetimeoffset]::UtcNow-$observed).TotalSeconds -gt 60){
+   throw 'V3_POSTSTOP_ARCHIVE_EXPIRED_AFTER_LATCH_NO_RETRY'
+  }
+  $null=& $native {
+   param($From,$To,$Sha)
+   Invoke-V3ReleasePinnedFenceRename $From $To $Sha 'C:\Users\ADMIN\Trading'
+  } $fence $archive $localFence
+  return @{kind='V3_PAPER_POSTSTOP_FENCE_ARCHIVE_PASS';series_id=$series;epoch_id=$epoch;
+   archive_path=$archive;archive_sha256=$localFence;active_fence_present=$false;
+   historical_stop_outcome='UNKNOWN';retry_authorized=$false;stage4_authorized=$false;writer_authorized=$false}
+ }finally{
+  if($held){$mutex.ReleaseMutex()}
+  $mutex.Dispose()
+ }
+}
+
 function Invoke-V3OneTimePaperRelease {
  [CmdletBinding()]
  param([string]$Mode,[string]$PackageRoot,[string]$ApprovalJson,[string]$ApprovalCms,
@@ -505,7 +615,7 @@ function Invoke-V3OneTimePaperRelease {
  [string]$PaperPlanJson,[string]$RuntimeSpecJson,[string]$HostReceiptJson,[string]$HostReceiptCms,
  [Security.SecureString]$PostgresPassword,[string]$CaFile)
  $scope=@{PaperOpenEpoch='CLOUD_STAGE4_EPOCH_OPEN';PaperSealEpoch='CLOUD_STAGE5_EPOCH_SEAL';PaperPrepare='V3_PAPER_PREPARE';PaperStop='V3_PAPER_STOP';PaperCas='V3_PAPER_CAS';InstallPaperCas='V3_PAPER_CAS_INSTALL';
-  PaperActivate='V3_PAPER_ACTIVATE';PaperRollback='V3_PAPER_ROLLBACK';PaperHostReadback='V3_PAPER_RUNTIME';PaperRuntimeBootstrap='V3_PAPER_RUNTIME';PaperResume='V3_PAPER_RESUME'}[$Mode]
+  PaperActivate='V3_PAPER_ACTIVATE';PaperRollback='V3_PAPER_ROLLBACK';PaperPostStopFenceArchive='V3_PAPER_POSTSTOP_FENCE_ARCHIVE';PaperHostReadback='V3_PAPER_RUNTIME';PaperRuntimeBootstrap='V3_PAPER_RUNTIME';PaperResume='V3_PAPER_RESUME'}[$Mode]
  if(-not $scope){throw 'V3_PAPER_UNKNOWN_MODE'}
  Assert-V3PaperOriginalHost $Mode $PackageRoot $ExpectedReleaseCommit
  $inventory=Get-V3PaperReleaseInventory $PackageRoot
@@ -524,6 +634,9 @@ function Invoke-V3OneTimePaperRelease {
   }
   $auth=Assert-V3OneTimeReleaseAuthorization -Payload (Read-V3ReleaseLocalBytes $ApprovalJson) -Cms (Read-V3ReleaseLocalBytes $ApprovalCms 32768) `
    -ReviewedAuthorityCertificateSha256 $pin -Scope $scope -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $inventory
+  if($Mode -eq 'PaperPostStopFenceArchive'){
+   return Invoke-V3PaperPostStopFenceArchive $auth $HostReceiptJson $HostReceiptCms
+  }
   $b=$auth.claims.bindings
   if([string]$b.reader_certificate_sha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_PAPER_INDEPENDENT_READER_PIN_REQUIRED'}
   $ctx=[pscustomobject]@{authorization=$auth;commit=$ExpectedReleaseCommit;plan=$null;

@@ -3067,11 +3067,15 @@ function Invoke-V3Pr515NativeExclusiveFenceArchiveSOURCE_ONLY(
  if(-not(Test-V3Pr661HostedOperatorScope -Root $IsolatedRoot -Tasks $IsolatedTaskNames)){
   throw 'V3_PR661_FENCE_ARCHIVE_PRODUCTION_RELEASE_LOCKED'
  }
+ Assert-V3ReleaseMutationBoundary -Phase 'ARCHIVE'
+ Invoke-V3ReleasePinnedFenceRename $Source $Archive $ExpectedSha256 $IsolatedRoot
+}
+
+function Invoke-V3ReleasePinnedFenceRename([string]$Source,[string]$Archive,[string]$ExpectedSha256,[string]$IsolatedRoot) {
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
     $ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$'){
   throw 'V3_EXCLUSIVE_ARCHIVE_WRONG_HOST_OR_HASH'
  }
- Assert-V3ReleaseMutationBoundary -Phase 'ARCHIVE'
  $root=Join-Path ([IO.Path]::GetFullPath($IsolatedRoot).TrimEnd('\')) 'State'
  $from=[IO.Path]::GetFullPath($Source)
  $to=[IO.Path]::GetFullPath($Archive)
