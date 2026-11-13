@@ -1177,6 +1177,31 @@ def _pr692_original_proof_pins(*, pr699: bool = False) -> tuple[str, str] | None
                 "f806d51c7c16fb55390cf03b27659d93ca33ad7431c97e4c7caa75f010dc0d35",
             ),
         }
+        # The separately signed post-STOP archive adds no strategy or writer
+        # effect. Only the complete reviewed host-archive byte delta may
+        # retain the existing strategy proof provenance.
+        poststop_archive_delta = {
+            "tools/v3-one-time-release.ps1": (
+                "f806d51c7c16fb55390cf03b27659d93ca33ad7431c97e4c7caa75f010dc0d35",
+                "81a9899023b4af4ad105c595caef19c21e7349e33a3f4b5ffeca809703987aba",
+            ),
+            "tools/v3-one-time-release-authorization.psm1": (
+                "02ad00ab3880246f5aeea5d9d23165051f77a891e72b18c34b6042ab419096c2",
+                "c7ea9b294fafcd257ed25ef1cc2f8c18f75151fc33bfe132c49025f7160b67af",
+            ),
+            "tools/v3-one-time-paper-release.ps1": (
+                "f3c118b273fa0d1e070c1bc268092ce9e4471df975e0b4895ee48b3f527c73fe",
+                "fa0c679a31d4a489df9387ab3401d53350b277d1f2ac263e49520f479755b16b",
+            ),
+            "tools/v3-one-time-originalhost-release.psm1": (
+                "011480507001212cf9e3e2ee4405886b72f9150a7cf3eedf20d6d93a1dc3c7f0",
+                "0617fc2497ad25fa1ff70d8541808b92f2b144643b2384631695ccace004c2c4",
+            ),
+        }
+        if all(inventory.get(path) == new
+               for path, (_, new) in poststop_archive_delta.items()):
+            for path, (old, _) in poststop_archive_delta.items():
+                inventory[path] = old
         # Disabled-task preparation binds future Post-CAS paths. Its exact
         # recovery-only successor also accepts the already enabled writer
         # for Resume or safe Hold. Other operator changes cannot inherit.
