@@ -196,3 +196,25 @@ if(-not $validatorRaw.Contains('$row.cloud_cas_rpc_acl_restricted -ne $true') -o
  throw 'AP04_POSTSTOP_TERMINAL_ACL_RPC_GUARD_MISSING'
 }
 Write-Output 'AP04_POSTSTOP_ISSUER_TERMINAL_SOURCE_GATES_PASS'
+
+
+# Targeted regression for the new PR723 same-window authorization bridge.
+$bridge=Join-Path $PSScriptRoot '../tools/v3-poststop-authorized-window.ps1'
+$parseTokens=$null;$parseErrors=$null
+$parsed=[System.Management.Automation.Language.Parser]::ParseFile($bridge,[ref]$parseTokens,[ref]$parseErrors)
+if($null -eq $parsed -or @($parseErrors).Count -ne 0){throw 'AP04_BRIDGE_NATIVE_PS51_PARSE_HOLD'}
+$bridgeText=[IO.File]::ReadAllText($bridge)
+foreach($token in @('POSTSTOP_AUTH_PRIOR_ISSUER_ATTEMPT_NO_RETRY',
+ 'Assert-V3ReleaseAuthorityAdmission','Get-V3OneTimeReleaseArtifactInventory',
+ 'PASS_NO_PRODUCTION_EFFECT','POSTSTOP_AUTH_COORDINATOR_HASH_HOLD',
+ 'POSTSTOP_AUTH_LOCAL_HOST_HASH_HOLD','ComputeSignature',
+ 'Assert-V3ReleaseCms','POST_STOP_CMS_AUTHORIZED','-Mode Abort',
+ '-PostStopTerminalReader','-Mode Readback',
+ 'TARGET_EPOCH_TERMINALIZED_INDEPENDENT_READER_PASS',
+ 'if(-not [IO.File]::Exists($latch)){throw}')){
+ if(-not $bridgeText.Contains($token)){throw ('AP04_BRIDGE_REQUIRED_BOUNDARY_MISSING: '+$token)}
+}
+if($bridgeText -match '(?i)(ALTER\s+ROLE|CREATE\s+ROLE|DROP\s+ROLE|Remove-Item\s+.*-Recurse)'){
+ throw 'AP04_BRIDGE_FORBIDDEN_AUTHORITY_MUTATION'
+}
+Write-Output 'AP04_POSTSTOP_BRIDGE_NATIVE_PS51_PARSE_AND_GUARDS_PASS'
