@@ -99,6 +99,22 @@ if(-not $hostReader -or -not $cloudReader){throw 'POSTSTOP_AUTH_READER_KIND_COUN
 $cloudJson=Join-Path $cloudReader 'reader.json'
 $cloudSha=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $cloudJson 8192)
 if([string]$coord.host_sha256 -cne $hostSha -or [string]$coord.cloud_sha256 -cne $cloudSha){throw 'POSTSTOP_AUTH_COORDINATOR_HASH_HOLD'}
+# Pre-sign freshness check keeps the release approval from being issued for
+# evidence that can no longer pass the immutable PR723 issuer's 60s window.
+$hostObserved=Read-V3ReleaseJson $hostBytes
+$cloudObserved=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $cloudJson 8192)
+$hostAt=[datetimeoffset]::ParseExact([string]$hostObserved.observed_at_utc,
+ "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
+ [Globalization.DateTimeStyles]::AssumeUniversal)
+$cloudAt=[datetimeoffset]::ParseExact([string]$cloudObserved.observed_at_utc,
+ "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,
+ [Globalization.DateTimeStyles]::AssumeUniversal)
+$freshAt=[datetimeoffset]::UtcNow
+if($hostAt -gt $freshAt.AddSeconds(5) -or $cloudAt -gt $freshAt.AddSeconds(5) -or
+ ($freshAt-$hostAt).TotalSeconds -ge 45 -or ($freshAt-$cloudAt).TotalSeconds -ge 45 -or
+ [Math]::Abs(($hostAt-$cloudAt).TotalSeconds) -gt 15){
+ throw 'POSTSTOP_AUTH_PRE_SIGN_FRESHNESS_HOLD'
+}
 $fields=@('series_id','epoch_id','source_sha256','epoch_fence_sha256','caller_acl_sha256',
  'local_fence_file_sha256','candidates_xml_sha256','wait_xml_sha256','cloudsync_xml_sha256',
  'writer_xml_sha256','host_certificate_sha256','cloud_certificate_sha256','owner_review_sha256','observation_nonce')
