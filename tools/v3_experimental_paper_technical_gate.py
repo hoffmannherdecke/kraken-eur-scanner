@@ -1198,10 +1198,15 @@ def _pr692_original_proof_pins(*, pr699: bool = False) -> tuple[str, str] | None
                 "0617fc2497ad25fa1ff70d8541808b92f2b144643b2384631695ccace004c2c4",
             ),
         }
-        if all(inventory.get(path) == new
-               for path, (_, new) in poststop_archive_delta.items()):
-            for path, (old, _) in poststop_archive_delta.items():
-                inventory[path] = old
+        archive_operator = "tools/v3-one-time-paper-release.ps1"
+        archive_scope_fix = "1b9b5d781884bdecabc520d4083f7dcd5dadb63a0626c8167732b12af6c7f2c9"
+        if all(
+            inventory.get(path) == reviewed
+            or (path == archive_operator and inventory.get(path) == archive_scope_fix)
+            for path, (_, reviewed) in poststop_archive_delta.items()
+        ):
+            for path, (original, _) in poststop_archive_delta.items():
+                inventory[path] = original
         # Disabled-task preparation binds future Post-CAS paths. Its exact
         # recovery-only successor also accepts the already enabled writer
         # for Resume or safe Hold. Other operator changes cannot inherit.
