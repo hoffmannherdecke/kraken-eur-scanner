@@ -1206,7 +1206,7 @@ def _pr692_original_proof_pins(*, pr699: bool = False) -> tuple[str, str] | None
         postarchive_restore_revision = {
             "tools/v3-one-time-release.ps1": "b89c460a7f81f2f0267c203b8c15d987789bfad5f39453b599c500cac8453130",
             "tools/v3-one-time-release-authorization.psm1": "e062a1cb68c888f6ac87ee1ae550acc937db741b269cf3dc460e8aeacbf46596",
-            "tools/v3-one-time-paper-release.ps1": "9996c57960679695b82a062bf3b4e83954067026d085a7a1f4acc42f500998f4",
+            "tools/v3-one-time-paper-release.ps1": "cbdd5e8ddaa103eedb6c94650cae918ed3c5f8ae4a6b86b32888950bab2e2eab",
         }
         if all(inventory.get(path) == digest for path, digest in postarchive_restore_revision.items()):
             for path in postarchive_restore_revision:
