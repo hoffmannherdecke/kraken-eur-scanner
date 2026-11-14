@@ -18,18 +18,18 @@ function Assert-V3PostStopUnknownQuarantineSourceContract([object]$Evidence) {
   throw 'V3_POSTSTOP_EVIDENCE_FIELDS_HOLD'
  }
  if([string]$Evidence.kind -cne 'V3_POST_STOP_UNKNOWN_READONLY_STATE_V1' -or
-    [string]$Evidence.series_id -cne 'PAPER-V3-20261111T105211Z' -or
-    [string]$Evidence.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
-    [string]$Evidence.fence_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
-    [string]$Evidence.fence_phase -cne 'ARMED' -or
+    [string]$Evidence.series_id -cne 'PAPER-V3-20261113T203428Z' -or
+    [string]$Evidence.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
+    [string]$Evidence.fence_sha256 -cne '9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff' -or
+    [string]$Evidence.fence_phase -cne 'QUIESCED' -or
     [string]$Evidence.cloud_inhibit_state -cne 'INHIBITED' -or
     $Evidence.cloud_epoch_sealed -isnot [bool] -or $Evidence.cloud_epoch_sealed -ne $false -or
     $Evidence.cloud_next_ordinal -isnot [int] -or $Evidence.cloud_next_ordinal -ne 1 -or
     $Evidence.cloud_intent_count -isnot [int] -or $Evidence.cloud_intent_count -ne 0 -or
     $Evidence.cloud_attempt_count -isnot [int] -or $Evidence.cloud_attempt_count -ne 0 -or
     $Evidence.cloud_abort_count -isnot [int] -or $Evidence.cloud_abort_count -ne 0 -or
-    $Evidence.candidates_enabled -isnot [bool] -or $Evidence.candidates_enabled -ne $true -or
-    $Evidence.wait_enabled -isnot [bool] -or $Evidence.wait_enabled -ne $true -or
+    $Evidence.candidates_enabled -isnot [bool] -or $Evidence.candidates_enabled -ne $false -or
+    $Evidence.wait_enabled -isnot [bool] -or $Evidence.wait_enabled -ne $false -or
     $Evidence.cloudsync_enabled -isnot [bool] -or $Evidence.cloudsync_enabled -ne $true -or
     $Evidence.v3_writer_enabled -isnot [bool] -or $Evidence.v3_writer_enabled -ne $false -or
     [string]$Evidence.native_stop_outcome -cne 'UNKNOWN' -or
@@ -57,10 +57,9 @@ function Assert-V3PostStopUnknownQuarantineSourceContract([object]$Evidence) {
 }
 
 
-# Original Cloud epoch_v1 read-only ACK for this exact epoch independently pins\n# the same SHA256 as the 627-byte original ARMED fence. The previously cited\n# similar-looking digest was a transcription error, not an admitted epoch pin.\n# Host and Cloud custody still require independent current CMS and source pins.
-# The reviewer pins every expected SHA256 outside the supplied evidence.
-# Never interprets UNKNOWN as a successful historical STOP.
-# The routine is deliberately pure and never performs the next transaction.
+# The epoch retains its original fence hash. The current local QUIESCED
+# fence is verified separately through the independently signed host receipt.
+
 function Assert-V3PostStopUnknownCurrentCustody(
  [byte[]]$HostPayload,[byte[]]$HostCms,
  [byte[]]$CloudPayload,[byte[]]$CloudCms,
@@ -77,16 +76,16 @@ function Assert-V3PostStopUnknownCurrentCustody(
     @($fields|Where-Object {$_ -cnotin $required}).Count){
   throw 'V3_POSTSTOP_CURRENT_PINS_SCOPE_HOLD'
  }
- if([string]$Pins.series_id -cne 'PAPER-V3-20261111T105211Z' -or
-    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+ if([string]$Pins.series_id -cne 'PAPER-V3-20261113T203428Z' -or
+    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
     [string]$Pins.source_sha256 -cne
       '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
     [string]$Pins.epoch_fence_sha256 -cne
-      '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
+      'a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f' -or
     [string]$Pins.caller_acl_sha256 -cne
       '6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0' -or
     [string]$Pins.local_fence_file_sha256 -cne
-      '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
+      '9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff' -or
     [string]$Pins.observation_nonce -cnotmatch '^[a-f0-9]{32}$'){
   throw 'V3_POSTSTOP_CURRENT_HISTORICAL_PIN_HOLD'
  }
@@ -143,13 +142,13 @@ function Assert-V3PostStopUnknownCurrentCustody(
     [string]$cloud.original_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
     [string]$cloud.caller_acl_sha256 -cne [string]$Pins.caller_acl_sha256 -or
     [string]$hostRow.local_fence_file_sha256 -cne [string]$Pins.local_fence_file_sha256 -or
-    [string]$hostRow.fence_phase -cne 'ARMED' -or
+    [string]$hostRow.fence_phase -cne 'QUIESCED' -or
     [string]$hostRow.candidates_xml_sha256 -cne [string]$Pins.candidates_xml_sha256 -or
     [string]$hostRow.wait_xml_sha256 -cne [string]$Pins.wait_xml_sha256 -or
     [string]$hostRow.cloudsync_xml_sha256 -cne [string]$Pins.cloudsync_xml_sha256 -or
     [string]$hostRow.writer_xml_sha256 -cne [string]$Pins.writer_xml_sha256 -or
-    $hostRow.candidates_enabled -isnot [bool] -or $hostRow.candidates_enabled -ne $true -or
-    $hostRow.wait_enabled -isnot [bool] -or $hostRow.wait_enabled -ne $true -or
+    $hostRow.candidates_enabled -isnot [bool] -or $hostRow.candidates_enabled -ne $false -or
+    $hostRow.wait_enabled -isnot [bool] -or $hostRow.wait_enabled -ne $false -or
     $hostRow.cloudsync_enabled -isnot [bool] -or $hostRow.cloudsync_enabled -ne $true -or
     $hostRow.writer_enabled -isnot [bool] -or $hostRow.writer_enabled -ne $false -or
     ($hostRow.writer_process_count -isnot [int] -and $hostRow.writer_process_count -isnot [long]) -or $hostRow.writer_process_count -ne 0 -or
@@ -214,7 +213,7 @@ function Get-V3PostStopCurrentCustodyReceiptSha256([object]$Custody) {
  if($null -eq $Custody -or
     [string]$Custody.kind -cne 'V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1' -or
     $Custody.independently_signed_current_custody -ne $true -or
-    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901') {
+    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717') {
   throw 'V3_POSTSTOP_CURRENT_RECEIPT_SOURCE_HOLD'
  }
  foreach($field in @('host_payload_sha256','cloud_payload_sha256','owner_review_sha256')) {
@@ -237,8 +236,8 @@ function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
     [string]$Custody.kind -cne 'V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1' -or
     $Custody.independently_signed_current_custody -ne $true -or
     $Custody.production_authorized -ne $false -or
-    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
-    [string]$Custody.series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
+    [string]$Custody.series_id -cne 'PAPER-V3-20261113T203428Z' -or
     [string]$Custody.host_payload_sha256 -cne [string]$Pins.host_payload_sha256 -or
     [string]$Custody.cloud_payload_sha256 -cne [string]$Pins.cloud_payload_sha256 -or
     [string]$Custody.source_sha256 -cne [string]$Pins.source_sha256 -or
@@ -267,7 +266,7 @@ function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
   ' END IF;'
   'END $poststop$;'
   'SELECT v3_cas_audit.record_paper_release_abort_v1('
-  " 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901',"
+  " 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717',"
   " '46c5abbd6af16266c1229943db973dc9d6b2fb4f',"
   " '$($Pins.source_sha256)',"
   " '$($Pins.epoch_fence_sha256)',"
@@ -298,7 +297,7 @@ function Invoke-V3PostStopCloudOnceCandidate([string]$LatchPath,
     $PlanBytes.Length -lt 32 -or $PlanBytes.Length -gt 32768 -or
     -not [IO.Path]::IsPathRooted($LatchPath) -or
     [IO.Path]::GetFileName($LatchPath) -cne
-      'poststop-f27cce0ba68043b480e4f97698dd2901-attempted') {
+      'poststop-5b4d4e5a0e27430f986f4249ea92b717-attempted') {
   throw 'V3_POSTSTOP_CLOUD_ONCE_SCOPE_HOLD'
  }
  $digest=Get-V3ReleaseSha256 $PlanBytes
@@ -332,7 +331,7 @@ function Assert-V3PostStopSignedTerminalCloud(
  Assert-V3ReleaseCms -Payload $Payload -Cms $Cms -ReviewedAuthorityCertificateSha256 $Pins.cloud_certificate_sha256
  $row=Read-V3ReleaseJson $Payload
  if([string]$row.kind -cne 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1' -or
-    [string]$row.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$row.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
     [string]$row.source_sha256 -cne [string]$Pins.source_sha256 -or
     [string]$row.prepared_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
     [string]$row.caller_acl_sha256 -cne [string]$Pins.caller_acl_sha256 -or
@@ -368,7 +367,7 @@ function Assert-V3PostStopSignedTerminalCloud(
  }
 }
 
-# The host quarantine is by preservation of the exact ARMED fence and
+# The host quarantine is by preservation of the exact QUIESCED fence and
 # disabled V3 writer. No task mutation, restore, enable or archive is claimed.
 function Assert-V3PostStopSignedHostQuarantine(
  [object]$Terminal,[byte[]]$HostPayload,[byte[]]$HostCms,
@@ -386,12 +385,12 @@ function Assert-V3PostStopSignedHostQuarantine(
     [string]$row.series_id -cne [string]$Pins.series_id -or
     [string]$row.terminal_cloud_reader_sha256 -cne [string]$Terminal.reader_sha256 -or
     [string]$row.local_fence_file_sha256 -cne [string]$Pins.local_fence_file_sha256 -or
-    [string]$row.fence_phase -cne 'ARMED' -or
+    [string]$row.fence_phase -cne 'QUIESCED' -or
     [string]$row.candidates_xml_sha256 -cne [string]$Pins.candidates_xml_sha256 -or
     [string]$row.wait_xml_sha256 -cne [string]$Pins.wait_xml_sha256 -or
     [string]$row.cloudsync_xml_sha256 -cne [string]$Pins.cloudsync_xml_sha256 -or
     [string]$row.writer_xml_sha256 -cne [string]$Pins.writer_xml_sha256 -or
-    $row.candidates_enabled -ne $true -or $row.wait_enabled -ne $true -or
+    $row.candidates_enabled -ne $false -or $row.wait_enabled -ne $false -or
     $row.cloudsync_enabled -ne $true -or $row.writer_enabled -ne $false -or
     $row.writer_process_count -ne 0 -or
     $row.other_writer_authorities_closed -ne $true -or
@@ -485,13 +484,13 @@ function Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms(
  [datetimeoffset]$Now=[datetimeoffset]::UtcNow) {
  $tpmPin='ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'
  if($null -eq $Pins -or
-    [string]$Pins.series_id -cne 'PAPER-V3-20261111T105211Z' -or
-    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$Pins.series_id -cne 'PAPER-V3-20261113T203428Z' -or
+    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
     [string]$Pins.host_certificate_sha256 -cne '2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57' -or
     [string]$Pins.cloud_certificate_sha256 -cne '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55' -or
     [string]$Pins.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
-    [string]$Pins.epoch_fence_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
-    [string]$Pins.local_fence_file_sha256 -cne '4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef' -or
+    [string]$Pins.epoch_fence_sha256 -cne 'a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f' -or
+    [string]$Pins.local_fence_file_sha256 -cne '9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff' -or
     [string]$Pins.caller_acl_sha256 -cne '6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0') {
   throw 'V3_POSTSTOP_OWNER_ADMITTED_SCOPE_AND_SOURCE_HOLD'
  }
