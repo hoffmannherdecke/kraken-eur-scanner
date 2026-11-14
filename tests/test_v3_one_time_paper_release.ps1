@@ -37,6 +37,11 @@ Need ($archiveSource -match '(?s)Import-Module[^\r\n]*originalhost-release\.psm1
 }
 & {
  $restore=Get-Command Invoke-V3PaperPostArchiveRestore
+ $entry=(Get-Command Invoke-V3OneTimePaperRelease).ScriptBlock.ToString()
+ Need ($entry.Contains('Import-Module -Name $nativePath -Force -PassThru') -and
+       $entry.Contains('-NativeModule $native[0]') -and
+       $restore.ScriptBlock.ToString().Contains('& $NativeModule {') -and
+       -not $restore.ScriptBlock.ToString().Contains('Get-Module v3-one-time-originalhost-release')) 'POSTARCHIVE_RESTORE_MODULE_INSTANCE_NOT_PINNED'
  Need ($restore.ScriptBlock.ToString() -notmatch '\b(Stop-ScheduledTask|Invoke-V3ReleasePg|Remove-Item)\b') 'POSTARCHIVE_RESTORE_FORBIDDEN_EFFECT'
  $bindings=[pscustomobject]@{
   epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
