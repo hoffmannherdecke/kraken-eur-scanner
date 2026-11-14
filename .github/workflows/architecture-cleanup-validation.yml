@@ -665,6 +665,9 @@ jobs:
       - name: Productive Paper operator on Windows PowerShell 5.1 (offline)
         shell: powershell
         run: ./tests/test_v3_one_time_paper_release.ps1
+      - name: AP04 PR701 Fixed Inputs handoff on Windows PowerShell 5.1
+        shell: powershell
+        run: ./tests/test_v3_ap04_pr701_fixed_inputs_native.ps1
       - name: Disposable disabled task definition lease and recovery
         shell: pwsh
         run: ./tests/test_v3_pr661_task_file_lease_windows.ps1
