@@ -17,7 +17,7 @@ if($env:OS -cne 'Windows_NT' -or $env:COMPUTERNAME -ceq 'MINI-PC' -or
 }
 Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Force
 . (Join-Path $PSScriptRoot 'v3-post-stop-unknown-quarantine-source-only.ps1')
-$epoch='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+$epoch='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
 $inventory=Get-V3OneTimeReleaseArtifactInventory $PackageRoot
 foreach($rel in @('tools/v3-poststop-issuer-release.ps1',
  'tools/v3-post-stop-unknown-quarantine-source-only.ps1',
@@ -81,7 +81,7 @@ if(@($b.PSObject.Properties.Name).Count -ne $required.Count -or
 }
 if([string]$b.epoch_id -cne $epoch -or
  [string]$b.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
- [string]$b.fence_sha256 -cne 'a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f' -or
+ [string]$b.fence_sha256 -cne '548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a' -or
  [string]$b.caller_acl_sha256 -cne '6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'){
  throw 'V3_POSTSTOP_AUTH_EXACT_TARGET_HOLD'
 }
@@ -173,7 +173,7 @@ try{
  $password=ConvertTo-SecureString $secret -AsPlainText -Force
 }finally{if($null -ne $raw){[Array]::Clear($raw,0,$raw.Length)};$secret=$null}
 try{
- $latch=Join-Path $issuerRoot 'poststop-5b4d4e5a0e27430f986f4249ea92b717-attempted'
+ $latch=Join-Path $issuerRoot 'poststop-3c6b22d02d8a413c88bfede21acce2ea-attempted'
  $transport={
   param([byte[]]$Payload)
   $sql=[Text.UTF8Encoding]::new($false,$true).GetString($Payload)
