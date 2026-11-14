@@ -1208,6 +1208,16 @@ def _pr692_original_proof_pins(*, pr699: bool = False) -> tuple[str, str] | None
             "tools/v3-one-time-release-authorization.psm1": "e062a1cb68c888f6ac87ee1ae550acc937db741b269cf3dc460e8aeacbf46596",
             "tools/v3-one-time-paper-release.ps1": "cbdd5e8ddaa103eedb6c94650cae918ed3c5f8ae4a6b86b32888950bab2e2eab",
         }
+        # The current-epoch recovery changes only the separately signed
+        # archive and restore branches. Admit this exact operator revision
+        # only alongside the previously reviewed entry point and authority.
+        recovery_operator = "tools/v3-one-time-paper-release.ps1"
+        current_epoch_recovery_revision = {
+            **postarchive_restore_revision,
+            recovery_operator: "ff87d03c3f67155a6e2354f32eaed6978f0ab9a2d3fb37bd621b280b773be3ef",
+        }
+        if all(inventory.get(path) == digest for path, digest in current_epoch_recovery_revision.items()):
+            inventory[recovery_operator] = postarchive_restore_revision[recovery_operator]
         if all(inventory.get(path) == digest for path, digest in postarchive_restore_revision.items()):
             for path in postarchive_restore_revision:
                 inventory[path] = poststop_archive_delta[path][1]
