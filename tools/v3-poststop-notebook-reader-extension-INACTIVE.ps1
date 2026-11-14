@@ -128,10 +128,10 @@ if($PostStopHostReader){
  $bytes=[IO.File]::ReadAllBytes($jsonPath)
  $raw=[Text.UTF8Encoding]::new($false,$true).GetString($bytes)
  $hostReceipt=Assert-V3PostStopFreshReader $raw $ObservationNonce 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
- if([string]$hostReceipt.series_id -cne 'PAPER-V3-20261113T203428Z' -or
-    [string]$hostReceipt.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
+ if([string]$hostReceipt.series_id -cne 'PAPER-V3-20261114T104214Z' -or
+    [string]$hostReceipt.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea' -or
     [string]$hostReceipt.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
-    [string]$hostReceipt.original_fence_sha256 -cne 'a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f' -or
+    [string]$hostReceipt.original_fence_sha256 -cne '548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a' -or
     [string]$hostReceipt.native_stop_outcome -cne 'UNKNOWN' -or
     $hostReceipt.writer_enabled -ne $false -or $hostReceipt.writer_process_count -ne 0 -or
     $hostReceipt.other_writer_authorities_closed -ne $true -or
@@ -189,15 +189,15 @@ WITH catalog AS MATERIALIZED (
  SELECT v3_cas_audit.read_forward_t0_current_v1() AS c
 ), scoped AS MATERIALIZED (
  SELECT v3_cas_audit.read_paper_release_epoch_v1(
-  'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717') AS p
+  'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea') AS p
 ), epoch AS MATERIALIZED (
  SELECT epoch_id,source_sha256,original_fence_sha256,approved_caller_acl_sha256,sealed,next_ordinal
  FROM v3_cas_audit.epoch_v1
- WHERE epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+ WHERE epoch_id='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
 )
 SELECT pg_catalog.jsonb_build_object(
  'kind','V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1',
- 'series_id','PAPER-V3-20261113T203428Z',
+ 'series_id','PAPER-V3-20261114T104214Z',
  'epoch_id',e.epoch_id,'source_sha256',e.source_sha256,
  'observation_nonce','__NONCE__',
  'observed_at_utc',pg_catalog.replace(pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
@@ -230,7 +230,7 @@ WHERE session_user='v3_cas_audit_reader_actor'
  AND (c->>'dispatch_unknown_count')::integer=0
  AND (c->>'cas_rpc_count')::integer=1
  AND e.source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
- AND e.original_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
+ AND e.original_fence_sha256='548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a'
  AND e.approved_caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
  AND NOT e.sealed AND e.next_ordinal=1
  AND NOT EXISTS (SELECT 1 FROM v3_cas_audit.prepared_fence_abort_v1 a WHERE a.epoch_id=e.epoch_id)
@@ -251,10 +251,10 @@ WITH c AS MATERIALIZED (SELECT v3_cas_audit.read_forward_t0_current_v1() AS j),
  e AS MATERIALIZED (
  SELECT epoch_id,source_sha256,original_fence_sha256,approved_caller_acl_sha256,sealed,next_ordinal
  FROM v3_cas_audit.epoch_v1
- WHERE epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+ WHERE epoch_id='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
  ), target AS MATERIALIZED (
  SELECT a.* FROM v3_cas_audit.prepared_fence_abort_v1 a
- WHERE a.epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+ WHERE a.epoch_id='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
  )
 SELECT pg_catalog.jsonb_build_object(
  'kind','V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1',
@@ -289,7 +289,7 @@ WHERE session_user='v3_cas_audit_reader_actor'
  AND a.issuer_actor='v3_cas_inhibit_issuer_actor'
  AND a.state='ABORT_RECORDED_NOT_RELEASED'
  AND e.source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
- AND e.original_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
+ AND e.original_fence_sha256='548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a'
  AND e.approved_caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
  AND NOT EXISTS (
   SELECT 1 FROM v3_cas_audit.epoch_v1 other
@@ -351,7 +351,7 @@ try{
  $receiptKind=if($PostStopTerminalReader){'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1'}else{'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'}
  $row=Assert-V3PostStopFreshReader $wire $ObservationNonce $receiptKind
  if($PostStopTerminalReader){
-  if([string]$row.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
+  if([string]$row.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea' -or
    [string]$row.state -cne 'ABORT_RECORDED_NOT_RELEASED' -or
    [string]$row.issuer_actor -cne 'v3_cas_inhibit_issuer_actor' -or
    $row.cloud_cas_rpc_count -ne 1 -or

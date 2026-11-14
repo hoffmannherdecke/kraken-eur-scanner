@@ -257,12 +257,12 @@ function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
    throw 'V3_SIGNER_CURRENT_HOST_DUPLICATE_FIELD_HOLD'
   }
  }
- $knownFence='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
+ $knownFence='c924bbbc9d47ca00cd2478ac422185e33b417026a29f32535eb2f8331e94bf34'
  if([string]$v.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1' -or
-    [string]$v.series_id -cne 'PAPER-V3-20261113T203428Z' -or
-    [string]$v.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
+    [string]$v.series_id -cne 'PAPER-V3-20261114T104214Z' -or
+    [string]$v.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea' -or
     [string]$v.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
-    [string]$v.original_fence_sha256 -cne 'a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f' -or
+    [string]$v.original_fence_sha256 -cne '548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a' -or
     [string]$v.local_fence_file_sha256 -cne $knownFence -or
     [string]$v.fence_phase -cne 'QUIESCED' -or
     [string]$v.native_stop_outcome -cne 'UNKNOWN' -or
@@ -331,7 +331,7 @@ function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
 function New-V3PostStopHostCurrentBytes([string]$Nonce) {
  if($Nonce -cnotmatch '^[a-f0-9]{32}$'){throw 'V3_POSTSTOP_PRODUCER_NONCE_HOLD'}
  $f='C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'
- $expected='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
+ $expected='c924bbbc9d47ca00cd2478ac422185e33b417026a29f32535eb2f8331e94bf34'
  $item=Get-Item -LiteralPath $f -Force -ErrorAction Stop
  if($item.PSIsContainer -or $item.Length -ne 630 -or
     [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
@@ -341,10 +341,24 @@ function New-V3PostStopHostCurrentBytes([string]$Nonce) {
  $fence=([Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($f))) | ConvertFrom-Json -ErrorAction Stop
  if([string]$fence.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
     [string]$fence.phase -cne 'QUIESCED' -or
-    [string]$fence.proposed_successor_series_id -cne 'PAPER-V3-20261113T203428Z' -or
+    [string]$fence.proposed_successor_series_id -cne 'PAPER-V3-20261114T104214Z' -or
     $fence.paper_only -ne $true -or $fence.orders_enabled -ne $false -or
     $fence.real_money_actions -ne $false){
   throw 'V3_POSTSTOP_PRODUCER_FENCE_FIELDS_HOLD'
+ }
+ $stop=Join-Path (Split-Path -Parent $f) 'V3-ONETIME-3c6b22d02d8a413c88bfede21acce2ea.stop.completed.json'
+ $stopItem=Get-Item -LiteralPath $stop -Force -ErrorAction Stop
+ if($stopItem.PSIsContainer -or $stopItem.Length -gt 8192 -or
+    ($stopItem.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+  throw 'V3_POSTSTOP_PRODUCER_LOCAL_STOP_RECEIPT_HOLD'
+ }
+ $stopBytes=[IO.File]::ReadAllBytes($stop)
+ $stopSha=[Security.Cryptography.SHA256]::Create()
+ try{$actualStopSha=([BitConverter]::ToString($stopSha.ComputeHash($stopBytes))).Replace('-','').ToLowerInvariant()}
+ finally{$stopSha.Dispose()}
+ if($actualStopSha -cne '3234c64b36cdc29fef217d419b4cd84d6d0098b2e286283f8404554ca6285a1b' -or
+    [string](([Text.UTF8Encoding]::new($false,$true).GetString($stopBytes) | ConvertFrom-Json -ErrorAction Stop).state) -cne 'QUIESCED'){
+  throw 'V3_POSTSTOP_PRODUCER_LOCAL_STOP_RECEIPT_HOLD'
  }
  $mapping=@(
   @('CryptoMiniPC-V2R4PaperCandidates','candidates_xml_sha256','candidates_enabled',$false),
@@ -400,12 +414,12 @@ function New-V3PostStopHostCurrentBytes([string]$Nonce) {
  if($unknown.Count){throw 'V3_POSTSTOP_PRODUCER_UNREADABLE_PROCESS_HOLD'}
  $record=[ordered]@{
   kind='V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
-  series_id='PAPER-V3-20261113T203428Z'
-  epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+  series_id='PAPER-V3-20261114T104214Z'
+  epoch_id='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
   source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
   observation_nonce=$Nonce
   observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
-  original_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
+  original_fence_sha256='548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a'
   local_fence_file_sha256=$expected
   fence_phase='QUIESCED'
   candidates_xml_sha256=[string]$v.candidates_xml_sha256

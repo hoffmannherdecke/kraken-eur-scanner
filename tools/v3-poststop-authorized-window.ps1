@@ -16,7 +16,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $release=$ExpectedReleaseCommit
-$epoch='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+$epoch='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
 $authority='2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'
 if($env:OS -cne 'Windows_NT' -or $env:USERNAME -cne 'burns' -or $env:COMPUTERNAME -ieq 'MINI-PC' -or
  $env:GITHUB_ACTIONS -eq 'true' -or -not [Environment]::UserInteractive){throw 'POSTSTOP_AUTH_NOTEBOOK_BURNS_ONLY_HOLD'}
@@ -52,7 +52,7 @@ $terminalNonce=[guid]::NewGuid().ToString('N')
 foreach($name in @($approvalJson,$approvalCms,$pinsJson)){
  if([IO.File]::Exists($name)){throw 'POSTSTOP_AUTH_ATTEMPT_REPLAY_HOLD'}
 }
-$latch=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer\poststop-5b4d4e5a0e27430f986f4249ea92b717-attempted'
+$latch=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer\poststop-3c6b22d02d8a413c88bfede21acce2ea-attempted'
 if([IO.File]::Exists($latch)){throw 'POSTSTOP_AUTH_PRIOR_ISSUER_ATTEMPT_NO_RETRY'}
 $cloudOpts=@{ObservationNonce=$ObservationNonce;HostDirectory=$OriginalHostDirectory;
  ApprovedPinsJson=$StaticOwnerPolicyJson;ApprovedPinsSha256=$StaticOwnerPolicySha256;MaxWaitSeconds=120}
@@ -135,7 +135,7 @@ $timestamp="yyyy-MM-dd'T'HH:mm:ss'Z'"
 $bindings=[ordered]@{
  epoch_id=$epoch
  source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
- fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
+ fence_sha256='548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a'
  caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
  pins_sha256=$pinsHash
 }

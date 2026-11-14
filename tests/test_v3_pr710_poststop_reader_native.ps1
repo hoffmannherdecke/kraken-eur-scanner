@@ -170,7 +170,7 @@ foreach($required in @(
  'issuer-currentuser.dpapi','DataProtectionScope]::CurrentUser',
  'Invoke-V3PostStopCloudOnceCandidate','Get-V3PostStopCloudAbortCandidate',
  'Assert-V3PostStopSignedTerminalCloud','TARGET_EPOCH_TERMINALIZED',
- 'PostStopUnknownCurrentCustody','poststop-5b4d4e5a0e27430f986f4249ea92b717-attempted'
+ 'PostStopUnknownCurrentCustody','poststop-3c6b22d02d8a413c88bfede21acce2ea-attempted'
 )){
  if(-not $entryRaw.Contains($required)){throw ('AP04_POSTSTOP_OPERATOR_CONTRACT_MISSING: '+$required)}
 }

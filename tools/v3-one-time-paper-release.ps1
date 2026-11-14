@@ -500,10 +500,10 @@ function Get-V3PaperStateBase([string]$ReleaseId) {
 function Get-V3PaperFencePath {return 'C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'}
 # Exact post-STOP UNKNOWN case. The historical STOP is never replayed.
 function Invoke-V3PaperPostStopFenceArchive($Auth,[string]$TerminalJson,[string]$TerminalCms) {
- $series='PAPER-V3-20261113T203428Z'
- $epoch='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
- $localFence='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
- $epochFence='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
+ $series='PAPER-V3-20261114T104214Z'
+ $epoch='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
+ $localFence='c924bbbc9d47ca00cd2478ac422185e33b417026a29f32535eb2f8331e94bf34'
+ $epochFence='548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a'
  $terminalReceipt=[string]$Auth.claims.bindings.terminal_receipt_sha256
  $source='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
  $aclPin='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
@@ -592,7 +592,7 @@ function Invoke-V3PaperPostStopFenceArchive($Auth,[string]$TerminalJson,[string]
    throw 'V3_POSTSTOP_ARCHIVE_FRESHNESS_HOLD'
   }
   Write-V3PaperReceipt $attempt @{epoch_id=$epoch;series_id=$series;approval_sha256=$Auth.approval_sha256;
-   terminal_reader_sha256=$terminalHash;local_fence_file_sha256=$localFence;epoch_fence_sha256=$epochFence}
+   terminal_reader_sha256=$terminalHash;terminal_receipt_sha256=$terminalReceipt;local_fence_file_sha256=$localFence;epoch_fence_sha256=$epochFence}
   if([datetimeoffset]::UtcNow -ge $Auth.expires_at -or
      ([datetimeoffset]::UtcNow-$observed).TotalSeconds -gt 60){
    throw 'V3_POSTSTOP_ARCHIVE_EXPIRED_AFTER_LATCH_NO_RETRY'
@@ -612,15 +612,15 @@ function Invoke-V3PaperPostStopFenceArchive($Auth,[string]$TerminalJson,[string]
 
 # Restore only the original, archived PR728 epoch. The archive is a read lease.
 function Invoke-V3PaperPostArchiveRestore($Auth,[string]$TerminalJson,[string]$TerminalCms,[System.Management.Automation.PSModuleInfo]$NativeModule) {
- $epoch='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
- $series='PAPER-V3-20261113T203428Z'
- $archiveSha='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
- $epochSha='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
- $receiptSha='62c4a1efaff370a272e76c16cf9c6d85cffcee6c66fb771a651113fb470624eb'
+ $epoch='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
+ $series='PAPER-V3-20261114T104214Z'
+ $archiveSha='c924bbbc9d47ca00cd2478ac422185e33b417026a29f32535eb2f8331e94bf34'
+ $epochSha='548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a'
  $b=$Auth.claims.bindings
+ $receiptSha=[string]$b.terminal_receipt_sha256
  if($b.epoch_id -cne $epoch -or $b.series_id -cne $series -or
     $b.archive_sha256 -cne $archiveSha -or $b.epoch_fence_sha256 -cne $epochSha -or
-    $b.terminal_receipt_sha256 -cne $receiptSha -or
+    $receiptSha -cnotmatch '^[a-f0-9]{64}$' -or
     [string]$b.archive_journal_sha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_POSTARCHIVE_RESTORE_TARGET_HOLD'}
  $payload=Read-V3ReleaseLocalBytes $TerminalJson 8192
  if((Get-V3ReleaseSha256 $payload) -cne $b.terminal_reader_sha256){throw 'V3_POSTARCHIVE_RESTORE_READER_BYTES_HOLD'}
@@ -646,7 +646,7 @@ function Invoke-V3PaperPostArchiveRestore($Auth,[string]$TerminalJson,[string]$T
   'CryptoMiniPC-V2R4PaperWait'=@('fcea4dc62feb83392b0772e8fb44498885298f4e972bf4173e75eeca5b429446','8d7434508e37f2e8676726a2b8bbbc7de37cd976b246cddc20b0bc6739f65856')
   'CryptoMiniPC-V2R4PaperLifecycle'=@('45e54191ef8c546c338ffe2aefa3459f23ee7206f5ef14bf6144e088e038aa8a','45e54191ef8c546c338ffe2aefa3459f23ee7206f5ef14bf6144e088e038aa8a')
   'CryptoMiniPC-V2R4PaperCloudSync'=@('b3fbe17d2e76cefb581556bb3cf8885f41c41d8dcca0df37f2a90a255a6a709a','b3fbe17d2e76cefb581556bb3cf8885f41c41d8dcca0df37f2a90a255a6a709a')
-  'CryptoMiniPC-V3PaperSingleWriter'=@('7623923483909494be3074cb6ddb92bece43509f48a92d842346971f1afac467','cda1a751d4a08db835fad7666aac74361625f370f1e16a2979553d42fe88c592')
+  'CryptoMiniPC-V3PaperSingleWriter'=@('6cd8399a126ddb327cc03d0c42304f653d0114687d49b048e880e7f14a3aef81','cda1a751d4a08db835fad7666aac74361625f370f1e16a2979553d42fe88c592')
  }
  $ctx=@{authorization=$Auth}
  $enc=[Text.UTF8Encoding]::new($false,$true)
@@ -665,7 +665,8 @@ function Invoke-V3PaperPostArchiveRestore($Auth,[string]$TerminalJson,[string]$T
   if((Get-V3ReleaseSha256 $journalBytes) -cne $b.archive_journal_sha256){throw 'V3_POSTARCHIVE_RESTORE_ARCHIVE_JOURNAL_BYTES_HOLD'}
   $journal=Read-V3ReleaseJson $journalBytes
   if($journal.epoch_id -cne $epoch -or $journal.series_id -cne $series -or
-     $journal.local_fence_file_sha256 -cne $archiveSha -or $journal.epoch_fence_sha256 -cne $epochSha){
+     $journal.local_fence_file_sha256 -cne $archiveSha -or $journal.epoch_fence_sha256 -cne $epochSha -or
+     $journal.terminal_receipt_sha256 -cne $receiptSha){
    throw 'V3_POSTARCHIVE_RESTORE_ARCHIVE_JOURNAL_HOLD'
   }
   $arguments=@{}

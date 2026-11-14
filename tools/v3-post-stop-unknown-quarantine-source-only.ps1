@@ -18,9 +18,9 @@ function Assert-V3PostStopUnknownQuarantineSourceContract([object]$Evidence) {
   throw 'V3_POSTSTOP_EVIDENCE_FIELDS_HOLD'
  }
  if([string]$Evidence.kind -cne 'V3_POST_STOP_UNKNOWN_READONLY_STATE_V1' -or
-    [string]$Evidence.series_id -cne 'PAPER-V3-20261113T203428Z' -or
-    [string]$Evidence.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
-    [string]$Evidence.fence_sha256 -cne '9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff' -or
+    [string]$Evidence.series_id -cne 'PAPER-V3-20261114T104214Z' -or
+    [string]$Evidence.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea' -or
+    [string]$Evidence.fence_sha256 -cne 'c924bbbc9d47ca00cd2478ac422185e33b417026a29f32535eb2f8331e94bf34' -or
     [string]$Evidence.fence_phase -cne 'QUIESCED' -or
     [string]$Evidence.cloud_inhibit_state -cne 'INHIBITED' -or
     $Evidence.cloud_epoch_sealed -isnot [bool] -or $Evidence.cloud_epoch_sealed -ne $false -or
@@ -76,16 +76,16 @@ function Assert-V3PostStopUnknownCurrentCustody(
     @($fields|Where-Object {$_ -cnotin $required}).Count){
   throw 'V3_POSTSTOP_CURRENT_PINS_SCOPE_HOLD'
  }
- if([string]$Pins.series_id -cne 'PAPER-V3-20261113T203428Z' -or
-    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
+ if([string]$Pins.series_id -cne 'PAPER-V3-20261114T104214Z' -or
+    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea' -or
     [string]$Pins.source_sha256 -cne
       '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
     [string]$Pins.epoch_fence_sha256 -cne
-      'a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f' -or
+      '548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a' -or
     [string]$Pins.caller_acl_sha256 -cne
       '6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0' -or
     [string]$Pins.local_fence_file_sha256 -cne
-      '9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff' -or
+      'c924bbbc9d47ca00cd2478ac422185e33b417026a29f32535eb2f8331e94bf34' -or
     [string]$Pins.observation_nonce -cnotmatch '^[a-f0-9]{32}$'){
   throw 'V3_POSTSTOP_CURRENT_HISTORICAL_PIN_HOLD'
  }
@@ -213,7 +213,7 @@ function Get-V3PostStopCurrentCustodyReceiptSha256([object]$Custody) {
  if($null -eq $Custody -or
     [string]$Custody.kind -cne 'V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1' -or
     $Custody.independently_signed_current_custody -ne $true -or
-    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717') {
+    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea') {
   throw 'V3_POSTSTOP_CURRENT_RECEIPT_SOURCE_HOLD'
  }
  foreach($field in @('host_payload_sha256','cloud_payload_sha256','owner_review_sha256')) {
@@ -236,8 +236,8 @@ function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
     [string]$Custody.kind -cne 'V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1' -or
     $Custody.independently_signed_current_custody -ne $true -or
     $Custody.production_authorized -ne $false -or
-    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
-    [string]$Custody.series_id -cne 'PAPER-V3-20261113T203428Z' -or
+    [string]$Custody.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea' -or
+    [string]$Custody.series_id -cne 'PAPER-V3-20261114T104214Z' -or
     [string]$Custody.host_payload_sha256 -cne [string]$Pins.host_payload_sha256 -or
     [string]$Custody.cloud_payload_sha256 -cne [string]$Pins.cloud_payload_sha256 -or
     [string]$Custody.source_sha256 -cne [string]$Pins.source_sha256 -or
@@ -266,7 +266,7 @@ function Get-V3PostStopCloudAbortCandidate([object]$Custody,[object]$Pins,
   ' END IF;'
   'END $poststop$;'
   'SELECT v3_cas_audit.record_paper_release_abort_v1('
-  " 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717',"
+  " 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea',"
   " '46c5abbd6af16266c1229943db973dc9d6b2fb4f',"
   " '$($Pins.source_sha256)',"
   " '$($Pins.epoch_fence_sha256)',"
@@ -297,7 +297,7 @@ function Invoke-V3PostStopCloudOnceCandidate([string]$LatchPath,
     $PlanBytes.Length -lt 32 -or $PlanBytes.Length -gt 32768 -or
     -not [IO.Path]::IsPathRooted($LatchPath) -or
     [IO.Path]::GetFileName($LatchPath) -cne
-      'poststop-5b4d4e5a0e27430f986f4249ea92b717-attempted') {
+      'poststop-3c6b22d02d8a413c88bfede21acce2ea-attempted') {
   throw 'V3_POSTSTOP_CLOUD_ONCE_SCOPE_HOLD'
  }
  $digest=Get-V3ReleaseSha256 $PlanBytes
@@ -331,7 +331,7 @@ function Assert-V3PostStopSignedTerminalCloud(
  Assert-V3ReleaseCms -Payload $Payload -Cms $Cms -ReviewedAuthorityCertificateSha256 $Pins.cloud_certificate_sha256
  $row=Read-V3ReleaseJson $Payload
  if([string]$row.kind -cne 'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1' -or
-    [string]$row.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
+    [string]$row.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea' -or
     [string]$row.source_sha256 -cne [string]$Pins.source_sha256 -or
     [string]$row.prepared_fence_sha256 -cne [string]$Pins.epoch_fence_sha256 -or
     [string]$row.caller_acl_sha256 -cne [string]$Pins.caller_acl_sha256 -or
@@ -484,13 +484,13 @@ function Assert-V3PostStopOwnerAdmittedCurrentHostTripleCms(
  [datetimeoffset]$Now=[datetimeoffset]::UtcNow) {
  $tpmPin='ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'
  if($null -eq $Pins -or
-    [string]$Pins.series_id -cne 'PAPER-V3-20261113T203428Z' -or
-    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
+    [string]$Pins.series_id -cne 'PAPER-V3-20261114T104214Z' -or
+    [string]$Pins.epoch_id -cne 'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea' -or
     [string]$Pins.host_certificate_sha256 -cne '2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57' -or
     [string]$Pins.cloud_certificate_sha256 -cne '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55' -or
     [string]$Pins.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
-    [string]$Pins.epoch_fence_sha256 -cne 'a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f' -or
-    [string]$Pins.local_fence_file_sha256 -cne '9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff' -or
+    [string]$Pins.epoch_fence_sha256 -cne '548615beee65139c2f4cdf8172ba5ddc383d68452c41821b4af1ea2de91f4d0a' -or
+    [string]$Pins.local_fence_file_sha256 -cne 'c924bbbc9d47ca00cd2478ac422185e33b417026a29f32535eb2f8331e94bf34' -or
     [string]$Pins.caller_acl_sha256 -cne '6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0') {
   throw 'V3_POSTSTOP_OWNER_ADMITTED_SCOPE_AND_SOURCE_HOLD'
  }
