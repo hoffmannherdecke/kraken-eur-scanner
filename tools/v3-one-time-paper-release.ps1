@@ -611,7 +611,7 @@ function Invoke-V3PaperPostStopFenceArchive($Auth,[string]$TerminalJson,[string]
 }
 
 # Restore only the original, archived PR728 epoch. The archive is a read lease.
-function Invoke-V3PaperPostArchiveRestore($Auth,[string]$TerminalJson,[string]$TerminalCms) {
+function Invoke-V3PaperPostArchiveRestore($Auth,[string]$TerminalJson,[string]$TerminalCms,[System.Management.Automation.PSModuleInfo]$NativeModule) {
  $epoch='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
  $series='PAPER-V3-20261113T203428Z'
  $archiveSha='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
@@ -669,8 +669,7 @@ function Invoke-V3PaperPostArchiveRestore($Auth,[string]$TerminalJson,[string]$T
    throw 'V3_POSTARCHIVE_RESTORE_ARCHIVE_JOURNAL_HOLD'
   }
   $arguments=@{}
-  $native=Get-Module v3-one-time-originalhost-release
-  if($null -eq $native){throw 'V3_POSTARCHIVE_RESTORE_NATIVE_MODULE_HOLD'}
+  if($null -eq $NativeModule){throw 'V3_POSTARCHIVE_RESTORE_NATIVE_MODULE_HOLD'}
   $service=New-Object -ComObject Schedule.Service
   $service.Connect()
   $folder=$service.GetFolder('\')
@@ -692,7 +691,7 @@ function Invoke-V3PaperPostArchiveRestore($Auth,[string]$TerminalJson,[string]$T
     if((Get-V3ReleaseSha256 $saved) -cne $rows[$name][1]){throw "V3_POSTARCHIVE_RESTORE_ORIGINAL_HOLD $name"}
     $arguments[$name]=[string]$task.Actions[0].Arguments
     if($arguments[$name].Length -lt 10){throw "V3_POSTARCHIVE_RESTORE_ACTION_HOLD $name"}
-    if($name -cin $names -and -not (& $native {param($original,$disabled) Test-V3Pr515DisabledOnlyXmlDifference $original $disabled} ($enc.GetString($saved)) $liveXml)){
+    if($name -cin $names -and -not (& $NativeModule {param($original,$disabled) Test-V3Pr515DisabledOnlyXmlDifference $original $disabled} ($enc.GetString($saved)) $liveXml)){
      throw "V3_POSTARCHIVE_RESTORE_INTAKE_XML_DELTA_HOLD $name"
     }
     if($name -ceq $writer){
@@ -803,9 +802,12 @@ function Invoke-V3OneTimePaperRelease {
   $auth=Assert-V3OneTimeReleaseAuthorization -Payload (Read-V3ReleaseLocalBytes $ApprovalJson) -Cms (Read-V3ReleaseLocalBytes $ApprovalCms 32768) `
    -ReviewedAuthorityCertificateSha256 $pin -Scope $scope -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $inventory
   if($Mode -eq 'PaperPostArchiveRestore'){
-   Import-Module (Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1') -Force
+   $nativePath=Join-Path $PSScriptRoot 'v3-one-time-originalhost-release.psm1'
+   $native=@(Import-Module -Name $nativePath -Force -PassThru -ErrorAction Stop |
+    Where-Object {$_.Path -ieq $nativePath})
+   if($native.Count -ne 1){throw 'V3_POSTARCHIVE_RESTORE_NATIVE_MODULE_HOLD'}
    Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Scope Local
-   return Invoke-V3PaperPostArchiveRestore $auth $HostReceiptJson $HostReceiptCms
+   return Invoke-V3PaperPostArchiveRestore $auth $HostReceiptJson $HostReceiptCms -NativeModule $native[0]
   }
   if($Mode -eq 'PaperPostStopFenceArchive'){
    return Invoke-V3PaperPostStopFenceArchive $auth $HostReceiptJson $HostReceiptCms
