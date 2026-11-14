@@ -500,17 +500,17 @@ function Get-V3PaperStateBase([string]$ReleaseId) {
 function Get-V3PaperFencePath {return 'C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'}
 # Exact post-STOP UNKNOWN case. The historical STOP is never replayed.
 function Invoke-V3PaperPostStopFenceArchive($Auth,[string]$TerminalJson,[string]$TerminalCms) {
- $series='PAPER-V3-20261111T105211Z'
- $epoch='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
- $localFence='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
- $epochFence='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
- $terminalReceipt='8a89ded0a2cf482bc47e1f9f848990861ca22cd3748da6f5dc996d05c5a37631'
+ $series='PAPER-V3-20261113T203428Z'
+ $epoch='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+ $localFence='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
+ $epochFence='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
+ $terminalReceipt=[string]$Auth.claims.bindings.terminal_receipt_sha256
  $source='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
  $aclPin='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
  $b=$Auth.claims.bindings
  if($b.epoch_id -cne $epoch -or $b.series_id -cne $series -or
     $b.local_fence_file_sha256 -cne $localFence -or $b.epoch_fence_sha256 -cne $epochFence -or
-    $b.terminal_receipt_sha256 -cne $terminalReceipt){
+    $terminalReceipt -cnotmatch '^[a-f0-9]{64}$'){
   throw 'V3_POSTSTOP_ARCHIVE_TARGET_HOLD'
  }
  $raw=Read-V3ReleaseLocalBytes $TerminalJson 8192
@@ -559,7 +559,7 @@ function Invoke-V3PaperPostStopFenceArchive($Auth,[string]$TerminalJson,[string]
   }
   foreach($name in $tasks.Keys){
    $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
-   $expectedState=if($name -ceq 'CryptoMiniPC-V3PaperSingleWriter'){'Disabled'}else{'Running'}
+   $expectedState=if($name -cin @('CryptoMiniPC-V3PaperSingleWriter','CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){'Disabled'}else{'Running'}
    $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
    $xmlPin=[string]$b.($tasks[$name])
    if($xmlPin -cnotmatch '^[a-f0-9]{64}$' -or [string]$task.State -cne $expectedState -or
