@@ -4,6 +4,7 @@
 [CmdletBinding()]
 param(
  [Parameter(Mandatory=$true)][string]$PackageRoot,
+ [Parameter(Mandatory=$true)][ValidatePattern('^[a-f0-9]{40}$')][string]$ExpectedReleaseCommit,
  [Parameter(Mandatory=$true)][string]$StaticOwnerPolicyJson,
  [Parameter(Mandatory=$true)][string]$StaticOwnerPolicySha256,
  [Parameter(Mandatory=$true)][string]$AuthorityAdmissionJson,
@@ -14,7 +15,7 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
-$release='b27cf775e5de25786cba5f2dd8f0bb78564f8452'
+$release=$ExpectedReleaseCommit
 $epoch='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
 $authority='2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'
 if($env:OS -cne 'Windows_NT' -or $env:USERNAME -cne 'burns' -or $env:COMPUTERNAME -ieq 'MINI-PC' -or
