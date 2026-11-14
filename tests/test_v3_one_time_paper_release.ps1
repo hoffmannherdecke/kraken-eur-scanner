@@ -35,6 +35,24 @@ Need ($archiveSource -match '(?s)Import-Module[^\r\n]*originalhost-release\.psm1
  $b.epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
  Reject {Invoke-V3PaperPostStopFenceArchive $auth 'unused' 'unused'} 'ARCHIVE_TERMINAL_BYTES_HOLD'
 }
+& {
+ $restore=Get-Command Invoke-V3PaperPostArchiveRestore
+ Need ($restore.ScriptBlock.ToString() -notmatch '\b(Stop-ScheduledTask|Invoke-V3ReleasePg|Remove-Item)\b') 'POSTARCHIVE_RESTORE_FORBIDDEN_EFFECT'
+ $bindings=[pscustomobject]@{
+  epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+  series_id='PAPER-V3-20261113T203428Z'
+  archive_sha256=('0'*64)
+  epoch_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
+  terminal_receipt_sha256='62c4a1efaff370a272e76c16cf9c6d85cffcee6c66fb771a651113fb470624eb'
+  archive_journal_sha256=('1'*64)
+  terminal_reader_sha256=('2'*64)
+ }
+ $auth=[pscustomobject]@{claims=[pscustomobject]@{bindings=$bindings}}
+ function Read-V3ReleaseLocalBytes {return ,[byte[]](123,125)}
+ Reject {Invoke-V3PaperPostArchiveRestore $auth 'unused' 'unused'} 'POSTARCHIVE_RESTORE_TARGET_HOLD'
+ $bindings.archive_sha256='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
+ Reject {Invoke-V3PaperPostArchiveRestore $auth 'unused' 'unused'} 'POSTARCHIVE_RESTORE_READER_BYTES_HOLD'
+}
 if($env:OS -eq 'Windows_NT'){
  & {
   $dir='C:\Users\ADMIN\Trading\TestOnly'
