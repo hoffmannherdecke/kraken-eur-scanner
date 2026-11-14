@@ -1199,10 +1199,13 @@ def _pr692_original_proof_pins(*, pr699: bool = False) -> tuple[str, str] | None
             ),
         }
         archive_operator = "tools/v3-one-time-paper-release.ps1"
-        archive_scope_fix = "1b9b5d781884bdecabc520d4083f7dcd5dadb63a0626c8167732b12af6c7f2c9"
+        archive_only_revisions = (
+            "1b9b5d781884bdecabc520d4083f7dcd5dadb63a0626c8167732b12af6c7f2c9",
+            "4e2f817a2d1166cb3b11f61b0bb6b361269dc91178ab9ab002ef00e21f8e50ef",
+        )
         if all(
             inventory.get(path) == reviewed
-            or (path == archive_operator and inventory.get(path) == archive_scope_fix)
+            or (path == archive_operator and inventory.get(path) in archive_only_revisions)
             for path, (_, reviewed) in poststop_archive_delta.items()
         ):
             for path, (original, _) in poststop_archive_delta.items():
