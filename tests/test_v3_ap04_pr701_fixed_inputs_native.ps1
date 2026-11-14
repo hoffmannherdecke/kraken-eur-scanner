@@ -51,6 +51,7 @@ try {
         throw 'AP04_PYTHON_BINDER_FAILED_TO_REJECT_WRONG_BYTES'
     }
     'AP04_PR701_PS51_BYTE_AND_ARGUMENT_CONTRACT_PASS'
+    $global:LASTEXITCODE = 0
 }
 finally {
     [IO.Directory]::Delete($tmp, $true)
