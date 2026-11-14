@@ -6,7 +6,7 @@ if ($PSVersionTable.PSEdition -ne 'Desktop' -or $PSVersionTable.PSVersion -lt [v
 }
 $root = Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/ap04-pr701'
 foreach ($line in Get-Content -LiteralPath (Join-Path $root 'SHA256SUMS')) {
-    if ($line -cnotmatch '^([a-f0-9]{64})  ([A-Za-z.-]+)$') {
+    if ($line -cnotmatch '^([a-f0-9]{64})  ([A-Za-z0-9.-]+)$') {
         throw 'AP04_MANIFEST_FORMAT'
     }
     $expected = $Matches[1]
