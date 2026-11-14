@@ -170,7 +170,7 @@ foreach($required in @(
  'issuer-currentuser.dpapi','DataProtectionScope]::CurrentUser',
  'Invoke-V3PostStopCloudOnceCandidate','Get-V3PostStopCloudAbortCandidate',
  'Assert-V3PostStopSignedTerminalCloud','TARGET_EPOCH_TERMINALIZED',
- 'PostStopUnknownCurrentCustody','poststop-f27cce0ba68043b480e4f97698dd2901-attempted'
+ 'PostStopUnknownCurrentCustody','poststop-5b4d4e5a0e27430f986f4249ea92b717-attempted'
 )){
  if(-not $entryRaw.Contains($required)){throw ('AP04_POSTSTOP_OPERATOR_CONTRACT_MISSING: '+$required)}
 }
@@ -186,8 +186,7 @@ foreach($required in @(
  'historical.prepared_fence_sha256 IS DISTINCT FROM other.original_fence_sha256',
  'historical.caller_acl_sha256 IS DISTINCT FROM other.approved_caller_acl_sha256',
  "pg_catalog.has_function_privilege('v3_cas_executor'",
- "AND (SELECT count(*) FROM v3_cas_audit.epoch_v1)=6",
- "AND (SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1)=6"
+ "WHERE other.epoch_id<>e.epoch_id"
 )){
  if(-not $raw.Contains($required)){throw ('AP04_POSTSTOP_TERMINAL_READER_GUARD_MISSING: '+$required)}
 }

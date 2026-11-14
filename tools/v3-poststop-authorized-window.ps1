@@ -4,6 +4,7 @@
 [CmdletBinding()]
 param(
  [Parameter(Mandatory=$true)][string]$PackageRoot,
+ [Parameter(Mandatory=$true)][ValidatePattern('^[a-f0-9]{40}$')][string]$ExpectedReleaseCommit,
  [Parameter(Mandatory=$true)][string]$StaticOwnerPolicyJson,
  [Parameter(Mandatory=$true)][string]$StaticOwnerPolicySha256,
  [Parameter(Mandatory=$true)][string]$AuthorityAdmissionJson,
@@ -14,8 +15,8 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
-$release='b27cf775e5de25786cba5f2dd8f0bb78564f8452'
-$epoch='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+$release=$ExpectedReleaseCommit
+$epoch='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
 $authority='2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'
 if($env:OS -cne 'Windows_NT' -or $env:USERNAME -cne 'burns' -or $env:COMPUTERNAME -ieq 'MINI-PC' -or
  $env:GITHUB_ACTIONS -eq 'true' -or -not [Environment]::UserInteractive){throw 'POSTSTOP_AUTH_NOTEBOOK_BURNS_ONLY_HOLD'}
@@ -51,11 +52,15 @@ $terminalNonce=[guid]::NewGuid().ToString('N')
 foreach($name in @($approvalJson,$approvalCms,$pinsJson)){
  if([IO.File]::Exists($name)){throw 'POSTSTOP_AUTH_ATTEMPT_REPLAY_HOLD'}
 }
-$latch=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer\poststop-f27cce0ba68043b480e4f97698dd2901-attempted'
+$latch=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer\poststop-5b4d4e5a0e27430f986f4249ea92b717-attempted'
 if([IO.File]::Exists($latch)){throw 'POSTSTOP_AUTH_PRIOR_ISSUER_ATTEMPT_NO_RETRY'}
 $cloudOpts=@{ObservationNonce=$ObservationNonce;HostDirectory=$OriginalHostDirectory;
  ApprovedPinsJson=$StaticOwnerPolicyJson;ApprovedPinsSha256=$StaticOwnerPolicySha256;MaxWaitSeconds=120}
 if($CaFile){$cloudOpts.CaFile=$CaFile}
+$ownerPhrase='AUTHORIZE-POSTSTOP-CLOUD-ABORT-'+$epoch
+if((Read-Host ("Separate Ownerfreigabe fuer Cloud-Abbruch der Epoche "+$epoch+" eingeben")) -cne $ownerPhrase){
+ throw 'POSTSTOP_AUTH_EXPLICIT_OWNER_EXECUTION_HOLD'
+}
 Write-Output 'NOTEBOOK_WAITING_FOR_SINGLE_ORIGINALHOST_TPM'
 $lines=@(& $coordinator @cloudOpts)
 if($lines.Count -ne 1){throw 'POSTSTOP_AUTH_COORDINATOR_OUTPUT_HOLD'}
@@ -130,7 +135,7 @@ $timestamp="yyyy-MM-dd'T'HH:mm:ss'Z'"
 $bindings=[ordered]@{
  epoch_id=$epoch
  source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
- fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
  caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
  pins_sha256=$pinsHash
 }

@@ -23,16 +23,16 @@ Need ($archiveSource -match '(?s)Import-Module[^\r\n]*originalhost-release\.psm1
 & {
  $b=[pscustomobject]@{
   epoch_id='wrong-epoch'
-  series_id='PAPER-V3-20261111T105211Z'
-  local_fence_file_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
-  epoch_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+  series_id='PAPER-V3-20261113T203428Z'
+  local_fence_file_sha256='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
+  epoch_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
   terminal_receipt_sha256='8a89ded0a2cf482bc47e1f9f848990861ca22cd3748da6f5dc996d05c5a37631'
   terminal_reader_sha256=('0'*64)
  }
  $auth=[pscustomobject]@{claims=[pscustomobject]@{bindings=$b}}
  function Read-V3ReleaseLocalBytes {return ,[byte[]](123,125)}
  Reject {Invoke-V3PaperPostStopFenceArchive $auth 'unused' 'unused'} 'ARCHIVE_TARGET_HOLD'
- $b.epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+ $b.epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
  Reject {Invoke-V3PaperPostStopFenceArchive $auth 'unused' 'unused'} 'ARCHIVE_TERMINAL_BYTES_HOLD'
 }
 if($env:OS -eq 'Windows_NT'){

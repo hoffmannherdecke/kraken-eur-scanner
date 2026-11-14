@@ -310,13 +310,13 @@ Write-Output 'V3_GATE_A_EXACT_BYTES_REAL_CMS_NEGATIVE_TESTS_PASS'
 # Historical post-STOP-UNKNOWN quarantine: source-only guard, no actor or host access.
 $historical=[pscustomobject]@{
  kind='V3_POST_STOP_UNKNOWN_READONLY_STATE_V1'
- series_id='PAPER-V3-20261111T105211Z'
- epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
- fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
- fence_phase='ARMED';cloud_inhibit_state='INHIBITED'
+ series_id='PAPER-V3-20261113T203428Z'
+ epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
+ fence_sha256='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
+ fence_phase='QUIESCED';cloud_inhibit_state='INHIBITED'
  cloud_epoch_sealed=$false;cloud_next_ordinal=1
  cloud_intent_count=0;cloud_attempt_count=0;cloud_abort_count=0
- candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true
+ candidates_enabled=$false;wait_enabled=$false;cloudsync_enabled=$true
  v3_writer_enabled=$false;native_stop_outcome='UNKNOWN'
  originalhost_journal_present=$false
  independent_host_custody_verified=$false
@@ -338,8 +338,8 @@ foreach($negative in @(
  @('fence_sha256',('0'*64)),@('fence_phase','CLOSED'),
  @('cloud_inhibit_state','RELEASED'),@('cloud_epoch_sealed',$true),
  @('cloud_next_ordinal',2),@('cloud_intent_count',1),@('cloud_attempt_count',1),
- @('cloud_abort_count',1),@('candidates_enabled',$false),
- @('wait_enabled',$false),@('cloudsync_enabled',$false),
+ @('cloud_abort_count',1),@('candidates_enabled',$true),
+ @('wait_enabled',$true),@('cloudsync_enabled',$false),
  @('v3_writer_enabled',$true),@('native_stop_outcome','SUCCESS'),
  @('originalhost_journal_present',$true)
 )){
@@ -369,14 +369,14 @@ try {
  $timestamp=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
  $hr=[ordered]@{
   kind='V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
-  series_id='PAPER-V3-20261111T105211Z'
-  epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+  series_id='PAPER-V3-20261113T203428Z'
+  epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
   source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251';observation_nonce=('b'*32);observed_at_utc=$timestamp
-  original_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
-  local_fence_file_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
-  fence_phase='ARMED';candidates_xml_sha256=('d'*64);wait_xml_sha256=('e'*64)
+  original_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
+  local_fence_file_sha256='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
+  fence_phase='QUIESCED';candidates_xml_sha256=('d'*64);wait_xml_sha256=('e'*64)
   cloudsync_xml_sha256=('f'*64);writer_xml_sha256=('1'*64)
-  candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true
+  candidates_enabled=$false;wait_enabled=$false;cloudsync_enabled=$true
   writer_enabled=$false;writer_process_count=0;other_writer_authorities_closed=$true
   native_stop_outcome='UNKNOWN';current_host_custody_verified=$true
  }
@@ -384,7 +384,7 @@ try {
   kind='V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'
   series_id=$hr.series_id;epoch_id=$hr.epoch_id;source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
   observation_nonce=('b'*32);observed_at_utc=$timestamp
-  original_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef';caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+  original_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f';caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
   inhibit_state='INHIBITED';sealed=$false;next_ordinal=1
   intent_count=0;attempt_count=0;abort_count=0
   executor_login_closed=$true;executor_sessions_count=0
@@ -403,7 +403,7 @@ try {
  $cs=New-TestSignedCurrent $cr $cc
  $binding=[pscustomobject]@{
   series_id=$hr.series_id;epoch_id=$hr.epoch_id
-  source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251';epoch_fence_sha256='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef';caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+  source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251';epoch_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f';caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
   local_fence_file_sha256=$hr.local_fence_file_sha256
   candidates_xml_sha256=('d'*64);wait_xml_sha256=('e'*64)
   cloudsync_xml_sha256=('f'*64);writer_xml_sha256=('1'*64)
@@ -547,7 +547,7 @@ Write-Output ('V3_POSTSTOP_SOURCE_ONLY_SHA256='+(Get-V3ReleaseSha256 ([IO.File]:
 
 
 # Post-STOP cloud candidate and disposable transport ambiguity.
-$custody=[pscustomobject]@{kind='V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1';series_id='PAPER-V3-20261111T105211Z';epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901';independently_signed_current_custody=$true;production_authorized=$false;host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
+$custody=[pscustomobject]@{kind='V3_POSTSTOP_CURRENT_CUSTODY_SOURCE_REVIEW_V1';series_id='PAPER-V3-20261113T203428Z';epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717';independently_signed_current_custody=$true;production_authorized=$false;host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
 $custody|Add-Member -NotePropertyName owner_review_sha256 -NotePropertyValue ('7'*64)
 $receiptHash=Get-V3PostStopCurrentCustodyReceiptSha256 $custody
 $pins=[pscustomobject]@{host_payload_sha256=('a'*64);cloud_payload_sha256=('b'*64);source_sha256=('c'*64);epoch_fence_sha256=('d'*64);caller_acl_sha256=('e'*64)}
@@ -561,7 +561,7 @@ $pins.source_sha256=('c'*64)
 $tempDir=Join-Path ([IO.Path]::GetTempPath()) ('poststop-once-'+[guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($tempDir)|Out-Null
 try{
- $latch=Join-Path $tempDir 'poststop-f27cce0ba68043b480e4f97698dd2901-attempted'
+ $latch=Join-Path $tempDir 'poststop-5b4d4e5a0e27430f986f4249ea92b717-attempted'
  $script:attemptCount=0
  $transport={param([byte[]]$p) $script:attemptCount++;throw 'SIMULATED_LOST_COMMIT'}
  $payload=[Text.Encoding]::UTF8.GetBytes($plan.sql)
@@ -599,7 +599,7 @@ try{
  $held=$false
  try{$null=Assert-V3PostStopSignedTerminalCloud -Payload $badCount.Payload -Cms $badCount.Cms -Pins $reviewPins -CurrentCustodyReceiptSha256 $receiptHash}catch{$held=$true}
  if(-not $held){throw 'V3_POSTSTOP_CAS_RPC_DRIFT_ACCEPTED'}
- $hostRow=[ordered]@{kind='V3_POSTSTOP_INDEPENDENT_HOST_QUARANTINE_V1';epoch_id=$custody.epoch_id;series_id=$custody.series_id;observed_at_utc=$timestamp;terminal_cloud_reader_sha256=$verified.reader_sha256;local_fence_file_sha256=$reviewPins.local_fence_file_sha256;fence_phase='ARMED';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64);candidates_enabled=$true;wait_enabled=$true;cloudsync_enabled=$true;writer_enabled=$false;writer_process_count=0;other_writer_authorities_closed=$true;native_stop_outcome='UNKNOWN'}
+ $hostRow=[ordered]@{kind='V3_POSTSTOP_INDEPENDENT_HOST_QUARANTINE_V1';epoch_id=$custody.epoch_id;series_id=$custody.series_id;observed_at_utc=$timestamp;terminal_cloud_reader_sha256=$verified.reader_sha256;local_fence_file_sha256=$reviewPins.local_fence_file_sha256;fence_phase='QUIESCED';candidates_xml_sha256=('1'*64);wait_xml_sha256=('2'*64);cloudsync_xml_sha256=('3'*64);writer_xml_sha256=('4'*64);candidates_enabled=$false;wait_enabled=$false;cloudsync_enabled=$true;writer_enabled=$false;writer_process_count=0;other_writer_authorities_closed=$true;native_stop_outcome='UNKNOWN'}
  $hs=New-TestSignedCurrent $hostRow $c2
  $finished=Assert-V3PostStopSignedHostQuarantine -Terminal $verified -HostPayload $hs.Payload -HostCms $hs.Cms -Pins $reviewPins
  if($finished.quarantine_preserved -ne $true -or $finished.ap05a_authorized -ne $false){throw 'V3_POSTSTOP_HOST_FALSE_RELEASE'}

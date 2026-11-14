@@ -257,14 +257,14 @@ function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
    throw 'V3_SIGNER_CURRENT_HOST_DUPLICATE_FIELD_HOLD'
   }
  }
- $knownFence='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ $knownFence='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
  if([string]$v.kind -cne 'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1' -or
-    [string]$v.series_id -cne 'PAPER-V3-20261111T105211Z' -or
-    [string]$v.epoch_id -cne 'V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901' -or
+    [string]$v.series_id -cne 'PAPER-V3-20261113T203428Z' -or
+    [string]$v.epoch_id -cne 'V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717' -or
     [string]$v.source_sha256 -cne '8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251' -or
-    [string]$v.original_fence_sha256 -cne $knownFence -or
+    [string]$v.original_fence_sha256 -cne 'a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f' -or
     [string]$v.local_fence_file_sha256 -cne $knownFence -or
-    [string]$v.fence_phase -cne 'ARMED' -or
+    [string]$v.fence_phase -cne 'QUIESCED' -or
     [string]$v.native_stop_outcome -cne 'UNKNOWN' -or
     [string]$v.observation_nonce -cnotmatch '^[a-f0-9]{32}$' -or
     $v.writer_process_count -isnot [int] -or $v.writer_process_count -ne 0 -or
@@ -291,14 +291,14 @@ function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
  }
  $fence='C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'
  $fi=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
- if($fi.PSIsContainer -or $fi.Length -ne 627 -or
+ if($fi.PSIsContainer -or $fi.Length -ne 630 -or
     [bool]($fi.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
     (Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne $knownFence){
   throw 'V3_SIGNER_CURRENT_HOST_FENCE_ORIGINAL_HOLD'
  }
  $mapping=@(
-  @('CryptoMiniPC-V2R4PaperCandidates','candidates_xml_sha256','candidates_enabled',$true),
-  @('CryptoMiniPC-V2R4PaperWait','wait_xml_sha256','wait_enabled',$true),
+  @('CryptoMiniPC-V2R4PaperCandidates','candidates_xml_sha256','candidates_enabled',$false),
+  @('CryptoMiniPC-V2R4PaperWait','wait_xml_sha256','wait_enabled',$false),
   @('CryptoMiniPC-V2R4PaperCloudSync','cloudsync_xml_sha256','cloudsync_enabled',$true),
   @('CryptoMiniPC-V3PaperSingleWriter','writer_xml_sha256','writer_enabled',$false)
  )
@@ -331,24 +331,24 @@ function Test-V3OriginalhostFreshCurrentReader([byte[]]$Payload) {
 function New-V3PostStopHostCurrentBytes([string]$Nonce) {
  if($Nonce -cnotmatch '^[a-f0-9]{32}$'){throw 'V3_POSTSTOP_PRODUCER_NONCE_HOLD'}
  $f='C:\Users\ADMIN\Trading\State\v3-experimental-paper-old-intake-fence.json'
- $expected='4f01704d20375bf201f87c56eb350a67c1a91f82535296b28ae318768aa213ef'
+ $expected='9b44a5364f54f894ea568d06d6e196c5925d01a9c40f7724de1ac00211e7f3ff'
  $item=Get-Item -LiteralPath $f -Force -ErrorAction Stop
- if($item.PSIsContainer -or $item.Length -ne 627 -or
+ if($item.PSIsContainer -or $item.Length -ne 630 -or
     [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
     (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected){
   throw 'V3_POSTSTOP_PRODUCER_FENCE_HOLD'
  }
  $fence=([Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($f))) | ConvertFrom-Json -ErrorAction Stop
  if([string]$fence.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
-    [string]$fence.phase -cne 'ARMED' -or
-    [string]$fence.proposed_successor_series_id -cne 'PAPER-V3-20261111T105211Z' -or
+    [string]$fence.phase -cne 'QUIESCED' -or
+    [string]$fence.proposed_successor_series_id -cne 'PAPER-V3-20261113T203428Z' -or
     $fence.paper_only -ne $true -or $fence.orders_enabled -ne $false -or
     $fence.real_money_actions -ne $false){
   throw 'V3_POSTSTOP_PRODUCER_FENCE_FIELDS_HOLD'
  }
  $mapping=@(
-  @('CryptoMiniPC-V2R4PaperCandidates','candidates_xml_sha256','candidates_enabled',$true),
-  @('CryptoMiniPC-V2R4PaperWait','wait_xml_sha256','wait_enabled',$true),
+  @('CryptoMiniPC-V2R4PaperCandidates','candidates_xml_sha256','candidates_enabled',$false),
+  @('CryptoMiniPC-V2R4PaperWait','wait_xml_sha256','wait_enabled',$false),
   @('CryptoMiniPC-V2R4PaperCloudSync','cloudsync_xml_sha256','cloudsync_enabled',$true),
   @('CryptoMiniPC-V3PaperSingleWriter','writer_xml_sha256','writer_enabled',$false)
  )
@@ -400,14 +400,14 @@ function New-V3PostStopHostCurrentBytes([string]$Nonce) {
  if($unknown.Count){throw 'V3_POSTSTOP_PRODUCER_UNREADABLE_PROCESS_HOLD'}
  $record=[ordered]@{
   kind='V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1'
-  series_id='PAPER-V3-20261111T105211Z'
-  epoch_id='V3CAS-AUDIT-f27cce0ba68043b480e4f97698dd2901'
+  series_id='PAPER-V3-20261113T203428Z'
+  epoch_id='V3CAS-AUDIT-5b4d4e5a0e27430f986f4249ea92b717'
   source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
   observation_nonce=$Nonce
   observed_at_utc=[datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'")
-  original_fence_sha256=$expected
+  original_fence_sha256='a2d49fc3b5db57cab0ec54b384e8f41a66a95a466fd97a9e47daab605523871f'
   local_fence_file_sha256=$expected
-  fence_phase='ARMED'
+  fence_phase='QUIESCED'
   candidates_xml_sha256=[string]$v.candidates_xml_sha256
   wait_xml_sha256=[string]$v.wait_xml_sha256
   cloudsync_xml_sha256=[string]$v.cloudsync_xml_sha256
