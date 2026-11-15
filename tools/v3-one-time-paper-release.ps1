@@ -978,7 +978,8 @@ function Invoke-V3OneTimePaperRelease {
       [IO.File]::Exists($ctx.fence) -or [IO.File]::Exists($casLatch)){
     throw 'V3_PAPER_PREPARE_EXISTING_FENCE_OR_UNSAFE_READER_HOLD'
    }
-   $null=Assert-V3PaperCurrentSuccessor $plan.series_id
+   # Current signed PRESTOP reader, unchanged epoch and fresh separate CMS
+   # govern resumed PREPARE; the Stage4 series timestamp is historical.
    $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
    Assert-V3PaperRuntimeSpec $spec $plan
    $arguments=Get-V3PaperNativeActionArguments $plan $PackageRoot $RuntimeSpecJson $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit -PrepareDisabledAction
@@ -1015,9 +1016,9 @@ function Invoke-V3OneTimePaperRelease {
    if((Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $ctx.fence)) -cne [string]$epoch.fence_sha256){
     throw 'V3_PAPER_PRESTOP_FENCE_EPOCH_DRIFT'
    }
-   # The installed CAS uses the timestamp in the issued series ID and
-   # rejects it once it is older than ten minutes. Detect that before STOP.
-   $null=Assert-V3PaperCurrentSuccessor $plan.series_id
+   # STOP requires the fresh independent PRESTOP reader, ARMED exact fence,
+   # original process/task pins and a current separate signed STOP approval.
+   # Never reuse a dispatched STOP; its CreateNew latch remains mandatory.
    Assert-V3PaperProcesses $plan
    Write-V3PaperReceipt ($base+'.stop.attempted.json') @{approval_sha256=$auth.approval_sha256}
    $intakes=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
