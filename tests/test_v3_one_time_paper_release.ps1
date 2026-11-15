@@ -216,6 +216,28 @@ try{
  $body=[regex]::Match($original,'(?s)as \$v3_atomic_cas\$(.*?)\$v3_atomic_cas\$;').Value
  Need ($body.Length -gt 1000 -and $released.Contains($body)) 'ORIGINAL_ATOMIC_CAS_CHANGED'
  Reject {Get-V3PaperCasInstallSql 'altered' @{authorization=@{expires_at=[datetimeoffset]::UtcNow}}} 'SEAM_DRIFT'
+
+ # Exact existing-definition CAS replacement: never a second first-install.
+ $epoch=@{epoch_id=('V3CAS-AUDIT-'+('a'*32));source_sha256=('a'*64);fence_sha256=('b'*64);caller_acl_sha256=('c'*64)}
+ $replaceContext=@{commit=('d'*40);authorization=@{expires_at=[datetimeoffset]::UtcNow.AddMinutes(1)}}
+ $replaced=Get-V3PaperCasInstallSql $original $replaceContext $epoch -ReplaceExisting
+ Need ($replaced.Contains('d9973febcd429fe76bbc582ca4e7827c801b83e2f07d381f1fde9de8c1060c10') -and
+  $replaced.Contains('V3_CAS_REPLACEMENT_OLD_DEFINITION_OR_ACL_DRIFT_HOLD') -and
+  $replaced.Contains('V3_CAS_REPLACEMENT_POSTCHECK_HOLD')) 'REPLACEMENT_OLD_DEF_OR_POSTCHECK_MISSING'
+ Need (-not $replaced.Contains('GRANT v3_cas_executor TO v3_cas_executor_actor WITH INHERIT FALSE, SET TRUE, ADMIN FALSE')) 'REPLACEMENT_CHANGED_MEMBERSHIP'
+ Need ($replaced.Contains("p.proacl::text='{postgres=X/postgres,v3_cas_executor=X/postgres}'")) 'REPLACEMENT_ACL_DRIFT_GUARD_MISSING'
+ Need ($replaced.Contains("CREATE OR REPLACE FUNCTION") -or $replaced.Contains('create or replace function')) 'REPLACEMENT_DROPPED_FUNCTION'
+ Need (-not $replaced.Contains('DROP FUNCTION') -and -not $replaced.Contains('CREATE ROLE')) 'REPLACEMENT_ILLEGAL_DDL'
+ Need (([regex]::Matches($replaced,'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD')).Count -eq 0) 'REPLACEMENT_OLD_FIRST_INSTALL_BLOCK'
+ Reject {Get-V3PaperCasInstallSql $original @{authorization=@{expires_at=[datetimeoffset]::UtcNow}} -ReplaceExisting} 'CURRENT_EPOCH_REQUIRED'
+ Reject {Get-V3PaperCasInstallSql ($original.Replace("V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD","OTHER")) $replaceContext $epoch -ReplaceExisting} 'ORIGINAL_GUARD_DRIFT'
+ $entry=[IO.File]::ReadAllText((Join-Path $root 'tools/v3-one-time-release.ps1'))
+ $operator=[IO.File]::ReadAllText((Join-Path $root 'tools/v3-one-time-paper-release.ps1'))
+ Need ($entry.Contains('-ReplaceExistingCas:$ReplaceExistingCas') -and
+  $operator.Contains('V3_CAS_REPLACEMENT_SIGNED_OLD_AND_NEW_HASH_HOLD') -and
+  $operator.Contains('V3_PAPER_CAS_INSTALL_READER_HOLD') -and
+  $operator.Contains("Write-V3PaperReceipt ($([char]36)base+'.install.attempted.json')")) 'REPLACEMENT_MISSING_AUTH_OR_LATCH'
+
  # Resume/rollback decisions are exercised below with mock native boundaries;
  # these mocks are confined to this test script, absent from CLI parameters.
  function Import-Module {

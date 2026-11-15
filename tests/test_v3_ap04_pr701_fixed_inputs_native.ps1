@@ -55,6 +55,22 @@ if ($prepStart -lt 0 -or $stopStart -lt 0 -or
     throw 'PR701_PRESTOP_RESUME_FRESH_READER_OR_STOP_LATCH_HOLD'
 }
 
+# PR735 deployment entry: only the already opened original Mini-PC window
+# may use -ResumePreStop. The legacy Stage4 entry remains fully unchanged.
+$entry = [IO.File]::ReadAllText((Join-Path $root 'Start-PR701-Window.ps1'))
+if (-not $entry.Contains('[switch]$ResumePreStop') -or
+    -not $entry.Contains("PR701_PRESTOP_RESUME_MINIPC_ONLY_HOLD") -or
+    -not $entry.Contains("PR701_PRESTOP_RESUME_EXISTING_WINDOW_REQUIRED") -or
+    -not $entry.Contains("PR701_PRESTOP_RESUME_STAGE4_PLAN_DRIFT") -or
+    -not $entry.Contains('MiniPC-Sequence.ps1' + "') -ResumePreStop") -or
+    $entry.IndexOf('if($ResumePreStop){') -ge
+       $entry.IndexOf('INSUFFICIENT_WINDOW_BUDGET_NO_STAGE4') -or
+    -not $entry.Contains("STAGE4_HANDOFF_TOO_LATE_NO_DISPATCH") -or
+    -not $entry.Contains("MiniPC-InitializeWindow.ps1") -or
+    -not $entry.Contains("& $([char]36)stage4 -AdminPassword")) {
+    throw 'PR701_PRESTOP_RESUME_ENTRY_OR_LEGACY_STAGE4_HOLD'
+}
+
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ('ap04-ci-' + [guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($tmp)
 try {

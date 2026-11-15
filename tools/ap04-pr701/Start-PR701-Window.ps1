@@ -5,7 +5,8 @@ param(
  [Parameter(Mandatory=$true)][ValidatePattern('^[a-f0-9]{64}$')][string]$PlanSha256,
  [Parameter(Mandatory=$true)][ValidatePattern('^[a-f0-9]{64}$')][string]$Stage4ScriptSha256,
  [Parameter(Mandatory=$true)][ValidatePattern('^[0-9]{1,20}$')][string]$DecisionCommentId,
- [string]$CaFile
+ [string]$CaFile,
+ [switch]$ResumePreStop
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -24,6 +25,29 @@ if($plan.repo_sha -cne '46c5abbd6af16266c1229943db973dc9d6b2fb4f' -or $plan.seri
 }
 $stamp=$plan.series_id.Substring(9)
 $end=[DateTimeOffset]::ParseExact($stamp,"yyyyMMdd'T'HHmmss'Z'",[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal).AddMinutes(10)
+# Resume is only for a previously opened original Mini-PC Stage4 window.
+# Do not invoke initial Stage4, initialize another window or ARM a Notebook.
+if($ResumePreStop){
+ if($Role -cne 'MiniPC'){throw 'PR701_PRESTOP_RESUME_MINIPC_ONLY_HOLD'}
+ $local='C:\Users\ADMIN\Trading\Research\V3Paper\PR700-Window-'+$stamp
+ if(-not (Test-Path -LiteralPath $local -PathType Container)){
+  throw 'PR701_PRESTOP_RESUME_EXISTING_WINDOW_REQUIRED'
+ }
+ $state=Read-Stage4Identity $local
+ if([string]$state.plan.series_id -cne [string]$plan.series_id -or
+    [string]$state.plan.repo_sha -cne [string]$plan.repo_sha -or
+    [string]$state.plan.cas_epoch.epoch_id -cne [string]$plan.cas_epoch.epoch_id){
+  throw 'PR701_PRESTOP_RESUME_STAGE4_PLAN_DRIFT'
+ }
+ # Original sequence checks signed Owner handoff, writer and attempt latches.
+ $admin=Read-Host 'Bestehendes PostgreSQL-Administratorpasswort nur lokal' -AsSecureString
+ try{
+  $sequence=@{}
+  if($CaFile){$sequence.CaFile=$CaFile}
+  & (Join-Path $PSScriptRoot 'MiniPC-Sequence.ps1') -ResumePreStop -WindowDirectory $local -ExpectedFixedInputsSha256 $fixedHash -AdminPassword $admin @sequence
+ }finally{$admin.Dispose()}
+ return
+}
 if([DateTimeOffset]::UtcNow -ge $end.AddMinutes(-6)){throw 'INSUFFICIENT_WINDOW_BUDGET_NO_STAGE4'}
 $launch=@{Role=$Role;DecisionCommentId=$DecisionCommentId}
 $sequence=@{}

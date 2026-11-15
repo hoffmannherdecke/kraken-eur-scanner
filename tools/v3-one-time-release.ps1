@@ -16,7 +16,8 @@ param(
  [string]$CoordinatedPostArchiveRequestPath='', [string]$CoordinatedPostArchiveEnvelopePath='',
  [string]$CoordinatedHandoffNonce='',
  [string]$PaperPlanJson='', [string]$RuntimeSpecJson='',
- [string]$HostReceiptJson='', [string]$HostReceiptCms=''
+ [string]$HostReceiptJson='', [string]$HostReceiptCms='',
+ [switch]$ReplaceExistingCas
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -131,12 +132,13 @@ if($Mode -eq 'PaperInventory'){
  return
 }
 
+if($ReplaceExistingCas -and $Mode -cne 'InstallPaperCas'){throw 'V3_CAS_REPLACEMENT_ONLY_INSTALL_MODE_HOLD'}
 if($Mode -in @('PaperOpenEpoch','PaperSealEpoch','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperPostStopFenceArchive','PaperPostArchiveRestore','PaperHostReadback','PaperRuntimeBootstrap','PaperResume')){
  . (Join-Path $PSScriptRoot 'v3-one-time-paper-release.ps1')
  Invoke-V3OneTimePaperRelease -Mode $Mode -PackageRoot $PackageRoot -ApprovalJson $ApprovalJson -ApprovalCms $ApprovalCms `
   -AuthorityAdmissionJson $AuthorityAdmissionJson -ExpectedAuthorityAdmissionSha256 $ExpectedAuthorityAdmissionSha256 `
   -ExpectedReleaseCommit $ExpectedReleaseCommit -PaperPlanJson $PaperPlanJson -RuntimeSpecJson $RuntimeSpecJson `
-  -HostReceiptJson $HostReceiptJson -HostReceiptCms $HostReceiptCms -PostgresPassword $PostgresPassword -CaFile $CaFile |
+  -HostReceiptJson $HostReceiptJson -HostReceiptCms $HostReceiptCms -PostgresPassword $PostgresPassword -CaFile $CaFile -ReplaceExistingCas:$ReplaceExistingCas |
   ConvertTo-Json -Depth 24 -Compress
  return
 }
