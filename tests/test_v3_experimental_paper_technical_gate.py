@@ -326,12 +326,17 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 # Historical PR699 six-proof inheritance MUST reject that
                 # modified source until independently admitted for release.
                 original_release = "ff87d03c3f67155a6e2354f32eaed6978f0ab9a2d3fb37bd621b280b773be3ef"
+                original_cas = "0056eeb0415fa3ca68ba2c70a103a6f48a6f82ab137afb9abf6d0aed7e3fb603"
+                cas_path = "supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql"
                 current_release = inventory["tools/v3-one-time-paper-release.ps1"]
+                current_cas = inventory[cas_path]
                 self.assertNotEqual(current_release, original_release)
+                self.assertNotEqual(current_cas, original_cas)
                 self.assertIsNone(pins())
-                # Keep the previous positive provenance fixture for its
-                # exact historical source, including all negative drift tests.
+                # Keep previous positive six-proof provenance for the exact
+                # historical Release AND CAS SQL source, not the new bytes.
                 inventory["tools/v3-one-time-paper-release.ps1"] = original_release
+                inventory[cas_path] = original_cas
                 self.assertIsNotNone(pins())
                 for name in ("tools/v3-one-time-paper-release.ps1", "paper_context.py",
                              "tools/v3-one-time-release.ps1",
@@ -342,6 +347,7 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                         self.assertIsNone(pins())
                         inventory[name] = original
                 inventory["tools/v3-one-time-paper-release.ps1"] = current_release
+                inventory[cas_path] = current_cas
                 self.assertIsNone(pins())
 
     def test_current_v2r4_unchanged_and_no_v3_evidence_is_blocked(self):
