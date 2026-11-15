@@ -485,12 +485,12 @@ function Assert-V3PaperCurrentSuccessor([string]$SeriesId) {
  return $stamp
 }
 function Get-V3PaperSupersessionSettings([object]$Plan) {
- $settings=@{prior_epoch_id='';prior_commit='';prior_terminal_sha256='';installed_cas_sha256='';
+ $settings=@{prior_epoch_id='';prior_commit='';prior_source_sha256='';prior_terminal_sha256='';installed_cas_sha256='';
   installed_issuer_sha256='';installed_reader_sha256='';series_time=''}
  $property=$Plan.PSObject.Properties['supersession']
  if($null -eq $property){return $settings}
  $previous=$property.Value
- $fields=@('prior_epoch_id','prior_commit','prior_terminal_sha256','installed_cas_sha256',
+ $fields=@('prior_epoch_id','prior_commit','prior_source_sha256','prior_terminal_sha256','installed_cas_sha256',
   'installed_issuer_sha256','installed_reader_sha256')
  if($null -eq $previous -or @($previous.PSObject.Properties).Count -ne $fields.Count -or
     [string]$previous.prior_epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
