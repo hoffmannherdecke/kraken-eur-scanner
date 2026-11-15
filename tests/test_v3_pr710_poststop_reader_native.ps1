@@ -169,7 +169,7 @@ $entry=Join-Path $PSScriptRoot '../tools/v3-poststop-issuer-release.ps1'
 foreach($file in @($entry,$validator)){
  $tok=$null;$err=$null
  $null=[Management.Automation.Language.Parser]::ParseFile($file,[ref]$tok,[ref]$err)
- if(@($err).Count -ne 0){throw ('AP04_POSTSTOP_PARSE_HOLD: '+$file)}
+ if(@($err).Count -ne 0){throw ('AP04_POSTSTOP_PARSE_HOLD: '+$file+' : '+(($err | ForEach-Object {$_.Message + ' at line ' + $_.Extent.StartLineNumber}) -join '; '))}
 }
 $entryRaw=[IO.File]::ReadAllText($entry)
 foreach($required in @(
