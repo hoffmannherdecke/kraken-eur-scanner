@@ -31,7 +31,6 @@ $common=@{WindowDirectory=$WindowDirectory;FixedSha256=$fixedHash}
 $bind=@{WindowDirectory=$WindowDirectory;ExpectedFixedInputsSha256=$ExpectedFixedInputsSha256}
 $executor=@{WindowDirectory=$WindowDirectory;FixedSha256=$fixedHash;AdminPassword=$AdminPassword}
 if($CaFile){$common.CaFile=$CaFile;$bind.CaFile=$CaFile;$executor.CaFile=$CaFile}
-$postStopAckDeadline=if($ResumePreStop){[DateTimeOffset]::UtcNow.AddMinutes(5)}else{$state.end.AddMinutes(-2)}
 $phaseScript=Join-Path $PSScriptRoot 'MiniPC-Phase.ps1'
 $bindScript=Join-Path $PSScriptRoot 'MiniPC-BindHandoff.ps1'
 $prepareDeadline=if($ResumePreStop){[DateTimeOffset]::UtcNow.AddMinutes(10)}else{$state.end}
@@ -42,6 +41,7 @@ $stopPlan=Join-Path $WindowDirectory 'plan.stop.json'
 $stopDeadline=if($ResumePreStop){[DateTimeOffset]::UtcNow.AddMinutes(5)}else{$state.end.AddMinutes(-3)}
 $stop=Wait-Phase $share Stop $stopPlan $stopDeadline
 & $phaseScript -Mode PaperStop -NotebookTransfer $stop -Execute @common
+$postStopAckDeadline=if($ResumePreStop){[DateTimeOffset]::UtcNow.AddMinutes(5)}else{$state.end.AddMinutes(-2)}
 do{
  try{
    & $bindScript -Phase PostStop -AdminPassword $AdminPassword @bind
