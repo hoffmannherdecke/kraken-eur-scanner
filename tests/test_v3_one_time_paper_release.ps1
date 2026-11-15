@@ -218,8 +218,9 @@ try{
  Reject {Get-V3PaperCasInstallSql 'altered' @{authorization=@{expires_at=[datetimeoffset]::UtcNow}}} 'SEAM_DRIFT'
 
  # Exact existing-definition CAS replacement: never a second first-install.
- $epoch=@{epoch_id=('V3CAS-AUDIT-'+('a'*32))}
- $replaced=Get-V3PaperCasInstallSql $original @{authorization=@{expires_at=[datetimeoffset]::UtcNow.AddMinutes(1)}} $epoch -ReplaceExisting
+ $epoch=@{epoch_id=('V3CAS-AUDIT-'+('a'*32));source_sha256=('a'*64);fence_sha256=('b'*64);caller_acl_sha256=('c'*64)}
+ $replaceContext=@{commit=('d'*40);authorization=@{expires_at=[datetimeoffset]::UtcNow.AddMinutes(1)}}
+ $replaced=Get-V3PaperCasInstallSql $original $replaceContext $epoch -ReplaceExisting
  Need ($replaced.Contains('d9973febcd429fe76bbc582ca4e7827c801b83e2f07d381f1fde9de8c1060c10') -and
   $replaced.Contains('V3_CAS_REPLACEMENT_OLD_DEFINITION_OR_ACL_DRIFT_HOLD') -and
   $replaced.Contains('V3_CAS_REPLACEMENT_POSTCHECK_HOLD')) 'REPLACEMENT_OLD_DEF_OR_POSTCHECK_MISSING'
