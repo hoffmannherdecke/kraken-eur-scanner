@@ -1503,7 +1503,7 @@ if supersede_sql 1 > /dev/null 2>"$transition_tmp/supersede-live.err"; then
 fi
 grep -Fq V3_PAPER_FOLLOWUP_TERMINAL_HISTORY_HOLD "$transition_tmp/supersede-live.err" || { cat "$transition_tmp/supersede-live.err" >&2; exit 1; }
 prior_fence="$(pg -Atc "select original_fence_sha256 from v3_cas_audit.epoch_v1 where epoch_id='$prior_epoch'")"
-issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$prior_epoch','$prior_commit','$followup_source','$prior_fence','$followup_acl','$prior_receipt');" >/dev/null
+issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$prior_epoch','$prior_commit','$prior_source','$prior_fence','$followup_acl','$prior_receipt');" >/dev/null
 if supersede_sql 660 >/dev/null 2>"$transition_tmp/supersede-expired.err"; then
  echo 'FAIL_SUPERSESSION_ACCEPTED_EXPIRED_SERIES' >&2; exit 1
 fi
