@@ -323,7 +323,9 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                  patch.object(technical_gate.sys, "executable", str(executable)), \
                  patch.object(technical_gate.hashlib, "sha256", side_effect=offline_sha256):
                 self.assertIsNotNone(pins())
-                for name in ("tools/v3-one-time-paper-release.ps1", "paper_context.py"):
+                for name in ("tools/v3-one-time-paper-release.ps1", "paper_context.py",
+                             "tools/v3-one-time-release.ps1",
+                             "supabase/v3-cas-audit-stage4-followup-release.sql"):
                     with self.subTest(name=name):
                         original = inventory[name]
                         inventory[name] = "0" * 64
