@@ -298,7 +298,7 @@ try{
  $oldPlan=$script:plan
  $script:plan=[pscustomobject]($script:plan.Clone())
  $script:plan | Add-Member NoteProperty supersession ([pscustomobject]@{
-  prior_epoch_id='V3CAS-AUDIT-'+('8'*32);prior_commit=('a'*40);prior_terminal_sha256=('1'*64);
+  prior_epoch_id='V3CAS-AUDIT-'+('8'*32);prior_commit=('a'*40);prior_source_sha256=('9'*64);prior_terminal_sha256=('1'*64);
   installed_cas_sha256=('2'*64);installed_issuer_sha256=('3'*64);installed_reader_sha256=('4'*64)})
  $script:plan.series_id='PAPER-V3-'+[datetimeoffset]::UtcNow.AddMinutes(-11).ToString("yyyyMMdd'T'HHmmss'Z'")
  $openPw=ConvertTo-SecureString 'OFFLINE-NOT-A-CREDENTIAL' -AsPlainText -Force
@@ -306,6 +306,19 @@ try{
  Need (@(Get-ChildItem -LiteralPath $tmp -Filter 'run*.epoch.attempted.json').Count -eq 0) 'EXPIRED_EPOCH_CREATED_DISPATCH_LATCH'
  $script:plan.series_id='PAPER-V3-'+[datetimeoffset]::UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'")
  Need ((Get-V3PaperSupersessionSettings $script:plan).prior_epoch_id -ceq $script:plan.supersession.prior_epoch_id) 'FRESH_SIGNED_EPOCH_NOT_PREPARABLE'
+
+ $supersession=Get-V3PaperSupersessionSettings $script:plan
+ Need ($supersession.prior_source_sha256 -ceq ('9'*64) -and
+   $supersession.prior_source_sha256 -cne ('2'*64)) 'PRIOR_SOURCE_NOT_INDEPENDENT_OF_SUCCESSOR'
+ $prior=$script:plan.supersession.prior_source_sha256
+ $script:plan.supersession.prior_source_sha256=''
+ Reject {Get-V3PaperSupersessionSettings $script:plan} 'SUPERSESSION_DIGEST_HOLD'
+ $script:plan.supersession.prior_source_sha256=('g'*64)
+ Reject {Get-V3PaperSupersessionSettings $script:plan} 'SUPERSESSION_DIGEST_HOLD'
+ $script:plan.supersession.PSObject.Properties.Remove('prior_source_sha256')
+ Reject {Get-V3PaperSupersessionSettings $script:plan} 'SUPERSESSION_PINS_REQUIRED'
+ $script:plan.supersession | Add-Member NoteProperty prior_source_sha256 $prior
+ Need ((Get-V3PaperSupersessionSettings $script:plan).prior_source_sha256 -ceq $prior) 'ORIGINAL_PRIOR_SOURCE_PIN_NOT_RESTORED'
  $openPw.Dispose()
  $script:plan=$oldPlan
  $res=Invoke-V3OneTimePaperRelease -Mode PaperResume @common
