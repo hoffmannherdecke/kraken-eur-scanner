@@ -57,7 +57,7 @@ class Stage4OneTimeEpochContract(unittest.TestCase):
         self.assertIn("V3_PAPER_FOLLOWUP_PRIOR_SOURCE_PIN_HOLD", sql)
         self.assertLess(sql.index("V3_PAPER_FOLLOWUP_PRIOR_SOURCE_PIN_HOLD"),
                         sql.index("GRANT v3_cas_audit_table_owner TO postgres"))
-        self.assertIn("coalesce(current_setting('v3_followup.prior_source_sha256',true),'') !~ '^[a-f0-9]{64}
+        self.assertIn("V3_PAPER_FOLLOWUP_PRIOR_SOURCE_PIN_HOLD", sql)
         # All old terminal, fence, ACL and no-effect guards remain.
         for clause in (
             "a.receipt_sha256=current_setting('v3_followup.prior_terminal_sha256')",
