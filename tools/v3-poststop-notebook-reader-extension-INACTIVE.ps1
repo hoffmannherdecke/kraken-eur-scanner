@@ -1,16 +1,16 @@
 # PR710 source-only POSTSTOP extension; original staged Reader bytes immutable.
 [CmdletBinding()]
-param([switch]$PostStopHostReader,[switch]$PostStopCloudReader,[switch]$PostStopTerminalReader,
+param([switch]$PostStopHostReader,[switch]$PostStopCloudReader,[switch]$PostStopTerminalReader,[switch]$ExpiredStage4Readback,
  [Parameter(Mandatory=$true)][string]$ObservationNonce,
  [Parameter(Mandatory=$true)][string]$ReviewedNotebookCertificateSha256,
  [string]$OriginalHostDirectory='',[string]$CaFile='')
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
-if(([int]$PostStopHostReader.IsPresent+[int]$PostStopCloudReader.IsPresent+[int]$PostStopTerminalReader.IsPresent) -ne 1){throw 'PR710_READER_MODE_HOLD'}
+if(([int]$PostStopHostReader.IsPresent+[int]$PostStopCloudReader.IsPresent+[int]$PostStopTerminalReader.IsPresent+[int]$ExpiredStage4Readback.IsPresent) -ne 1){throw 'PR710_READER_MODE_HOLD'}
 $pin=if($PostStopHostReader){'2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'}else{'61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'}
 if($ObservationNonce -cnotmatch '^[a-f0-9]{32}$' -or $ReviewedNotebookCertificateSha256 -cne $pin){throw 'PR710_READER_PIN_HOLD'}
 if($PostStopHostReader -and (-not $OriginalHostDirectory -or $CaFile)){throw 'PR710_HOST_INPUT_HOLD'}
-if($PostStopCloudReader -and $OriginalHostDirectory){throw 'PR710_CLOUD_INPUT_HOLD'}
+if(($PostStopCloudReader -or $ExpiredStage4Readback) -and $OriginalHostDirectory){throw 'PR710_CLOUD_INPUT_HOLD'}
 if($env:OS -cne 'Windows_NT'){throw 'PR710_READER_WINDOWS_ONLY'}
 Add-Type -AssemblyName System.Security -ErrorAction Stop
 $dir=Join-Path $env:LOCALAPPDATA 'V3CasAuditActors'
@@ -168,7 +168,7 @@ if($PostStopHostReader){
  return
 }
 
-if(-not ($PostStopCloudReader -or $PostStopTerminalReader)){throw 'PR710_UNKNOWN_MODE_HOLD'}
+if(-not ($PostStopCloudReader -or $PostStopTerminalReader -or $ExpiredStage4Readback)){throw 'PR710_UNKNOWN_MODE_HOLD'}
 if(-not [IO.File]::Exists($psql)){throw 'PR710_PG17_REQUIRED'}
 $checks=@(@{Name='READER';File='reader.dpapi';Login='v3_cas_audit_reader_actor';Sql=''})
 
@@ -326,6 +326,38 @@ COMMIT;
  }
 }
 
+if($ExpiredStage4Readback){
+ $checks[0].Sql=@'
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+WITH pins AS (
+ SELECT jsonb_object_agg(p.proname,encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex')) AS hashes
+ FROM pg_proc p WHERE p.oid IN (
+  'v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)'::regprocedure,
+  'v3_cas_audit.record_paper_release_abort_v1(text,text,text,text,text,text)'::regprocedure,
+  'v3_cas_audit.read_paper_release_epoch_v1(text)'::regprocedure)
+)
+SELECT jsonb_build_object(
+ 'kind','V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_V1','observation_nonce','__NONCE__',
+ 'observed_at_utc',to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'epoch_id',e.epoch_id,'source_sha256',e.source_sha256,'fence_sha256',e.original_fence_sha256,
+ 'caller_acl_sha256',e.approved_caller_acl_sha256,'function_sha256',pins.hashes,
+ 'terminal_receipt_sha256',a.receipt_sha256,'state',CASE WHEN a.epoch_id IS NULL THEN 'INSTALL_READBACK_ONLY'
+   ELSE (v3_cas_audit.read_paper_release_epoch_v1(e.epoch_id)->>'state') END
+)::text FROM v3_cas_audit.epoch_v1 e CROSS JOIN pins
+LEFT JOIN v3_cas_audit.prepared_fence_abort_v1 a ON a.epoch_id=e.epoch_id
+WHERE session_user='v3_cas_audit_reader_actor' AND current_user='v3_cas_audit_reader'
+ AND e.epoch_id='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+ AND e.paper_release_commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
+ AND e.original_fence_sha256='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28'
+ AND e.source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+ AND e.approved_caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+ AND e.next_ordinal=1 AND NOT e.sealed;
+COMMIT;
+'@
+ $checks[0].Sql=$checks[0].Sql.Replace('__NONCE__',$ObservationNonce)
+}
+
 $plain=$null
 try{
  $root='system'
@@ -348,6 +380,30 @@ try{
  if($LASTEXITCODE -ne 0){throw 'PR710_CLOUD_QUERY_HOLD'}
  $wire=($output|Out-String).Trim()
  if($wire.Length -lt 400 -or $wire.Length -gt 4096){throw 'PR710_CLOUD_WIRE_HOLD'}
+ if($ExpiredStage4Readback){
+  $row=Assert-V3PostStopFreshReader $wire $ObservationNonce 'V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_V1'
+  if($row.state -cnotin @('INSTALL_READBACK_ONLY','EXPIRED_STAGE4_ABORTED_BEFORE_INHIBIT')){
+   throw 'V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_STATE_HOLD'
+  }
+  $expected=@{
+   begin_executor_inhibit_v1='4be32f9c6b3dae6f3f35f125ab83da1d4992eecb0b634e07574caf5785001926'
+   read_paper_release_epoch_v1='4ca76c1a02dc42a81d3c7105c43c382f91b9bcf77bef2fe0b71fd973b475c0a0'
+   record_paper_release_abort_v1='6100ce0783220f5d615eaf7f75466665f832d63dc2c5a5bcad6be8e18bd16eda'
+  }
+  if($row.function_sha256 -isnot [pscustomobject] -or
+     @($row.function_sha256.PSObject.Properties).Count -ne $expected.Count){
+   throw 'V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_DEFINITION_SET_HOLD'
+  }
+  foreach($name in $expected.Keys){
+   $actual=$row.function_sha256.PSObject.Properties[$name]
+   if($null -eq $actual -or [string]$actual.Value -cne $expected[$name]){
+    throw 'V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_DEFINITION_HASH_HOLD'
+   }
+  }
+  $signed=Save-V3SignedNotebookReaderSnapshot $wire $ReviewedNotebookCertificateSha256
+  $signed|ConvertTo-Json -Compress
+  return
+ }
  $receiptKind=if($PostStopTerminalReader){'V3_CAS_PREPARED_FENCE_ABORT_READER_RECEIPT_V1'}else{'V3_POSTSTOP_CURRENT_INDEPENDENT_CLOUD_READER_V1'}
  $row=Assert-V3PostStopFreshReader $wire $ObservationNonce $receiptKind
  if($PostStopTerminalReader){

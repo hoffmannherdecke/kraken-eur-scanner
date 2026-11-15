@@ -1216,6 +1216,22 @@ def _pr692_original_proof_pins(*, pr699: bool = False) -> tuple[str, str] | None
             **postarchive_restore_revision,
             recovery_operator: "ff87d03c3f67155a6e2354f32eaed6978f0ab9a2d3fb37bd621b280b773be3ef",
         }
+        # This exact pair adds a separately signed install and an
+        # epoch-specific terminal receipt route. Neither changes strategy,
+        # STOP, CAS, native writer or the previously reviewed proof inputs.
+        expiry_abort_install_delta = {
+            "tools/v3-one-time-release.ps1": (
+                current_epoch_recovery_revision["tools/v3-one-time-release.ps1"],
+                "d90f1b0c7995c33053b8f1d6dbe7beb56d2531cef83d1cf28754866709d60725",
+            ),
+            "supabase/v3-cas-audit-stage4-followup-release.sql": (
+                "848a3f1086c9ed214cf1e28cfdb9a5a72082b5676fd7117b43f97c1a0327350e",
+                "d5c21aabbef470f942f0053f5356ab18b702ae5ea48f41e0beee226ddd6d8a63",
+            ),
+        }
+        if all(inventory.get(path) == after for path, (_, after) in expiry_abort_install_delta.items()):
+            for path, (before, _) in expiry_abort_install_delta.items():
+                inventory[path] = before
         if all(inventory.get(path) == digest for path, digest in current_epoch_recovery_revision.items()):
             inventory[recovery_operator] = postarchive_restore_revision[recovery_operator]
         if all(inventory.get(path) == digest for path, digest in postarchive_restore_revision.items()):

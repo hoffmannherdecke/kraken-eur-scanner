@@ -2,7 +2,7 @@
 # Default is local inventory only. No implicit installation, STOP, CAS or Paper.
 [CmdletBinding()]
 param(
- [ValidateSet('Inventory','PaperInventory','InstallCloud','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','PaperOpenEpoch','PaperSealEpoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperPostStopFenceArchive','PaperPostArchiveRestore','PaperHostReadback','PaperRuntimeBootstrap','PaperResume')][string]$Mode='Inventory',
+ [ValidateSet('Inventory','PaperInventory','InstallCloud','InstallExpiredStage4Abort','ReadbackCloud','OriginalhostAbortRestore','OriginalhostReconcile','Stage4Epoch','PaperOpenEpoch','PaperSealEpoch','GateAAbort','GateAReadback','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperPostStopFenceArchive','PaperPostArchiveRestore','PaperHostReadback','PaperRuntimeBootstrap','PaperResume')][string]$Mode='Inventory',
  [string]$PackageRoot=(Split-Path $PSScriptRoot -Parent),
  [string]$ApprovalJson='', [string]$ApprovalCms='', [string]$ExpectedReleaseCommit='',
  [string]$AuthorityAdmissionJson='', [string]$ExpectedAuthorityAdmissionSha256='',
@@ -142,6 +142,14 @@ if($Mode -in @('PaperOpenEpoch','PaperSealEpoch','PaperPrepare','PaperStop','Pap
 }
 
 $hashes=Get-V3OneTimeReleaseArtifactInventory -PackageRoot $PackageRoot
+if($Mode -ceq 'InstallExpiredStage4Abort'){
+ foreach($path in @('supabase/v3-cas-audit-stage4-followup-release.sql',
+   'supabase/v3-cas-audit-expired-stage4-abort-install.sql',
+   'tools/v3-poststop-notebook-reader-extension-INACTIVE.ps1')){
+  $hashes[$path]=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes (Join-Path $PackageRoot $path) 1048576)
+ }
+}
+
 if($Mode -eq 'Stage4Epoch'){
  foreach($path in @('supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql',
   'supabase/v3-cas-audit-stage4-original-epoch-open-release.sql',
@@ -331,6 +339,57 @@ if($Mode -eq 'Stage4Epoch'){
  $original
  return
 }
+if($Mode -ceq 'InstallExpiredStage4Abort'){
+ $b=$authorized.claims.bindings
+ $pins=@{
+  epoch_id='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+  successor_series_id='PAPER-V3-20261115T073741Z'
+  epoch_release_commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
+  source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+  fence_sha256='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28'
+  caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+ }
+ if(@($b.PSObject.Properties).Count -ne $pins.Count){throw 'V3_EXPIRED_STAGE4_INSTALL_BINDINGS_HOLD'}
+ foreach($key in $pins.Keys){
+  $actual=$b.PSObject.Properties[$key]
+  if($null -eq $actual -or [string]$actual.Value -cne $pins[$key]){throw 'V3_EXPIRED_STAGE4_INSTALL_BINDINGS_HOLD'}
+ }
+ if($CaFile -cne 'C:\Users\ADMIN\Downloads\prod-ca-2021.crt'){
+  throw 'V3_EXPIRED_STAGE4_INSTALL_CA_HOLD'
+ }
+
+ # Install the same three definitions used by the successor SQL. Do not
+ # execute its Stage4 preflight, epoch INSERT, or transaction wrapper.
+ $followup=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes (Join-Path $PackageRoot 'supabase/v3-cas-audit-stage4-followup-release.sql') 1048576))
+ $install=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes (Join-Path $PackageRoot 'supabase/v3-cas-audit-expired-stage4-abort-install.sql') 1048576))
+ $blocks=@{
+  ISSUER='(?ms)^DO \$issuer_upgrade\$.*?^END \$issuer_upgrade\$;'
+  ABORT='(?ms)^CREATE OR REPLACE FUNCTION v3_cas_audit\.record_paper_release_abort_v1\(.*?^END \$abort\$;'
+  READER='(?ms)^CREATE OR REPLACE FUNCTION v3_cas_audit\.read_paper_release_epoch_v1\(.*?^END \$reader\$;'
+ }
+ foreach($name in $blocks.Keys){
+  $block=[regex]::Matches($followup,$blocks[$name])
+  $needle='/*__'+$name+'__*/'
+  if($block.Count -ne 1 -or [regex]::Matches($install,[regex]::Escape($needle)).Count -ne 1){
+   throw 'V3_EXPIRED_STAGE4_INSTALL_EXACT_SOURCE_SEAM_HOLD'
+  }
+  $install=$install.Replace($needle,$block[0].Value.Replace("`r`n","`n"))
+ }
+ $settings=@{
+  scope='CLOUD_ABORT_INSTALL';epoch_id=$pins.epoch_id;approval_sha256=$authorized.approval_sha256
+  expires_at=$authorized.expires_at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+ }
+ $prefix=@(foreach($key in $settings.Keys){"SELECT set_config('v3_expired_stage4.$key','$($settings[$key])',false);"}) -join "`n"
+ if($null -eq $PostgresPassword){$PostgresPassword=Read-Host 'Existing postgres password (not saved)' -AsSecureString}
+ $root=Join-Path 'C:\Users\ADMIN\Trading\State' ($pins.epoch_id+'-expired-stage4-install-attempted')
+ $latch=[IO.File]::Open($root,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+ try{$latch.Write($approval,0,$approval.Length);$latch.Flush($true)}finally{$latch.Dispose()}
+ $null=Invoke-V3ReleasePg -Sql ($prefix+"`n"+$install) -Password $PostgresPassword -Ca $CaFile -Actor postgres
+ [pscustomobject]@{kind='V3_EXPIRED_STAGE4_INSTALL_RETURNED_INDEPENDENT_READER_REQUIRED';
+  epoch_id=$pins.epoch_id;retry_authorized=$false;abort_authorized=$false}|ConvertTo-Json -Compress
+ return
+}
+
 $releaseSql=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes -Path (Join-Path $PackageRoot 'supabase/v3-cas-prepared-fence-abort-release.sql')))
 $readbackSql=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes -Path (Join-Path $PackageRoot 'supabase/v3-cas-prepared-fence-abort-release-readback.sql')))
 if($null -eq $PostgresPassword){$PostgresPassword=Read-Host 'Existing postgres password (not saved)' -AsSecureString}
