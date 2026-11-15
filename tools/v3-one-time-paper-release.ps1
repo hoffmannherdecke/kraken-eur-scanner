@@ -418,14 +418,14 @@ END `$v3_install_inhibit`$;
   }
   $oldDef='d9973febcd429fe76bbc582ca4e7827c801b83e2f07d381f1fde9de8c1060c10'
   $sig='public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
-  $originalGuard=@'
-  if pg_catalog.to_regprocedure(
-    'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
-  ) is not null then
-    raise exception 'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD';
-  end if;
-'@
-  if(([regex]::Matches($Source,[regex]::Escape($originalGuard))).Count -ne 1){
+  $start=$Source.IndexOf('  if pg_catalog.to_regprocedure(',[StringComparison]::Ordinal)
+  $end=if($start -ge 0){$Source.IndexOf('  end if;',$start,[StringComparison]::Ordinal)}else{-1}
+  if($start -lt 0 -or $end -le $start -or
+    ([regex]::Matches($Source,'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD')).Count -ne 1){
+   throw 'V3_CAS_REPLACEMENT_ORIGINAL_GUARD_DRIFT'
+  }
+  $originalGuard=$Source.Substring($start,$end-$start+'  end if;'.Length)
+  if($originalGuard -cnotmatch "^\s*if pg_catalog\.to_regprocedure\(\s*'public\.rotate_v2r4_to_v3_experimental_paper\(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text\)'\s*\)\s*is not null then\s*raise exception 'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD';\s*end if;$"){
    throw 'V3_CAS_REPLACEMENT_ORIGINAL_GUARD_DRIFT'
   }
   # Original CREATE OR REPLACE preserves OID, owner and executor ACL.
