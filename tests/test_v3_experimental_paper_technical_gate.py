@@ -333,11 +333,20 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 self.assertNotEqual(current_release, original_release)
                 self.assertNotEqual(current_cas, original_cas)
                 self.assertIsNone(pins())
-                # Keep previous positive six-proof provenance for the exact
-                # historical Release AND CAS SQL source, not the new bytes.
+                # Historical proof claims are immutable: the original
+                # adapter and its exact archived fingerprint remain in place.
+                # No new operator/SQL source may silently inherit them.
+                adapter_source = (root / gate_name).read_text(encoding="utf-8")
+                self.assertIn(original_release, adapter_source)
+                self.assertIn("60230cbf8fd6b4babdb9d26cf3fea56aa80ee1ee39babbc3b065e35b51f776a8", adapter_source)
                 inventory["tools/v3-one-time-paper-release.ps1"] = original_release
                 inventory[cas_path] = original_cas
-                self.assertIsNotNone(pins())
+                # The current staged inventory is NOT the archived original
+                # stage, so it must remain closed until a new owner admission.
+                self.assertIsNone(pins())
+                inventory["tools/v3-one-time-paper-release.ps1"] = current_release
+                inventory[cas_path] = current_cas
+                self.assertIsNone(pins())
                 for name in ("tools/v3-one-time-paper-release.ps1", "paper_context.py",
                              "tools/v3-one-time-release.ps1",
                              "supabase/v3-cas-audit-stage4-followup-release.sql"):
@@ -346,9 +355,6 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                         inventory[name] = "0" * 64
                         self.assertIsNone(pins())
                         inventory[name] = original
-                inventory["tools/v3-one-time-paper-release.ps1"] = current_release
-                inventory[cas_path] = current_cas
-                self.assertIsNone(pins())
 
     def test_current_v2r4_unchanged_and_no_v3_evidence_is_blocked(self):
         self.assertEqual(validate_learning_gate(ROOT,
