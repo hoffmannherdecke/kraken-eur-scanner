@@ -1,7 +1,7 @@
 # One-shot POST-STOP UNKNOWN Notebook issuer. Separate scoped CMS authorization.
 [CmdletBinding()]
 param(
- [ValidateSet('Abort','Readback')][string]$Mode,
+ [ValidateSet('Abort','Readback','ExpiredStage4Abort')][string]$Mode,
  [string]$PackageRoot,[string]$ApprovalJson,[string]$ApprovalCms,
  [string]$AuthorityAdmissionJson,[string]$ExpectedAuthorityAdmissionSha256,
  [string]$ExpectedReleaseCommit,[string]$ApprovedPinsJson,
@@ -17,6 +17,132 @@ if($env:OS -cne 'Windows_NT' -or $env:COMPUTERNAME -ceq 'MINI-PC' -or
 }
 Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1') -Force
 . (Join-Path $PSScriptRoot 'v3-post-stop-unknown-quarantine-source-only.ps1')
+
+if($Mode -ceq 'ExpiredStage4Abort'){
+ $epoch='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+ $series='PAPER-V3-20261115T073741Z'
+ $commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
+ $source='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+ $fence='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28'
+ $acl='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+ $inventory=Get-V3OneTimeReleaseArtifactInventory $PackageRoot
+ foreach($rel in @('tools/v3-poststop-authorized-window.ps1','tools/v3-poststop-issuer-release.ps1','tools/v3-poststop-notebook-reader-extension-INACTIVE.ps1')){
+  $inventory[$rel]=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes (Join-Path $PackageRoot $rel) 1048576)
+ }
+ if($env:USERNAME -cne 'burns'){throw 'AP05A_NOTEBOOK_ACTOR_HOLD'}
+ $pin=Assert-V3ReleaseAuthorityAdmission -Bytes (Read-V3ReleaseLocalBytes $AuthorityAdmissionJson) -ExpectedSha256 $ExpectedAuthorityAdmissionSha256 -ReleaseCommit $ExpectedReleaseCommit
+ if($pin -cne '2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'){throw 'AP05A_AUTHORITY_HOLD'}
+ $approvalBytes=Read-V3ReleaseLocalBytes $ApprovalJson 16384
+ # Reuse the original PR723 narrow CMS schema without changing the common release module.
+ Assert-V3ReleaseCms -Payload $approvalBytes -Cms (Read-V3ReleaseLocalBytes $ApprovalCms 32768) -ReviewedAuthorityCertificateSha256 $pin
+ $claims=Read-V3ReleaseJson $approvalBytes
+ $af=@('kind','release_id','scope','base_commit','release_commit','not_before_utc','expires_at_utc','project_ref','computer_name','trading_root','artifacts','bindings')
+ if(@($claims.PSObject.Properties).Count -ne $af.Count -or @($claims.PSObject.Properties.Name|Where-Object {$_ -cnotin $af}).Count -ne 0 -or
+  $claims.kind -cne 'V3_ONE_TIME_RELEASE_AUTHORIZATION_V1' -or [string]$claims.release_id -cnotmatch '^V3-ONETIME-[a-f0-9]{32}$' -or
+  $claims.scope -cne 'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT' -or $claims.base_commit -cne '5b1789e349b157d06d3109c5f0ff10d95154bf81' -or
+  $claims.release_commit -cne $ExpectedReleaseCommit -or $claims.project_ref -cne 'nlgzjmqgwueojlyqmoru' -or
+  $claims.computer_name -cne 'MINI-PC' -or $claims.trading_root -cne 'C:\Users\ADMIN\Trading' -or
+  $claims.artifacts -isnot [pscustomobject] -or $claims.bindings -isnot [pscustomobject] -or
+  @($claims.artifacts.PSObject.Properties).Count -ne $inventory.Count){throw 'AP05A_SIGNED_AUTHORIZATION_SCHEMA_HOLD'}
+ foreach($rel in $inventory.Keys){
+  if([string]$claims.artifacts.$rel -cne [string]$inventory[$rel]){throw 'AP05A_ARTIFACT_PIN_HOLD'}
+ }
+ $fmt="yyyy-MM-dd'T'HH:mm:ss'Z'"
+ $startTime=[datetimeoffset]::MinValue;$endTime=[datetimeoffset]::MinValue
+ if(-not [datetimeoffset]::TryParseExact([string]$claims.not_before_utc,$fmt,[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal,[ref]$startTime) -or
+  -not [datetimeoffset]::TryParseExact([string]$claims.expires_at_utc,$fmt,[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal,[ref]$endTime) -or
+  $endTime -le $startTime -or ($endTime-$startTime).TotalMinutes -gt 15 -or
+  [datetimeoffset]::UtcNow -lt $startTime -or [datetimeoffset]::UtcNow -ge $endTime){throw 'AP05A_SIGNED_TIME_HOLD'}
+ $auth=[pscustomobject]@{claims=$claims;expires_at=$endTime}
+ $bindings=$auth.claims.bindings
+ $names=@('series_id','epoch_id','epoch_release_commit','source_sha256','fence_sha256','caller_acl_sha256','operator_sha256','controller_sha256','preflight_sha256','terminal_receipt_sha256','owner_comment_id')
+ if(@($bindings.PSObject.Properties).Count -ne $names.Count -or @($bindings.PSObject.Properties.Name|Where-Object {$_ -cnotin $names}).Count -ne 0 -or
+  $bindings.series_id -cne $series -or $bindings.epoch_id -cne $epoch -or $bindings.epoch_release_commit -cne $commit -or
+  $bindings.source_sha256 -cne $source -or $bindings.fence_sha256 -cne $fence -or $bindings.caller_acl_sha256 -cne $acl -or
+  $bindings.operator_sha256 -cne $inventory['tools/v3-poststop-issuer-release.ps1'] -or
+  $bindings.controller_sha256 -cne $inventory['tools/v3-poststop-authorized-window.ps1'] -or
+  [string]$bindings.owner_comment_id -cnotmatch '^[0-9]{9,12}$'){throw 'AP05A_EXACT_BINDINGS_HOLD'}
+ $reader=Read-V3ReleaseLocalBytes $CloudJson 8192
+ Assert-V3ReleaseCms $reader (Read-V3ReleaseLocalBytes $CloudCms 32768) '61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'
+ $pre=Read-V3ReleaseJson $reader
+ $preHash=Get-V3ReleaseSha256 $reader
+ $observed=[datetimeoffset]::ParseExact([string]$pre.observed_at_utc,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal)
+ if($preHash -cne $bindings.preflight_sha256 -or $pre.kind -cne 'V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_V1' -or $pre.state -cne 'INSTALL_READBACK_ONLY' -or
+  $pre.epoch_id -cne $epoch -or $pre.source_sha256 -cne $source -or $pre.fence_sha256 -cne $fence -or $pre.caller_acl_sha256 -cne $acl -or
+  $null -ne $pre.terminal_receipt_sha256 -or $observed -gt [datetimeoffset]::UtcNow.AddSeconds(5) -or
+  ([datetimeoffset]::UtcNow-$observed).TotalSeconds -ge 30){throw 'AP05A_FRESH_READER_HOLD'}
+ $defs=@{begin_executor_inhibit_v1='4be32f9c6b3dae6f3f35f125ab83da1d4992eecb0b634e07574caf5785001926';read_paper_release_epoch_v1='4ca76c1a02dc42a81d3c7105c43c382f91b9bcf77bef2fe0b71fd973b475c0a0';record_paper_release_abort_v1='6100ce0783220f5d615eaf7f75466665f832d63dc2c5a5bcad6be8e18bd16eda'}
+ if(@($pre.function_sha256.PSObject.Properties).Count -ne 3){throw 'AP05A_DEFINITION_COUNT_HOLD'}
+ foreach($key in $defs.Keys){if([string]$pre.function_sha256.$key -cne $defs[$key]){throw 'AP05A_DEFINITION_DRIFT_HOLD'}}
+ $receipt=Get-V3ReleaseSha256 ([Text.Encoding]::ASCII.GetBytes("V3_EXPIRED_STAGE4_TERMINAL_RECEIPT_V1"+[char]10+$epoch+[char]10+$preHash))
+ if($receipt -cne $bindings.terminal_receipt_sha256){throw 'AP05A_RECEIPT_DERIVATION_HOLD'}
+ $original=Invoke-RestMethod -Uri ('https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/comments/'+$bindings.owner_comment_id) -Method Get -TimeoutSec 10 -MaximumRedirection 0
+ if([string]$original.id -cne [string]$bindings.owner_comment_id -or $original.user.login -cne 'hoffmannherdecke' -or [string]$original.user.id -cne '331995561' -or
+  $original.issue_url -cne 'https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/99'){throw 'AP05A_OWNER_ORIGIN_HOLD'}
+ $owner=Read-V3ReleaseJson ([Text.Encoding]::UTF8.GetBytes([string]$original.body))
+ $fields=@('decision','scope','release_commit','series_id','epoch_id','operator_sha256','controller_sha256','source_sha256','fence_sha256','caller_acl_sha256')
+ if(@($owner.PSObject.Properties).Count -ne $fields.Count -or @($owner.PSObject.Properties.Name|Where-Object {$_ -cnotin $fields}).Count -ne 0 -or
+  $owner.decision -cne 'APPROVE_ONE_EXPIRED_STAGE4_TERMINAL_ABORT' -or $owner.scope -cne 'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT' -or
+  $owner.release_commit -cne $ExpectedReleaseCommit -or $owner.series_id -cne $series -or $owner.epoch_id -cne $epoch -or
+  $owner.operator_sha256 -cne $bindings.operator_sha256 -or $owner.controller_sha256 -cne $bindings.controller_sha256 -or
+  $owner.source_sha256 -cne $source -or $owner.fence_sha256 -cne $fence -or $owner.caller_acl_sha256 -cne $acl){throw 'AP05A_OWNER_DECISION_HOLD'}
+ $issuerRoot=Join-Path $env:LOCALAPPDATA 'V3CasIndependentIssuer'
+ $latch=Join-Path $issuerRoot ($epoch+'-terminal-attempted')
+ $sql=@'
+BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SET LOCAL lock_timeout='5s';
+SET LOCAL statement_timeout='15s';
+SELECT v3_cas_audit.record_paper_release_abort_v1('__EPOCH__','__COMMIT__','__SOURCE__','__FENCE__','__ACL__','__RECEIPT__');
+COMMIT;
+'@
+ foreach($key in @('EPOCH','COMMIT','SOURCE','FENCE','ACL','RECEIPT')){$sql=$sql.Replace('__'+$key+'__',[string](Get-Variable -Name $key.ToLowerInvariant() -ValueOnly))}
+ $raw=$null;$password=$null
+ try{
+  $raw=[Security.Cryptography.ProtectedData]::Unprotect((Read-V3ReleaseLocalBytes (Join-Path $issuerRoot 'issuer-currentuser.dpapi') 8192),[Text.Encoding]::ASCII.GetBytes('V3_CAS_INDEPENDENT_ISSUER_NOTEBOOK_V1'),[Security.Cryptography.DataProtectionScope]::CurrentUser)
+  $secret=[Text.Encoding]::ASCII.GetString($raw)
+  if($secret -cnotmatch '^[a-f0-9]{64}$'){throw 'AP05A_ISSUER_SECRET_HOLD'}
+  $password=ConvertTo-SecureString $secret -AsPlainText -Force
+ }finally{if($null -ne $raw){[Array]::Clear($raw,0,$raw.Length)};$secret=$null}
+ try{
+  if(([datetimeoffset]::UtcNow-$observed).TotalSeconds -ge 30 -or [datetimeoffset]::UtcNow -ge $auth.expires_at){throw 'AP05A_PREFLIGHT_EXPIRED_HOLD'}
+  $fs=[IO.File]::Open($latch,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+  try{$fs.Write($approvalBytes,0,$approvalBytes.Length);$fs.Flush($true)}finally{$fs.Dispose()}
+  $exe='C:\Program Files\PostgreSQL\17\bin\psql.exe'
+  $null=Read-V3ReleaseLocalBytes $exe 67108864
+  $ca='system'
+  if($CaFile){$null=Read-V3ReleaseLocalBytes $CaFile 65536;$ca=[IO.Path]::GetFullPath($CaFile)}
+  $start=[Diagnostics.ProcessStartInfo]::new()
+  $start.FileName=$exe;$start.Arguments='-X -q -A -t -w -v ON_ERROR_STOP=1 -f -'
+  $start.UseShellExecute=$false;$start.CreateNoWindow=$true
+  $start.RedirectStandardInput=$true;$start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true
+  foreach($key in @($start.EnvironmentVariables.Keys)){if([string]$key -match '^PG'){$start.EnvironmentVariables.Remove([string]$key)}}
+  $start.EnvironmentVariables['PGHOST']='aws-1-eu-west-1.pooler.supabase.com'
+  $start.EnvironmentVariables['PGPORT']='5432';$start.EnvironmentVariables['PGDATABASE']='postgres'
+  $start.EnvironmentVariables['PGUSER']='v3_cas_inhibit_issuer_actor.nlgzjmqgwueojlyqmoru'
+  $start.EnvironmentVariables['PGSSLMODE']='verify-full';$start.EnvironmentVariables['PGSSLROOTCERT']=$ca
+  $start.EnvironmentVariables['PGCONNECT_TIMEOUT']='10'
+  $start.EnvironmentVariables['PGAPPNAME']='AP05A-once'
+  $ptr=[IntPtr]::Zero;$process=[Diagnostics.Process]::new()
+  try{
+   $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
+   $start.EnvironmentVariables['PGPASSWORD']=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+   $process.StartInfo=$start
+   if(-not $process.Start()){throw 'AP05A_START_UNKNOWN_NO_RETRY'}
+   $out=$process.StandardOutput.ReadToEndAsync();$err=$process.StandardError.ReadToEndAsync()
+   $process.StandardInput.Write($sql);$process.StandardInput.Close()
+   if(-not $process.WaitForExit(45000)){$process.Kill();throw 'AP05A_TIMEOUT_UNKNOWN_NO_RETRY'}
+   $process.WaitForExit()
+   $null=$out.GetAwaiter().GetResult();$null=$err.GetAwaiter().GetResult()
+   if($process.ExitCode -ne 0){throw 'AP05A_RESULT_UNKNOWN_NO_RETRY'}
+  }finally{
+   if($ptr -ne [IntPtr]::Zero){[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}
+   $start.EnvironmentVariables.Remove('PGPASSWORD');$process.Dispose()
+  }
+ }finally{if($null -ne $password){$password.Dispose()}}
+ [pscustomobject]@{kind='AP05A_TERMINAL_DISPATCH_RETURNED_READER_REQUIRED';epoch_id=$epoch;receipt_sha256=$receipt;retry_authorized=$false}|ConvertTo-Json -Compress
+ return
+}
+
 $epoch='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
 $inventory=Get-V3OneTimeReleaseArtifactInventory $PackageRoot
 foreach($rel in @('tools/v3-poststop-issuer-release.ps1',

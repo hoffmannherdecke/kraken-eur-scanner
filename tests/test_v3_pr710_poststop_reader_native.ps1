@@ -169,7 +169,7 @@ $entry=Join-Path $PSScriptRoot '../tools/v3-poststop-issuer-release.ps1'
 foreach($file in @($entry,$validator)){
  $tok=$null;$err=$null
  $null=[Management.Automation.Language.Parser]::ParseFile($file,[ref]$tok,[ref]$err)
- if(@($err).Count -ne 0){throw ('AP04_POSTSTOP_PARSE_HOLD: '+$file)}
+ if(@($err).Count -ne 0){throw ('AP04_POSTSTOP_PARSE_HOLD: '+$file+' : '+(($err | ForEach-Object {$_.Message + ' at line ' + $_.Extent.StartLineNumber}) -join '; '))}
 }
 $entryRaw=[IO.File]::ReadAllText($entry)
 foreach($required in @(
@@ -254,3 +254,51 @@ if(-not $sourceContractRaw.Contains('($Now-$ht).TotalSeconds -gt 60') -or
  throw 'AP04_POSTSTOP_EXISTING_FRESHNESS_BOUND_CHANGED'
 }
 Write-Output 'AP04_POSTSTOP_30S_OVERLAP_BOUNDARY_AND_FRESHNESS_PASS'
+
+
+# AP05A: changed terminal dispatch only, no PR732/PR733 fixture replay.
+$ap05Issuer=Join-Path $PSScriptRoot '../tools/v3-poststop-issuer-release.ps1'
+$ap05Controller=Join-Path $PSScriptRoot '../tools/v3-poststop-authorized-window.ps1'
+$ap05Auth=Join-Path $PSScriptRoot '../tools/v3-one-time-release-authorization.psm1'
+foreach($p in @($ap05Issuer,$ap05Controller,$ap05Auth)){
+ $tok=$null;$errs=$null
+ $null=[Management.Automation.Language.Parser]::ParseFile($p,[ref]$tok,[ref]$errs)
+ if(@($errs).Count -gt 0){throw ('AP05A_NATIVE_PARSER_HOLD: '+$p+' '+$errs[0].Message)}
+}
+$i=[IO.File]::ReadAllText($ap05Issuer)
+$c=[IO.File]::ReadAllText($ap05Controller)
+$a=[IO.File]::ReadAllText($ap05Auth)
+$start=$i.IndexOf('if($Mode -ceq '+[char]39+'ExpiredStage4Abort'+[char]39+'){')
+$end=$i.IndexOf('$epoch='+[char]39+'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'+[char]39,[Math]::Max(0,$start))
+if($start -lt 0 -or $end -le $start){throw 'AP05A_NARROW_BRANCH_HOLD'}
+$target=$i.Substring($start,$end-$start)
+foreach($required in @(
+ 'V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4',
+ 'PAPER-V3-20261115T073741Z',
+ 'c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28',
+ 'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT',
+ 'AP05A_SIGNED_AUTHORIZATION_SCHEMA_HOLD','Assert-V3ReleaseAuthorityAdmission',
+ 'Assert-V3ReleaseCms','AP05A_DEFINITION_DRIFT_HOLD',
+ 'AP05A_FRESH_READER_HOLD','AP05A_RECEIPT_DERIVATION_HOLD',
+ 'AP05A_OWNER_DECISION_HOLD','AP05A_EXACT_BINDINGS_HOLD',
+ 'v3_cas_inhibit_issuer_actor.nlgzjmqgwueojlyqmoru',
+ 'FileMode]::CreateNew','AP05A_TIMEOUT_UNKNOWN_NO_RETRY',
+ 'AP05A_RESULT_UNKNOWN_NO_RETRY','BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED',
+ 'record_paper_release_abort_v1','-MaximumRedirection 0'
+)){
+ if(-not $target.Contains($required)){throw ('AP05A_TERMINAL_GUARD_MISSING: '+$required)}
+}
+if(([regex]::Matches($target,'SELECT v3_cas_audit.record_paper_release_abort_v1')).Count -ne 1 -or
+ $target.Contains('DROP TABLE') -or $target.Contains('ALTER ROLE') -or
+ $target.Contains('rotate_v2r4_to_v3_experimental_paper(')){
+ throw 'AP05A_UNEXPECTED_EFFECT_HOLD'
+}
+foreach($required in @('ExpectedIssuerSha256','ExpectedControllerSha256',
+ 'AUTHORIZE-EXPIRED-STAGE4-TERMINAL-','AP05A_PREFLIGHT_TERMINAL_OR_DRIFT_HOLD',
+ 'AP05A_PREFLIGHT_TOO_OLD_HOLD','AP05A_TERMINAL_INDEPENDENT_READER_HOLD_NO_RETRY',
+ 'FileMode]::CreateNew','-ExpiredStage4Readback',
+ 'AP05A_TERMINAL_INDEPENDENT_SIGNED_PASS')){
+ if(-not $c.Contains($required)){throw ('AP05A_CONTROLLER_GUARD_MISSING: '+$required)}
+}
+if(-not $target.Contains("'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT'")){throw 'AP05A_SCOPE_MISSING_HOLD'}
+'AP05A_TARGETED_NATIVE_CONTRACT_PASS'

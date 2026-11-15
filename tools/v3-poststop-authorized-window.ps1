@@ -5,13 +5,17 @@
 param(
  [Parameter(Mandatory=$true)][string]$PackageRoot,
  [Parameter(Mandatory=$true)][ValidatePattern('^[a-f0-9]{40}$')][string]$ExpectedReleaseCommit,
- [Parameter(Mandatory=$true)][string]$StaticOwnerPolicyJson,
- [Parameter(Mandatory=$true)][string]$StaticOwnerPolicySha256,
+ [string]$StaticOwnerPolicyJson,
+ [string]$StaticOwnerPolicySha256,
  [Parameter(Mandatory=$true)][string]$AuthorityAdmissionJson,
  [Parameter(Mandatory=$true)][string]$AuthorityAdmissionSha256,
  [Parameter(Mandatory=$true)][string]$ObservationNonce,
- [Parameter(Mandatory=$true)][string]$OriginalHostDirectory,
- [string]$CaFile=''
+ [string]$OriginalHostDirectory,
+ [string]$CaFile='',
+ [switch]$ExpiredStage4Abort,
+ [string]$OwnerCommentId='',
+ [string]$ExpectedIssuerSha256='',
+ [string]$ExpectedControllerSha256=''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -20,6 +24,99 @@ $epoch='V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea'
 $authority='2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'
 if($env:OS -cne 'Windows_NT' -or $env:USERNAME -cne 'burns' -or $env:COMPUTERNAME -ieq 'MINI-PC' -or
  $env:GITHUB_ACTIONS -eq 'true' -or -not [Environment]::UserInteractive){throw 'POSTSTOP_AUTH_NOTEBOOK_BURNS_ONLY_HOLD'}
+
+if($ExpiredStage4Abort){
+ $e='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+ $series='PAPER-V3-20261115T073741Z'
+ $source='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+ $fence='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28'
+ $acl='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+ $signerSha='2e3322131208737c58a82c04764bddf4ebe29481c96c79697183710358a2fc57'
+ $readerSha='61d08dd9a925730f213fedc559664dbfe2a3e4f8f1ae77496b385f7d92f3bc55'
+ if($OwnerCommentId -cnotmatch '^[0-9]{9,12}$' -or
+    $ExpectedIssuerSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedControllerSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ObservationNonce -cnotmatch '^[a-f0-9]{32}$'){throw 'AP05A_INPUT_HOLD'}
+ $module=Join-Path $PackageRoot 'tools\v3-one-time-release-authorization.psm1'
+ $issuer=Join-Path $PackageRoot 'tools\v3-poststop-issuer-release.ps1'
+ $reader=Join-Path $PackageRoot 'tools\v3-poststop-notebook-reader-extension-INACTIVE.ps1'
+ Import-Module $module -Force
+ if((Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $issuer 1048576)) -cne $ExpectedIssuerSha256 -or
+    (Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes $PSCommandPath 1048576)) -cne $ExpectedControllerSha256){throw 'AP05A_OPERATOR_HASH_HOLD'}
+ $pin=Assert-V3ReleaseAuthorityAdmission -Bytes (Read-V3ReleaseLocalBytes $AuthorityAdmissionJson) -ExpectedSha256 $AuthorityAdmissionSha256 -ReleaseCommit $ExpectedReleaseCommit
+ if($pin -cne $signerSha){throw 'AP05A_ADMISSION_HOLD'}
+ if((Read-Host 'Separate Ownerfreigabe fuer AP05A eingeben') -cne ('AUTHORIZE-EXPIRED-STAGE4-TERMINAL-'+$e)){throw 'AP05A_OWNER_INPUT_HOLD'}
+ $result=@(& $reader -ExpiredStage4Readback -ObservationNonce $ObservationNonce -ReviewedNotebookCertificateSha256 $readerSha -CaFile $CaFile)
+ if($result.Count -ne 1){throw 'AP05A_PREFLIGHT_HOLD'}
+ $obj=Read-V3ReleaseJson ([Text.Encoding]::UTF8.GetBytes([string]$result[0]))
+ $pre=Join-Path $obj.local_directory 'reader.json'
+ $cms=Join-Path $obj.local_directory 'reader.cms'
+ $raw=Read-V3ReleaseLocalBytes $pre 8192
+ Assert-V3ReleaseCms $raw (Read-V3ReleaseLocalBytes $cms 32768) $readerSha
+ $ob=Read-V3ReleaseJson $raw
+ if($ob.kind -cne 'V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_V1' -or
+   $ob.state -cne 'INSTALL_READBACK_ONLY' -or $ob.epoch_id -cne $e -or
+   $ob.source_sha256 -cne $source -or $ob.fence_sha256 -cne $fence -or
+   $ob.caller_acl_sha256 -cne $acl){throw 'AP05A_PREFLIGHT_TERMINAL_OR_DRIFT_HOLD'}
+ $now=[datetimeoffset]::UtcNow
+ $obs=[datetimeoffset]::ParseExact([string]$ob.observed_at_utc,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AssumeUniversal)
+ if($obs -gt $now.AddSeconds(5) -or ($now-$obs).TotalSeconds -ge 20){throw 'AP05A_PREFLIGHT_TOO_OLD_HOLD'}
+ $preSha=Get-V3ReleaseSha256 $raw
+ $receipt=Get-V3ReleaseSha256 ([Text.Encoding]::ASCII.GetBytes("V3_EXPIRED_STAGE4_TERMINAL_RECEIPT_V1"+[char]10+$e+[char]10+$preSha))
+ $inventory=Get-V3OneTimeReleaseArtifactInventory $PackageRoot
+ foreach($rel in @('tools/v3-poststop-authorized-window.ps1','tools/v3-poststop-issuer-release.ps1','tools/v3-poststop-notebook-reader-extension-INACTIVE.ps1')){
+  $inventory[$rel]=Get-V3ReleaseSha256 (Read-V3ReleaseLocalBytes (Join-Path $PackageRoot $rel) 1048576)
+ }
+ $a=[ordered]@{
+  kind='V3_ONE_TIME_RELEASE_AUTHORIZATION_V1';release_id=('V3-ONETIME-'+[guid]::NewGuid().ToString('N'))
+  scope='CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT';base_commit='5b1789e349b157d06d3109c5f0ff10d95154bf81'
+  release_commit=$ExpectedReleaseCommit
+  not_before_utc=$now.AddSeconds(-3).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  expires_at_utc=$now.AddSeconds(90).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  project_ref='nlgzjmqgwueojlyqmoru';computer_name='MINI-PC';trading_root='C:\Users\ADMIN\Trading'
+  artifacts=$inventory
+  bindings=[ordered]@{series_id=$series;epoch_id=$e;epoch_release_commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f';
+   source_sha256=$source;fence_sha256=$fence;caller_acl_sha256=$acl;operator_sha256=$ExpectedIssuerSha256;
+   controller_sha256=$ExpectedControllerSha256;preflight_sha256=$preSha;terminal_receipt_sha256=$receipt;owner_comment_id=$OwnerCommentId}
+ }
+ $payload=[Text.UTF8Encoding]::new($false).GetBytes(($a|ConvertTo-Json -Compress -Depth 8))
+ Add-Type -AssemblyName System.Security
+ $certs=@(Get-ChildItem Cert:\CurrentUser\My|Where-Object {(Get-V3ReleaseSha256 ([byte[]]$_.RawData)) -ceq $signerSha})
+ if($certs.Count -ne 1 -or -not $certs[0].HasPrivateKey){throw 'AP05A_SIGNER_HOLD'}
+ $signed=[Security.Cryptography.Pkcs.SignedCms]::new([Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$payload),$true)
+ $c=[Security.Cryptography.Pkcs.CmsSigner]::new($certs[0])
+ $c.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+ $signed.ComputeSignature($c)
+ $signature=[byte[]]$signed.Encode()
+ Assert-V3ReleaseCms $payload $signature $signerSha
+ $dir=Join-Path $env:LOCALAPPDATA ('V3PostStopAuthority\ap05a-'+$ObservationNonce)
+ [void][IO.Directory]::CreateDirectory($dir)
+ foreach($name in @('approval.json','approval.cms')){
+  $bytes=if($name -ceq 'approval.json'){$payload}else{$signature}
+  $path=Join-Path $dir $name
+  $fs=[IO.File]::Open($path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+  try{$fs.Write($bytes,0,$bytes.Length);$fs.Flush($true)}finally{$fs.Dispose()}
+ }
+ $latch=Join-Path $env:LOCALAPPDATA ('V3CasIndependentIssuer\'+$e+'-terminal-attempted')
+ try{
+  $null=@(& $issuer -Mode ExpiredStage4Abort -PackageRoot $PackageRoot -ApprovalJson (Join-Path $dir 'approval.json') -ApprovalCms (Join-Path $dir 'approval.cms') -AuthorityAdmissionJson $AuthorityAdmissionJson -ExpectedAuthorityAdmissionSha256 $AuthorityAdmissionSha256 -ExpectedReleaseCommit $ExpectedReleaseCommit -CloudJson $pre -CloudCms $cms -CaFile $CaFile)
+ }catch{
+  if(-not [IO.File]::Exists($latch)){throw}
+  Write-Output 'AP05A_UNKNOWN_NO_RETRY'
+ }
+ $after=@(& $reader -ExpiredStage4Readback -ObservationNonce ([guid]::NewGuid().ToString('N')) -ReviewedNotebookCertificateSha256 $readerSha -CaFile $CaFile)
+ if($after.Count -ne 1){throw 'AP05A_TERMINAL_READER_HOLD'}
+ $x=Read-V3ReleaseJson ([Text.Encoding]::UTF8.GetBytes([string]$after[0]))
+ $final=Read-V3ReleaseLocalBytes (Join-Path $x.local_directory 'reader.json') 8192
+ Assert-V3ReleaseCms $final (Read-V3ReleaseLocalBytes (Join-Path $x.local_directory 'reader.cms') 32768) $readerSha
+ $t=Read-V3ReleaseJson $final
+ if($t.state -cne 'EXPIRED_STAGE4_ABORTED_BEFORE_INHIBIT' -or $t.epoch_id -cne $e -or
+   $t.terminal_receipt_sha256 -cne $receipt){throw 'AP05A_TERMINAL_INDEPENDENT_READER_HOLD_NO_RETRY'}
+ [pscustomobject]@{kind='AP05A_TERMINAL_INDEPENDENT_SIGNED_PASS';epoch_id=$e;terminal_receipt_sha256=$receipt;
+  terminal_reader_sha256=(Get-V3ReleaseSha256 $final);retry_authorized=$false}|ConvertTo-Json -Compress
+ return
+}
+
 if($ObservationNonce -cnotmatch '^[a-f0-9]{32}$' -or $StaticOwnerPolicySha256 -cnotmatch '^[a-f0-9]{64}$' -or
  $AuthorityAdmissionSha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'POSTSTOP_AUTH_PREPIN_HOLD'}
 $module=Join-Path $PackageRoot 'tools\v3-one-time-release-authorization.psm1'
