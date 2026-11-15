@@ -339,7 +339,7 @@ WITH pins AS (
 )
 SELECT jsonb_build_object(
  'kind','V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_V1','observation_nonce','__NONCE__',
- 'observed_at_utc',to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'observed_at_utc',replace(to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
  'epoch_id',e.epoch_id,'source_sha256',e.source_sha256,'fence_sha256',e.original_fence_sha256,
  'caller_acl_sha256',e.approved_caller_acl_sha256,'function_sha256',pins.hashes,
  'terminal_receipt_sha256',a.receipt_sha256,'state',CASE WHEN a.epoch_id IS NULL THEN 'INSTALL_READBACK_ONLY'
