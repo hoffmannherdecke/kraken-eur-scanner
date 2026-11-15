@@ -180,9 +180,13 @@ begin
        or p_proposed_v3_series_id is distinct from (
           'PAPER-V3-' || pg_catalog.to_char(
               p_cutover_at_utc at time zone 'UTC','YYYYMMDD"T"HH24MISS"Z"'))
-       or p_cutover_at_utc > pg_catalog.clock_timestamp()
-       or p_cutover_at_utc < pg_catalog.clock_timestamp()-interval '10 minutes' then
-        raise exception 'V3 CAS cutover timestamp outside exact bounded window';
+       or p_cutover_at_utc > pg_catalog.clock_timestamp() then
+        raise exception 'V3 CAS cutover timestamp is in future or unbound';
+    -- A confirmed Stage4 epoch may persist beyond the initial series window.
+    -- Freshness for the actual CAS is instead enforced by the separate
+    -- committed preinvoke intent, durable dispatch attempt and current
+    -- independently scoped inhibit/STOP receipt below (each <=5 minutes).
+    -- Preserve the EXACT series/timestamp match and reject future timestamps.
     end if;
 
     if p_expected_old_release_sha is null
