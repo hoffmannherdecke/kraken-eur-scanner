@@ -366,7 +366,7 @@ function Get-V3PaperEpochSealSql([string]$Source,[object]$Context,[object]$Epoch
   "PERFORM set_config('v3_stage5.followup','true',true),set_config('v3_stage5.commit','$($Context.commit)',true),set_config('v3_stage5.stop_sha256','$StopSha',true);"
  return $Source.Replace($lock,$gate)
 }
-function Get-V3PaperCasInstallSql([string]$Source,[object]$Context,[object]$Epoch) {
+function Get-V3PaperCasInstallSql([string]$Source,[object]$Context,[object]$Epoch,[switch]$ReplaceExisting) {
  # Deterministic release of the existing original, never a copied CAS body.
  # Caller has already verified the independent INSTALL scope and package lease.
  $lock="raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
@@ -409,6 +409,57 @@ BEGIN
  THEN RAISE EXCEPTION 'V3_PAPER_INSTALL_CURRENT_INHIBIT_HOLD'; END IF;
 END `$v3_install_inhibit`$;
 "@
+ }
+ if($ReplaceExisting){
+  # Only the existing independently signed INSTALL reader state may
+  # replace this exact old definition, never a generic function.
+  if($null -eq $Epoch -or [string]$Epoch.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$'){
+   throw 'V3_CAS_REPLACEMENT_CURRENT_EPOCH_REQUIRED'
+  }
+  $oldDef='d9973febcd429fe76bbc582ca4e7827c801b83e2f07d381f1fde9de8c1060c10'
+  $sig='public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
+  $originalGuard=@'
+  if pg_catalog.to_regprocedure(
+    'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
+  ) is not null then
+    raise exception 'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD';
+  end if;
+'@
+  if(([regex]::Matches($Source,[regex]::Escape($originalGuard))).Count -ne 1){
+   throw 'V3_CAS_REPLACEMENT_ORIGINAL_GUARD_DRIFT'
+  }
+  # Original CREATE OR REPLACE preserves OID, owner and executor ACL.
+  $guard=@"
+  perform 1 from pg_catalog.pg_proc p
+   where p.oid=pg_catalog.to_regprocedure('$sig')
+     and p.proowner='postgres'::regrole and p.prosecdef
+     and p.proacl::text='{postgres=X/postgres,v3_cas_executor=X/postgres}'
+     and pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+       pg_catalog.pg_get_functiondef(p.oid),'UTF8')),'hex')='$oldDef';
+  if not found then
+    raise exception 'V3_CAS_REPLACEMENT_OLD_DEFINITION_OR_ACL_DRIFT_HOLD';
+  end if;
+"@
+  $installed=$Source.Replace($lock,$gate).Replace($originalGuard,$guard)
+  # Within the SAME transaction, prove required current CAS semantics and
+  # unchanged exact privileges. A failure rolls back the entire replacement.
+  $post=@"
+DO `$v3_cas_replace_verify`$
+BEGIN
+ PERFORM 1 FROM pg_catalog.pg_proc p
+  WHERE p.oid=pg_catalog.to_regprocedure('$sig')
+    AND p.proowner='postgres'::regrole AND p.prosecdef
+    AND p.proacl::text='{postgres=X/postgres,v3_cas_executor=X/postgres}'
+    AND pg_catalog.pg_get_functiondef(p.oid) NOT LIKE
+        '%p_cutover_at_utc < pg_catalog.clock_timestamp()-interval ''10 minutes''%'
+    AND pg_catalog.pg_get_functiondef(p.oid) LIKE
+        '%p_cutover_at_utc > pg_catalog.clock_timestamp()%';
+ IF NOT FOUND THEN
+  RAISE EXCEPTION 'V3_CAS_REPLACEMENT_POSTCHECK_HOLD';
+ END IF;
+END `$v3_cas_replace_verify`$;
+"@
+  return $transaction+"`n"+$inhibit+"`n"+$installed+"`n"+$post+"`nCOMMIT;"
  }
  return $transaction+"`n"+$inhibit+"`n"+$Source.Replace($lock,$gate)+"`n"+$membership+"`nCOMMIT;"
 }
@@ -777,10 +828,11 @@ function Invoke-V3OneTimePaperRelease {
  param([string]$Mode,[string]$PackageRoot,[string]$ApprovalJson,[string]$ApprovalCms,
  [string]$AuthorityAdmissionJson,[string]$ExpectedAuthorityAdmissionSha256,[string]$ExpectedReleaseCommit,
  [string]$PaperPlanJson,[string]$RuntimeSpecJson,[string]$HostReceiptJson,[string]$HostReceiptCms,
- [Security.SecureString]$PostgresPassword,[string]$CaFile)
+ [Security.SecureString]$PostgresPassword,[string]$CaFile,[switch]$ReplaceExistingCas)
  $scope=@{PaperOpenEpoch='CLOUD_STAGE4_EPOCH_OPEN';PaperSealEpoch='CLOUD_STAGE5_EPOCH_SEAL';PaperPrepare='V3_PAPER_PREPARE';PaperStop='V3_PAPER_STOP';PaperCas='V3_PAPER_CAS';InstallPaperCas='V3_PAPER_CAS_INSTALL';
   PaperActivate='V3_PAPER_ACTIVATE';PaperRollback='V3_PAPER_ROLLBACK';PaperPostStopFenceArchive='V3_PAPER_POSTSTOP_FENCE_ARCHIVE';PaperPostArchiveRestore='V3_PAPER_POSTARCHIVE_RESTORE';PaperHostReadback='V3_PAPER_RUNTIME';PaperRuntimeBootstrap='V3_PAPER_RUNTIME';PaperResume='V3_PAPER_RESUME'}[$Mode]
  if(-not $scope){throw 'V3_PAPER_UNKNOWN_MODE'}
+ if($ReplaceExistingCas -and $Mode -cne 'InstallPaperCas'){throw 'V3_CAS_REPLACEMENT_MODE_HOLD'}
  Assert-V3PaperOriginalHost $Mode $PackageRoot $ExpectedReleaseCommit
  $inventory=Get-V3PaperReleaseInventory $PackageRoot
  if($Mode -eq 'PaperPostArchiveRestore'){
@@ -968,10 +1020,16 @@ function Invoke-V3OneTimePaperRelease {
    if([string]$receipt.state -cne 'INSTALL_APPROVED_OLD_ONLY_NO_ATTEMPTS'){throw 'V3_PAPER_CAS_INSTALL_READER_HOLD'}
    $source=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes (Join-Path $PackageRoot 'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql') 1048576))
    if($null -eq $PostgresPassword){throw 'V3_PAPER_EXISTING_ADMIN_CREDENTIAL_REQUIRED'}
-   $sql=Get-V3PaperCasInstallSql $source $ctx -Epoch $epoch
-   Write-V3PaperReceipt ($base+'.install.attempted.json') @{approval_sha256=$auth.approval_sha256}
+   if($ReplaceExistingCas){
+    if([string]$b.cas_replacement_old_definition_sha256 -cne 'd9973febcd429fe76bbc582ca4e7827c801b83e2f07d381f1fde9de8c1060c10' -or
+       [string]$b.cas_replacement_source_sha256 -cne $inventory['supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql']){
+     throw 'V3_CAS_REPLACEMENT_SIGNED_OLD_AND_NEW_HASH_HOLD'
+    }
+   }
+   $sql=Get-V3PaperCasInstallSql $source $ctx -Epoch $epoch -ReplaceExisting:$ReplaceExistingCas
+   Write-V3PaperReceipt ($base+'.install.attempted.json') @{approval_sha256=$auth.approval_sha256;cas_replacement=[bool]$ReplaceExistingCas}
    $null=Invoke-V3ReleasePg -Sql $sql -Password $PostgresPassword -Ca $CaFile
-   return @{kind='V3_PAPER_CAS_INSTALL_RETURNED_INDEPENDENT_READBACK_REQUIRED';paper_activated=$false}
+   return @{kind='V3_PAPER_CAS_INSTALL_RETURNED_INDEPENDENT_READBACK_REQUIRED';paper_activated=$false;cas_replacement=[bool]$ReplaceExistingCas}
   }
   if($Mode -eq 'PaperPrepare'){
    if([string]$receipt.state -cne 'PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS' -or
