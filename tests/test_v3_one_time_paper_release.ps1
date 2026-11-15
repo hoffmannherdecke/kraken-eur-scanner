@@ -230,7 +230,7 @@ try{
  Need (-not $replaced.Contains('DROP FUNCTION') -and -not $replaced.Contains('CREATE ROLE')) 'REPLACEMENT_ILLEGAL_DDL'
  Need (([regex]::Matches($replaced,'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD')).Count -eq 0) 'REPLACEMENT_OLD_FIRST_INSTALL_BLOCK'
  Reject {Get-V3PaperCasInstallSql $original @{authorization=@{expires_at=[datetimeoffset]::UtcNow}} -ReplaceExisting} 'CURRENT_EPOCH_REQUIRED'
- Reject {Get-V3PaperCasInstallSql ($original.Replace("V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD","OTHER")) @{authorization=@{expires_at=[datetimeoffset]::UtcNow}} $epoch -ReplaceExisting} 'ORIGINAL_GUARD_DRIFT'
+ Reject {Get-V3PaperCasInstallSql ($original.Replace("V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD","OTHER")) $replaceContext $epoch -ReplaceExisting} 'ORIGINAL_GUARD_DRIFT'
  $entry=[IO.File]::ReadAllText((Join-Path $root 'tools/v3-one-time-release.ps1'))
  $operator=[IO.File]::ReadAllText((Join-Path $root 'tools/v3-one-time-paper-release.ps1'))
  Need ($entry.Contains('-ReplaceExistingCas:$ReplaceExistingCas') -and
