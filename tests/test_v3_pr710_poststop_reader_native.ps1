@@ -277,7 +277,7 @@ foreach($required in @(
  'PAPER-V3-20261115T073741Z',
  'c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28',
  'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT',
- 'Assert-V3OneTimeReleaseAuthorization','Assert-V3ReleaseAuthorityAdmission',
+ 'AP05A_SIGNED_AUTHORIZATION_SCHEMA_HOLD','Assert-V3ReleaseAuthorityAdmission',
  'Assert-V3ReleaseCms','AP05A_DEFINITION_DRIFT_HOLD',
  'AP05A_FRESH_READER_HOLD','AP05A_RECEIPT_DERIVATION_HOLD',
  'AP05A_OWNER_DECISION_HOLD','AP05A_EXACT_BINDINGS_HOLD',
@@ -296,9 +296,9 @@ if(([regex]::Matches($target,'SELECT v3_cas_audit.record_paper_release_abort_v1'
 foreach($required in @('ExpectedIssuerSha256','ExpectedControllerSha256',
  'AUTHORIZE-EXPIRED-STAGE4-TERMINAL-','AP05A_PREFLIGHT_TERMINAL_OR_DRIFT_HOLD',
  'AP05A_PREFLIGHT_TOO_OLD_HOLD','AP05A_TERMINAL_INDEPENDENT_READER_HOLD_NO_RETRY',
- 'AP05A_APPROVAL_REPLAY_HOLD','-ExpiredStage4Readback',
+ 'FileMode]::CreateNew','-ExpiredStage4Readback',
  'AP05A_TERMINAL_INDEPENDENT_SIGNED_PASS')){
  if(-not $c.Contains($required)){throw ('AP05A_CONTROLLER_GUARD_MISSING: '+$required)}
 }
-if(-not $a.Contains("'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT'")){throw 'AP05A_SCOPE_MISSING_HOLD'}
+if(-not $target.Contains("'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT'")){throw 'AP05A_SCOPE_MISSING_HOLD'}
 'AP05A_TARGETED_NATIVE_CONTRACT_PASS'
