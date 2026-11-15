@@ -45,13 +45,13 @@ if ($sequence.IndexOf('PRIOR_PHASE_POSSIBLY_DISPATCHED_USE_READBACK') -ge
     throw 'PR701_PRESTOP_RESUME_ATTEMPT_CHECK_TOO_LATE_HOLD'
 }
 $paper = [IO.File]::ReadAllText((Join-Path (Split-Path $root -Parent) 'v3-one-time-paper-release.ps1'))
-$prepStart = $paper.IndexOf("if($Mode -eq 'PaperPrepare')")
-$stopStart = $paper.IndexOf("if($Mode -eq 'PaperStop')")
+$prepStart = $paper.IndexOf("if(`$Mode -eq 'PaperPrepare')")
+$stopStart = $paper.IndexOf("if(`$Mode -eq 'PaperStop')")
 if ($prepStart -lt 0 -or $stopStart -lt 0 -or
     -not $paper.Contains('V3_PAPER_PREPARE_EXISTING_FENCE_OR_UNSAFE_READER_HOLD') -or
     -not $paper.Contains('V3_PAPER_PRESTOP_INDEPENDENT_INHIBIT_REQUIRED') -or
     -not $paper.Contains('Read-V3PaperIndependentReceipt') -or
-    -not $paper.Contains("Write-V3PaperReceipt ($base+'.stop.attempted.json')")) {
+    -not $paper.Contains("Write-V3PaperReceipt (`$base+'.stop.attempted.json')")) {
     throw 'PR701_PRESTOP_RESUME_FRESH_READER_OR_STOP_LATCH_HOLD'
 }
 
