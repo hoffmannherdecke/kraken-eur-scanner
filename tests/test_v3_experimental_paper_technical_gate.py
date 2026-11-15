@@ -322,7 +322,31 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
             with patch.object(technical_gate, "__file__", str(stage / gate_name)), \
                  patch.object(technical_gate.sys, "executable", str(executable)), \
                  patch.object(technical_gate.hashlib, "sha256", side_effect=offline_sha256):
-                self.assertIsNotNone(pins())
+                # The new state-based resume operator has changed bytes.
+                # Historical PR699 six-proof inheritance MUST reject that
+                # modified source until independently admitted for release.
+                original_release = "ff87d03c3f67155a6e2354f32eaed6978f0ab9a2d3fb37bd621b280b773be3ef"
+                original_cas = "0056eeb0415fa3ca68ba2c70a103a6f48a6f82ab137afb9abf6d0aed7e3fb603"
+                cas_path = "supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql"
+                current_release = inventory["tools/v3-one-time-paper-release.ps1"]
+                current_cas = inventory[cas_path]
+                self.assertNotEqual(current_release, original_release)
+                self.assertNotEqual(current_cas, original_cas)
+                self.assertIsNone(pins())
+                # Historical proof claims are immutable: the original
+                # adapter and its exact archived fingerprint remain in place.
+                # No new operator/SQL source may silently inherit them.
+                adapter_source = (root / gate_name).read_text(encoding="utf-8")
+                self.assertIn(original_release, adapter_source)
+                self.assertIn("60230cbf8fd6b4babdb9d26cf3fea56aa80ee1ee39babbc3b065e35b51f776a8", adapter_source)
+                inventory["tools/v3-one-time-paper-release.ps1"] = original_release
+                inventory[cas_path] = original_cas
+                # The current staged inventory is NOT the archived original
+                # stage, so it must remain closed until a new owner admission.
+                self.assertIsNone(pins())
+                inventory["tools/v3-one-time-paper-release.ps1"] = current_release
+                inventory[cas_path] = current_cas
+                self.assertIsNone(pins())
                 for name in ("tools/v3-one-time-paper-release.ps1", "paper_context.py",
                              "tools/v3-one-time-release.ps1",
                              "supabase/v3-cas-audit-stage4-followup-release.sql"):

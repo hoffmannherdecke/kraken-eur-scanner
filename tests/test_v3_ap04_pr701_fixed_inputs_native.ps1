@@ -30,6 +30,31 @@ if (-not $starter.Contains('-ExpectedFixedInputsSha256 $expectedFixedInputsSha25
     throw 'AP04_FIXED_INPUTS_ARGUMENT_CHAIN_DRIFT'
 }
 
+# Targeted PRESTOP restart contract. Local source-only/guard assertions.
+# No phase dispatch: unchanged per-mode CMS and independent Reader are mandatory.
+if (-not $sequence.Contains('[switch]$ResumePreStop') -or
+    -not $sequence.Contains('PR701_PRESTOP_RESUME_ORIGINAL_EPOCH_REQUIRED') -or
+    -not $sequence.Contains('PRIOR_PHASE_POSSIBLY_DISPATCHED_USE_READBACK') -or
+    -not $sequence.Contains('Wait-Phase $share Prepare $state.path $prepareDeadline') -or
+    -not $sequence.Contains('Wait-Phase $share Stop $stopPlan $stopDeadline') -or
+    -not $sequence.Contains('Wait-Phase $share CasApproval $plan $casDeadline')) {
+    throw 'PR701_PRESTOP_RESUME_OLD_PHASE_OR_RETRY_GUARD_HOLD'
+}
+if ($sequence.IndexOf('PRIOR_PHASE_POSSIBLY_DISPATCHED_USE_READBACK') -ge
+    $sequence.IndexOf('Wait-Phase $share Prepare')) {
+    throw 'PR701_PRESTOP_RESUME_ATTEMPT_CHECK_TOO_LATE_HOLD'
+}
+$paper = [IO.File]::ReadAllText((Join-Path (Split-Path $root -Parent) 'v3-one-time-paper-release.ps1'))
+$prepStart = $paper.IndexOf("if(`$Mode -eq 'PaperPrepare')")
+$stopStart = $paper.IndexOf("if(`$Mode -eq 'PaperStop')")
+if ($prepStart -lt 0 -or $stopStart -lt 0 -or
+    -not $paper.Contains('V3_PAPER_PREPARE_EXISTING_FENCE_OR_UNSAFE_READER_HOLD') -or
+    -not $paper.Contains('V3_PAPER_PRESTOP_INDEPENDENT_INHIBIT_REQUIRED') -or
+    -not $paper.Contains('Read-V3PaperIndependentReceipt') -or
+    -not $paper.Contains("Write-V3PaperReceipt (`$base+'.stop.attempted.json')")) {
+    throw 'PR701_PRESTOP_RESUME_FRESH_READER_OR_STOP_LATCH_HOLD'
+}
+
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ('ap04-ci-' + [guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($tmp)
 try {
