@@ -57,6 +57,10 @@ BEGIN
          OR e.original_fence_sha256=current_setting('v3_followup.fence_sha256'))
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_TERMINAL_HISTORY_HOLD'; END IF;
  IF continuing THEN
+   -- The predecessor is immutable historical evidence; it may have a different
+   -- source hash from the newly pinned CAS original for this successor epoch.
+   IF coalesce(current_setting('v3_followup.prior_source_sha256',true),'') !~ '^[a-f0-9]{64}$'
+   THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_PRIOR_SOURCE_PIN_HOLD'; END IF;
    IF (current_setting('v3_followup.series_time',true)::timestamptz
           BETWEEN clock_timestamp()-interval '10 minutes' AND clock_timestamp()) IS DISTINCT FROM TRUE
       OR encode(sha256(convert_to(pg_get_functiondef(
@@ -73,7 +77,7 @@ BEGIN
         LEFT JOIN v3_cas_audit.executor_inhibit_v1 i ON i.epoch_id=e.epoch_id
         WHERE e.epoch_id=current_setting('v3_followup.prior_epoch_id')
           AND e.paper_release_commit=current_setting('v3_followup.prior_commit')
-          AND e.source_sha256=current_setting('v3_followup.source_sha256')
+          AND e.source_sha256=current_setting('v3_followup.prior_source_sha256')
           AND e.approved_caller_acl_sha256=current_setting('v3_followup.caller_acl_sha256')
           AND a.receipt_sha256=current_setting('v3_followup.prior_terminal_sha256')
           AND a.issuer_actor='v3_cas_inhibit_issuer_actor'
