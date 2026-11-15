@@ -322,6 +322,16 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
             with patch.object(technical_gate, "__file__", str(stage / gate_name)), \
                  patch.object(technical_gate.sys, "executable", str(executable)), \
                  patch.object(technical_gate.hashlib, "sha256", side_effect=offline_sha256):
+                # The new state-based resume operator has changed bytes.
+                # Historical PR699 six-proof inheritance MUST reject that
+                # modified source until independently admitted for release.
+                original_release = "ff87d03c3f67155a6e2354f32eaed6978f0ab9a2d3fb37bd621b280b773be3ef"
+                current_release = inventory["tools/v3-one-time-paper-release.ps1"]
+                self.assertNotEqual(current_release, original_release)
+                self.assertIsNone(pins())
+                # Keep the previous positive provenance fixture for its
+                # exact historical source, including all negative drift tests.
+                inventory["tools/v3-one-time-paper-release.ps1"] = original_release
                 self.assertIsNotNone(pins())
                 for name in ("tools/v3-one-time-paper-release.ps1", "paper_context.py",
                              "tools/v3-one-time-release.ps1",
@@ -331,6 +341,8 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                         inventory[name] = "0" * 64
                         self.assertIsNone(pins())
                         inventory[name] = original
+                inventory["tools/v3-one-time-paper-release.ps1"] = current_release
+                self.assertIsNone(pins())
 
     def test_current_v2r4_unchanged_and_no_v3_evidence_is_blocked(self):
         self.assertEqual(validate_learning_gate(ROOT,
