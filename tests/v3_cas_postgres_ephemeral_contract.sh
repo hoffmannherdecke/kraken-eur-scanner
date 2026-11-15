@@ -1529,7 +1529,7 @@ fi
 issuer_transaction -c "SELECT v3_cas_audit.begin_executor_inhibit_v1('$followup_epoch','$followup_source','$followup_fence','$followup_acl');" >/dev/null
 followup_reader "$followup_epoch" | grep -Fq PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS
 test "$(pg -Atc "select receipt_sha256 from v3_cas_audit.prepared_fence_abort_v1 where epoch_id='$prior_epoch'")" = "$prior_receipt"
-export V3_CI_EPOCH="$followup_epoch" V3_CI_COMMIT="$followup_commit" V3_CI_FENCE="$followup_fence"
+export V3_CI_EPOCH="$followup_epoch" V3_CI_COMMIT="$followup_commit" V3_CI_SOURCE="$followup_source" V3_CI_FENCE="$followup_fence"
 echo 'V3_PG17_SUPERSESSION_EXPIRY_REPLAY_ORIGINAL_CAS_PRESERVED_PASS'
 
 # Genuine independent Writer and issuer commits are prerequisites for sealing.
