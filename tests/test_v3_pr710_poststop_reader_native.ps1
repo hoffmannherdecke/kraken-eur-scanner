@@ -85,6 +85,14 @@ try{
 if(-not $held){throw 'PR710_SELF_APPROVED_EPHEMERAL_SHA_ACCEPTED'}
 
 $raw=[IO.File]::ReadAllText($source)
+# The SQL travels through Windows PowerShell 5.1 native psql arguments.
+# Embedded double quotes may be removed before PostgreSQL sees its format.
+$expirySql=[regex]::Match($raw,'(?ms)^if\(\$ExpiredStage4Readback\)\{\s*\$checks\[0\]\.Sql=@''\r?\n(?<sql>.*?)^''@')
+$expiryFormat="replace(to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z'"
+if(-not $expirySql.Success -or $expirySql.Groups['sql'].Value.Contains([char]34) -or
+   -not $expirySql.Groups['sql'].Value.Contains($expiryFormat)){
+ throw 'PR732_NOTEBOOK_UTC_NATIVE_PSQL_FORMAT_HOLD'
+}
 foreach($required in @(
  'PostStopHostReader','PostStopCloudReader','ObservationNonce',
  'V3_POSTSTOP_CURRENT_INDEPENDENT_HOST_READER_V1',
