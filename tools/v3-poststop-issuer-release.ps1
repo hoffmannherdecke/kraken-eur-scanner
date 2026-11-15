@@ -38,8 +38,7 @@ if($Mode -ceq 'ExpiredStage4Abort'){
  $claims=Read-V3ReleaseJson $approvalBytes
  $af=@('kind','release_id','scope','base_commit','release_commit','not_before_utc','expires_at_utc','project_ref','computer_name','trading_root','artifacts','bindings')
  if(@($claims.PSObject.Properties).Count -ne $af.Count -or @($claims.PSObject.Properties.Name|Where-Object {$_ -cnotin $af}).Count -ne 0 -or
-  $claims.kind -cne 'V3_ONE_TIME_RELEASE_AUTHORIZATION_V1' -or [string]$claims.release_id -cnotmatch '^V3-ONETIME-[a-f0-9]{32}$'
- -or
+  $claims.kind -cne 'V3_ONE_TIME_RELEASE_AUTHORIZATION_V1' -or [string]$claims.release_id -cnotmatch '^V3-ONETIME-[a-f0-9]{32}$' -or
   $claims.scope -cne 'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT' -or $claims.base_commit -cne '5b1789e349b157d06d3109c5f0ff10d95154bf81' -or
   $claims.release_commit -cne $ExpectedReleaseCommit -or $claims.project_ref -cne 'nlgzjmqgwueojlyqmoru' -or
   $claims.computer_name -cne 'MINI-PC' -or $claims.trading_root -cne 'C:\Users\ADMIN\Trading' -or
