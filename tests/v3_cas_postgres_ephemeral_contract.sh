@@ -1470,9 +1470,12 @@ echo 'V3_PG17_FOLLOWUP_EPOCH_INHIBIT_INSTALL_PRESTOP_REPLAY_DRIFT_ACL_PASS'
 # installed CAS definition and the original epoch rows.
 prior_epoch=$followup_epoch
 prior_commit=$followup_commit
+prior_source=$followup_source
 prior_receipt="$(printf '6%.0s' {1..64})"
 followup_epoch='V3CAS-AUDIT-77777777777777777777777777777777'
 followup_commit="$(printf '8%.0s' {1..40})"
+# Deliberately choose a DIFFERENT successor CAS source than the historical epoch.
+followup_source="$(printf '5%.0s' {1..64})"
 followup_fence="$(printf 'f%.0s' {1..64})"
 rpc_sig='public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
 definition_sha() {
@@ -1482,11 +1485,12 @@ cas_before="$(definition_sha "$rpc_sig")"
 issuer_before="$(definition_sha 'v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)')"
 reader_before="$(definition_sha 'v3_cas_audit.read_paper_release_epoch_v1(text)')"
 supersede_sql() {
+ local prior_pin="${2-$prior_source}"
  {
   printf "SET v3_followup.%s='%s';\n" scope CLOUD_STAGE4_EPOCH_OPEN commit "$followup_commit" \
    epoch_id "$followup_epoch" source_sha256 "$followup_source" fence_sha256 "$followup_fence" \
    caller_acl_sha256 "$followup_acl" prior_epoch_id "$prior_epoch" prior_commit "$prior_commit" \
-   prior_terminal_sha256 "$prior_receipt" installed_cas_sha256 "$cas_before" \
+   prior_source_sha256 "$prior_pin" prior_terminal_sha256 "$prior_receipt" installed_cas_sha256 "$cas_before" \
    installed_issuer_sha256 "$issuer_before" installed_reader_sha256 "$reader_before"
   printf "SELECT set_config('v3_followup.series_time',(clock_timestamp()-interval '%s seconds')::text,false);\n" "$1"
   printf "SELECT set_config('v3_followup.approval_sha256',repeat('2',64),false);\n"
@@ -1504,6 +1508,18 @@ if supersede_sql 660 >/dev/null 2>"$transition_tmp/supersede-expired.err"; then
  echo 'FAIL_SUPERSESSION_ACCEPTED_EXPIRED_SERIES' >&2; exit 1
 fi
 grep -Fq V3_PAPER_FOLLOWUP_SUPERSESSION_BINDING_HOLD "$transition_tmp/supersede-expired.err" || { cat "$transition_tmp/supersede-expired.err" >&2; exit 1; }
+test "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" = 2
+# Negative: a well-formed but wrong historic source MUST not bind the old
+# terminal epoch; a missing prior pin MUST be rejected before any write.
+bad_prior="$(printf '0%.0s' {1..64})"
+if supersede_sql 1 "$bad_prior" >/dev/null 2>"$transition_tmp/supersede-prior-source-drift.err"; then
+ echo 'FAIL_SUPERSESSION_ACCEPTED_WRONG_PRIOR_SOURCE' >&2; exit 1
+fi
+grep -Fq V3_PAPER_FOLLOWUP_SUPERSESSION_BINDING_HOLD "$transition_tmp/supersede-prior-source-drift.err"
+if supersede_sql 1 "" >/dev/null 2>"$transition_tmp/supersede-prior-source-missing.err"; then
+ echo 'FAIL_SUPERSESSION_ACCEPTED_MISSING_PRIOR_SOURCE' >&2; exit 1
+fi
+grep -Fq V3_PAPER_FOLLOWUP_PRIOR_SOURCE_PIN_HOLD "$transition_tmp/supersede-prior-source-missing.err"
 test "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" = 2
 supersede_sql 1 >/dev/null
 test "$(definition_sha "$rpc_sig")" = "$cas_before"
