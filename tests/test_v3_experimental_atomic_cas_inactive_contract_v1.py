@@ -384,12 +384,32 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             "p_reviewed_new_bundle_sha256",
             "p_reviewed_new_strategy_sha256",
             "p_cutover_at_utc",
-            "pg_catalog.clock_timestamp()-interval '10 minutes'",
+            "p_cutover_at_utc > pg_catalog.clock_timestamp()",
             "status='strategy_cutover_closed'",
             "status='active'",
         ):
             with self.subTest(required=required):
                 self.assertIn(required,self.body)
+
+    def test_confirmed_stage4_may_resume_without_stale_series_clock_bypass_of_cas_fences(self):
+        # Series identity and future-time rejection remain exact; only the
+        # historical ten-minute age restriction is replaced by CURRENT state.
+        self.assertIn("p_proposed_v3_series_id is distinct from (", self.body)
+        self.assertIn("p_cutover_at_utc > pg_catalog.clock_timestamp()", self.body)
+        self.assertNotIn("p_cutover_at_utc < pg_catalog.clock_timestamp()-interval '10 minutes'", self.body)
+        # The live CAS still requires committed fresh intent, durable UNKNOWN,
+        # and a separately acknowledged unexpired issuer/STOP receipt.
+        for gate in ("i.state='PREINVOKE_INTENT'",
+                     "i.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'",
+                     "t.state='DISPATCH_UNKNOWN'",
+                     "t.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'",
+                     "g.state='INHIBITED'",
+                     "g.native_stop_at_utc<=g.acknowledged_at_utc",
+                     "g.valid_through_utc>pg_catalog.clock_timestamp()",
+                     "g.valid_through_utc<=g.acknowledged_at_utc+interval '5 minutes'",
+                     "old_row.status is distinct from 'active'"):
+            with self.subTest(gate=gate):
+                self.assertIn(gate, self.body)
 
     def test_old_trade_exit_version_must_be_in_same_atomic_cas(self):
         # Existing open Paper trades can close without increasing trade count.
