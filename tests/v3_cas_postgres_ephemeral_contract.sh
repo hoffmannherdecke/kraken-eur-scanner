@@ -1673,4 +1673,31 @@ for sig in 'v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)' 'v3_cas
 done
 echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_ABORT_READER_REPLAY_IDENTITY_PASS_NO_PRODUCTION'
 
+# Exercise the ORIGINAL successor SQL, not a parallel reconstruction.
+# The earlier synthetic predecessor was sealed for the unrelated Stage5 test.
+# Normalize only that disposable fixture row to the current real history's
+# unsealed-terminal shape, after all its original Stage5 tests have completed.
+pg_root_db -c "UPDATE v3_cas_audit.epoch_v1 SET sealed=false WHERE epoch_id='$followup_epoch';" >/dev/null
+prior_epoch=$ep
+prior_commit=$ec
+prior_source=$es
+prior_receipt=$er
+followup_epoch='V3CAS-AUDIT-33333333333333333333333333333333'
+followup_commit=$ec
+followup_source="$(printf 'd%.0s' {1..64})"
+followup_fence="$(printf 'b%.0s' {1..64})"
+followup_acl=$ea
+cas_before="$(definition_sha "$rpc_sig")"
+issuer_before="$(definition_sha 'v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)')"
+reader_before="$(definition_sha 'v3_cas_audit.read_paper_release_epoch_v1(text)')"
+supersede_sql 1 >/dev/null
+test "$(pg -Atc "SELECT count(*) FROM v3_cas_audit.epoch_v1 WHERE epoch_id='$followup_epoch' AND source_sha256='$followup_source'")" = 1
+test "$(pg -Atc "SELECT receipt_sha256 FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id='$prior_epoch'")" = "$prior_receipt"
+test "$(pg -Atc 'SELECT count(*) FROM v3_cas_audit.attempt_v1')" = 0
+if supersede_sql 1 >/dev/null 2>"$transition_tmp/current-successor-replay.err"; then
+ echo 'FAIL_CURRENT_EXPIRED_READER_ACCEPTED_SUPERSESSION_REPLAY' >&2; exit 1
+fi
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_TERMINAL_SUCCESSOR_BINDING_REPLAY_PASS_NO_PRODUCTION'
+
+
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
