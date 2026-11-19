@@ -329,7 +329,7 @@ $installTokens=$null;$installErrors=$null
 $null=[Management.Automation.Language.Parser]::ParseFile($installOperator,[ref]$installTokens,[ref]$installErrors)
 if(@($installErrors).Count -gt 0){throw 'AP05A_ORIGINAL_INSTALL_OPERATOR_NATIVE_PARSE_HOLD'}
 $operatorText=[IO.File]::ReadAllText($installOperator)
-$installStart=$operatorText.IndexOf('if($Mode -ceq '+[char]39+'InstallExpiredStage4Abort'+[char]39+'){')
+$installStart=$operatorText.LastIndexOf('if($Mode -ceq '+[char]39+'InstallExpiredStage4Abort'+[char]39+'){')
 $installEnd=$operatorText.IndexOf('$releaseSql=[Text.Encoding]::UTF8.GetString',[Math]::Max(0,$installStart))
 if($installStart -lt 0 -or $installEnd -le $installStart){throw 'AP05A_ORIGINAL_INSTALL_SCOPE_MISSING'}
 $installBranch=$operatorText.Substring($installStart,$installEnd-$installStart)
