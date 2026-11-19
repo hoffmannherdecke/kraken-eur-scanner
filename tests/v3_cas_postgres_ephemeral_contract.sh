@@ -1637,6 +1637,7 @@ if issuer_transaction -c "SELECT v3_cas_audit.begin_executor_inhibit_v1('$ep','$
 fi
 grep -Fq V3_PAPER_EXPIRED_STAGE4_INHIBIT_HOLD "$transition_tmp/late-inhibit.err" || { cat "$transition_tmp/late-inhibit.err" >&2; exit 1; }
 echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_LATE_INHIBIT_REJECTED'
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_NEGATIVE_CASES_BEGIN'
 for mode in source fence acl commit epoch; do
  bs=$es; bf=$ef; ba=$ea; bc=$ec; be=$ep
  case "$mode" in
@@ -1650,7 +1651,9 @@ for mode in source fence acl commit epoch; do
   echo "FAIL_EXPIRED_CURRENT_ACCEPTED_WRONG_$mode" >&2; exit 1
  fi
  test "$(pg -Atc "SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id='$ep'")" = 0
+ echo "V3_PG17_CURRENT_EXPIRED_STAGE4_CASE_${mode}_PASS"
 done
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_WRONG_ACTOR_BEGIN'
 if pg -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$ep','$ec','$es','$ef','$ea','$er');" >/dev/null 2>"$transition_tmp/recover-actor.err"; then
  echo 'FAIL_EXPIRED_CURRENT_ACCEPTED_WRONG_ACTOR' >&2; exit 1
 fi
