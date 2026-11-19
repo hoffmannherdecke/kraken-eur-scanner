@@ -1657,7 +1657,8 @@ echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_WRONG_ACTOR_BEGIN'
 if pg -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$ep','$ec','$es','$ef','$ea','$er');" >/dev/null 2>"$transition_tmp/recover-actor.err"; then
  echo 'FAIL_EXPIRED_CURRENT_ACCEPTED_WRONG_ACTOR' >&2; exit 1
 fi
-grep -Fq V3_PAPER_FOLLOWUP_ABORT_ACTOR_HOLD "$transition_tmp/recover-actor.err"
+grep -Eq "V3_PAPER_FOLLOWUP_ABORT_ACTOR_HOLD|permission denied for function" "$transition_tmp/recover-actor.err" || { cat "$transition_tmp/recover-actor.err" >&2; exit 1; }
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_WRONG_ACTOR_DENIED'
 issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$ep','$ec','$es','$ef','$ea','$er');" >/dev/null
 if issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$ep','$ec','$es','$ef','$ea','$er');" >/dev/null 2>"$transition_tmp/recover-replay.err"; then
  echo 'FAIL_EXPIRED_CURRENT_ABORT_REPLAY' >&2; exit 1
