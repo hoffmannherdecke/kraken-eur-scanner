@@ -386,9 +386,9 @@ try{
    throw 'V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_STATE_HOLD'
   }
   $expected=@{
-   begin_executor_inhibit_v1='4be32f9c6b3dae6f3f35f125ab83da1d4992eecb0b634e07574caf5785001926'
-   read_paper_release_epoch_v1='4ca76c1a02dc42a81d3c7105c43c382f91b9bcf77bef2fe0b71fd973b475c0a0'
-   record_paper_release_abort_v1='6100ce0783220f5d615eaf7f75466665f832d63dc2c5a5bcad6be8e18bd16eda'
+   begin_executor_inhibit_v1='50be2e1c95a23fe3c281afc43bae456728fc4f36dd2065a18a233e4af8859626'
+   read_paper_release_epoch_v1='b1e3799d7509f36109a0682962041362d01aa9b5ec3fb390cfcdad01273ca21a'
+   record_paper_release_abort_v1='057b582994b4a8c821e3bc143eb4f09eafd48040de8d5a3fb8e022c406169bbf'
   }
   if($row.function_sha256 -isnot [pscustomobject] -or
      @($row.function_sha256.PSObject.Properties).Count -ne $expected.Count){
