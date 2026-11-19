@@ -1618,7 +1618,9 @@ echo 'V3_PG17_FOLLOWUP_TERMINAL_ROLLBACK_WITH_INSTALLED_RPC_PASS'
 # wrote one intent. Remove only that fixture row to model a *fresh* Stage4
 # epoch with no intent (the product database is NEVER connected).
 pg_root_db -c 'DELETE FROM v3_cas_audit.intent_v1;' >/dev/null
+echo 'V3_PG17_CURRENT_RECOVERY_INTENT_FIXTURE_RESET_APPLIED'
 test "$(pg -Atc 'SELECT count(*) FROM v3_cas_audit.intent_v1')" = 0
+echo 'V3_PG17_CURRENT_RECOVERY_INTENT_COUNT_ZERO'
 ep='V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93'
 es='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'
 ef='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025'
@@ -1626,6 +1628,7 @@ ea='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
 ec='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
 er="$(printf 'c%.0s' {1..64})"
 # A disposable superuser seeds only the original epoch shape in the sandbox.
+echo 'V3_PG17_CURRENT_RECOVERY_INSERT_BEGIN'
 pg_root_db -c "INSERT INTO v3_cas_audit.epoch_v1
  (epoch_id,predecessor_series_id,expected_rpc,source_sha256,original_fence_sha256,approved_caller_acl_sha256,paper_release_commit)
  VALUES ('$ep','PAPER-V2R4-20261009T110135Z','public.rotate_v2r4_to_v3_experimental_paper','$es','$ef','$ea','$ec');" >/dev/null
