@@ -177,8 +177,10 @@ BEGIN
         <> length(' INSERT INTO v3_cas_audit.executor_inhibit_v1')
    THEN RAISE EXCEPTION 'V3_PAPER_EXPIRED_STAGE4_ISSUER_SEAM_HOLD'; END IF;
    new_def:=replace(new_def,' INSERT INTO v3_cas_audit.executor_inhibit_v1',$guard$
- IF p_epoch_id='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
-    AND (clock_timestamp() >= timestamptz '2026-11-15 07:47:41+00'
+ IF p_epoch_id IN ('V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4','V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93')
+    AND (clock_timestamp() >= CASE p_epoch_id
+          WHEN 'V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4' THEN timestamptz '2026-11-15 07:47:41+00'
+          ELSE timestamptz '2026-11-19 09:19:35+00' END
          OR EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id=p_epoch_id))
  THEN RAISE EXCEPTION 'V3_PAPER_EXPIRED_STAGE4_INHIBIT_HOLD'; END IF;
  INSERT INTO v3_cas_audit.executor_inhibit_v1$guard$);
@@ -198,7 +200,7 @@ BEGIN
     OR NOT EXISTS (SELECT FROM pg_roles WHERE rolname='v3_cas_executor_actor' AND rolconnlimit=0)
     OR EXISTS (SELECT FROM pg_stat_activity WHERE usename IN ('v3_cas_executor_actor','v3_cas_executor'))
  THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_ABORT_ACTOR_HOLD'; END IF;
- IF p_epoch=stage4_expired_epoch THEN
+ IF p_epoch IN (stage4_expired_epoch, 'V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93') THEN
    IF current_setting('transaction_isolation') <> 'read committed'
    THEN RAISE EXCEPTION 'V3_PAPER_EXPIRED_STAGE4_ABORT_ISOLATION_HOLD'; END IF;
    -- Take an exclusive row lock and create a new row version. BeginInhibit
@@ -208,11 +210,15 @@ BEGIN
    WHERE e.epoch_id=p_epoch AND e.paper_release_commit=p_commit
      AND p_commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
      AND e.source_sha256=p_source AND e.original_fence_sha256=p_fence
-     AND p_fence='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28'
+     AND ((p_epoch=stage4_expired_epoch AND p_fence='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28')
+       OR (p_epoch='V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93' AND p_fence='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025'
+           AND p_source='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'))
      AND e.approved_caller_acl_sha256=p_acl AND NOT e.sealed AND e.next_ordinal=1
      AND e.predecessor_series_id='PAPER-V2R4-20261009T110135Z'
      AND e.expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
-     AND clock_timestamp() >= timestamptz '2026-11-15 07:47:41+00';
+     AND clock_timestamp() >= CASE p_epoch WHEN stage4_expired_epoch
+           THEN timestamptz '2026-11-15 07:47:41+00'
+           ELSE timestamptz '2026-11-19 09:19:35+00' END;
    IF NOT FOUND
       OR EXISTS (SELECT FROM v3_cas_audit.epoch_v1 later JOIN v3_cas_audit.epoch_v1 e ON e.epoch_id=p_epoch
                  WHERE later.epoch_id<>e.epoch_id AND later.opened_at_utc>=e.opened_at_utc)
@@ -296,9 +302,10 @@ BEGIN
    WHERE a.epoch_id=p_epoch_id AND a.source_sha256=e.source_sha256
      AND a.prepared_fence_sha256=e.original_fence_sha256 AND a.caller_acl_sha256=e.approved_caller_acl_sha256
      AND a.issuer_actor='v3_cas_inhibit_issuer_actor' AND a.state='ABORT_RECORDED_NOT_RELEASED';
-   IF p_epoch_id IS DISTINCT FROM 'V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+   IF p_epoch_id NOT IN ('V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4','V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93')
       OR e.paper_release_commit IS DISTINCT FROM '46c5abbd6af16266c1229943db973dc9d6b2fb4f'
-      OR e.original_fence_sha256 IS DISTINCT FROM 'c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28'
+      OR NOT ((p_epoch_id='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4' AND e.original_fence_sha256='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28')
+        OR (p_epoch_id='V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93' AND e.original_fence_sha256='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025' AND e.source_sha256='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'))
       OR terminal_receipt IS NULL OR actor.rolcanlogin OR actor.rolconnlimit<>0
       OR e.sealed OR e.next_ordinal<>1
       OR EXISTS (SELECT FROM v3_cas_audit.executor_inhibit_v1 WHERE epoch_id=p_epoch_id)
