@@ -188,6 +188,21 @@ BEGIN
          OR EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id=p_epoch_id))
  THEN RAISE EXCEPTION 'V3_PAPER_EXPIRED_STAGE4_INHIBIT_HOLD'; END IF;
  INSERT INTO v3_cas_audit.executor_inhibit_v1$guard$);
+ ELSIF position('V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93' in new_def)=0 THEN
+   -- Existing production issuer already contains the historical guard.
+   -- Extend only that exact old guard; any difference fails closed.
+   new_def:=replace(new_def,$old_expired$
+ IF p_epoch_id='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+    AND (clock_timestamp() >= timestamptz '2026-11-15 07:47:41+00'
+         OR EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id=p_epoch_id))
+ THEN RAISE EXCEPTION 'V3_PAPER_EXPIRED_STAGE4_INHIBIT_HOLD'; END IF;$old_expired$,$both_expired$
+ IF p_epoch_id IN ('V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4','V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93')
+    AND (clock_timestamp() >= CASE p_epoch_id
+          WHEN 'V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4' THEN timestamptz '2026-11-15 07:47:41+00'
+          ELSE timestamptz '2026-11-19 09:19:35+00' END
+         OR EXISTS (SELECT FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id=p_epoch_id))
+ THEN RAISE EXCEPTION 'V3_PAPER_EXPIRED_STAGE4_INHIBIT_HOLD'; END IF;$both_expired$);
+   IF new_def=old_def THEN RAISE EXCEPTION 'V3_PAPER_EXPIRED_STAGE4_ISSUER_SEAM_HOLD'; END IF;
  END IF;
  IF new_def<>old_def THEN EXECUTE new_def; END IF;
 END $issuer_upgrade$;
