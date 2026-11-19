@@ -1677,7 +1677,7 @@ echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_ABORT_READER_REPLAY_IDENTITY_PASS_NO_PRODUC
 # The earlier synthetic predecessor was sealed for the unrelated Stage5 test.
 # Normalize only that disposable fixture row to the current real history's
 # unsealed-terminal shape, after all its original Stage5 tests have completed.
-pg_root_db -c "UPDATE v3_cas_audit.epoch_v1 SET sealed=false WHERE epoch_id='$followup_epoch';" >/dev/null
+pg_root_db -c "UPDATE v3_cas_audit.epoch_v1 SET sealed=false,next_ordinal=1 WHERE epoch_id='$followup_epoch';" >/dev/null
 prior_epoch=$ep
 prior_commit=$ec
 prior_source=$es
