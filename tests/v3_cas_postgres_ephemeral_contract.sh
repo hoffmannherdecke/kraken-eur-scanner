@@ -1486,12 +1486,27 @@ issuer_before="$(definition_sha 'v3_cas_audit.begin_executor_inhibit_v1(text,tex
 reader_before="$(definition_sha 'v3_cas_audit.read_paper_release_epoch_v1(text)')"
 supersede_sql() {
  local prior_pin="${2-$prior_source}"
+ # Only isolated fixture inputs change; the exact Stage4 SQL is not edited.
+ local drift_case="${3-}"
+ local cas_pin="$cas_before" issuer_pin="$issuer_before" reader_pin="$reader_before"
+ local receipt_pin="$prior_receipt" acl_pin="$followup_acl"
+ local bad_pin
+ bad_pin="$(printf '0%.0s' {1..64})"
+ case "$drift_case" in
+  '') ;;
+  cas) cas_pin="$bad_pin" ;;
+  issuer) issuer_pin="$bad_pin" ;;
+  reader) reader_pin="$bad_pin" ;;
+  receipt) receipt_pin="$bad_pin" ;;
+  acl) acl_pin="$bad_pin" ;;
+  *) echo 'FAIL_UNSUPPORTED_CI_STAGE4_DRIFT_CASE' >&2; return 1 ;;
+ esac
  {
   printf "SET v3_followup.%s='%s';\n" scope CLOUD_STAGE4_EPOCH_OPEN commit "$followup_commit" \
    epoch_id "$followup_epoch" source_sha256 "$followup_source" fence_sha256 "$followup_fence" \
-   caller_acl_sha256 "$followup_acl" prior_epoch_id "$prior_epoch" prior_commit "$prior_commit" \
-   prior_source_sha256 "$prior_pin" prior_terminal_sha256 "$prior_receipt" installed_cas_sha256 "$cas_before" \
-   installed_issuer_sha256 "$issuer_before" installed_reader_sha256 "$reader_before"
+   caller_acl_sha256 "$acl_pin" prior_epoch_id "$prior_epoch" prior_commit "$prior_commit" \
+   prior_source_sha256 "$prior_pin" prior_terminal_sha256 "$receipt_pin" installed_cas_sha256 "$cas_pin" \
+   installed_issuer_sha256 "$issuer_pin" installed_reader_sha256 "$reader_pin"
   printf "SELECT set_config('v3_followup.series_time',(clock_timestamp()-interval '%s seconds')::text,false);\n" "$1"
   printf "SELECT set_config('v3_followup.approval_sha256',repeat('2',64),false);\n"
   printf "SELECT set_config('v3_followup.expires_at',(clock_timestamp()+interval '5 minutes')::text,false);\n"
@@ -1521,6 +1536,26 @@ if supersede_sql 1 "" >/dev/null 2>"$transition_tmp/supersede-prior-source-missi
 fi
 grep -Fq V3_PAPER_FOLLOWUP_PRIOR_SOURCE_PIN_HOLD "$transition_tmp/supersede-prior-source-missing.err"
 test "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" = 2
+# Exact productive Stage4 SQL must reject the two actual historical failure
+# mechanisms (Reader/Issuer pins), plus CAS, terminal receipt, and ACL drift
+# BEFORE any successor epoch is committed. A negative psql result is not a
+# successful test unless the expected precise HOLD and zero effects are proven.
+for drift_case in reader issuer cas receipt acl; do
+ if supersede_sql 1 "$prior_source" "$drift_case" > /dev/null 2>"$transition_tmp/supersede-$drift_case.err"; then
+  echo "FAIL_SUPERSESSION_ACCEPTED_${drift_case}_DRIFT" >&2; exit 1
+ fi
+ expected_hold='V3_PAPER_FOLLOWUP_SUPERSESSION_BINDING_HOLD'
+ if [[ "$drift_case" = issuer ]]; then
+  expected_hold='V3_PAPER_FOLLOWUP_ISSUER_SOURCE_DRIFT'
+ fi
+ grep -Fq "$expected_hold" "$transition_tmp/supersede-$drift_case.err" || {
+  cat "$transition_tmp/supersede-$drift_case.err" >&2; exit 1;
+ }
+ test "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" = 2
+ test "$(pg -Atc 'select count(*) from v3_cas_audit.intent_v1')" = 0
+ test "$(pg -Atc 'select count(*) from v3_cas_audit.attempt_v1')" = 0
+done
+echo 'V3_PG17_FOLLOWUP_READER_ISSUER_CAS_RECEIPT_ACL_DRIFT_FAILCLOSED_PASS'
 supersede_sql 1 >/dev/null
 test "$(definition_sha "$rpc_sig")" = "$cas_before"
 if supersede_sql 1 >/dev/null 2>&1; then
