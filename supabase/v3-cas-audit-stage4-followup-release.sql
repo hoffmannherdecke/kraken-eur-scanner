@@ -85,9 +85,13 @@ BEGIN
             (i.state='INHIBITED' AND i.issuer_id=a.issuer_actor
              AND i.source_sha256=e.source_sha256 AND i.original_fence_sha256=e.original_fence_sha256
              AND i.caller_acl_sha256=e.approved_caller_acl_sha256 AND i.native_stop_at_utc IS NULL)
-            OR (i.epoch_id IS NULL AND e.epoch_id='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+            OR (i.epoch_id IS NULL
                 AND e.paper_release_commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
-                AND e.original_fence_sha256='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28')
+                AND ((e.epoch_id='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+                      AND e.original_fence_sha256='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28')
+                  OR (e.epoch_id='V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93'
+                      AND e.source_sha256='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'
+                      AND e.original_fence_sha256='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025')))
           )
           AND NOT EXISTS (SELECT FROM v3_cas_audit.epoch_v1 later WHERE later.opened_at_utc>e.opened_at_utc))
    THEN RAISE EXCEPTION 'V3_PAPER_FOLLOWUP_SUPERSESSION_BINDING_HOLD'; END IF;
