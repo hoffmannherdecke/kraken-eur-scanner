@@ -1635,7 +1635,8 @@ pg_root_db -c "INSERT INTO v3_cas_audit.epoch_v1
 if issuer_transaction -c "SELECT v3_cas_audit.begin_executor_inhibit_v1('$ep','$es','$ef','$ea');" >/dev/null 2>"$transition_tmp/late-inhibit.err"; then
  echo 'FAIL_EXPIRED_CURRENT_LATE_INHIBIT_ALLOWED' >&2; exit 1
 fi
-grep -Fq V3_PAPER_EXPIRED_STAGE4_INHIBIT_HOLD "$transition_tmp/late-inhibit.err"
+grep -Fq V3_PAPER_EXPIRED_STAGE4_INHIBIT_HOLD "$transition_tmp/late-inhibit.err" || { cat "$transition_tmp/late-inhibit.err" >&2; exit 1; }
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_LATE_INHIBIT_REJECTED'
 for mode in source fence acl commit epoch; do
  bs=$es; bf=$ef; ba=$ea; bc=$ec; be=$ep
  case "$mode" in
