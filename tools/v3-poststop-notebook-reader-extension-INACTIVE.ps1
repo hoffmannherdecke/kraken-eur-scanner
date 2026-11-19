@@ -347,10 +347,10 @@ SELECT jsonb_build_object(
 )::text FROM v3_cas_audit.epoch_v1 e CROSS JOIN pins
 LEFT JOIN v3_cas_audit.prepared_fence_abort_v1 a ON a.epoch_id=e.epoch_id
 WHERE session_user='v3_cas_audit_reader_actor' AND current_user='v3_cas_audit_reader'
- AND e.epoch_id='V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+ AND e.epoch_id='V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93'
  AND e.paper_release_commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
- AND e.original_fence_sha256='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28'
- AND e.source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
+ AND e.original_fence_sha256='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025'
+ AND e.source_sha256='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'
  AND e.approved_caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
  AND e.next_ordinal=1 AND NOT e.sealed;
 COMMIT;
@@ -386,9 +386,9 @@ try{
    throw 'V3_EXPIRED_STAGE4_NOTEBOOK_READBACK_STATE_HOLD'
   }
   $expected=@{
-   begin_executor_inhibit_v1='4be32f9c6b3dae6f3f35f125ab83da1d4992eecb0b634e07574caf5785001926'
-   read_paper_release_epoch_v1='4ca76c1a02dc42a81d3c7105c43c382f91b9bcf77bef2fe0b71fd973b475c0a0'
-   record_paper_release_abort_v1='6100ce0783220f5d615eaf7f75466665f832d63dc2c5a5bcad6be8e18bd16eda'
+   begin_executor_inhibit_v1='50be2e1c95a23fe3c281afc43bae456728fc4f36dd2065a18a233e4af8859626'
+   read_paper_release_epoch_v1='b1e3799d7509f36109a0682962041362d01aa9b5ec3fb390cfcdad01273ca21a'
+   record_paper_release_abort_v1='057b582994b4a8c821e3bc143eb4f09eafd48040de8d5a3fb8e022c406169bbf'
   }
   if($row.function_sha256 -isnot [pscustomobject] -or
      @($row.function_sha256.PSObject.Properties).Count -ne $expected.Count){

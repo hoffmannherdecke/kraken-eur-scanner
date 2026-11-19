@@ -12,7 +12,7 @@ BEGIN
     OR NOT EXISTS (SELECT FROM pg_roles WHERE rolname='postgres'
                    AND NOT rolsuper AND rolcreaterole AND rolbypassrls)
     OR current_setting('v3_expired_stage4.scope',true) IS DISTINCT FROM 'CLOUD_ABORT_INSTALL'
-    OR current_setting('v3_expired_stage4.epoch_id',true) IS DISTINCT FROM 'V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4'
+    OR current_setting('v3_expired_stage4.epoch_id',true) IS DISTINCT FROM 'V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93'
     OR coalesce(current_setting('v3_expired_stage4.approval_sha256',true),'') !~ '^[a-f0-9]{64}$'
     OR (current_setting('v3_expired_stage4.expires_at',true)::timestamptz
           BETWEEN clock_timestamp() AND clock_timestamp()+interval '15 minutes') IS DISTINCT FROM TRUE
@@ -29,9 +29,9 @@ BEGIN
  THEN RAISE EXCEPTION 'V3_EXPIRED_STAGE4_INSTALL_OWNER_OR_EXECUTOR_HOLD'; END IF;
  IF EXISTS (
    SELECT FROM (VALUES
-    ('v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)','v3_cas_audit_table_owner','08792c0af31012c0a77cc04a64586436d2e6fef93805140346bb51e6f8e65b5d'),
-    ('v3_cas_audit.record_paper_release_abort_v1(text,text,text,text,text,text)','v3_cas_audit_table_owner','97a15d9d9accd71d5a488b0bdadf61467e0800926d5ac624a78ded926f3117aa'),
-    ('v3_cas_audit.read_paper_release_epoch_v1(text)','postgres','8bebf7089a3e7411ed6f06961e542389016b6eda66be05930b1b828572c7ed7a')
+    ('v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)','v3_cas_audit_table_owner','4be32f9c6b3dae6f3f35f125ab83da1d4992eecb0b634e07574caf5785001926'),
+    ('v3_cas_audit.record_paper_release_abort_v1(text,text,text,text,text,text)','v3_cas_audit_table_owner','6100ce0783220f5d615eaf7f75466665f832d63dc2c5a5bcad6be8e18bd16eda'),
+    ('v3_cas_audit.read_paper_release_epoch_v1(text)','postgres','4ca76c1a02dc42a81d3c7105c43c382f91b9bcf77bef2fe0b71fd973b475c0a0')
    ) pin(signature,owner_name,digest)
    LEFT JOIN pg_proc p ON p.oid=to_regprocedure(pin.signature)
    WHERE pg_get_userbyid(p.proowner) IS DISTINCT FROM pin.owner_name
@@ -47,18 +47,18 @@ GRANT v3_cas_audit_table_owner TO postgres WITH INHERIT FALSE, SET TRUE, ADMIN F
 GRANT CREATE ON SCHEMA v3_cas_audit TO v3_cas_audit_table_owner;
 SET ROLE v3_cas_audit_table_owner;
 DO $install_epoch$
-DECLARE target constant text := 'V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4';
+DECLARE target constant text := 'V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93';
 BEGIN
  PERFORM 1 FROM v3_cas_audit.epoch_v1 e
  WHERE e.epoch_id=target
    AND e.paper_release_commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
-   AND e.source_sha256='8b27c2392c2c8165660a40e15f5ab896c99da39befcd2201e43220acaa2e1251'
-   AND e.original_fence_sha256='c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28'
+   AND e.source_sha256='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'
+   AND e.original_fence_sha256='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025'
    AND e.approved_caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
-   AND e.opened_at_utc=timestamptz '2026-11-15 07:39:19.661951+00'
+   AND e.opened_at_utc=timestamptz '2026-11-19 09:14:03.642539+00'
    AND e.predecessor_series_id='PAPER-V2R4-20261009T110135Z'
    AND e.next_ordinal=1 AND NOT e.sealed
-   AND clock_timestamp() >= timestamptz '2026-11-15 07:47:41+00'
+   AND clock_timestamp() >= timestamptz '2026-11-19 09:19:35+00'
    AND NOT EXISTS (SELECT FROM v3_cas_audit.epoch_v1 later
                   WHERE later.epoch_id<>target AND later.opened_at_utc>=e.opened_at_utc)
  FOR UPDATE;
@@ -70,7 +70,7 @@ BEGIN
  THEN RAISE EXCEPTION 'V3_EXPIRED_STAGE4_INSTALL_EPOCH_STATE_HOLD'; END IF;
 END $install_epoch$;
 SELECT set_config('v3_followup.prior_epoch_id',current_setting('v3_expired_stage4.epoch_id'),true);
-SELECT set_config('v3_followup.installed_issuer_sha256','08792c0af31012c0a77cc04a64586436d2e6fef93805140346bb51e6f8e65b5d',true);
+SELECT set_config('v3_followup.installed_issuer_sha256','4be32f9c6b3dae6f3f35f125ab83da1d4992eecb0b634e07574caf5785001926',true);
 /*__ISSUER__*/
 /*__ABORT__*/
 RESET ROLE;

@@ -273,14 +273,17 @@ $end=$i.IndexOf('$epoch='+[char]39+'V3CAS-AUDIT-3c6b22d02d8a413c88bfede21acce2ea
 if($start -lt 0 -or $end -le $start){throw 'AP05A_NARROW_BRANCH_HOLD'}
 $target=$i.Substring($start,$end-$start)
 foreach($required in @(
- 'V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4',
- 'PAPER-V3-20261115T073741Z',
- 'c9775bdeee0be54a2658fb7673180f2e499035830656300ad68067196e426e28',
+ 'V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93',
+ 'PAPER-V3-20261119T091235Z',
+ '0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025',
  'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT',
  'AP05A_SIGNED_AUTHORIZATION_SCHEMA_HOLD','Assert-V3ReleaseAuthorityAdmission',
  'Assert-V3ReleaseCms','AP05A_DEFINITION_DRIFT_HOLD',
  'AP05A_FRESH_READER_HOLD','AP05A_RECEIPT_DERIVATION_HOLD',
  'AP05A_OWNER_DECISION_HOLD','AP05A_EXACT_BINDINGS_HOLD',
+ '50be2e1c95a23fe3c281afc43bae456728fc4f36dd2065a18a233e4af8859626',
+ '057b582994b4a8c821e3bc143eb4f09eafd48040de8d5a3fb8e022c406169bbf',
+ 'b1e3799d7509f36109a0682962041362d01aa9b5ec3fb390cfcdad01273ca21a',
  'v3_cas_inhibit_issuer_actor.nlgzjmqgwueojlyqmoru',
  'FileMode]::CreateNew','AP05A_TIMEOUT_UNKNOWN_NO_RETRY',
  'AP05A_RESULT_UNKNOWN_NO_RETRY','BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED',
@@ -302,3 +305,46 @@ foreach($required in @('ExpectedIssuerSha256','ExpectedControllerSha256',
 }
 if(-not $target.Contains("'CLOUD_EXPIRED_STAGE4_TERMINAL_ABORT'")){throw 'AP05A_SCOPE_MISSING_HOLD'}
 'AP05A_TARGETED_NATIVE_CONTRACT_PASS'
+
+# AP05A independently signed Reader's current epoch and exactly matching
+# current definition identities are mandatory before CMS/terminal claims.
+$readerText=[IO.File]::ReadAllText($source)
+foreach($pin in @(
+ 'V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93',
+ '989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043',
+ '0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025',
+ '50be2e1c95a23fe3c281afc43bae456728fc4f36dd2065a18a233e4af8859626',
+ '057b582994b4a8c821e3bc143eb4f09eafd48040de8d5a3fb8e022c406169bbf',
+ 'b1e3799d7509f36109a0682962041362d01aa9b5ec3fb390cfcdad01273ca21a'
+)){
+ if(-not $readerText.Contains($pin)){throw 'AP05A_EXACT_READER_BINDING_MISSING'}
+}
+'AP05A_CURRENT_EXPIRED_STAGE4_SIGNED_CONSUMER_NATIVE_STATIC_PASS'
+
+
+# AP05A original Cloud installer is the sole existing signed source assembly
+# consumer; assert current exact pins and preserve original CMS/attempt gate.
+$installOperator=Join-Path $PSScriptRoot '../tools/v3-one-time-release.ps1'
+$installTokens=$null;$installErrors=$null
+$null=[Management.Automation.Language.Parser]::ParseFile($installOperator,[ref]$installTokens,[ref]$installErrors)
+if(@($installErrors).Count -gt 0){throw 'AP05A_ORIGINAL_INSTALL_OPERATOR_NATIVE_PARSE_HOLD'}
+$operatorText=[IO.File]::ReadAllText($installOperator)
+$installStart=$operatorText.LastIndexOf('if($Mode -ceq '+[char]39+'InstallExpiredStage4Abort'+[char]39+'){')
+$installEnd=$operatorText.IndexOf('$releaseSql=[Text.Encoding]::UTF8.GetString',[Math]::Max(0,$installStart))
+if($installStart -lt 0 -or $installEnd -le $installStart){throw 'AP05A_ORIGINAL_INSTALL_SCOPE_MISSING'}
+$installBranch=$operatorText.Substring($installStart,$installEnd-$installStart)
+foreach($required in @(
+ 'V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93',
+ 'PAPER-V3-20261119T091235Z',
+ '989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043',
+ '0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025',
+ 'CLOUD_ABORT_INSTALL','V3_EXPIRED_STAGE4_INSTALL_EXACT_SOURCE_SEAM_HOLD',
+ 'FileMode]::CreateNew','V3_EXPIRED_STAGE4_INSTALL_RETURNED_INDEPENDENT_READER_REQUIRED',
+ 'Invoke-V3ReleasePg'
+)){
+ if(-not $installBranch.Contains($required)){throw 'AP05A_ORIGINAL_INSTALL_CONSUMER_PIN_OR_LATCH_MISSING'}
+}
+if($installBranch.Contains('V3CAS-AUDIT-7fce8ba3fd714b008407d687e29f50f4')){
+ throw 'AP05A_INSTALLER_STILL_TARGETS_OLD_EPOCH'
+}
+'AP05A_CURRENT_EXPIRED_STAGE4_ORIGINAL_INSTALLER_NATIVE_STATIC_PASS'

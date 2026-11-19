@@ -1613,4 +1613,91 @@ grep -Fq V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT "$transition_tmp/follo
 test "$(pg -Atc 'select count(*) from v3_cas_audit.prepared_fence_abort_v1')" = 3
 echo 'V3_PG17_FOLLOWUP_TERMINAL_ROLLBACK_WITH_INSTALLED_RPC_PASS'
 
+
+# Existing disposable PG17 fixture: the preceding sealed synthetic epoch
+# wrote one intent. Remove only that fixture row to model a *fresh* Stage4
+# epoch with no intent (the product database is NEVER connected).
+pg_root_db -c 'DELETE FROM v3_cas_audit.intent_v1;' >/dev/null
+echo 'V3_PG17_CURRENT_RECOVERY_INTENT_FIXTURE_RESET_APPLIED'
+test "$(pg -Atc 'SELECT count(*) FROM v3_cas_audit.intent_v1')" = 0
+echo 'V3_PG17_CURRENT_RECOVERY_INTENT_COUNT_ZERO'
+ep='V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93'
+es='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'
+ef='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025'
+ea='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
+ec='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
+er="$(printf 'c%.0s' {1..64})"
+# A disposable superuser seeds only the original epoch shape in the sandbox.
+echo 'V3_PG17_CURRENT_RECOVERY_INSERT_BEGIN'
+pg_root_db -c "INSERT INTO v3_cas_audit.epoch_v1
+ (epoch_id,predecessor_series_id,expected_rpc,source_sha256,original_fence_sha256,approved_caller_acl_sha256,paper_release_commit)
+ VALUES ('$ep','PAPER-V2R4-20261009T110135Z','public.rotate_v2r4_to_v3_experimental_paper','$es','$ef','$ea','$ec');" >/dev/null
+if issuer_transaction -c "SELECT v3_cas_audit.begin_executor_inhibit_v1('$ep','$es','$ef','$ea');" >/dev/null 2>"$transition_tmp/late-inhibit.err"; then
+ echo 'FAIL_EXPIRED_CURRENT_LATE_INHIBIT_ALLOWED' >&2; exit 1
+fi
+grep -Fq V3_PAPER_EXPIRED_STAGE4_INHIBIT_HOLD "$transition_tmp/late-inhibit.err" || { cat "$transition_tmp/late-inhibit.err" >&2; exit 1; }
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_LATE_INHIBIT_REJECTED'
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_NEGATIVE_CASES_BEGIN'
+for mode in source fence acl commit epoch; do
+ bs=$es; bf=$ef; ba=$ea; bc=$ec; be=$ep
+ case "$mode" in
+  source) bs="$(printf '0%.0s' {1..64})";;
+  fence) bf="$(printf '0%.0s' {1..64})";;
+  acl) ba="$(printf '0%.0s' {1..64})";;
+  commit) bc="$(printf '0%.0s' {1..40})";;
+  epoch) be='V3CAS-AUDIT-00000000000000000000000000000000';;
+ esac
+ if issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$be','$bc','$bs','$bf','$ba','$er');" >/dev/null 2>"$transition_tmp/recover-$mode.err"; then
+  echo "FAIL_EXPIRED_CURRENT_ACCEPTED_WRONG_$mode" >&2; exit 1
+ fi
+ test "$(pg -Atc "SELECT count(*) FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id='$ep'")" = 0
+ echo "V3_PG17_CURRENT_EXPIRED_STAGE4_CASE_${mode}_PASS"
+done
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_WRONG_ACTOR_BEGIN'
+if pg -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$ep','$ec','$es','$ef','$ea','$er');" >/dev/null 2>"$transition_tmp/recover-actor.err"; then
+ echo 'FAIL_EXPIRED_CURRENT_ACCEPTED_WRONG_ACTOR' >&2; exit 1
+fi
+grep -Eq "V3_PAPER_FOLLOWUP_ABORT_ACTOR_HOLD|permission denied for function" "$transition_tmp/recover-actor.err" || { cat "$transition_tmp/recover-actor.err" >&2; exit 1; }
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_WRONG_ACTOR_DENIED'
+issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$ep','$ec','$es','$ef','$ea','$er');" >/dev/null
+if issuer_transaction -c "SELECT v3_cas_audit.record_paper_release_abort_v1('$ep','$ec','$es','$ef','$ea','$er');" >/dev/null 2>"$transition_tmp/recover-replay.err"; then
+ echo 'FAIL_EXPIRED_CURRENT_ABORT_REPLAY' >&2; exit 1
+fi
+grep -Fq V3_PAPER_EXPIRED_STAGE4_ABORT_STATE_HOLD "$transition_tmp/recover-replay.err"
+followup_reader "$ep" | grep -Fq EXPIRED_STAGE4_ABORTED_BEFORE_INHIBIT
+test "$(pg -Atc "SELECT receipt_sha256 FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id='$ep'")" = "$er"
+test "$(pg -Atc "SELECT count(*) FROM v3_cas_audit.executor_inhibit_v1 WHERE epoch_id='$ep'")" = 0
+test "$(pg -Atc 'SELECT count(*) FROM v3_cas_audit.attempt_v1')" = 0
+for sig in 'v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)' 'v3_cas_audit.record_paper_release_abort_v1(text,text,text,text,text,text)' 'v3_cas_audit.read_paper_release_epoch_v1(text)'; do
+ echo "V3_PG17_CURRENT_RECOVERY_FUNCTION_SHA256 $sig $(definition_sha "$sig")"
+done
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_ABORT_READER_REPLAY_IDENTITY_PASS_NO_PRODUCTION'
+
+# Exercise the ORIGINAL successor SQL, not a parallel reconstruction.
+# The earlier synthetic predecessor was sealed for the unrelated Stage5 test.
+# Normalize only that disposable fixture row to the current real history's
+# unsealed-terminal shape, after all its original Stage5 tests have completed.
+pg_root_db -c "UPDATE v3_cas_audit.epoch_v1 SET sealed=false,next_ordinal=1 WHERE epoch_id='$followup_epoch';" >/dev/null
+prior_epoch=$ep
+prior_commit=$ec
+prior_source=$es
+prior_receipt=$er
+followup_epoch='V3CAS-AUDIT-33333333333333333333333333333333'
+followup_commit=$ec
+followup_source="$(printf 'd%.0s' {1..64})"
+followup_fence='123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0'
+followup_acl=$ea
+cas_before="$(definition_sha "$rpc_sig")"
+issuer_before="$(definition_sha 'v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)')"
+reader_before="$(definition_sha 'v3_cas_audit.read_paper_release_epoch_v1(text)')"
+supersede_sql 1 >/dev/null
+test "$(pg -Atc "SELECT count(*) FROM v3_cas_audit.epoch_v1 WHERE epoch_id='$followup_epoch' AND source_sha256='$followup_source'")" = 1
+test "$(pg -Atc "SELECT receipt_sha256 FROM v3_cas_audit.prepared_fence_abort_v1 WHERE epoch_id='$prior_epoch'")" = "$prior_receipt"
+test "$(pg -Atc 'SELECT count(*) FROM v3_cas_audit.attempt_v1')" = 0
+if supersede_sql 1 >/dev/null 2>"$transition_tmp/current-successor-replay.err"; then
+ echo 'FAIL_CURRENT_EXPIRED_READER_ACCEPTED_SUPERSESSION_REPLAY' >&2; exit 1
+fi
+echo 'V3_PG17_CURRENT_EXPIRED_STAGE4_TERMINAL_SUCCESSOR_BINDING_REPLAY_PASS_NO_PRODUCTION'
+
+
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
