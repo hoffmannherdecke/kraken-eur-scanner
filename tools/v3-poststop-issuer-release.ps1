@@ -71,7 +71,7 @@ if($Mode -ceq 'ExpiredStage4Abort'){
   $pre.epoch_id -cne $epoch -or $pre.source_sha256 -cne $source -or $pre.fence_sha256 -cne $fence -or $pre.caller_acl_sha256 -cne $acl -or
   $null -ne $pre.terminal_receipt_sha256 -or $observed -gt [datetimeoffset]::UtcNow.AddSeconds(5) -or
   ([datetimeoffset]::UtcNow-$observed).TotalSeconds -ge 30){throw 'AP05A_FRESH_READER_HOLD'}
- $defs=@{begin_executor_inhibit_v1='4be32f9c6b3dae6f3f35f125ab83da1d4992eecb0b634e07574caf5785001926';read_paper_release_epoch_v1='4ca76c1a02dc42a81d3c7105c43c382f91b9bcf77bef2fe0b71fd973b475c0a0';record_paper_release_abort_v1='6100ce0783220f5d615eaf7f75466665f832d63dc2c5a5bcad6be8e18bd16eda'}
+ $defs=@{begin_executor_inhibit_v1='50be2e1c95a23fe3c281afc43bae456728fc4f36dd2065a18a233e4af8859626';read_paper_release_epoch_v1='b1e3799d7509f36109a0682962041362d01aa9b5ec3fb390cfcdad01273ca21a';record_paper_release_abort_v1='057b582994b4a8c821e3bc143eb4f09eafd48040de8d5a3fb8e022c406169bbf'}
  if(@($pre.function_sha256.PSObject.Properties).Count -ne 3){throw 'AP05A_DEFINITION_COUNT_HOLD'}
  foreach($key in $defs.Keys){if([string]$pre.function_sha256.$key -cne $defs[$key]){throw 'AP05A_DEFINITION_DRIFT_HOLD'}}
  $receipt=Get-V3ReleaseSha256 ([Text.Encoding]::ASCII.GetBytes("V3_EXPIRED_STAGE4_TERMINAL_RECEIPT_V1"+[char]10+$epoch+[char]10+$preHash))
