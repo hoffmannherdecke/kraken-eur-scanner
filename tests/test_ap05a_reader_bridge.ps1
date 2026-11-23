@@ -47,43 +47,107 @@ try {
  $readerPin = Get-V3ReleaseSha256 $readerCert.RawData
  $authorityPin = Get-V3ReleaseSha256 $authorityCert.RawData
  if ($readerPin -ceq $authorityPin) { throw 'AP05A_FIXTURE_SIGNERS_NOT_DISTINCT' }
- $artifacts = @{
-  'tools/v3-one-time-release-authorization.psm1' = (Get-FileHash (Join-Path $tools 'v3-one-time-release-authorization.psm1')).Hash.ToLowerInvariant()
-  'tools/v3-one-time-paper-release.ps1' = (Get-FileHash (Join-Path $tools 'v3-one-time-paper-release.ps1')).Hash.ToLowerInvariant()
+ # Execute exact, bounded portions of candidate ASTs. The production setup,
+ # credential lookup and final effectful operator dispatch are outside these ranges.
+ function Get-PinnedAst($Name,$Hash) {
+  $file = Join-Path $PSScriptRoot "ap05a-fixtures/$Name"
+  if ((Get-FileHash -LiteralPath $file).Hash -ine $Hash) { throw "AP05A_CANDIDATE_HASH_HOLD $Name" }
+  $tokens = $null
+  $errors = $null
+  $ast = [Management.Automation.Language.Parser]::ParseFile($file,[ref]$tokens,[ref]$errors)
+  if ($errors.Count) { throw "AP05A_CANDIDATE_PARSE_HOLD $Name" }
+  $ast
  }
- $releaseId = 'V3-ONETIME-' + $EpochId.Substring(12)
- $utf8 = [Text.UTF8Encoding]::new($false)
- foreach ($phase in @('PREPARE','STOP')) {
-  # These are separate local fixture plans. No signed claim rewrites the database fields.
-  $planBytes = $utf8.GetBytes((@{phase=$phase;repo_sha=$Release;cas_epoch=$epoch} | ConvertTo-Json -Compress))
-  $planSha = Get-V3ReleaseSha256 $planBytes
-  foreach ($field in @('release_id','plan_sha256')) {
-   if ($null -ne $row.PSObject.Properties[$field]) { throw 'AP05A_UNEXPECTED_READER_ENVELOPE_FIELD' }
+ function Get-Range($Ast,$First,$Last) {
+  $statements = @($Ast.EndBlock.Statements)
+  $result = [Collections.Generic.List[string]]::new()
+  $started = $false
+  foreach ($statement in $statements) {
+   $line = $statement.Extent.Text
+   if ($line.StartsWith($First,[StringComparison]::Ordinal)) { $started = $true }
+   if ($started) { $result.Add($line) }
+   if ($started -and $line.StartsWith($Last,[StringComparison]::Ordinal)) { return ($result -join "`n") }
   }
+  throw "AP05A_CANDIDATE_RANGE_HOLD $First $Last"
+ }
+ $nb = Get-PinnedAst 'Notebook-Phase.ps1' '45327fe0ae53411ffd7161aa4082752264d774dfcfd64b1bb085369f5911c364'
+ $pc = Get-PinnedAst 'MiniPC-Phase.ps1' 'fc4d126ef9d2fe6ce953035dfaac3f9d8a0c80556cec95d76ec5f03d49304eac'
+ $functions = Get-Range $nb 'function Digest' 'function Assert-Cms'
+ . ([scriptblock]::Create($functions))
+ $producer = [scriptblock]::Create(
+  (Get-Range $nb '$rules = @{' '$rule = ') + "`n" +
+  (Get-Range $nb 'Assert-Cms $readBytes' 'Write-Output $path'))
+ $consumer = [scriptblock]::Create((Get-Range $pc '$rules = @{' 'Write-Exact (Join-Path $phase ''reader.cms'')'))
+ $root = Split-Path -Parent $ReaderJson
+ $handoff = Join-Path $root 'ap05a-handoff'
+ [void][IO.Directory]::CreateDirectory($handoff)
+ $WindowDirectory = $root
+ $utf8 = [Text.UTF8Encoding]::new($false,$true)
+ $id = 'V3-ONETIME-' + $EpochId.Substring(12)
+ $releaseId = $id
+ $fixtureArtifacts = @{}
+ foreach ($n in 1..10) { $fixtureArtifacts["tools/ap05a-test-$n.ps1"] = Get-V3ReleaseSha256 ($utf8.GetBytes([string]$n)) }
+ $expected = $fixtureArtifacts.Clone()
+ $pins = @{
+  'supabase/v3-cas-audit-stage4-followup-release.sql'='3cb150387ee4569b9826bbf5e4091ccf78981a44c0c3bbf83faeef959fc7002f'
+  'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql'='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'
+  'tools/v3-one-time-paper-release.ps1'='aecd031a189bd6431b8d6f2656f2c2b8bc7c2bcfbd287d6ef636b082e5b3f68c'
+  'tools/v3-one-time-release.ps1'='fe3d55e0299a7cd83647a6fed4580cb3956dda062402dd2e79f24cc88aae07d8'
+ }
+ foreach ($key in $pins.Keys) {
+  $fixtureArtifacts[$key] = '0' * 64
+  $expected[$key] = $pins[$key]
+ }
+ $fixed = @{repo_sha=$Release;artifacts=[pscustomobject]$fixtureArtifacts}
+ $end = $now.AddMinutes(3)
+ $runtimeBytes = $utf8.GetBytes('{"fixture":"prepare-runtime"}')
+ [IO.File]::WriteAllBytes((Join-Path $root 'runtime-spec.json'),$runtimeBytes)
+ $prepareApproval = $null
+ foreach ($Phase in @('Prepare','Stop')) {
+  $planHash = Get-V3ReleaseSha256 ($utf8.GetBytes((@{phase=$Phase;repo_sha=$Release;cas_epoch=$epoch} | ConvertTo-Json -Compress)))
   $wire = $utf8.GetString($raw).TrimEnd()
-  if (-not $wire.EndsWith('}')) { throw 'AP05A_READER_ENVELOPE_HOLD' }
-  $bindingsJson = @{release_id=$releaseId;plan_sha256=$planSha} | ConvertTo-Json -Compress
-  $receiptBytes = $utf8.GetBytes($wire.Substring(0,$wire.Length-1) + ',' + $bindingsJson.Substring(1))
-  $receiptFile = "$ReaderJson.$phase.json"
-  $cmsFile = "$ReaderJson.$phase.cms"
-  [IO.File]::WriteAllBytes($receiptFile,$receiptBytes)
-  [IO.File]::WriteAllBytes($cmsFile,(Sign-Bytes $receiptBytes $readerCert))
-  $scope = "V3_PAPER_$phase"
-  $claims = @{
-   kind='V3_ONE_TIME_RELEASE_AUTHORIZATION_V1';release_id=$releaseId;scope=$scope
-   base_commit='5b1789e349b157d06d3109c5f0ff10d95154bf81';release_commit=$Release
-   not_before_utc=$now.AddSeconds(-5).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-   expires_at_utc=$now.AddMinutes(2).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-   project_ref='nlgzjmqgwueojlyqmoru';computer_name='MINI-PC';trading_root='C:\Users\ADMIN\Trading'
-   artifacts=$artifacts;bindings=@{plan_sha256=$planSha;reader_certificate_sha256=$readerPin}
+  if (-not $wire.EndsWith('}') -or $null -ne $row.PSObject.Properties['plan_sha256'] -or
+      $null -ne $row.PSObject.Properties['release_id']) { throw 'AP05A_READER_ENVELOPE_HOLD' }
+  $join = @{release_id=$id;plan_sha256=$planHash} | ConvertTo-Json -Compress
+  $readBytes = $utf8.GetBytes($wire.Substring(0,$wire.Length-1)+','+$join.Substring(1))
+  $readCms = Sign-Bytes $readBytes $readerCert
+  # Inject only the temporary certificate-store lookup. The candidate still
+  # checks identity/validity and itself creates the CMS and writes the transfer.
+  $NotebookTransfer = & {
+   function Get-ChildItem([string]$Path) {
+    if ($Path -cne 'Cert:\CurrentUser\My') { throw 'AP05A_UNEXPECTED_CERT_PATH' }
+    $authorityCert
+   }
+   & $producer
   }
-  $payload = $utf8.GetBytes(($claims | ConvertTo-Json -Depth 10 -Compress))
-  $cms = Sign-Bytes $payload $authorityCert
-  $auth = Assert-V3OneTimeReleaseAuthorization -Payload $payload -Cms $cms -Scope $scope -ReviewedAuthorityCertificateSha256 $authorityPin -ExpectedReleaseCommit $Release -ExpectedArtifacts $artifacts
-  $verified = Read-V3PaperIndependentReceipt ([pscustomobject]@{commit=$Release;authorization=$auth}) $receiptFile $cmsFile ''
-  Assert-V3PaperEpochReceipt $verified $epoch
-  if ($verified.state -cne $row.state -or [string]$verified.observed_at_utc -cne [string]$row.observed_at_utc) { throw 'AP05A_READER_ASSERTION_DRIFT' }
-  "AP05A_PG17_READER_ORIGINAL_VERIFIER_SCOPE_PASS $scope"
+  $Mode = 'Paper' + $Phase
+  $paths = & {
+   . $consumer
+   $phase
+  }
+  $approvalBytes = Read-V3ReleaseLocalBytes (Join-Path $paths 'approval.json')
+  $approvalCms = Read-V3ReleaseLocalBytes (Join-Path $paths 'approval.cms')
+  $scope = 'V3_PAPER_' + $Phase.ToUpperInvariant()
+  $verify = @{Scope=$scope;ReviewedAuthorityCertificateSha256=$authorityPin;ExpectedReleaseCommit=$Release;ExpectedArtifacts=$expected}
+  $auth = Assert-V3OneTimeReleaseAuthorization -Payload $approvalBytes -Cms $approvalCms @verify
+  if ($auth.claims.bindings.plan_sha256 -cne $planHash -or
+      ($Phase -eq 'Prepare' -and $auth.claims.bindings.runtime_spec_sha256 -cne (Get-V3ReleaseSha256 $runtimeBytes))) {
+   throw 'AP05A_CANDIDATE_PLAN_BINDING_HOLD'
+  }
+  $received = Read-V3PaperIndependentReceipt ([pscustomobject]@{commit=$Release;authorization=$auth}) (Join-Path $paths 'reader.json') (Join-Path $paths 'reader.cms') (Get-V3ReleaseSha256 $readBytes)
+  Assert-V3PaperEpochReceipt $received $epoch
+  if ($received.state -cne $row.state -or [string]$received.observed_at_utc -cne [string]$row.observed_at_utc) { throw 'AP05A_READER_ASSERTION_DRIFT' }
+  if ($Phase -eq 'Prepare') { $prepareApproval = @{Payload=$approvalBytes;Cms=$approvalCms} }
+  else {
+   $rejected = $false
+   try { $null = Assert-V3OneTimeReleaseAuthorization @prepareApproval @verify }
+   catch {
+    if ($_.Exception.Message -cne 'V3_RELEASE_SCOPE_OR_IDENTITY_HOLD') { throw }
+    $rejected = $true
+   }
+   if (-not $rejected) { throw 'AP05A_CROSS_SCOPE_ACCEPTED' }
+  }
+  "AP05A_CANDIDATE_TRANSFER_ORIGINAL_VERIFIER_PASS $scope"
  }
 }
 finally {
