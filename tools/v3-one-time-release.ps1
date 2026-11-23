@@ -344,11 +344,11 @@ if($Mode -eq 'Stage4Epoch'){
 if($Mode -ceq 'InstallExpiredStage4Abort'){
  $b=$authorized.claims.bindings
  $pins=@{
-  epoch_id='V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93'
-  successor_series_id='PAPER-V3-20261119T091235Z'
+  epoch_id='V3CAS-AUDIT-caafcb9247b0480b8925b154f8351935'
+  successor_series_id='PAPER-V3-20261123T091458Z'
   epoch_release_commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
   source_sha256='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'
-  fence_sha256='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025'
+  fence_sha256='d4b81e56c455348259d95514ff95b5a28bd057df4c576d912d8f3476d216537b'
   caller_acl_sha256='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
  }
  if(@($b.PSObject.Properties).Count -ne $pins.Count){throw 'V3_EXPIRED_STAGE4_INSTALL_BINDINGS_HOLD'}

@@ -19,11 +19,11 @@ Import-Module (Join-Path $PSScriptRoot 'v3-one-time-release-authorization.psm1')
 . (Join-Path $PSScriptRoot 'v3-post-stop-unknown-quarantine-source-only.ps1')
 
 if($Mode -ceq 'ExpiredStage4Abort'){
- $epoch='V3CAS-AUDIT-4c43add6968a46a6a8133a55ae92cf93'
- $series='PAPER-V3-20261119T091235Z'
+ $epoch='V3CAS-AUDIT-caafcb9247b0480b8925b154f8351935'
+ $series='PAPER-V3-20261123T091458Z'
  $commit='46c5abbd6af16266c1229943db973dc9d6b2fb4f'
  $source='989e1657e03867774907f3a1ec9c9f4f84ee70c2d4b7a258cad9dc3e480f0043'
- $fence='0e5ff6f9d2cc6b2b588a053d1ea7e2e7a8a9ada9f5744c5491699803aca0b025'
+ $fence='d4b81e56c455348259d95514ff95b5a28bd057df4c576d912d8f3476d216537b'
  $acl='6f0d59c57f3f7ce3d54f5c674c0d41c342a2a08b9a86001e59353d772f5f66f0'
  $inventory=Get-V3OneTimeReleaseArtifactInventory $PackageRoot
  foreach($rel in @('tools/v3-poststop-authorized-window.ps1','tools/v3-poststop-issuer-release.ps1','tools/v3-poststop-notebook-reader-extension-INACTIVE.ps1')){
@@ -71,7 +71,7 @@ if($Mode -ceq 'ExpiredStage4Abort'){
   $pre.epoch_id -cne $epoch -or $pre.source_sha256 -cne $source -or $pre.fence_sha256 -cne $fence -or $pre.caller_acl_sha256 -cne $acl -or
   $null -ne $pre.terminal_receipt_sha256 -or $observed -gt [datetimeoffset]::UtcNow.AddSeconds(5) -or
   ([datetimeoffset]::UtcNow-$observed).TotalSeconds -ge 30){throw 'AP05A_FRESH_READER_HOLD'}
- $defs=@{begin_executor_inhibit_v1='50be2e1c95a23fe3c281afc43bae456728fc4f36dd2065a18a233e4af8859626';read_paper_release_epoch_v1='b1e3799d7509f36109a0682962041362d01aa9b5ec3fb390cfcdad01273ca21a';record_paper_release_abort_v1='057b582994b4a8c821e3bc143eb4f09eafd48040de8d5a3fb8e022c406169bbf'}
+ $defs=@{begin_executor_inhibit_v1='4aa74188a95758989676049f8200d9b920e3942cd78f793b9d975c79a9d82166';read_paper_release_epoch_v1='b3f6274308a558f305732bfed98e65a2c077e3a36fb9438a52792a09c8f152bf';record_paper_release_abort_v1='96fcbb36d68d6f6544194e4b636f7ee6b24ddf122c961955369876325d9bf2a9'}
  if(@($pre.function_sha256.PSObject.Properties).Count -ne 3){throw 'AP05A_DEFINITION_COUNT_HOLD'}
  foreach($key in $defs.Keys){if([string]$pre.function_sha256.$key -cne $defs[$key]){throw 'AP05A_DEFINITION_DRIFT_HOLD'}}
  $receipt=Get-V3ReleaseSha256 ([Text.Encoding]::ASCII.GetBytes("V3_EXPIRED_STAGE4_TERMINAL_RECEIPT_V1"+[char]10+$epoch+[char]10+$preHash))
