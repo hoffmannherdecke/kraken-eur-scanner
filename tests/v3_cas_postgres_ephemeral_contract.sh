@@ -1564,6 +1564,13 @@ fi
 issuer_transaction -c "SELECT v3_cas_audit.begin_executor_inhibit_v1('$followup_epoch','$followup_source','$followup_fence','$followup_acl');" >/dev/null
 followup_reader "$followup_epoch" | grep -Fq PRESTOP_INHIBITED_OLD_ONLY_NO_ATTEMPTS
 test "$(pg -Atc "select receipt_sha256 from v3_cas_audit.prepared_fence_abort_v1 where epoch_id='$prior_epoch'")" = "$prior_receipt"
+# Optional AP05A bridge: consume the authenticated readback in this same run.
+if [[ ${V3_AP05A_READER_BRIDGE:-1} == 1 ]]; then
+ followup_reader "$followup_epoch" > "$transition_tmp/ap05a-reader.json"
+ pwsh -NoProfile -NonInteractive -File tests/test_ap05a_reader_bridge.ps1 \
+  -ReaderJson "$transition_tmp/ap05a-reader.json" -EpochId "$followup_epoch" \
+  -Release "$followup_commit" -Source "$followup_source" -Fence "$followup_fence" -Acl "$followup_acl"
+fi
 export V3_CI_EPOCH="$followup_epoch" V3_CI_COMMIT="$followup_commit" V3_CI_SOURCE="$followup_source" V3_CI_FENCE="$followup_fence"
 echo 'V3_PG17_SUPERSESSION_EXPIRY_REPLAY_ORIGINAL_CAS_PRESERVED_PASS'
 
