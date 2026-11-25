@@ -8,3 +8,7 @@ Verification in chat: 25/25 isolated cases passed, including current authorized 
 
 ## Staged reader adapter
 `economic-ledger-adapter.mjs` accepts the existing approved read function and exact active series/cutoff; fixed projection, bounded 500-row pages and 5000-row cap, exact-count and identity checks, unavailable on failure. No new HTTP handler, credentials, permissions or deployment instructions. Nine synthetic adapter cases PASS. Existing API unchanged; not a production integration. Any future deployment must resolve the original safety block through its authorized review path, and avoid unnecessary repeated full-series reads.
+
+
+## App consumer
+0.12 adds the optional `economic_ledger` response consumer to the existing trade view. Exact series/cutoff binding, completeness/count checks, no-buy versus estimated P&L and missing data checks. Legacy API v2 fallback explicitly unavailable; existing 24h view stays intact. 13 isolated consumer validation tests PASS. No change to API, no deployment of server adapter, no claim of live economic data. Browser acceptance pending.
