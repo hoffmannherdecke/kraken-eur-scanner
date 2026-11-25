@@ -25,6 +25,34 @@ class SafeAutonomyTests(unittest.TestCase):
         self.assertFalse(result["orders"])
         self.assertFalse(result["real_money_actions"])
 
+    def test_current_positive_review_path_and_stale_rejection(self):
+        import datetime as dt
+        snap=CURRENT_STATE["operational_release_snapshot"]
+        evidence={"kind":"CURRENT_OPERATIONAL_REVIEW_EVIDENCE_V1",
+                  "no_release_or_runtime_authority":True,"series_id":snap["series_id"],
+                  "strategy_revision":snap["strategy_revision"],"source":snap["source"],
+                  "observed_at_utc":dt.datetime.now(dt.timezone.utc).isoformat(),
+                  "review_basis":{"V3_PAPER_NET_ECONOMIC_REVIEW":"NATIVE:mature_6h",
+                                  "V3_H2_DERIVATIVES_REAL_CONTEXT":"OWNER_ORIGINAL:test"}}
+        result=selector.select(ROOT,QUEUE,CURRENT_STATE,{},evidence)
+        self.assertEqual(result["status"],"READY_CURRENT_READONLY_REVIEW")
+        self.assertEqual(len(result["ready"]),2)
+        self.assertEqual({x["registered_obligation"]["id"] for x in result["ready"]},set(evidence["review_basis"]))
+        self.assertTrue(all(x["action"]=="READ_ONLY_CURRENT_ORIGINAL_REVIEW" for x in result["ready"]))
+        self.assertFalse(result["orders"])
+        with self.assertRaisesRegex(ValueError,"stale"):
+            selector.select(ROOT,QUEUE,CURRENT_STATE,{},dict(evidence,observed_at_utc="2026-11-01T00:00:00Z"))
+        with self.assertRaisesRegex(ValueError,"historical"):
+            selector.select(ROOT,QUEUE,CURRENT_STATE,{},dict(evidence,review_basis={"V3_EXPERIMENTAL_PAPER_SIX_PROOFS":"test"}))
+        with self.assertRaisesRegex(ValueError,"foreign"):
+            selector.select(ROOT,QUEUE,CURRENT_STATE,{},dict(evidence,series_id="PAPER-V3-OTHER"))
+        active={x["attempt_key"]:{"status":"IN_PROGRESS"} for x in result["ready"]}
+        self.assertEqual(selector.select(ROOT,QUEUE,CURRENT_STATE,{"autonomy_task_attempts":active},evidence)["ready"],[])
+        economic=next(x for x in result["ready"] if x["registered_obligation"]["id"]=="V3_PAPER_NET_ECONOMIC_REVIEW")
+        changed=dict(evidence,review_basis={"V3_PAPER_NET_ECONOMIC_REVIEW":"NATIVE:mature_6h,mature_24h"})
+        updated=selector.select(ROOT,QUEUE,CURRENT_STATE,{},changed)["ready"][0]
+        self.assertNotEqual(economic["gate_fingerprint"],updated["gate_fingerprint"])
+
     def test_post_v3_source_adoption_is_safe_real_work_only_after_verified_cutover(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)

@@ -330,7 +330,8 @@ class MiniPCDailyReadbackHandoffContract(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         original = (root / ".github/workflows/minipc-daily-status.yml").read_text("utf-8")
         self.assertIn("cron: '30 8,9 * * *'", original)
-        self.assertIn("native_diagnostics=classify_minipc_daily_diagnostics(row,now=now_utc)", original)
+        self.assertIn("native_diagnostics=classify_minipc_daily_diagnostics(row,now=now_utc,", original)
+        self.assertIn("active_series_id=current_series_id,active_strategy_revision=current_revision)", original)
         self.assertIn('"native_task_diagnostics":native_diagnostics', original)
         # Historical all-series totals must not be confused with the
         # current technical rotation, open trades or actual V3 model buys.
@@ -513,7 +514,11 @@ class MiniPCDailyExactCountContract(unittest.TestCase):
         self.assertIn('"Prefer":"count=exact"', script)
         self.assertIn('"Range":"0-0"', script)
         self.assertIn('resp.headers.get("Content-Range")', script)
-        self.assertEqual(script.count("=request_count("), 3)
+        # Two mutually exclusive old shadow counts, one current native count,
+        # and the existing scanner count. No payload download for any total.
+        self.assertEqual(script.count("=request_count("), 4)
+        self.assertIn("native_v3_receipt_count=request_count",script)
+        self.assertIn('"revision":"eq."+current_revision',script)
         for old in (
             "len(shadow_count_rows or [])",
             "len(completed_rows or [])",
@@ -536,3 +541,27 @@ class MiniPCDailyExactCountContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CurrentPaperDailyDiagnosticsTests(unittest.TestCase):
+    def test_current_v3_retirement_not_failure_but_missing_writer_is_not_health(self):
+        from datetime import timedelta
+        now=NOW
+        sid="PAPER-V3-20261124T140152Z"
+        active=("runtime_supervisor","v2r4_paper_lifecycle","v2r4_paper_cloud_sync","minipc_status_sync","v3_paper_single_writer")
+        retired=("v2r4_paper_candidates","v2r4_paper_wait")
+        checks={k:{"ok":True} for k in active}
+        checks.update({k:{"ok":None,"detail":"RETIRED_INTAKE_DISABLED_COMMITTED_FENCE"} for k in retired})
+        native={k:{"task_state":"Running","last_result_code":267009,"last_result_meaning":"RUNNING_CODE_AND_STATE_MATCH"} for k in active[1:]}
+        native.update({k:{"task_state":"Disabled","last_result_code":267014,"last_result_meaning":"OTHER_RESULT_REVIEW_REQUIRED"} for k in retired})
+        row={"node_id":"MINI-PC","observed_at":now.isoformat(),"status":"HEALTHY",
+             "payload":{"checked_at_local":now.isoformat(),"health_state":"OK","issues":[],"checks":checks,
+                        "native_task_readback":{"kind":"MINIPC_NATIVE_TASK_READBACK_V1","no_runtime_or_release_authority":True,"observations":native},
+                        "paper_successor_observation":{"series_id":sid,"host_report_only":True,"independent_runtime_proof":False}}}
+        got=classify_minipc_daily_diagnostics(row,now=now,active_series_id=sid,active_strategy_revision="V3-CURRENT")
+        self.assertEqual(got["native_task_readback_state"],"COMPLETE_REPORTED")
+        self.assertFalse(got["native_task_liveness_independently_verified"])
+        row["payload"]["native_task_readback"]["observations"]["v2r4_paper_wait"]["task_state"]="Running"
+        self.assertEqual(classify_minipc_daily_diagnostics(row,now=now,active_series_id=sid,active_strategy_revision="V3-CURRENT")["native_task_readback_state"],"REVIEW_REQUIRED")
+        del row["payload"]["checks"]["v3_paper_single_writer"]
+        self.assertFalse(classify_minipc_daily_diagnostics(row,now=now,active_series_id=sid,active_strategy_revision="V3-CURRENT")["host_reported_healthy"])

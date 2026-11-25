@@ -23,13 +23,13 @@ try:
     from tools.strategy_epoch_lineage import summarize_epoch
     from tools.project_followthrough_router import (v3_five_source_followthrough,
         project_implementation_commitments, operational_release_snapshot)
-    from tools.context_before_action import live_owner_readback, ContextGateError
+    from tools.context_before_action import live_owner_readback, ContextGateError, _github_api_read, GITHUB_API_BASE
     from tools.paper_series_transition_guard import select_current_readiness
 except ModuleNotFoundError:
     from strategy_epoch_lineage import summarize_epoch
     from project_followthrough_router import (v3_five_source_followthrough,
         project_implementation_commitments, operational_release_snapshot)
-    from context_before_action import live_owner_readback, ContextGateError
+    from context_before_action import live_owner_readback, ContextGateError, _github_api_read, GITHUB_API_BASE
     from paper_series_transition_guard import select_current_readiness
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +42,9 @@ ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7,
                  "H10_SOURCE_RECEIPT_INTEGRITY": 7,
                  "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH_DUE": 7,
                  "PROJECT_IMPLEMENTATION_COMMITMENT_REVIEW": 7,
-                 "V2R4_WAIT_INCIDENT_FOLLOWTHROUGH_DUE": 99}
+                 "V2R4_WAIT_INCIDENT_FOLLOWTHROUGH_DUE": 99,
+                 "PAPER_RUNTIME_LEASE_REVIEW": 99,
+                 "PAPER_NATIVE_HEALTH_REVIEW": 353}
 SUPPORTED_DECISIONS = {"V3-H3-ARCHIVE-DISPOSITION", "V2R4-PRODUCTIVITY-REVIEW",
                        "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"}
 
@@ -89,12 +91,18 @@ def get_rows(base: str, key: str, view: str) -> list:
                          "status=eq.active&limit=2", 2),
         "paper_series_completion_readiness": ("*", "limit=101", 100),
         "v3_h3_shadow_status": ("*", "", 1),
+        "paper_series_runtime_identity": (
+            "series_id,strategy_revision,status,release_repo_sha:config->>release_repo_sha,"
+            "runtime_bundle_sha256:config->>runtime_bundle_fingerprint_sha256,"
+            "strategy_sha256:config->>strategy_fingerprint_sha256",
+            "status=eq.active&limit=2", 2),
     }
     require(view in allowed, "unapproved evidence view")
     projection, options, max_rows = allowed[view]
     # Preserve explicit bounded GET only. No scripts, service calls, RPCs,
     # Paper mutation, model spend or alternate Work schedule.
-    url = base.rstrip("/") + "/rest/v1/" + view + "?select=" + projection
+    table = "paper_series" if view=="paper_series_runtime_identity" else view
+    url = base.rstrip("/") + "/rest/v1/" + table + "?select=" + projection
     if options:
         url += "&" + options
     headers = {"apikey": key, "Accept": "application/json",
@@ -120,6 +128,205 @@ def current_active_paper_readiness(base: str, key: str) -> dict:
     active = get_rows(base, key, "paper_series")
     readiness = get_rows(base, key, "paper_series_completion_readiness")
     return select_current_readiness(active, readiness)
+
+
+def resolve_current_paper_owner(state: dict, owner: dict, now: dt.datetime,
+                                fetcher=None) -> tuple[dict, dict]:
+    """Use the existing #99 current evidence reference, never release authority."""
+    prior = operational_release_snapshot(state, now)
+    require(prior is not None, "no declared historical Paper release")
+    require(owner.get("no_trading_or_release_authority") is True,
+            "unexpected owner readback authority")
+    fach = [x for x in owner["owners"] if x.get("issue") == 99]
+    require(len(fach) == 1 and not fach[0].get("current_owner_header_truncated"),
+            "current Paper fachowner unavailable")
+    head = fach[0]["current_owner_header_excerpt"]
+    blocks = re.findall(r"<!-- CURRENT_PAPER_OPERATIONAL_STATUS_V1\s*\n(.*?)\nEND_CURRENT_PAPER_OPERATIONAL_STATUS_V1 -->", head, re.S)
+    require(len(blocks) == 1, "current Paper original reference missing or ambiguous")
+    record = json.loads(blocks[0])
+    keys = {"series_id", "strategy_revision", "strategy_version", "source",
+            "observed_at_utc", "lease_expires_at_utc", "lease_source", "review_requests"}
+    require(isinstance(record, dict) and set(record) == keys,
+            "invalid current Paper original reference")
+    require(isinstance(record["strategy_version"],str) and re.fullmatch(r"V[0-9]+",record["strategy_version"]) is not None,
+            "unsupported strategy version identity")
+    current = dict(prior, **{k: record[k] for k in keys - {"lease_expires_at_utc", "lease_source", "review_requests"}},
+                   release_milestone=record["strategy_version"] + "_PAPER_OPERATIONAL")
+    require(operational_release_snapshot({"operational_release_snapshot": current}, now) is not None,
+            "future operational evidence timestamp")
+    require(iso_time(current["observed_at_utc"]) >= iso_time(prior["observed_at_utc"]),
+            "owner attempted rollback to older Paper evidence")
+    getter = fetcher or _github_api_read
+    def original(url):
+        match = re.fullmatch(r"https://github[.]com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-([0-9]+)", url)
+        require(match is not None, "not an existing #99 original")
+        item, _ = getter(GITHUB_API_BASE + "/issues/comments/" + match.group(1))
+        require(isinstance(item, dict) and str(item.get("id")) == match.group(1)
+                and item.get("html_url") == url
+                and isinstance(item.get("body"), str)
+                and current["series_id"] in item["body"],
+                "current original receipt/series mismatch")
+        return item["body"]
+    proof = original(record["source"])
+    require(current["release_milestone"] in proof, "current original lacks operating milestone")
+    if current["series_id"] != prior["series_id"] or current["strategy_revision"] != prior["strategy_revision"]:
+        require(current["strategy_revision"] in proof, "successor original lacks exact revision")
+    expiry = iso_time(record["lease_expires_at_utc"])
+    require(expiry > iso_time(record["observed_at_utc"]), "invalid last recorded lease")
+    lease = proof if record["lease_source"] == record["source"] else original(record["lease_source"])
+    require("lease" in lease.lower() and expiry.strftime("%H:%M:%S") in lease
+            and (expiry.strftime("%d.%m.%Y") in lease or expiry.strftime("%Y-%m-%d") in lease),
+            "last recorded lease expiry not present in original")
+    requests=record["review_requests"]
+    require(isinstance(requests,dict) and len(requests)<=16
+            and all(isinstance(x,str) for x in requests), "invalid current owner review list")
+    for ident, url in requests.items():
+        require(ident in original(url), "current review request lacks exact registered obligation")
+    return dict(state, operational_release_snapshot=current), record
+
+
+def native_paper_evidence(base: str, key: str, paper: dict, now: dt.datetime) -> dict:
+    """Exact native journal receipt counts at one UTC cutoff, no payload scan.
+
+    Receipt counts are neither closed positions nor profitability. Unknown
+    future journal contracts remain explicit, never mapped to V3 by guess.
+    """
+    require(re.fullmatch(r"https://[a-z0-9-]+[.]supabase[.]co", base.rstrip("/")) is not None,
+            "unapproved evidence host")
+    sid, rev = paper["series_id"], paper["strategy_revision"]
+    if not rev.startswith("V3-"):
+        return {"status": "NATIVE_JOURNAL_ADAPTER_REQUIRES_VERSION_REVIEW",
+                "series_id": sid, "strategy_revision": rev, "native_journal_checked": False}
+    headers = {"apikey": key, "Accept": "application/json",
+               "User-Agent": "project-milestone-controller/1", "Prefer": "count=exact"}
+    if not key.startswith("sb_secret_"):
+        headers["Authorization"] = "Bearer " + key
+    def read(phase=None, result=None, foreign=False):
+        params = {"select": "event_id,series_id,revision,phase,result,received_at",
+                  "series_id": "eq." + sid, "revision": ("neq." if foreign else "eq.")+rev,
+                  "received_at":"lte."+now.isoformat(),
+                  "order": "received_at.desc,event_id.desc", "limit": "1"}
+        if phase: params["phase"] = "eq." + phase
+        if result: params["result"] = "eq." + result
+        url = base.rstrip("/") + "/rest/v1/v3_paper_event_receipts?" + urllib.parse.urlencode(params)
+        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=15) as response:
+            rows = json.load(response)
+            total = response.headers.get("Content-Range", "").rsplit("/",1)[-1]
+        require(isinstance(rows,list) and len(rows)<=1 and total.isdigit()
+                and (int(total)>0)==bool(rows), "native journal exact count unavailable")
+        if rows:
+            row=rows[0]
+            require(row.get("series_id")==sid and ((row.get("revision")!=rev) if foreign else (row.get("revision")==rev))
+                    and (not phase or row.get("phase")==phase)
+                    and (not result or row.get("result")==result)
+                    and iso_time(row["received_at"])<=now,
+                    "foreign or future native journal receipt")
+        return int(total), rows[0] if rows else None
+    require(read(foreign=True)[0]==0,"native journal contains foreign revision")
+    total, last = read()
+    filters = {"scanner":("SCANNER_CAPTURE","SEEN"),"wait":("P4_VALIDATION","WAIT"),
+               "reject":("P4_VALIDATION","REJECT"),"buy":("P4_VALIDATION","BUY_SCOUT"),
+               "fill":("PAPER_FILL","PAPER_FILLED"),"exit":("PAPER_EXIT","CLOSED"),
+               "mature_6h":("FOLLOWUP_6H","MATURE_COMPLETE"),
+               "mature_24h":("FOLLOWUP_24H","MATURE_COMPLETE"),
+               "mature_72h":("FOLLOWUP_72H","MATURE_COMPLETE")}
+    counts = {k: read(*v)[0] for k,v in filters.items()}
+    require(sum(counts.values())<=total, "inconsistent native journal counts; reconcile originals")
+    return {"status":"NATIVE_V3_RECEIPT_COUNTS_NOT_PROFITABILITY",
+            "series_id":sid,"strategy_revision":rev,"native_journal_checked":True,
+            "observed_at_utc":now.isoformat(),"receipt_count":total,
+            "latest_received_at":last["received_at"] if last else None,
+            "phase_receipt_counts":counts,"realized_net_pnl_eur":None,
+            "economic_qualification_verified":False,"host_health_verified":False}
+
+
+def current_host_report(base: str, key: str, paper: dict, now: dt.datetime,
+                        runtime_identity: dict, lease_expires_at_utc: str) -> dict:
+    """Read existing host-relay report, not a direct physical health proof."""
+    require(re.fullmatch(r"https://[a-z0-9-]+[.]supabase[.]co", base.rstrip("/")) is not None,
+            "unapproved evidence host")
+    url=base.rstrip("/")+"/rest/v1/minipc_status_current?select=node_id,observed_at,status,payload&node_id=eq.MINI-PC&limit=2"
+    headers={"apikey":key,"Accept":"application/json","User-Agent":"project-milestone-controller/1"}
+    if not key.startswith("sb_secret_"): headers["Authorization"]="Bearer "+key
+    with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=15) as response:
+        rows=json.load(response)
+    if not isinstance(rows,list) or len(rows)!=1:
+        return {"status":"UNKNOWN_HOST_REPORT","host_health_verified":False}
+    row=rows[0]; payload=row.get("payload") or {}
+    age=(now-iso_time(row["observed_at"])).total_seconds()
+    writer=(payload.get("checks") or {}).get("v3_paper_single_writer") or {}
+    native=((payload.get("native_task_readback") or {}).get("observations") or {}).get("v3_paper_single_writer") or {}
+    identity=payload.get("paper_successor_observation") or {}
+    fresh= -30<=age<=1200
+    pins=("release_repo_sha","runtime_bundle_sha256","strategy_sha256")
+    pins_match=all(isinstance(runtime_identity.get(k),str)
+                   and re.fullmatch(r"[a-f0-9]{40}" if k=="release_repo_sha" else r"[a-f0-9]{64}",runtime_identity[k])
+                   and identity.get(k)==runtime_identity[k] for k in pins)
+    try:
+        reported_clock=iso_time(identity["observed_at_utc"])
+        reported_expiry=iso_time(identity["expires_at_utc"])
+        clock_and_lease_match=(-30<=(iso_time(row["observed_at"])-reported_clock).total_seconds()<=180
+                              and reported_expiry==iso_time(lease_expires_at_utc)
+                              and reported_expiry>now)
+    except (KeyError,ValueError,TypeError):
+        clock_and_lease_match=False
+    reported_ok=(fresh and writer.get("ok") is True and native.get("task_state")=="Running"
+                 and identity.get("series_id")==paper["series_id"]
+                 and identity.get("host_report_only") is True
+                 and identity.get("independent_runtime_proof") is False
+                 and pins_match and clock_and_lease_match)
+    return {"status":("HOST_REPORT_V3_MATCH_NOT_INDEPENDENT_PROOF" if reported_ok else
+                      "HOST_REPORT_STALE" if not fresh else "V3_HEARTBEAT_NOT_PROVEN_BY_HOST_REPORT"),
+            "host_reported_status":row.get("status"),"observed_at":row["observed_at"],
+            "issue_codes":[x.get("check") for x in (payload.get("issues") or []) if isinstance(x,dict)],
+            "writer_reported_ok":reported_ok,"host_health_verified":False}
+
+
+def current_review_basis(record: dict, journal: dict) -> dict:
+    """Only current material evidence triggers a registered review; no tuning."""
+    due={k:"OWNER_ORIGINAL:"+v for k,v in record["review_requests"].items()}
+    counts=journal.get("phase_receipt_counts") or {}
+    # First maturity for each horizon/exit is a distinct review stage.
+    maturity=[k for k in ("mature_6h","mature_24h","mature_72h","exit") if counts.get(k,0)>0]
+    if maturity:
+        key="V3_PAPER_NET_ECONOMIC_REVIEW"
+        due[key]="|".join(filter(None,(due.get(key),"NATIVE:"+",".join(maturity))))
+    if counts.get("fill",0)>0 and counts.get("exit",0)>0:
+        key="V3_H4_H7_H9_EXITS_AND_EXECUTION"
+        due[key]="|".join(filter(None,(due.get(key),"NATIVE_FILL_AND_EXIT")))
+    return due
+
+
+def read_operational_evidence(state: dict, base: str, key: str, now: dt.datetime,
+                              expected_main: str | None = None) -> tuple[dict, dict, dict]:
+    # Reuse #99, the existing Paper fachowner. The historical AP dashboard
+    # is not the current-version authority or a successor release gate.
+    owner=live_owner_readback("operations","V3",expected_main=expected_main)
+    state, record=resolve_current_paper_owner(state,owner,now)
+    paper=current_active_paper_readiness(base,key)
+    current=operational_release_snapshot(state,now)
+    require(paper["series_id"]==current["series_id"] and paper["strategy_revision"]==current["strategy_revision"],
+            "CURRENT_CLOUD_IDENTITY_DIFFERS_FROM_OWNER_ORIGINAL")
+    journal=native_paper_evidence(base,key,paper,now)
+    runtime=get_rows(base,key,"paper_series_runtime_identity")
+    require(len(runtime)==1 and runtime[0].get("series_id")==paper["series_id"]
+            and runtime[0].get("strategy_revision")==paper["strategy_revision"],
+            "Cloud runtime identity changed during operational read")
+    host=current_host_report(base,key,paper,dt.datetime.now(UTC),runtime[0],record["lease_expires_at_utc"])
+    due=current_review_basis(record,journal)
+    repeated=live_owner_readback("operations","V3",expected_main=owner["main_sha"])
+    require(repeated["owners"]==owner["owners"],"owner changed during operational read")
+    # Check the same Cloud active identity after the bounded original reads.
+    active=get_rows(base,key,"paper_series_runtime_identity")
+    require(active==runtime,
+            "Cloud identity changed during operational read")
+    evidence={"kind":"CURRENT_OPERATIONAL_REVIEW_EVIDENCE_V1","main_sha":owner["main_sha"],
+              "series_id":paper["series_id"],"strategy_revision":paper["strategy_revision"],
+              "source":current["source"],"observed_at_utc":now.isoformat(),
+              "review_basis":due,"journal":journal,"host":host,
+              "lease_expires_at_utc":record["lease_expires_at_utc"],
+              "lease_source":record["lease_source"],"no_release_or_runtime_authority":True}
+    return state,paper,evidence
 
 
 def first_h10_source_receipt_review(base: str, key: str) -> tuple[str, dict | None]:
@@ -681,11 +888,11 @@ def publish_once(repo: str, token: str, note: dict, slack: str) -> str:
 
 
 
-def registered_commitment_milestone(state:dict,now:dt.datetime,root:Path)->tuple[list[str],list[dict]]:
+def registered_commitment_milestone(state:dict,now:dt.datetime,root:Path,operational_evidence=None)->tuple[list[str],list[dict]]:
     """One bounded evidence-only grouped notice; Work stays the sole executor."""
     ack_path=root/"research/work-analysis-state.json"
     ack=json.loads(ack_path.read_text("utf-8")) if ack_path.is_file() else {}
-    report=project_implementation_commitments(root,state,ack,now)
+    report=project_implementation_commitments(root,state,ack,now,operational_evidence)
     waiting=report["ready_release_reviews"]
     safe=report["ready_safe_actions"]
     statuses=["PROJECT:REGISTERED_IMPLEMENTATION_OPEN:"+str(report["open_count"])]
@@ -695,6 +902,8 @@ def registered_commitment_milestone(state:dict,now:dt.datetime,root:Path)->tuple
     if waiting or safe:
         # Fixed anchor for each materially distinct list of ready items.
         membership="|".join(sorted(x["id"] for x in waiting+safe))
+        if operational_evidence is not None:
+            membership=operational_evidence["series_id"]+"|"+"|".join(sorted(x["gate_fingerprint"] for x in waiting+safe))
         anchor="COMMITMENT-GROUP-"+hashlib.sha256(membership.encode("utf-8")).hexdigest()[:24]
         details=", ".join(x["id"] for x in waiting+safe)
         notices.append(event("PROJECT_IMPLEMENTATION_COMMITMENT_REVIEW",
@@ -738,6 +947,7 @@ def main() -> int:
     require(not (args.fixture and args.publish), "fixture cannot publish")
     state = load_local_state(ROOT)
     milestone = None
+    operational_evidence = None
     if args.fixture:
         fixture = json.loads(args.fixture.read_text("utf-8"))
         paper, h3 = fixture["paper"], fixture["h3"]
@@ -748,18 +958,13 @@ def main() -> int:
         require(bool(key), "missing Supabase evidence credential")
         now = dt.datetime.now(UTC)
         milestone = operational_release_snapshot(state, now)
-        if milestone is not None:
-            # Existing GitHub owner readback; no cached owner/branch fallback.
-            try:
-                owner = live_owner_readback("operations", milestone["strategy_version"],
-                                            expected_main=os.getenv("GITHUB_SHA") or None)
-            except ContextGateError as exc:
-                raise ValueError("CURRENT_OWNER_READBACK_REQUIRED: " + str(exc)) from exc
-            require(any(milestone["source"] in x.get("current_owner_header_excerpt", "")
-                        for x in owner["owners"]),
-                    "CURRENT_OWNER_RELEASE_REFERENCE_CHANGED_NEEDS_RECONCILIATION")
         try:
-            paper = current_active_paper_readiness(base, key)
+            if milestone is not None:
+                state,paper,operational_evidence=read_operational_evidence(
+                    state,base,key,now,os.getenv("GITHUB_SHA") or None)
+                milestone=operational_release_snapshot(state,now)
+            else:
+                paper = current_active_paper_readiness(base, key)
             shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
             h3 = (get_rows(base, key, "v3_h3_shadow_status")[0]
                   if milestone is None and shadows and shadows[0].get("candidate_id") == "V3-H3-SHADOW-001"
@@ -788,7 +993,20 @@ def main() -> int:
     result = evaluate(state, paper, h3, now, ROOT)
     # General commitments use the same existing daily GitHub watcher.
     # It only reports/alerts and never mutates strategy or source systems.
-    extra_status,extra_events=registered_commitment_milestone(state,now,ROOT)
+    if operational_evidence is not None:
+        result["current_operational_evidence"]=operational_evidence
+        result["native_journal_checked"]=operational_evidence["journal"]["native_journal_checked"]
+        result["statuses"].append(operational_evidence["journal"]["status"])
+        result["statuses"].append(operational_evidence["host"]["status"])
+        if operational_evidence["host"]["status"]!="HOST_REPORT_V3_MATCH_NOT_INDEPENDENT_PROOF":
+            result["events"].append(event("PAPER_NATIVE_HEALTH_REVIEW",paper["series_id"],
+                "Aktuelle Host-Relay-Evidenz belegt den Paper-Writer nicht; gezielt Originalheartbeat/Task prüfen. Kein Neustart oder erneuter Release."))
+        expiry=iso_time(operational_evidence["lease_expires_at_utc"])
+        if expiry-now <= dt.timedelta(hours=72):
+            result["statuses"].append("PAPER:LAST_RECORDED_LEASE_REVIEW_DUE")
+            result["events"].append(event("PAPER_RUNTIME_LEASE_REVIEW",paper["series_id"]+"|"+expiry.isoformat(),
+                "Zuletzt belegte Lease endet "+expiry.isoformat()+". Aktuellen Originalhost/CMS-Vertrag prüfen und persönliche Verlängerungsfreigabe rechtzeitig vorbereiten. Keine automatische Verlängerung."))
+    extra_status,extra_events=registered_commitment_milestone(state,now,ROOT,operational_evidence)
     result["statuses"].extend(extra_status)
     result["events"].extend(extra_events)
     # Reuse the EXISTING scheduled controller for the first qualified H10

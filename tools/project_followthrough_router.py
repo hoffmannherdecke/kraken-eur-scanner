@@ -204,7 +204,7 @@ def v3_five_source_followthrough(root: Path, state: dict, ack: dict,
 # Registered *accepted* future work shares this EXISTING ownership manifest.
 # Coverage of 26 streams is NOT proof that a concrete user commitment will run.
 def project_implementation_commitments(root: Path, state: dict, ack: dict,
-                                       now: dt.datetime) -> dict:
+                                       now: dt.datetime, operational_evidence=None) -> dict:
     manifest=read_json(root,"research/project-followthrough-routing-v1.json")
     cfg=manifest.get("project_wide_implementation_commitments") or {}
     require(cfg.get("kind")=="PROJECT_WIDE_IMPLEMENTATION_COMMITMENTS_V1"
@@ -234,6 +234,24 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
               and t.get("status")=="V3_PAPER_ACTIVE_VERIFIED"
               and (t.get("verified_cutover_evidence") or {}).get(
                   "mini_pc_and_single_active_supabase_series_ack") is True)
+    current_basis={}
+    if operational_evidence is not None:
+        require(milestone is not None and operational_evidence.get("kind")=="CURRENT_OPERATIONAL_REVIEW_EVIDENCE_V1"
+                and operational_evidence.get("no_release_or_runtime_authority") is True
+                and operational_evidence.get("series_id")==milestone["series_id"]
+                and operational_evidence.get("strategy_revision")==milestone["strategy_revision"]
+                and operational_evidence.get("source")==milestone["source"]
+                and dt.timedelta(seconds=-30)<=now-utc(operational_evidence["observed_at_utc"])<=dt.timedelta(minutes=20),
+                "current operational review evidence invalid, foreign or stale")
+        current_basis=operational_evidence["review_basis"]
+        require(isinstance(current_basis,dict)
+                and set(current_basis).issubset(set(ids)-HISTORICAL_RELEASE_OBLIGATIONS)
+                and all(isinstance(x,str) and 0<len(x)<500 for x in current_basis.values()),
+                "unregistered or historical current review request")
+    if milestone is not None:
+        # Same-series documentary acknowledgements only; no live proof here.
+        a=milestone
+        physical=True
     records=((ack.get("acknowledgements") or {})
              .get("project_implementation_commitments") or {})
     require(isinstance(records,dict),"invalid implementation evidence state")
@@ -301,16 +319,31 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
                     else "READY_SAFE_IMPLEMENTATION" if ready and ob["safe_work"]
                     else "READY_REVIEW_RELEASE_GATED" if ready
                     else "WAIT_FOR_EVIDENCE_GATE")
+        fp=None
+        basis=current_basis.get(ident)
         if milestone is not None:
-            # No automatic work from old dates, historical V2R4 rows or the
-            # fact that a release was once successful. Keep genuine followups
-            # discoverable at their existing owners, requiring current facts.
             if ident in HISTORICAL_RELEASE_OBLIGATIONS:
                 state_name = "HISTORICAL_NOT_CURRENT_WORK_NO_NEW_PASS"
                 block = "INITIAL_RELEASE_OR_PREDECESSOR_ONLY"
-            elif not audited:
-                state_name = "WAIT_CURRENT_ORIGINAL_OWNER_EVIDENCE"
-                block = "CURRENT_MATERIAL_NEED_AND_RELEVANT_ORIGINAL_ACK_REQUIRED"
+            else:
+                if audited and (item.get("series_id")!=milestone["series_id"] or
+                                item.get("strategy_revision")!=milestone["strategy_revision"]):
+                    audited=False
+                if basis:
+                    fp=hashlib.sha256(json.dumps({"series":milestone["series_id"],
+                        "revision":milestone["strategy_revision"],"obligation":ident,
+                        "basis":basis},sort_keys=True).encode()).hexdigest()[:20]
+                    if audited and item.get("gate_fingerprint")!=fp:
+                        audited=False
+                if audited:
+                    state_name="DOCUMENTARY_ACK_RECORDED_VERIFY_PHYSICAL_INDEPENDENTLY"
+                    block=None
+                elif basis:
+                    state_name="READY_SAFE_IMPLEMENTATION" if ob["safe_work"] else "READY_REVIEW_RELEASE_GATED"
+                    block=None
+                else:
+                    state_name="WAIT_CURRENT_ORIGINAL_OWNER_EVIDENCE"
+                    block="CURRENT_MATERIAL_NEED_AND_RELEVANT_ORIGINAL_ACK_REQUIRED"
         states.append({"id":ident,"stream_id":ob["stream_id"],
             "owner":ob["owner"],"trigger":trigger,
             "state":state_name,"blocker":block,
@@ -319,6 +352,9 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
             "completion_gate":ob["completion_gate"],
             "requires_user_release":ob["requires_user_release"],
             "safe_work":ob["safe_work"],
+            "current_review_only":milestone is not None,
+            "review_basis":basis,
+            "gate_fingerprint":fp,
             "completion_is_documentary_not_independent_runtime_proof":audited})
     open_tasks=[s for s in states if not s["completion_is_documentary_not_independent_runtime_proof"]
                 and s["state"] != "HISTORICAL_NOT_CURRENT_WORK_NO_NEW_PASS"]

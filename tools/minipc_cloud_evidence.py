@@ -220,15 +220,20 @@ def classify_minipc_daily_diagnostics(
     row: Mapping[str, Any] | None,
     *,
     now: datetime,
+    active_series_id: str | None = None,
+    active_strategy_revision: str | None = None,
 ) -> dict[str, Any]:
     """Add bounded, fail-closed cloud evidence to an EXISTING daily report.
 
     This function is pure and never fetches, writes, reports to Slack or
     changes the preexisting daily alert/warning policy.
     """
-    host = classify_minipc_evidence(
-        row, now=now, required_checks=DAILY_REQUIRED_CHECKS
-    )
+    v3=bool(active_strategy_revision and active_strategy_revision.startswith("V3-"))
+    legacy=active_strategy_revision is None or active_strategy_revision.startswith("V2R4-")
+    retired=("v2r4_paper_candidates","v2r4_paper_wait")
+    checks=tuple(x for x in DAILY_REQUIRED_CHECKS if x not in retired)+("v3_paper_single_writer",) if v3 else DAILY_REQUIRED_CHECKS
+    task_names=retired+("v2r4_paper_lifecycle","v2r4_paper_cloud_sync","minipc_status_sync","v3_paper_single_writer") if v3 else DAILY_NATIVE_TASKS
+    host = classify_minipc_evidence(row,now=now,required_checks=checks)
     result: dict[str, Any] = {
         "kind": "MINIPC_DAILY_READBACK_DIAGNOSTICS_V1",
         "cloud_evidence_state": host["source_evidence_state"],
@@ -241,7 +246,15 @@ def classify_minipc_daily_diagnostics(
         "slack_delivery_verified": False,
         "paper_or_real_money_authorized": False,
         "reporting_only": True,
+        "active_series_id":active_series_id,
+        "active_strategy_revision":active_strategy_revision,
+        "native_task_scope":"V3_ACTIVE_AND_RETAINED_AFTERCARE" if v3 else "V2R4_LEGACY_OR_UNSPECIFIED" if legacy else "UNKNOWN_VERSION",
     }
+
+    if not (v3 or legacy):
+        result["host_reported_healthy"]=False
+        result["cloud_evidence_state"]="UNKNOWN_VERSION_CONTRACT"
+        return result
 
     # A stale, future, wrong-node or clock-inconsistent Cloud row cannot
     # certify even the reported native task observations as current.
@@ -271,7 +284,7 @@ def classify_minipc_daily_diagnostics(
     invalid = False
     missing = False
     selected: dict[str, dict[str, Any]] = {}
-    for key in DAILY_NATIVE_TASKS:
+    for key in task_names:
         raw = observations.get(key)
         if not isinstance(raw, Mapping):
             missing = True
@@ -293,6 +306,15 @@ def classify_minipc_daily_diagnostics(
             "last_result_code": code,
             "last_result_meaning": meaning,
         }
+        if v3 and key in retired:
+            retired_check=(payload.get("checks") or {}).get(key) or {}
+            if state!="Disabled" or retired_check.get("detail")!="RETIRED_INTAKE_DISABLED_COMMITTED_FENCE" or retired_check.get("ok") is not None:
+                invalid=True
+            continue
+        if v3 and key=="v3_paper_single_writer":
+            identity=payload.get("paper_successor_observation") or {}
+            if state!="Running" or identity.get("series_id")!=active_series_id or identity.get("host_report_only") is not True:
+                invalid=True
         if meaning == "RUNNING_CODE_AND_STATE_MATCH":
             invalid |= not (state == "Running" and code == _NATIVE_RUNNING_CODE)
         elif meaning == "RUNNING_CODE_STATE_MISMATCH":
@@ -304,11 +326,17 @@ def classify_minipc_daily_diagnostics(
         elif meaning == "UNAVAILABLE":
             missing = True
 
+    if v3:
+        identity=payload.get("paper_successor_observation") or {}
+        if identity.get("series_id")!=active_series_id or identity.get("independent_runtime_proof") is not False:
+            result["host_reported_healthy"]=False
+            if result["cloud_evidence_state"]=="HEALTHY_REPORTED":
+                result["cloud_evidence_state"]="FIELD_NOT_VERIFIED"
     result["native_task_observations"] = selected
     result["native_observation_count"] = len(selected)
     if invalid:
         result["native_task_readback_state"] = "REVIEW_REQUIRED"
-    elif missing or len(selected) != len(DAILY_NATIVE_TASKS):
+    elif missing or len(selected) != len(task_names):
         result["native_task_readback_state"] = "INCOMPLETE"
     else:
         result["native_task_readback_state"] = "COMPLETE_REPORTED"

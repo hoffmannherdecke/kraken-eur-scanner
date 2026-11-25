@@ -315,6 +315,74 @@ try {
   Add-Check "v2r4_shadow_cloud_sync" $false $_.Exception.Message "WARNING"
 }
 
+# Read-only successor diagnostics. A committed local fence retires old
+# intake, not historical aftercare. Never start or change a task here.
+$paperSuccessorObservation=$null
+$v3CommittedFence=$false
+try {
+  $fencePath=Join-Path $stateDir "v3-experimental-paper-old-intake-fence.json"
+  if(Test-Path -LiteralPath $fencePath){
+    $fence=Get-Content -LiteralPath $fencePath -Raw | ConvertFrom-Json
+    $v3CommittedFence=(
+      $fence.kind -ceq "V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1" -and
+      $fence.phase -ceq "CLOUD_COMMITTED" -and
+      [string]$fence.proposed_successor_series_id -cmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$' -and
+      [string]$fence.proposed_v3_repo_sha -cmatch '^[0-9a-f]{40}$' -and
+      [string]$fence.proposed_v3_bundle_sha256 -cmatch '^[0-9a-f]{64}$' -and
+      [string]$fence.proposed_v3_strategy_sha256 -cmatch '^[0-9a-f]{64}$' -and
+      $fence.successor_task_name -ceq "CryptoMiniPC-V3PaperSingleWriter" -and
+      $fence.paper_only -eq $true -and $fence.orders_enabled -eq $false -and
+      $fence.real_money_actions -eq $false -and $fence.persistent_until_explicit_owner_release -eq $true -and
+      ((@($fence.task_names | Sort-Object) -join '|') -ceq 'CryptoMiniPC-V2R4PaperCandidates|CryptoMiniPC-V2R4PaperWait')
+    )
+    if($v3CommittedFence){
+      $v3Task=Get-ScheduledTask -TaskName "CryptoMiniPC-V3PaperSingleWriter" -ErrorAction SilentlyContinue
+      Add-NativeTaskReadback -Key "v3_paper_single_writer" -Task $v3Task
+      $hbPath=Join-Path $stateDir "v3-paper-single-writer-heartbeat.json"
+      if(-not (Test-Path -LiteralPath $hbPath)){ throw "V3 successor heartbeat missing" }
+      $h=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
+      $stamp=([datetimeoffset]::Parse([string]$h.checked_at_utc)).UtcDateTime
+      $expiry=([datetimeoffset]::Parse([string]$h.expires_at_utc)).UtcDateTime
+      $age=([datetime]::UtcNow-$stamp).TotalSeconds
+      $writerPresent=$false
+      if([string]$h.pid -match '^[1-9][0-9]*$'){
+        $writerPresent=$null -ne (Get-Process -Id ([int]$h.pid) -ErrorAction SilentlyContinue)
+      }
+      $ok=($null -ne $v3Task -and [string]$v3Task.State -ceq "Running" -and
+           $h.kind -ceq "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1" -and $h.status -ceq "HEALTHY" -and
+           $h.series_id -ceq [string]$fence.proposed_successor_series_id -and
+           [string]$h.release_repo_sha -ceq [string]$fence.proposed_v3_repo_sha -and
+           [string]$h.runtime_bundle_sha256 -ceq [string]$fence.proposed_v3_bundle_sha256 -and
+           [string]$h.strategy_sha256 -ceq [string]$fence.proposed_v3_strategy_sha256 -and
+           [string]$h.runtime_approval_sha256 -cmatch '^[0-9a-f]{64}$' -and
+           $h.paper_only -eq $true -and $h.orders -eq $false -and $h.real_money_actions -eq $false -and
+           $writerPresent -and $expiry -gt [datetime]::UtcNow -and
+           $age -ge -30 -and $age -le 180)
+      # AP06B heartbeat has no strategy_revision. Relay its existing pins,
+      # never the PID, runtime arguments or paths.
+      $paperSuccessorObservation=[ordered]@{
+        series_id=[string]$h.series_id
+        release_repo_sha=[string]$h.release_repo_sha
+        runtime_bundle_sha256=[string]$h.runtime_bundle_sha256
+        strategy_sha256=[string]$h.strategy_sha256
+        observed_at_utc=$stamp.ToString("o")
+        expires_at_utc=$expiry.ToString("o")
+        host_report_only=$true
+        independent_runtime_proof=$false
+      }
+      Add-Check "v3_paper_single_writer" $ok ("local task/process/heartbeat match="+$ok+" age_sec="+[math]::Round($age,1)) "WARNING"
+    } else {
+      Add-Check "v3_paper_single_writer" $false "fence present but not a valid committed successor" "WARNING"
+    }
+  } else {
+    $checks["v3_paper_single_writer"]=[ordered]@{ok=$null;detail="no committed V3 fence on local host"}
+  }
+} catch {
+  Add-Check "v3_paper_single_writer" $false "V3 local successor observation unavailable" "WARNING"
+}
+
+# Active predecessor aftercare remains observed. Only deliberately fenced
+# old intake is neutral; unexpected re-enable remains a warning.
 # Active V2R4 Paper local runtime tasks are optional until installed.
 $paperRuntimeSpecs = @(
   @{ task="CryptoMiniPC-V2R4PaperCandidates"; check="v2r4_paper_candidates"; hb="v2r4-paper-candidate-runtime-heartbeat.json"; max_age=60 },
@@ -326,6 +394,14 @@ foreach ($spec in $paperRuntimeSpecs) {
   try {
     $task = Get-ScheduledTask -TaskName $spec.task -ErrorAction SilentlyContinue
     Add-NativeTaskReadback -Key $spec.check -Task $task
+    if($v3CommittedFence -and $spec.check -in @("v2r4_paper_candidates","v2r4_paper_wait")){
+      if($task -and [string]$task.State -ceq "Disabled"){
+        $checks[$spec.check]=[ordered]@{ok=$null;detail="RETIRED_INTAKE_DISABLED_COMMITTED_FENCE"}
+      }else{
+        Add-Check $spec.check $false "committed fence requires predecessor intake Disabled" "WARNING"
+      }
+      continue
+    }
     if ($task) {
       $hb = Join-Path $TradingRoot ("State\" + $spec.hb)
       if (-not (Test-Path $hb)) {
@@ -595,6 +671,7 @@ $report = [ordered]@{
   health_state = $healthState
   state_reason_codes = @($stateReasonCodes)
   checks = $checks
+  paper_successor_observation = $paperSuccessorObservation
   native_task_readback = [ordered]@{
     kind = "MINIPC_NATIVE_TASK_READBACK_V1"
     observations = $nativeTaskReadback

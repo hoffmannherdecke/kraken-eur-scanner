@@ -9,6 +9,7 @@ name: Autonomous project milestone control
     paths:
       - 'tools/project_milestone_controller.py'
       - 'tools/context_before_action.py'
+      - 'tools/minipc-watchdog.ps1'
       - 'tools/select-autonomous-implementation.py'
       - 'research/autonomous-implementation-queue-v1.json'
       - 'project-current-state.json'
