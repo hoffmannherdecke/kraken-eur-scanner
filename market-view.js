@@ -59,16 +59,20 @@ function candidatesPanel(cat){
  p.append(d,marketLink('Forschungskatalog öffnen','https://github.com/'+MARKET_REPO+'/blob/main/research/market-source-candidates-v1.json'));
  return p;
 }
-let marketLoaded=false,marketBusy=false;
-async function loadMarket(){
- if(marketBusy||!data)return;
- marketBusy=true;$('market-refresh').disabled=true;$('market-note').textContent='Vorhandene Forschungsbelege werden gelesen …';
- const results=await Promise.allSettled([readMarketEpisode(),marketJSON(MARKET_RAW+'source-registry.json'),marketJSON(MARKET_RAW+'market-source-candidates-v1.json')]);
- const renderers=[episodePanel,registryPanel,candidatesPanel],ids=['market-phase','market-registry','market-candidates'];
- let good=0;
- for(let i=0;i<ids.length;i++){try{if(results[i].status!=='fulfilled')throw Error('Nicht verfügbar');put(ids[i],renderers[i](results[i].value));good++;}catch{put(ids[i],panel(el('h3','Datenquelle derzeit nicht verfügbar','warn'),el('p','Kein aktueller Abruf bestätigt. Keine Ersatzwerte.')));}}
- $('market-note').textContent=good===3?'Forschungsquellen abgerufen: '+time(new Date().toISOString()):'Abruf teilweise oder vollständig fehlgeschlagen. Bitte bei Bedarf erneut abrufen.';
- marketLoaded=good===3;marketBusy=false;$('market-refresh').disabled=false;
+
+let marketGeneration=0,marketBusy=false,marketPhaseAttempt=0,marketCatalogAttempt=0;
+function resetMarket(){marketGeneration++;marketBusy=false;marketPhaseAttempt=0;marketCatalogAttempt=0;$('market-refresh').disabled=false;$('market-note').textContent='Abruf beim Öffnen dieses Bereichs.';for(const id of ['market-phase','market-registry','market-candidates'])put(id);}
+async function loadMarket(force=false){
+ if(marketBusy||!data||document.hidden||$('market').hidden)return;
+ const now=Date.now(),phase=force||now-marketPhaseAttempt>=900000,catalog=force||now-marketCatalogAttempt>=3600000;
+ if(!phase&&!catalog)return;
+ const g=marketGeneration;marketBusy=true;$('market-refresh').disabled=true;$('market-note').textContent='Vorhandene Forschungsbelege werden gelesen …';
+ const jobs=[];if(phase){marketPhaseAttempt=now;jobs.push(['market-phase',episodePanel,readMarketEpisode()]);}
+ if(catalog){marketCatalogAttempt=now;jobs.push(['market-registry',registryPanel,marketJSON(MARKET_RAW+'source-registry.json')],['market-candidates',candidatesPanel,marketJSON(MARKET_RAW+'market-source-candidates-v1.json')]);}
+ const results=await Promise.allSettled(jobs.map(j=>j[2]));if(g!==marketGeneration)return;let good=0;
+ for(let i=0;i<jobs.length;i++){try{if(results[i].status!=='fulfilled')throw Error('Nicht verfügbar');put(jobs[i][0],jobs[i][1](results[i].value));good++;}catch{put(jobs[i][0],panel(el('h3','Datenquelle derzeit nicht verfügbar','warn'),el('p','Kein aktueller Abruf bestätigt. Keine Ersatzwerte.')));}}
+ $('market-note').textContent=good===jobs.length?'Forschungsabruf: '+time(new Date().toISOString())+' · Phase alle 15 Min., Kataloge stündlich bei sichtbarer Marktansicht.':'Abruf teilweise oder vollständig fehlgeschlagen. Erneut manuell abrufbar.';
+ marketBusy=false;$('market-refresh').disabled=false;
 }
-document.querySelector('nav button[data-page="market"]').addEventListener('click',()=>{if(!marketLoaded)loadMarket();});
-$('market-refresh').addEventListener('click',loadMarket);
+document.querySelector('nav button[data-page="market"]').addEventListener('click',()=>{loadMarket();refreshQuotes();});
+$('market-refresh').addEventListener('click',()=>{loadMarket(true);refreshQuotes(true);});
