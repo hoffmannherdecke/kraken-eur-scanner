@@ -668,6 +668,60 @@ jobs:
           if ($h.status -ne 'HEALTHY' -or $h.active_events -ne 1 -or $h.counters.events_enrolled -ne 1) { throw 'unexpected tracker heartbeat' }
           if ($h.strategy_action -ne 'NONE_EVIDENCE_ONLY' -or $h.real_money_actions -ne $false) { throw 'outcome tracker guardrail changed' }
           Write-Host 'V2R4_SHADOW_OUTCOME_TRACKER_SMOKE_OK'
+      - name: Validate supervisor fence-only display evidence against original watchdog logic
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $source=Get-Content -LiteralPath 'tools/minipc-watchdog.ps1' -Raw
+          $start=$source.IndexOf('      # Display evidence only:')
+          $end=$source.IndexOf('      Add-Check "runtime_supervisor" $ok $detail "WARNING"')
+          if($start -lt 0 -or $end -le $start){throw 'FENCE_CLASSIFIER_SOURCE_BOUNDARY_MISSING'}
+          $classifier=[ScriptBlock]::Create($source.Substring($start,$end-$start))
+          $regular=@('CryptoMiniPC-KrakenCanary','CryptoMiniPC-KrakenUniverse','CryptoMiniPC-AltradyTrigger','CryptoMiniPC-V2R4WSShadow','CryptoMiniPC-V2R4ShadowOutcomes','CryptoMiniPC-V2R4ShadowCloudSync','CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync','CryptoMiniPC-StatusSync')
+          function New-Fixture {
+            $rows=@($regular | ForEach-Object { [pscustomobject]@{task=$_;installed=$true;healthy_after=$true;action='NONE'} })
+            $rows+=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait' | ForEach-Object { [pscustomobject]@{task=$_;installed=$true;healthy_after=$null;action='V3_INTAKE_SUPERVISOR_REARM_BLOCKED';before=[pscustomobject]@{scheduler_state='Disabled'}} })
+            $rows+=[pscustomobject]@{task='CryptoMiniPC-V3H3Shadow001';installed=$true;action='ARCHIVED_BASELINE_NOT_RESTARTED'}
+            $state=[pscustomobject]@{
+              kind='MINIPC_RUNTIME_SUPERVISOR_V1';schema_version=1;status='WARNING';error=$null
+              restarted=@();failed_restarts=@();maintenance=[pscustomobject]@{mode='NONE'}
+              v3_paper_old_intake_fence=[pscustomobject]@{mode='CLOUD_COMMITTED';marker_present=$true}
+              v3_paper_successor_readonly=[pscustomobject]@{kind='V3_PAPER_SUCCESSOR_SUPERVISOR_READONLY_OBSERVATION_V1';status='LOCAL_TASK_AND_HEARTBEAT_MATCH_NOT_RELEASE_PROOF'}
+              guardrails=[pscustomobject]@{real_money_actions=$false};h3_001_archived=$true;tasks=$rows
+            }
+            return ($state | ConvertTo-Json -Depth 10 | ConvertFrom-Json)
+          }
+          function Assert-Fixture([string]$name,[bool]$expected,[ScriptBlock]$mutate,[int]$age=60){
+            $s=New-Fixture
+            $checked=[datetime]::UtcNow.AddSeconds(-$age)
+            $detail='status=WARNING age_sec=60 restarted='
+            if($mutate){ . $mutate }
+            . $classifier
+            $marked=$detail.EndsWith(' classification=EXPECTED_V3_FENCE_ONLY_V1')
+            if($marked -ne $expected){throw "FENCE_CLASSIFICATION_FAIL:$name"}
+            Write-Output "FENCE_CLASSIFICATION_PASS:$name"
+          }
+          Assert-Fixture 'complete' $true {}
+          Assert-Fixture 'stale' $false {} 301
+          Assert-Fixture 'future' $false {} -30
+          Assert-Fixture 'missing_failed_restarts' $false {$s.PSObject.Properties.Remove('failed_restarts')}
+          Assert-Fixture 'failed_restart' $false {$s.failed_restarts=@('fixture')}
+          Assert-Fixture 'restarted' $false {$s.restarted=@('fixture')}
+          Assert-Fixture 'error' $false {$s.error='fixture'}
+          Assert-Fixture 'missing_error' $false {$s.PSObject.Properties.Remove('error')}
+          Assert-Fixture 'maintenance' $false {$s.maintenance.mode='ACTIVE'}
+          Assert-Fixture 'invalid_fence' $false {$s.v3_paper_old_intake_fence.mode='INVALID_FAIL_CLOSED'}
+          Assert-Fixture 'successor_hold' $false {$s.v3_paper_successor_readonly.status='HOLD_SUCCESSOR_HEARTBEAT_MISSING'}
+          Assert-Fixture 'unhealthy_regular_task' $false {$s.tasks[0].healthy_after=$false}
+          Assert-Fixture 'nonboolean_health' $false {$s.tasks[0].healthy_after='true'}
+          Assert-Fixture 'missing_task' $false {$s.tasks=@($s.tasks | Select-Object -Skip 1)}
+          Assert-Fixture 'duplicate_task' $false {$s.tasks[0].task=$s.tasks[1].task}
+          Assert-Fixture 'predecessor_enabled' $false {$s.tasks[9].before.scheduler_state='Running'}
+          Assert-Fixture 'archived_reactivated' $false {$s.tasks[11].action='RESTART_STARTED'}
+          Assert-Fixture 'critical' $false {$s.status='CRITICAL'}
+          Assert-Fixture 'real_money_guard_missing' $false {$s.guardrails.PSObject.Properties.Remove('real_money_actions')}
+          Write-Output 'SUPERVISOR_FENCE_ONLY_NATIVE_FIXTURES_PASS'
+
       - name: Smoke watchdog report creation
         shell: powershell
         run: |

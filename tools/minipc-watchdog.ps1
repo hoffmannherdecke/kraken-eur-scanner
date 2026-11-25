@@ -486,7 +486,41 @@ try {
         $ageSec -le 300 -and
         -not [bool]$s.guardrails.real_money_actions
       )
-      Add-Check "runtime_supervisor" $ok ("status=" + $s.status + " age_sec=" + $ageSec + " restarted=" + (($s.restarted | ForEach-Object { $_ }) -join ",")) "WARNING"
+      $detail = ("status=" + $s.status + " age_sec=" + $ageSec + " restarted=" + (($s.restarted | ForEach-Object { $_ }) -join ","))
+      # Display evidence only: never change existing health severity, task actions or fence.
+      # Exact complete original report required; partial/foreign/old reports cannot clear a warning.
+      $regular = @("CryptoMiniPC-KrakenCanary","CryptoMiniPC-KrakenUniverse","CryptoMiniPC-AltradyTrigger","CryptoMiniPC-V2R4WSShadow","CryptoMiniPC-V2R4ShadowOutcomes","CryptoMiniPC-V2R4ShadowCloudSync","CryptoMiniPC-V2R4PaperLifecycle","CryptoMiniPC-V2R4PaperCloudSync","CryptoMiniPC-StatusSync")
+      $protected = @("CryptoMiniPC-V2R4PaperCandidates","CryptoMiniPC-V2R4PaperWait")
+      $exactAge = ((Get-Date).ToUniversalTime() - $checked).TotalSeconds
+      $fenceOnly = (
+        $s.kind -ceq "MINIPC_RUNTIME_SUPERVISOR_V1" -and $s.schema_version -eq 1 -and
+        $s.status -ceq "WARNING" -and $exactAge -ge 0 -and $exactAge -le 300 -and
+        $s.PSObject.Properties.Name -contains "error" -and $null -eq $s.error -and
+        $s.restarted -is [array] -and @($s.restarted).Count -eq 0 -and
+        $s.failed_restarts -is [array] -and @($s.failed_restarts).Count -eq 0 -and
+        $s.maintenance.mode -ceq "NONE" -and
+        $s.v3_paper_old_intake_fence.mode -ceq "CLOUD_COMMITTED" -and
+        $s.v3_paper_old_intake_fence.marker_present -is [bool] -and $s.v3_paper_old_intake_fence.marker_present -eq $true -and
+        $s.v3_paper_successor_readonly.kind -ceq "V3_PAPER_SUCCESSOR_SUPERVISOR_READONLY_OBSERVATION_V1" -and
+        $s.v3_paper_successor_readonly.status -ceq "LOCAL_TASK_AND_HEARTBEAT_MATCH_NOT_RELEASE_PROOF" -and
+        $s.guardrails.real_money_actions -is [bool] -and $s.guardrails.real_money_actions -eq $false -and
+        $s.h3_001_archived -is [bool] -and $s.h3_001_archived -eq $true -and
+        $s.tasks -is [array] -and @($s.tasks).Count -eq 12
+      )
+      if ($fenceOnly) {
+        foreach ($name in $regular) {
+          $matchesForTask = @($s.tasks | Where-Object { $_.task -ceq $name })
+          if ($matchesForTask.Count -ne 1 -or $matchesForTask[0].installed -isnot [bool] -or $matchesForTask[0].installed -ne $true -or $matchesForTask[0].healthy_after -isnot [bool] -or $matchesForTask[0].healthy_after -ne $true -or $matchesForTask[0].action -cne "NONE") { $fenceOnly = $false }
+        }
+        foreach ($name in $protected) {
+          $matchesForTask = @($s.tasks | Where-Object { $_.task -ceq $name })
+          if ($matchesForTask.Count -ne 1 -or $matchesForTask[0].installed -isnot [bool] -or $matchesForTask[0].installed -ne $true -or $matchesForTask[0].action -cne "V3_INTAKE_SUPERVISOR_REARM_BLOCKED" -or $matchesForTask[0].before.scheduler_state -cne "Disabled") { $fenceOnly = $false }
+        }
+        $archived = @($s.tasks | Where-Object { $_.task -ceq "CryptoMiniPC-V3H3Shadow001" })
+        if ($archived.Count -ne 1 -or $archived[0].action -cne "ARCHIVED_BASELINE_NOT_RESTARTED") { $fenceOnly = $false }
+      }
+      if ($fenceOnly) { $detail += " classification=EXPECTED_V3_FENCE_ONLY_V1" }
+      Add-Check "runtime_supervisor" $ok $detail "WARNING"
     }
   } else {
     $checks["runtime_supervisor"] = [ordered]@{ ok=$null; detail="bounded runtime supervisor not installed yet" }
