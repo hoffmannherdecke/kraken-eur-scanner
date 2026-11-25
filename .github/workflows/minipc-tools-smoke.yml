@@ -755,3 +755,55 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'PR666_SCOPED_RELEASE_NEGATIVE_TEST_FAIL' }
           & .\tests\test_v2r4_pr666_scoped_release.ps1
           Write-Host 'PR666_SCOPED_RELEASE_SOURCE_TEST_PASS'
+      - name: Verify native Writer HOLD projection with isolated fixtures
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = Get-Content -LiteralPath 'tools/minipc-watchdog.ps1' -Raw
+          $start = $source.IndexOf('      if ($h.kind -ceq "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1"')
+          $end = $source.IndexOf('          $checks["v3_paper_single_writer"]["diagnosis"] = $diagnosis', $start)
+          if ($start -lt 0 -or $end -lt 0) { throw 'WRITER_DIAGNOSIS_SOURCE_MISSING' }
+          $end = $source.IndexOf('      }', $end) + '      }'.Length
+          $projection = [scriptblock]::Create($source.Substring($start, $end - $start))
+          $stamp = [datetime]::UtcNow
+          $fence = @{
+            proposed_successor_series_id = 'PAPER-V3-20261124T140152Z'
+            proposed_v3_repo_sha = 'a' * 40
+            proposed_v3_bundle_sha256 = 'b' * 64
+            proposed_v3_strategy_sha256 = 'c' * 64
+          }
+          $h = @{
+            kind = 'V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1'
+            status = 'HOLD'
+            series_id = $fence.proposed_successor_series_id
+            release_repo_sha = $fence.proposed_v3_repo_sha
+            runtime_bundle_sha256 = $fence.proposed_v3_bundle_sha256
+            strategy_sha256 = $fence.proposed_v3_strategy_sha256
+            cycle_status = 'HOLD_CLOUD_RECEIPT_ACK_VALUEERROR'
+            failure_site = @{file='launcher.py';function='validate';line=70;raw_path='private'}
+            failure_detail = @{kind='ORIGINALHOST_READBACK_FAILURE_V1';category='POWERSHELL_REPORTED_FIXED_CODE';reported_code='V3_TASK_DEFINITION_LEASE_WINDOWS_ONLY';returncode=1;stderr='private'}
+            pid = 123
+          }
+          $checks = @{v3_paper_single_writer=@{}}
+          $age = 30
+          & $projection
+          $result = $checks.v3_paper_single_writer.diagnosis | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+          if ($result.failure_detail.reported_code -cne $h.failure_detail.reported_code -or
+              $result.failure_site.line -ne 70 -or $result.pid -or
+              $result.failure_detail.stderr -or $result.failure_site.raw_path) { throw 'WRITER_DIAGNOSIS_PROJECTION_MISMATCH' }
+          $h.failure_detail.reported_code = 'V3_UNREGISTERED_TEST_TOKEN'
+          & $projection
+          if ($checks.v3_paper_single_writer.diagnosis.failure_detail.reported_code) { throw 'WRITER_DIAGNOSIS_UNKNOWN_CODE_EXPORTED' }
+          foreach ($fixture in @(
+            @{status='HEALTHY';age=30;series=$fence.proposed_successor_series_id},
+            @{status='HOLD';age=181;series=$fence.proposed_successor_series_id},
+            @{status='HOLD';age=30;series='PAPER-V3-20000101T000000Z'}
+          )) {
+            $checks = @{v3_paper_single_writer=@{}}
+            $h.status = $fixture.status
+            $h.series_id = $fixture.series
+            $age = $fixture.age
+            & $projection
+            if ($checks.v3_paper_single_writer.diagnosis) { throw 'WRITER_DIAGNOSIS_UNBOUND_FIXTURE_EXPORTED' }
+          }
+          Write-Host 'V3_WRITER_HOLD_NATIVE_PROJECTION_PASS'
