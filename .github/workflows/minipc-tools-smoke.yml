@@ -761,7 +761,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $source = Get-Content -LiteralPath 'tools/minipc-watchdog.ps1' -Raw
           $start = $source.IndexOf('      if ($h.kind -ceq "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1"')
-          $end = $source.IndexOf('          $checks["v3_paper_single_writer"]["diagnosis"] = $diagnosis', $start)
+          $end = $source.IndexOf('        $checks["v3_paper_single_writer"]["diagnosis"] = $diagnosis', $start)
           if ($start -lt 0 -or $end -lt 0) { throw 'WRITER_DIAGNOSIS_SOURCE_MISSING' }
           $end = $source.IndexOf('      }', $end) + '      }'.Length
           $projection = [scriptblock]::Create($source.Substring($start, $end - $start))
