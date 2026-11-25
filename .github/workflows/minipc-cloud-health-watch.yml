@@ -2,6 +2,11 @@ name: MINI-PC cloud health watch
 
 'on':
   workflow_dispatch:
+    inputs:
+      work_test:
+        description: 'Send the fixed synthetic Work test message only'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -22,6 +27,7 @@ jobs:
     timeout-minutes: 4
     steps:
       - name: Check remote MINI-PC status and alert only on real outage
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.work_test }}
         env:
           SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
@@ -175,4 +181,34 @@ jobs:
               "alert_sent":sent_alert,
               "recovery_sent":sent_recovery,
           },sort_keys=True))
+          PY
+
+      - name: Send fixed synthetic Work test via the existing Slack webhook
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.work_test }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          message = "KRYPTO_V3_WORK_TEST_V1 | 1b9f8281-772e-488e-a167-6c4a5d2ab813"
+          webhook = os.environ.get("SLACK_WEBHOOK_URL", "").strip()
+          if not webhook:
+              raise SystemExit("Existing Slack webhook is unavailable")
+          request = urllib.request.Request(
+              webhook,
+              data=json.dumps({"text": message}).encode(),
+              headers={"Content-Type": "application/json"},
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  accepted = response.status == 200 and response.read(32).strip() == b"ok"
+          except OSError:
+              raise SystemExit("Synthetic Slack webhook request failed") from None
+          if not accepted:
+              raise SystemExit("Synthetic Slack webhook request was not accepted")
+          print("KRYPTO_V3_WORK_TEST_WEBHOOK_ACCEPTED")
           PY
