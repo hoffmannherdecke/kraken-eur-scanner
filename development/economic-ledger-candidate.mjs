@@ -27,7 +27,7 @@ export function buildEconomicLedger(input){
   const f=fills.length===1?fills[0]:null,x=exits.length===1?exits[0]:null;
   const fillOk=f&&f.result==="PAPER_FILLED"&&f.source_status==="ASSUMED_VIRTUAL_PAPER_ASK_NOT_REAL_EXCHANGE_FILL"&&positive(f.paper_entry_ask_eur)&&positive(f.paper_entry_qty)&&finite(f.paper_entry_fee_eur)&&f.paper_entry_fee_eur>=0&&d==="BUY_SCOUT"&&clock(initial[0].source_known_at)<=clock(f.source_known_at);
   const exitOk=x&&fillOk&&x.result==="CLOSED"&&clock(x.source_known_at)>=clock(f.source_known_at);
-  const conflict=g.conflict||anchors.length>1||initial.length>1||fills.length>1||exits.length>1||!!f&&!fillOk||!!x&&!exitOk||(d==="BUY_SCOUT"&&!fillOk);
+  const conflict=g.conflict||anchors.length!==1||a.some(r=>clock(r.event_time_utc)!==clock(anchors[0]?.event_time_utc))||initial.length>1||fills.length>1||exits.length>1||!!f&&!fillOk||!!x&&!exitOk||(d==="BUY_SCOUT"&&!fillOk);
   let status=conflict?"UNCLEAR":exitOk?"EXIT_RECORDED":fillOk?"ENTRY_WITHOUT_EXIT_RECEIPT":"NO_ENTRY_RECEIPT";
   if(conflict){stats.unclear_candidates++;netInvalid=true;}
   if(!conflict&&fillOk){stats.entry_count++;if(!exitOk)stats.entry_without_exit_count++;}

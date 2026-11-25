@@ -12,3 +12,7 @@ Verification in chat: 25/25 isolated cases passed, including current authorized 
 
 ## App consumer
 0.12 adds the optional `economic_ledger` response consumer to the existing trade view. Exact series/cutoff binding, completeness/count checks, no-buy versus estimated P&L and missing data checks. Legacy API v2 fallback explicitly unavailable; existing 24h view stays intact. 13 isolated consumer validation tests PASS. No change to API, no deployment of server adapter, no claim of live economic data. Browser acceptance pending.
+
+
+## Targeted origin/clock correction
+A missing original scanner/P1 receipt or a mismatching original event clock could previously count a virtual entry/exit and net result as valid. Original native receipt verifier requires exactly one original anchor and matching event clocks (main 42f54ad0e90128944af1d5e1be60caaf72be84bf, v3_paper_minipc_selective_tick_v1.py and v3_paper_minipc_followup_v1.py). Ledger now marks the affected candidate and horizons unclear/conflicting; it does not include its entry/exit/net in reported totals. Two before/after defect reproducers, valid scanner/P1 and empty controls, plus current read-only cloud parity passed (8 assertions). This is an offline economic data integrity correction, not evidence of the original deployment failure. Production API and frontend unchanged; no deploy attempted.
