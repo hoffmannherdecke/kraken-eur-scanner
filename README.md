@@ -12,3 +12,6 @@ Market tab reads only existing public GitHub research Issue #7 phase-change reco
 
 ## 0.9
 Learning tab: existing Cloud API v2 for 24h candidate/entry/exit evidence and bounded decision list; existing public original historical V2R3/V2R4 reviews, V3 lesson matrix, policy bundle and dated operational release snapshot. Design, operational milestone, current evidence and economic proof are separated. No new permissions, API, model, scheduler, or runtime changes; no followup/position/net-result completeness claims. Read-only GitHub fetch on first open/manual refresh. Logout clears learning display and discards in-flight results. Six tabs wrap on small screens.
+
+## 0.10
+In-app lease preparation notice on the overview only when the existing project controller's <=72h rule is due, or the last documented expiry has passed. System shows the last documented lease, verified from the existing public #99 current owner marker and matching original comment, bound to the active Cloud API v2 series. No runtime authorization claim; missing, stale, mismatched evidence is unknown. The existing open-app refresh piggybacks a bounded owner read at most once per 15 minutes per series; no additional timer or background job. Existing Slack/iPhone alert router stays unchanged; no new native app push or duplicate routing. No secrets sent to GitHub.

@@ -4,3 +4,5 @@
 nav button{min-width:0;padding-left:3px;padding-right:3px}#market .split>small{max-width:46%;overflow-wrap:anywhere}#market a{overflow-wrap:anywhere}#market details .split{align-items:flex-start}
 
 #learning a{overflow-wrap:anywhere}#learning .split>div{min-width:0;width:100%}@media(max-width:540px){nav{flex-wrap:wrap}nav button{flex:1 1 29%;max-width:none;min-height:40px}main{padding-bottom:145px}}
+
+.action-notice{border-color:#75613e}#notice-system a,#action-notices a{overflow-wrap:anywhere}
