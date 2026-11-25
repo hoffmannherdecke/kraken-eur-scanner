@@ -66,7 +66,7 @@ def verified_completed_work_receipt(root: Path, receipt: dict) -> bool:
         return False
 
 
-def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
+def select(root:Path, queue:dict, state:dict, ack:dict|None=None, operational_evidence=None)->dict:
     errs=[]
     if queue.get("kind")!="SAFE_AUTONOMOUS_IMPLEMENTATION_QUEUE_V1" or queue.get("schema_version")!=1:
         errs.append("invalid queue kind/version")
@@ -126,10 +126,37 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         # Offline queue selection is not evidence of a live task. Existing
         # owner routing exposes candidate obligations, but only current
         # original evidence and an actual owner decision can select new work.
-        registered = project_implementation_commitments(root,state,ack or {},dt.datetime.now(dt.timezone.utc)) if all((root/p).is_file() for p in ("research/project-followthrough-routing-v1.json","research/monitoring-evidence-routing-v1.json","PROJECT_BACKLOG.md")) else None
+        registered = project_implementation_commitments(root,state,ack or {},dt.datetime.now(dt.timezone.utc),operational_evidence) if all((root/p).is_file() for p in ("research/project-followthrough-routing-v1.json","research/monitoring-evidence-routing-v1.json","PROJECT_BACKLOG.md")) else None
+        ready=[]
+        suppressed=[]
+        waiting_due=[]
+        if registered and operational_evidence:
+            for item in sorted(registered["ready_safe_actions"]+registered["ready_release_reviews"],key=lambda x:(x["priority"],x["id"])):
+                key="PROJECT_WIDE_COMMITMENT_SAFE_WORK:"+item["id"]
+                fp=item["gate_fingerprint"]
+                previous=attempts.get(key) or {}
+                if key in active_work_packages or item["id"] in active_work_packages:
+                    continue
+                if previous.get("gate_fingerprint")==fp and previous.get("status") in ("BLOCKED","ACTIVE_PR","COMPLETED"):
+                    if previous["status"]=="COMPLETED" and not verified_completed_work_receipt(root,previous):
+                        return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1","status":"BLOCKED",
+                                "errors":["unverified completion receipt "+key],"ready":[],"safe_work_requested":False,
+                                "orders":False,"strategy_changed":False,"real_money_actions":False}
+                    suppressed.append(key)
+                    continue
+                if len(ready)+len(active_work_packages)>=2:
+                    waiting_due.append({"id":item["id"],"wait_reason":"ACTIVE_PACKAGE_CAPACITY"})
+                    continue
+                ready.append({"id":"PROJECT_WIDE_COMMITMENT_SAFE_WORK","attempt_key":key,
+                              "gate_fingerprint":fp,"registered_obligation":item,
+                              "action":"READ_ONLY_CURRENT_ORIGINAL_REVIEW",
+                              "allowlist":["READ_ONLY_ORIGINAL_EVIDENCE","DECISION_PACKET_ONLY"],
+                              "no_material_change_without_existing_gate":True})
         return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1",
-                "status":"CURRENT_ORIGINAL_OWNER_REVIEW_REQUIRED",
-                "ready":[], "safe_work_requested":False,
+                "status":"READY_CURRENT_READONLY_REVIEW" if ready else "CURRENT_ORIGINAL_OWNER_REVIEW_REQUIRED",
+                "ready":ready, "safe_work_requested":bool(ready),
+                "waiting_due":waiting_due,
+                "suppressed_prior_attempts":suppressed,
                 "last_verified_operational_release":milestone,
                 "active_work_package_ids":active_work_packages,
                 "active_implementation_pr_count":active_pr_count,
@@ -322,13 +349,28 @@ def main()->int:
     p.add_argument("--queue",type=Path)
     p.add_argument("--state",type=Path)
     p.add_argument("--ack",type=Path)
+    p.add_argument("--live-review",action="store_true",help="fresh existing owner/Cloud evidence, read-only review only")
     args=p.parse_args()
     base=args.root
     j=json.loads((args.queue or base/"research/autonomous-implementation-queue-v1.json").read_text("utf-8"))
     state=json.loads((args.state or base/"project-current-state.json").read_text("utf-8"))
     path=args.ack or base/"research/work-analysis-state.json"
     ack=json.loads(path.read_text("utf-8")) if path.exists() else {}
-    out=select(base,j,state,ack)
+    evidence=None
+    if args.live_review:
+        import os
+        if args.state or args.queue or args.ack or base.resolve()!=ROOT.resolve():
+            p.error("--live-review requires canonical checkout and evidence credentials")
+        try:
+            from tools.project_milestone_controller import read_operational_evidence
+        except ModuleNotFoundError:
+            from project_milestone_controller import read_operational_evidence
+        import subprocess
+        head=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip()
+        state,_,evidence=read_operational_evidence(state,os.environ["SUPABASE_URL"],
+            os.getenv("SUPABASE_SECRET_KEY") or os.environ["SUPABASE_SERVICE_ROLE_KEY"],
+            dt.datetime.now(dt.timezone.utc),head)
+    out=select(base,j,state,ack,evidence)
     print(json.dumps(out,ensure_ascii=False,sort_keys=True))
     return 0 if out["status"]!="BLOCKED" else 2
 
