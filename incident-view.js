@@ -39,6 +39,15 @@ function incidentDiagnostics(v,ctx){
  const raw=w?.detail,other=wi?.detail;
  const m=typeof raw==="string"&&raw.length<=500&&raw.match(/^local task\/process\/heartbeat match=(True|False) age_sec=(-?\d{1,9}(?:[.,]\d{1,6})?)$/i),n=m?age(m[2]):null;
  const consistent=w?.ok===false&&issues.filter(i=>i?.check==="v3_paper_single_writer").length<=1&&(!wi||other===raw);
+
+ const d=w?.diagnosis;
+ if(consistent&&d&&d.series_id===ctx.series){
+   add("WRITER_ORIGINAL_HOLD","Writer-HOLD",d.cycle_status+" · "+d.checked_at_utc,"Seriengebundenen Originalbefund mit dem installierten Launcher und aktuellen Owner-Verträgen abgleichen.");
+   const f=d.failure_detail,s=d.failure_site;
+   if(f)add("WRITER_ORIGINAL_CATEGORY","Fehlerkategorie",[f.category,f.reported_code,f.returncode].filter(x=>x!==undefined).join(" · "),"Den gemeldeten Fehlercode am Originalquellstand prüfen und mit dem auslösenden Befund verbinden.");
+   if(s)add("WRITER_ORIGINAL_SITE","Fehlerstelle",s.file+" · "+s.function+" · Zeile "+s.line,"Die Stelle gegen den zum Vorfall gehörenden Quellstand prüfen.");
+   add("WRITER_ORIGINAL_IDENTITY","Quell- und Laufzeitbindung",[d.release_repo_sha,d.runtime_bundle_sha256,d.strategy_sha256].join(" · "),"Installierte Version und aktuellen main abgleichen, bevor eine Korrektur vorbereitet wird.");
+ }
  if(m&&n!==null&&m[1].toLowerCase()==="false"&&consistent){
  add("WRITER_COMPOSITE","Writer-Gesamtprüfung","Nicht bestanden; Heartbeat-Alter beim Hostcheck: "+n+" s.","Task, Prozess, Heartbeat, Identität, Fence und Lease werden gemeinsam geprüft. Ersten tatsächlich fehlerhaften Teilbefund und ursprüngliche Ausnahme am Originalhost ermitteln.");
  if(n>180)add("WRITER_HEARTBEAT_OLD","Writer-Heartbeat","Älter als die ursprüngliche 180-s-Prüfgrenze.","Letzten ursprünglichen Writer-Lauf, Zeitstempel und Abbruch-/HOLD-Belege prüfen. Kein Neustart aus dem Symptom ableiten.");
