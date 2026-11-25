@@ -44,7 +44,7 @@ Write-Host "2/3 Register persistent startup task..."
 $args = @(
   ('"' + $tool + '"'),
   "--trading-root",('"' + $TradingRoot + '"'),
-  "--interval-seconds","300"
+  "--interval-seconds","60"
 ) -join " "
 $action = New-ScheduledTaskAction -Execute $python -Argument $args
 $trigger = New-ScheduledTaskTrigger -AtStartup
