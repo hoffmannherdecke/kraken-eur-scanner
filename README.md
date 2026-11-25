@@ -9,3 +9,6 @@ Trade view on unchanged API v2: 24-hour entry/exit receipt counts, recent availa
 
 ## 0.8
 Market tab reads only existing public GitHub research Issue #7 phase-change records and the existing source registry / research candidate catalog, on first opening or explicit refresh. Distinguishes historical phase changes from current market phase, registered source roles from runtime use and source quality. No credential is sent to GitHub. No change to Cloud API v2, trader, scheduler, or source routing. Market parser supports both existing episode formats; bounded latest comment pages, not full history.
+
+## 0.9
+Learning tab: existing Cloud API v2 for 24h candidate/entry/exit evidence and bounded decision list; existing public original historical V2R3/V2R4 reviews, V3 lesson matrix, policy bundle and dated operational release snapshot. Design, operational milestone, current evidence and economic proof are separated. No new permissions, API, model, scheduler, or runtime changes; no followup/position/net-result completeness claims. Read-only GitHub fetch on first open/manual refresh. Logout clears learning display and discards in-flight results. Six tabs wrap on small screens.
