@@ -129,17 +129,30 @@ $('incident-action').addEventListener('click',()=>{
  target.style.scrollMarginTop=Math.ceil(banner.getBoundingClientRect().height+Math.max(0,parseFloat(getComputedStyle(banner).top)||0)+12)+'px';
  requestAnimationFrame(()=>{if(!$('system').hidden&&activeIncident())target.scrollIntoView({block:'start',behavior:'auto'});});
 });
+async function copyIncident(saved){
+ try{
+  await navigator.clipboard.writeText(saved.draft);
+  if(incidentPrepared===saved)$('incident-feedback').textContent='Auftrag kopiert. In den zuständigen Arbeitschat einfügen und dort mit der Diagnose beginnen.';
+ }catch{
+  if(incidentPrepared===saved){
+   const draft=$('incident-draft');
+   draft.focus();
+   draft.select();
+   $('incident-feedback').textContent='Der Browser hat das Kopieren blockiert. Bitte den markierten Auftrag kopieren und in den Arbeitschat einfügen.';
+  }
+ }
+}
 $('incident-create').addEventListener('click',()=>{
  const ctx=activeIncident(),draft=incidentDraft(ctx);
  if(!draft){clearIncident('Keine eindeutige Störungsgrundlage.');paintIncident();return;}
- incidentPrepared={key:ctx.key,draft};$('incident-draft').value=draft;$('incident-draft').hidden=false;$('incident-copy').disabled=false;$('incident-open-work').hidden=false;$('incident-prepared').textContent='Lokal vorbereitet';$('incident-feedback').textContent='Auftrag vorbereitet, nichts gesendet oder ausgeführt. Vor Übergabe vorhandenen Arbeitschat berücksichtigen.';
+ const saved={key:ctx.key,draft};
+ incidentPrepared=saved;$('incident-draft').value=draft;$('incident-draft').hidden=false;$('incident-copy').disabled=false;$('incident-open-work').hidden=false;$('incident-prepared').textContent='Auftrag vorbereitet';
+ return copyIncident(saved);
 });
-$('incident-copy').addEventListener('click',async()=>{
+$('incident-copy').addEventListener('click',()=>{
  const ctx=activeIncident();
  if(!ctx||!incidentPrepared||ctx.key!==incidentPrepared.key){clearIncident('Befund geändert. Neu vorbereiten.');paintIncident();return;}
- const saved=incidentPrepared;
- try{await navigator.clipboard.writeText(saved.draft);if(incidentPrepared===saved)$('incident-feedback').textContent='Auftrag kopiert. In den vorhandenen Arbeitschat oder Work einfügen. Keine Ausführung ausgelöst.';}
- catch{if(incidentPrepared===saved){$('incident-draft').focus();$('incident-draft').select();$('incident-feedback').textContent='Bitte markierten Text manuell kopieren. Keine Ausführung ausgelöst.';}}
+ return copyIncident(incidentPrepared);
 });
 $('incident-open-work').addEventListener('click',e=>{
  const ctx=activeIncident();
