@@ -514,7 +514,11 @@ class MiniPCDailyExactCountContract(unittest.TestCase):
         self.assertIn('"Prefer":"count=exact"', script)
         self.assertIn('"Range":"0-0"', script)
         self.assertIn('resp.headers.get("Content-Range")', script)
-        self.assertEqual(script.count("=request_count("), 3)
+        # Two mutually exclusive old shadow counts, one current native count,
+        # and the existing scanner count. No payload download for any total.
+        self.assertEqual(script.count("=request_count("), 4)
+        self.assertIn("native_v3_receipt_count=request_count",script)
+        self.assertIn('"revision":"eq."+current_revision',script)
         for old in (
             "len(shadow_count_rows or [])",
             "len(completed_rows or [])",
