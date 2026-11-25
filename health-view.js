@@ -1,4 +1,15 @@
 'use strict';
+// Accept only an explicit allowlisted classification from the original-host watchdog.
+function supervisorProtection(issues){
+ if(!Array.isArray(issues))return false;
+ const rows=issues.filter(i=>i?.check==="runtime_supervisor");
+ if(rows.length!==1||rows[0].severity!=="WARNING"||typeof rows[0].detail!=="string")return false;
+ const m=rows[0].detail.match(/^status=WARNING age_sec=(\d{1,3}(?:[.,]\d{1,6})?) restarted= classification=EXPECTED_V3_FENCE_ONLY_V1$/);
+ return !!m&&Number(m[1].replace(",","."))<=300;
+}
+function supervisorCritical(issues){
+ return issues.some(i=>i?.check==="runtime_supervisor"&&typeof i.detail==="string"&&/^status=CRITICAL age_sec=/.test(i.detail));
+}
 function healthModel(v,elapsedSec,connected){
  const unknown=(label,note)=>({tone:"unknown",label,note,hostAge:null,hostAt:null,writer:"Unbekannt",scanner:"Unbekannt"});
  if(!v||!Array.isArray(v.hosts)||!Number.isFinite(elapsedSec)||elapsedSec<0)return unknown("Systemstatus nicht bekannt","Noch kein bestätigter Betriebsbericht.");
@@ -8,13 +19,16 @@ function healthModel(v,elapsedSec,connected){
  if(!Number.isFinite(baseAge)||baseAge< -30)return unknown("Systembericht zeitlich unklar","Zeitstempel fehlen oder sind widersprüchlich.");
  const age=Math.max(0,baseAge+elapsedSec),issues=Array.isArray(h.issues)?h.issues:[],writerIssue=issues.find(i=>i?.check==="v3_paper_single_writer");
  const writer=h.writer?.ok===false||writerIssue?false:h.writer?.ok===true?true:null,scanner=h.scanner_ok===true?true:h.scanner_ok===false?false:null;
- const critical=h.status==="CRITICAL"||issues.some(i=>i?.severity==="CRITICAL"),negative=critical||writer===false||scanner===false;
+ const critical=h.status==="CRITICAL"||issues.some(i=>i?.severity==="CRITICAL")||supervisorCritical(issues),negative=critical||writer===false||scanner===false;
  const stale=!connected||elapsedSec>CLOUD_RESPONSE_STALE_SEC||age>HOST_REPORT_STALE_SEC;
  const active=Array.isArray(v.series)&&v.series.length===1&&v.series[0]?.status==="active";
  const result={hostAge:Math.floor(age),hostAt:h.observed_at,writer:writer===true?"Beim Bericht OK":writer===false?"Prüfung fehlgeschlagen":"Nicht belegt",scanner:scanner===true?"Beim Bericht OK":scanner===false?"Prüfung fehlgeschlagen":"Nicht belegt"};
  if(negative)return {...result,tone:"bad",label:stale?"Letzter Bericht: Störung – aktueller Status unklar":"Betriebsstörung gemeldet",note:stale?"Letzter negativer Beleg bleibt sichtbar. Keine aktuelle Entwarnung.":writer===false?"V3-Writer-Prüfung fehlgeschlagen. Betriebszustand beim Originalhost klären.":scanner===false?"Scanner-Prüfung fehlgeschlagen.":"Mini-PC meldet kritischen Fehler."};
  if(stale)return {...result,tone:"unknown",label:"Systemstatus nicht aktuell",note:!connected?"Cloud-Verbindung nicht bestätigt.":elapsedSec>CLOUD_RESPONSE_STALE_SEC?"Cloud-Abfrage überfällig.":"Hostbericht älter als fünf Minuten."};
  if(age>HOST_REPORT_DUE_SEC)return {...result,tone:"warn",label:"Neuer Hostbericht fällig",note:"Hostbericht älter als drei Minuten. Letzte Befunde bleiben sichtbar; aktuelle Gesundheit nicht bestätigt."};
+ const fenceProtected=active&&writer===true&&scanner===true&&h.status==="WARNING"&&supervisorProtection(issues);
+ if(fenceProtected&&issues.length===1)return {...result,tone:"good",fenceProtected:true,label:"Sicherheitsmechanismus aktiv",note:"Vorgänger-Writer geschützt. Writer und Scanner beim letzten Bericht bestätigt. Kein Reparaturbedarf aus diesem Schutzbefund; keine Echtzeitgarantie."};
+ if(fenceProtected)return {...result,tone:"warn",fenceProtected:true,label:"Sicherheitsmechanismus aktiv – weitere Systemwarnung",note:"Vorgänger-Writer geschützt. Weitere Hostwarnungen separat prüfen."};
  if(h.status==="WARNING"||issues.some(i=>i?.severity==="WARNING")){
   const core=active&&writer===true&&scanner===true;
   return {...result,tone:"warn",label:core?"Writer und Scanner bestätigt – Systemwarnung":"Systemwarnung gemeldet",note:core?"Die Kernprüfungen waren beim letzten Bericht positiv. Weitere Hostwarnungen sind separat zu klären; kein Writer-Ausfall daraus ableiten.":"Mindestens eine Hostprüfung meldet eine Warnung."};
@@ -51,7 +65,7 @@ function renderHealthDetails(m){
  const box=$('health-details-list'),hosts=Array.isArray(data?.hosts)?data.hosts.filter(h=>h?.node_id==='MINI-PC'):[],h=hosts.length===1?hosts[0]:null;
  const issues=Array.isArray(h?.issues)?h.issues.slice(0,30):[];
  const labels={v3_paper_single_writer:'V3-Writer',runtime_supervisor:'Laufzeitüberwachung',kraken_universe_heartbeat:'Kraken-Scanner',minipc_status_sync:'Statusübertragung',v2r4_ws_shadow_outcomes:'V2R4-Nachbetrachtung',v2r4_paper_wait:'V2R4-Warteüberwachung',v2r4_paper_candidates:'V2R4-Kandidaten'};
- const list=issues.map(i=>({label:labels[i?.check]||(/^[a-z0-9_]{1,80}$/i.test(i?.check||'')?i.check:'Weitere Hostprüfung'),severity:['WARNING','CRITICAL'].includes(i?.severity)?i.severity:'Nicht eingeordnet',detail:typeof i?.detail==='string'?i.detail.slice(0,500):'Kein Detail übermittelt.'}));
+ const list=issues.map(i=>({label:m.fenceProtected&&i?.check==='runtime_supervisor'?'Sicherheitsmechanismus aktiv':labels[i?.check]||(/^[a-z0-9_]{1,80}$/i.test(i?.check||'')?i.check:'Weitere Hostprüfung'),severity:m.fenceProtected&&i?.check==='runtime_supervisor'?'Schutz bestätigt':['WARNING','CRITICAL'].includes(i?.severity)?i.severity:'Nicht eingeordnet',detail:m.fenceProtected&&i?.check==='runtime_supervisor'?'Vorgänger-Writer geschützt. Kein Reparaturbedarf aus diesem Befund.':typeof i?.detail==='string'?i.detail.slice(0,500):'Kein Detail übermittelt.'}));
  const key=JSON.stringify([m.label,m.note,h?.observed_at,list]);
  if(box.dataset.key===key)return;
  box.dataset.key=key;$('health-details-time').textContent='Hostbericht: '+time(h?.observed_at)+' · '+m.label;
