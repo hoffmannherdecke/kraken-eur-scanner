@@ -162,7 +162,7 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
     if expected_main is not None:
         require(expected_main == sha, "GitHub main moved; re-read before action")
     owner_numbers = [353]
-    if work_domain == "strategy_release" and strategy_version == "V3":
+    if work_domain in ("operations", "strategy_development", "strategy_release", "research") and strategy_version == "V3":
         owner_numbers.append(99)
     owners = []
     issue_versions = {}
@@ -194,7 +194,7 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
                 f"issue #{number} latest comment shape invalid")
         issue_versions[number] = (issue.get("updated_at"), hashlib.sha256(
             issue["body"].encode("utf-8")).hexdigest())
-        if number == 99:
+        if number == 99 and work_domain == "strategy_release":
             release_view = existing_owner_gate_decision(issue["body"], candidate_id)
             if release_view["status"] == "OWNER_DECLARED_VIEW_CHECKED_NOT_ORIGINAL_RUNTIME_PROOF":
                 # GitHub issue BODY can change without a new comment. PR613
@@ -254,12 +254,22 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
     dashboard = (read_v3_release_dashboard(getter)
                  if work_domain == "strategy_release" and strategy_version == "V3"
                  else None)
+    if dashboard is not None and all(v == "DONE" for v in dashboard["states"].values()):
+        # The AP work selector is terminal, even if the old action view still
+        # carries a historical NEXT. Never treat completion as permission.
+        release_view = {"status": "V3_RELEASE_WORK_COMPLETE_NO_NEXT",
+                        "next_open_gate": None, "ready_to_execute": False,
+                        "candidate_verdict": "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE",
+                        "no_repeat_without_new_original_defect": True}
     for number, version in issue_versions.items():
         repeat, _ = getter(GITHUB_API_BASE + f"/issues/{number}")
         require(isinstance(repeat, dict) and isinstance(repeat.get("body"), str)
                 and (repeat.get("updated_at"), hashlib.sha256(
                     repeat["body"].encode("utf-8")).hexdigest()) == version,
                 f"issue #{number} changed during owner readback; retry with fresh original")
+    if dashboard is not None:
+        require(read_v3_release_dashboard(getter) == dashboard,
+                "canonical V3 dashboard changed during readback; retry before action")
     after, _ = getter(GITHUB_API_BASE + "/commits/main")
     require(isinstance(after, dict) and after.get("sha") == sha,
             "GitHub main changed during owner readback; retry before action")
@@ -1502,6 +1512,18 @@ def build(root: Path, scope: str, work_domain: str = "project_general", strategy
         "real_money_actions": active.get("real_money_actions"),
         "live_runtime_independently_checked": False,
     }
+    operational_release = state.get("operational_release_snapshot")
+    if operational_release is not None:
+        # Preserve historical V2R4 research/lineage contract without exposing it
+        # as the current operational strategy. No snapshot is a live heartbeat.
+        declared["legacy_research_baseline"] = {
+            "strategy_revision": declared.pop("strategy_revision"),
+            "strategy_epoch_anchor": declared.pop("strategy_epoch_anchor"),
+            "technical_series_last_verified": declared.pop("technical_series_last_verified"),
+            "declared_paper_status": declared.pop("declared_paper_status"),
+        }
+        declared["operational_release_snapshot"] = operational_release
+        declared["operational_identity_requires_fresh_original_readback"] = True
     operational = existing_operational_evidence_handoff(config, index)
     payload = {
         "kind": "CONTEXT_BEFORE_ACTION_PACKET_V1",
@@ -1525,6 +1547,14 @@ def build(root: Path, scope: str, work_domain: str = "project_general", strategy
         ],
         "required_next_step": "Use connected GitHub/Cloud first; then check reviewed bounded Mini-PC tasks. Read original decisions and request manual user action only after documenting a concrete blocker.",
     }
+    if operational_release is not None:
+        payload["legacy_control_decisions_not_current_work"] = True
+        for entry in payload["control_decision_ack_reconciliation"]:
+            entry["historical_baseline_not_current_work"] = True
+        # Source-only packet must not advertise the archived release path as
+        # the next operation; fresh owner reader decides actual work.
+        if "existing_transition_execution_path" in payload["next_action_selector"]:
+            payload["next_action_selector"]["historical_transition_execution_path"] = payload["next_action_selector"].pop("existing_transition_execution_path")
     if scope in ("strategy", "research") and work_domain in ("strategy_development", "strategy_release") and strategy_version == "V3":
         payload["strategy_learning_routes"] = v3_decision_inheritance(root)
         payload["strategy_learning_routes"]["scope_warning"] = (
@@ -1600,6 +1630,7 @@ def compact_decision_brief(packet: dict) -> dict:
         "status": packet["status"],
         "fingerprint": packet["fingerprint"],
         "declared_as_of_utc": packet["declared_status"]["as_of_utc"],
+        "operational_identity_requires_fresh_original_readback": True,
         "owner": "PROJECT_BACKLOG.md / Issue #353 for project-wide execution",
         "decision_order": list(selector["decision_order"]),
         "bounded_capabilities": list(selector["bounded_capabilities"]),
@@ -1621,6 +1652,8 @@ def compact_decision_brief(packet: dict) -> dict:
         "no_live_runtime_or_trading_authority": True,
         "history_or_hash_is_not_live_proof": True,
     }
+    if "operational_release_snapshot" in packet["declared_status"]:
+        result["historical_release_work_not_current"] = True
     if "existing_transition_execution_path" in selector:
         result["existing_transition_execution_path"] = selector["existing_transition_execution_path"]
     return result
@@ -1634,7 +1667,7 @@ def main() -> int:
     p.add_argument("--work-domain", default="project_general",
                    choices=("project_general", "infrastructure", "operations",
                             "strategy_development", "strategy_release", "research"),
-                   help="Task area independent from source scope; only named strategy_release uses a strategy release owner.")
+                   help="Task area independent from source scope; named V3 operational/research/development work also reads its Fachowner.")
     p.add_argument("--strategy-version", default=None,
                    help="Explicit target like V3 or V2R4; scope alone never selects a strategy.")
     p.add_argument("--brief", action="store_true",

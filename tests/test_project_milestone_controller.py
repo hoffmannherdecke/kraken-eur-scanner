@@ -8,6 +8,27 @@ controller = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(controller)
 
 
+class CurrentOperationalMilestoneTests(unittest.TestCase):
+    def test_current_cloud_identity_beats_historic_baseline_without_claiming_economics(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        snapshot=state["operational_release_snapshot"]
+        paper={"series_id":snapshot["series_id"],"strategy_revision":snapshot["strategy_revision"],
+               "candidate_outcomes":0,"completed_trades":0,
+               "fasttrack_policy_version":"EVIDENCE_DIVERSITY_FASTTRACK_V2","completion_ready":False}
+        now=dt.datetime(2026,11,25,10,tzinfo=dt.timezone.utc)
+        result=controller.evaluate(state,paper,None,now,ROOT)
+        self.assertIn("V3:PAPER_ACTIVE_CLOUD_IDENTITY_VERIFIED",result["statuses"])
+        self.assertEqual(result["events"],[])
+        self.assertFalse(result["host_health_verified"])
+        self.assertFalse(result["native_journal_checked"])
+        self.assertFalse(result["economic_qualification_verified"])
+        with self.assertRaisesRegex(ValueError,"IDENTITY_DIFFERS"):
+            controller.evaluate(state,dict(paper,series_id="PAPER-V3-OTHER"),None,now,ROOT)
+        with self.assertRaisesRegex(ValueError,"bypasses"):
+            controller.evaluate(state,dict(paper,completion_ready=True),None,now,ROOT)
+
+
 class DynamicPaperCloudMilestoneReadbackTests(unittest.TestCase):
     """No-network tests: never choose stale V2R4 row after V3 activation."""
 

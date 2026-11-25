@@ -39,8 +39,13 @@ issues=[]
 repairs=[]
 metrics={
     "paper_runtime_enabled":ENABLED,
-    "series_id":SERIES_ID,
-    "series_start_ts":SERIES_START_TS,
+    # This control file describes the retired Git runtime, not the native Paper owner.
+    "series_id":SERIES_ID if ENABLED else None,
+    "series_start_ts":SERIES_START_TS if ENABLED else None,
+    "historical_git_series_id":SERIES_ID if not ENABLED else None,
+    "historical_git_series_start_ts":SERIES_START_TS if not ENABLED else None,
+    "paper_runtime_enabled_scope":"LEGACY_GIT_RUNTIME_ONLY",
+    "current_paper_runtime_checked":False,
 }
 
 def add(code,severity,detail,repairable=False):
@@ -384,7 +389,10 @@ metrics["missed_10pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_10pct
 # Workflow liveness for the unified architecture.
 latest_health("scan.yml",SCAN_STALE_AFTER_SECONDS)
 metrics["legacy_git_paper_runtime_retired"]=CONTROL.get("git_runtime_compatibility_mode")=="DISABLED_V2R4_LOCAL_SUPABASE_PRIMARY"
-metrics["paper_runtime_pause_reason"]=CONTROL.get("reason")
+metrics["paper_runtime_pause_reason"]=(
+    "LEGACY_GIT_RUNTIME_RETIRED_CURRENT_NATIVE_RUNTIME_NOT_CHECKED_HERE"
+    if metrics["legacy_git_paper_runtime_retired"] else CONTROL.get("reason")
+)
 
 # Bounded technical self-healing only.
 try:
@@ -400,6 +408,7 @@ except Exception as exc:
 report={
     "schema_version":2,
     "kind":"CRYPTO_PROCESS_HEALTH_V2",
+    "status_scope":"SCANNER_AND_LEGACY_GIT_ARTIFACTS_ONLY_NOT_NATIVE_PAPER_HEALTH",
     "audited_at_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
     "status":"CRITICAL" if any(i["severity"]=="CRITICAL" for i in issues) else ("WARNING" if issues else "HEALTHY"),
     "metrics":metrics,"issues":issues,"repairs":repairs,

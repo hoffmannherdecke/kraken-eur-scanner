@@ -25,7 +25,9 @@ class ContextBeforeActionTests(unittest.TestCase):
         for barrier in result["known_source_barriers"]:
             self.assertIn(barrier["guard"], lines[barrier["line"] - 1])
         packet = build(ROOT, "operations", work_domain="strategy_release", strategy_version="V3")
-        self.assertEqual(compact_decision_brief(packet)["existing_transition_execution_path"], result)
+        self.assertEqual(packet["next_action_selector"]["historical_transition_execution_path"], result)
+        self.assertNotIn("existing_transition_execution_path", compact_decision_brief(packet))
+        self.assertTrue(packet["legacy_control_decisions_not_current_work"])
         self.assertFalse(result["baseline_device_retest_can_resolve_this"])
         self.assertFalse(result["executable_success_path_proven"])
         self.assertFalse(result["production_or_physical_execution_authorized"])
@@ -1070,6 +1072,35 @@ class LiveOwnerReadbackTests(unittest.TestCase):
             with self.subTest(domain=domain):
                 packet = live_owner_readback(domain, None, fetcher=self.fake_fetch)
                 self.assertEqual([x["issue"] for x in packet["owners"]], [353])
+
+    def test_named_v3_operations_and_research_read_fachowner_without_release_gate(self):
+        from tools.context_before_action import live_owner_readback
+        for domain in ("operations", "research", "strategy_development"):
+            with self.subTest(domain=domain):
+                packet = live_owner_readback(domain, "V3", fetcher=self.fake_fetch)
+                self.assertEqual([x["issue"] for x in packet["owners"]], [353, 99])
+                self.assertIsNone(packet["named_release_gate"])
+                self.assertIsNone(packet["canonical_v3_task_dashboard"])
+                self.assertTrue(packet["no_trading_or_release_authority"])
+
+    def test_completed_dashboard_has_no_next_ap(self):
+        from tools.context_before_action import read_v3_release_dashboard
+        import re
+        def fetch(url):
+            item, link = self.fake_fetch(url)
+            if url.endswith("/issues/comments/6742581400"):
+                body = re.sub(r"(?m)^- \[[ x]\] \*\*(AP(?:00|01|02|03|04|05A|05B|05C|06A|06B)) [A-Z0-9_]+:\*\*",
+                              r"- [x] **\1 DONE:**", item["body"])
+                item = dict(item, body=body)
+            return item, link
+        state = read_v3_release_dashboard(fetcher=fetch)
+        self.assertIsNone(state["next_task_id"])
+        self.assertTrue(all(v == "DONE" for v in state["states"].values()))
+        from tools.context_before_action import live_owner_readback
+        packet=live_owner_readback("strategy_release","V3",fetcher=fetch)
+        self.assertEqual(packet["named_release_gate"]["status"],"V3_RELEASE_WORK_COMPLETE_NO_NEXT")
+        self.assertIsNone(packet["named_release_gate"]["next_open_gate"])
+        self.assertFalse(packet["named_release_gate"]["ready_to_execute"])
 
     def test_stale_main_pin_fails_closed(self):
         from tools.context_before_action import live_owner_readback, ContextGateError

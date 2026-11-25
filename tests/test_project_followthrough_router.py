@@ -14,6 +14,20 @@ UTC = dt.timezone.utc
 
 
 class ProjectFollowthroughRoutingTests(unittest.TestCase):
+    def test_current_release_is_not_a_trigger_to_repeat_predecessor_or_source_work(self):
+        result=route(ROOT,dt.datetime(2026,11,25,10,tzinfo=UTC))
+        self.assertEqual(result["ready_control_decisions"],[])
+        self.assertEqual(result["historical_backlog_reconciliation"]["next_review"],[])
+        self.assertFalse(result["live_runtime_independently_checked"])
+        work=result["project_implementation_commitments"]
+        self.assertEqual(work["ready_safe_actions"],[])
+        self.assertEqual(work["ready_release_reviews"],[])
+        self.assertEqual(next(x for x in work["items"] if x["id"]=="V3_EXPERIMENTAL_PAPER_SIX_PROOFS")["state"],
+                         "HISTORICAL_NOT_CURRENT_WORK_NO_NEW_PASS")
+        self.assertEqual(next(x for x in work["items"] if x["id"]=="V3_PAPER_NET_ECONOMIC_REVIEW")["state"],
+                         "WAIT_CURRENT_ORIGINAL_OWNER_EVIDENCE")
+        self.assertEqual(result["v3_paper_five_source_followthrough"]["next_safe_actions"],[])
+
     def test_project_manager_uses_general_work_domain_contract_not_v3_by_default(self):
         from tools.context_before_action import build
         manifest = json.loads((ROOT / "research/project-followthrough-routing-v1.json").read_text())

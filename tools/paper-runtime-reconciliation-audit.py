@@ -167,6 +167,8 @@ def main() -> int:
 
     report = {
         "kind": "PAPER_RUNTIME_RECONCILIATION_AUDIT_V1",
+        "audit_scope": "LEGACY_GIT_REPOSITORY_ARTIFACTS_ONLY_NOT_LIVE_RUNTIME",
+        "live_runtime_checked": False,
         "checked_at_utc": now.isoformat().replace("+00:00", "Z"),
         "status": status,
         "series_id": series_id,
@@ -198,6 +200,7 @@ def main() -> int:
     }
 
     print("=== PAPER RUNTIME RECONCILIATION AUDIT SUMMARY ===")
+    print("Scope: legacy Git repository artifacts only; current native Paper runtime not checked")
     print(f"Status: {status}")
     print(f"Series: {series_id} | enabled={bool(control.get('enabled'))}")
     print(f"Active-series handoffs: {len(handoffs)} | decisions={len(decisions)} | revalidations={len(revals)}")

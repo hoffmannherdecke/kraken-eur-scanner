@@ -19,6 +19,17 @@ class ProcessHealthEventTriggerContract(unittest.TestCase):
         cls.scan=SCAN.read_text(encoding="utf-8")
         cls.startup_recovery=RECOVERY.read_text(encoding="utf-8")
 
+    def test_retired_git_audits_do_not_claim_current_native_paper_health(self):
+        audit=(ROOT / "process_audit.py").read_text(encoding="utf-8")
+        reconcile=(ROOT / "tools/paper-runtime-reconciliation-audit.py").read_text(encoding="utf-8")
+        self.assertIn('"series_id":SERIES_ID if ENABLED else None',audit)
+        self.assertIn('"historical_git_series_id":SERIES_ID if not ENABLED else None',audit)
+        self.assertIn('"current_paper_runtime_checked":False',audit)
+        self.assertIn("SCANNER_AND_LEGACY_GIT_ARTIFACTS_ONLY_NOT_NATIVE_PAPER_HEALTH",audit)
+        self.assertIn("LEGACY_GIT_RUNTIME_RETIRED_CURRENT_NATIVE_RUNTIME_NOT_CHECKED_HERE",audit)
+        self.assertIn("LEGACY_GIT_REPOSITORY_ARTIFACTS_ONLY_NOT_LIVE_RUNTIME",reconcile)
+        self.assertIn('"live_runtime_checked": False',reconcile)
+
     def test_existing_five_minute_fallback_unchanged(self):
         self.assertIn("cron: '4,9,14,19,24,29,34,39,44,49,54,59 * * * *'",self.health)
         self.assertIn("workflow_dispatch:",self.health)

@@ -21,11 +21,15 @@ import urllib.request
 
 try:
     from tools.strategy_epoch_lineage import summarize_epoch
-    from tools.project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments
+    from tools.project_followthrough_router import (v3_five_source_followthrough,
+        project_implementation_commitments, operational_release_snapshot)
+    from tools.context_before_action import live_owner_readback, ContextGateError
     from tools.paper_series_transition_guard import select_current_readiness
 except ModuleNotFoundError:
     from strategy_epoch_lineage import summarize_epoch
-    from project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments
+    from project_followthrough_router import (v3_five_source_followthrough,
+        project_implementation_commitments, operational_release_snapshot)
+    from context_before_action import live_owner_readback, ContextGateError
     from paper_series_transition_guard import select_current_readiness
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -263,7 +267,55 @@ def evaluate_verified_v3_paper(state: dict, paper: dict, now: dt.datetime, root:
             "real_money_actions": False}
 
 
+def evaluate_operational_paper(milestone: dict, paper: dict) -> dict:
+    """Cloud readiness is current evidence only for the matching series/revision.
+
+    Release history is not a heartbeat. The compatibility view is not the
+    V3 journal; zero view rows cannot prove zero candidate decisions.
+    """
+    require(paper.get("series_id") == milestone["series_id"]
+            and paper.get("strategy_revision") == milestone["strategy_revision"],
+            "CURRENT_CLOUD_IDENTITY_DIFFERS_FROM_LAST_AUTHORIZED_RELEASE_NEEDS_OWNER_ACK: "
+            + str(paper.get("series_id")) + " / " + str(paper.get("strategy_revision")))
+    for field in ("candidate_outcomes", "completed_trades"):
+        require(type(paper.get(field)) is int and paper[field] >= 0,
+                "missing or invalid readiness view count: " + field)
+    require(paper.get("fasttrack_policy_version") == "EVIDENCE_DIVERSITY_FASTTRACK_V2",
+            "paper evidence-diversity contract changed; current owner review required")
+    version = milestone["strategy_version"]
+    statuses = [version + ":PAPER_ACTIVE_CLOUD_IDENTITY_VERIFIED",
+                "RELEASE_COMPLETED_HISTORICAL_NOT_LIVE_HOST_HEALTH",
+                "READINESS_VIEW_COUNTS_ONLY_NOT_NATIVE_JOURNAL",
+                "ECONOMIC_QUALIFICATION_NOT_PROVEN_BY_RELEASE"]
+    notices = []
+    if paper.get("completion_ready") is True:
+        require(paper.get("intake_should_stop") is True
+                and paper.get("temporal_diversity_ready") is True
+                and paper.get("qualifying_maturity_ready") is True,
+                "paper completion gate bypasses diversity/mature outcomes")
+        statuses.append(version + ":PAPER_ECONOMIC_REVIEW_DUE")
+        notices.append(event("PAPER_FINAL_REVIEW", paper["series_id"],
+                             version + " Readiness-View meldet reifes Abschlussgate; "
+                             "Originaljournal und wirtschaftliche Ergebnisse abgleichen. "
+                             "Keine automatische Strategie- oder Echtgeldfreigabe."))
+    else:
+        statuses.append(version + ":PAPER_COLLECTING_OR_NATIVE_ECONOMICS_NOT_EVALUATED")
+    return {"kind": "PROJECT_MILESTONE_CONTROL_V1",
+            "series_id": paper["series_id"],
+            "live_technical_series_id": paper["series_id"],
+            "strategy_revision": paper["strategy_revision"],
+            "last_verified_release_source": milestone["source"],
+            "readiness_view_counts": {k: paper[k] for k in ("candidate_outcomes", "completed_trades")},
+            "host_health_verified": False, "native_journal_checked": False,
+            "economic_qualification_verified": False,
+            "statuses": statuses, "events": notices,
+            "strategy_changed": False, "orders": False, "real_money_actions": False}
+
+
 def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -> dict:
+    milestone = operational_release_snapshot(state, now)
+    if milestone is not None:
+        return evaluate_operational_paper(milestone, paper)
     active = state["active_strategy"]
     if str(active.get("strategy_revision") or "").startswith("V3-"):
         return evaluate_verified_v3_paper(state, paper, now, root)
@@ -685,6 +737,7 @@ def main() -> int:
     args = parser.parse_args()
     require(not (args.fixture and args.publish), "fixture cannot publish")
     state = load_local_state(ROOT)
+    milestone = None
     if args.fixture:
         fixture = json.loads(args.fixture.read_text("utf-8"))
         paper, h3 = fixture["paper"], fixture["h3"]
@@ -693,18 +746,30 @@ def main() -> int:
         base = os.environ.get("SUPABASE_URL", "")
         key = os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
         require(bool(key), "missing Supabase evidence credential")
+        now = dt.datetime.now(UTC)
+        milestone = operational_release_snapshot(state, now)
+        if milestone is not None:
+            # Existing GitHub owner readback; no cached owner/branch fallback.
+            try:
+                owner = live_owner_readback("operations", milestone["strategy_version"],
+                                            expected_main=os.getenv("GITHUB_SHA") or None)
+            except ContextGateError as exc:
+                raise ValueError("CURRENT_OWNER_READBACK_REQUIRED: " + str(exc)) from exc
+            require(any(milestone["source"] in x.get("current_owner_header_excerpt", "")
+                        for x in owner["owners"]),
+                    "CURRENT_OWNER_RELEASE_REFERENCE_CHANGED_NEEDS_RECONCILIATION")
         try:
             paper = current_active_paper_readiness(base, key)
             shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
             h3 = (get_rows(base, key, "v3_h3_shadow_status")[0]
-                  if shadows and shadows[0].get("candidate_id") == "V3-H3-SHADOW-001"
+                  if milestone is None and shadows and shadows[0].get("candidate_id") == "V3-H3-SHADOW-001"
                   else None)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             # Critical control-plane independence: Supabase downtime must not
             # suppress an already-overdue, locally evidenced Work handoff.
             # Never invent trading readiness or claim HEALTHY in degraded mode.
             now = dt.datetime.now(UTC)
-            overdue = due_followthrough_events(state, now, ROOT)
+            overdue = [] if milestone is not None else due_followthrough_events(state, now, ROOT)
             print(json.dumps({"kind": "PROJECT_MILESTONE_CONTROL_DEGRADED_V1",
                               "status": "SUPABASE_EVIDENCE_UNAVAILABLE",
                               "overdue_followthrough_only": [decision for decision, _ in overdue],
@@ -731,7 +796,7 @@ def main() -> int:
     if not args.fixture:
         proof = ((state.get("pending_strategy_transition") or {})
                  .get("v3_original_intake_e2e_gate") or {})
-        if proof.get("h10_pit_receipt_schema_applied") is True:
+        if milestone is None and proof.get("h10_pit_receipt_schema_applied") is True:
             try:
                 status, milestone = first_h10_source_receipt_review(base,key)
                 result["statuses"].append(status)
