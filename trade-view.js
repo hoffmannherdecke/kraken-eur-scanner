@@ -16,7 +16,7 @@ function renderTrade(v,current=true){
  cards.push(el('h2','Letzte belegte Handelsereignisse'));
  if(m.events.length)cards.push(...m.events.map(candidate));else cards.push(panel(el('p',m.fillCount===0&&m.exitCount===0?'Keine Einstiegs- oder Abschlussereignisse im abgefragten Zeitraum.':'In der aktuellen Liste der letzten Kandidatenentscheidungen ist kein Handelsbeleg enthalten. Die Zähler oben beziehen sich auf alle Ereignisse im Zeitraum.','muted')));
  cards.push(panel(el('small','Die Liste zeigt nur Handelsereignisse, die zugleich der zuletzt übermittelte Entscheidungsstand eines der höchstens 30 angezeigten Kandidaten sind. Sie ist kein vollständiges Handelsbuch. Noch nicht synchronisierte Vorgänge sind nicht enthalten.')));
- put('trade-info',...cards,...economicPanels(v,current));
+ put('trade-info',...cards,...economicPanels(v,current),...opportunityPanels(v,current));
 }
 
 function economicViewModel(v,current=true){
