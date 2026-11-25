@@ -723,3 +723,38 @@ class RepeatedV2R4EmailRegressionTests(unittest.TestCase):
         self.assertEqual(sum(x["kind"]=="PAPER_LOW_TRADES" for x in due["events"]),1)
 
 
+
+
+class CurrentOperationalEvidenceTests(unittest.TestCase):
+    def test_owner_pointer_accepts_successor_original_not_old_snapshot(self):
+        import datetime as dt
+        import json
+        state=controller.load_local_state(ROOT)
+        now=dt.datetime(2026,11,25,12,tzinfo=dt.timezone.utc)
+        url="https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-123"
+        record={"series_id":"PAPER-V3-20261125T100000Z","strategy_revision":"V3-NEW",
+                "strategy_version":"V3","source":url,"observed_at_utc":"2026-11-25T10:00:00Z",
+                "lease_expires_at_utc":"2026-11-29T06:21:49Z","lease_source":url,"review_requests":{}}
+        owner={"no_trading_or_release_authority":True,"owners":[{"issue":99,
+               "current_owner_header_excerpt":"<!-- CURRENT_PAPER_OPERATIONAL_STATUS_V1\n"+json.dumps(record)+"\nEND_CURRENT_PAPER_OPERATIONAL_STATUS_V1 -->"}]}
+        proof={"id":123,"html_url":url,"body":"PAPER-V3-20261125T100000Z V3-NEW V3_PAPER_OPERATIONAL Lease 29.11.2026 06:21:49 UTC"}
+        current,_=controller.resolve_current_paper_owner(state,owner,now,fetcher=lambda u:(proof,""))
+        self.assertEqual(current["operational_release_snapshot"]["series_id"],record["series_id"])
+        self.assertNotEqual(state["operational_release_snapshot"]["series_id"],record["series_id"])
+        with self.assertRaisesRegex(ValueError,"mismatch"):
+            controller.resolve_current_paper_owner(state,owner,now,fetcher=lambda u:(dict(proof,body="old"),""))
+        with self.assertRaisesRegex(ValueError,"revision"):
+            controller.resolve_current_paper_owner(state,owner,now,fetcher=lambda u:(dict(proof,body=proof["body"].replace("V3-NEW","old")),""))
+
+    def test_native_maturity_selects_review_not_profitability_or_trade(self):
+        record={"review_requests":{}}
+        journal={"phase_receipt_counts":{"scanner":5,"wait":1,"reject":4}}
+        self.assertEqual(controller.current_review_basis(record,journal),{})
+        journal["phase_receipt_counts"]["mature_6h"]=1
+        first=controller.current_review_basis(record,journal)
+        self.assertEqual(first,{"V3_PAPER_NET_ECONOMIC_REVIEW":"NATIVE:mature_6h"})
+        journal["phase_receipt_counts"]["mature_24h"]=1
+        later=controller.current_review_basis(record,journal)
+        self.assertNotEqual(first,later)
+        journal["phase_receipt_counts"].update(fill=1,exit=1)
+        self.assertIn("V3_H4_H7_H9_EXITS_AND_EXECUTION",controller.current_review_basis(record,journal))
