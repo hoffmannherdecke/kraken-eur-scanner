@@ -1653,7 +1653,6 @@ def compact_decision_brief(packet: dict) -> dict:
         "history_or_hash_is_not_live_proof": True,
     }
     if "operational_release_snapshot" in packet["declared_status"]:
-        result["last_verified_operational_release"] = packet["declared_status"]["operational_release_snapshot"]
         result["historical_release_work_not_current"] = True
     if "existing_transition_execution_path" in selector:
         result["existing_transition_execution_path"] = selector["existing_transition_execution_path"]
