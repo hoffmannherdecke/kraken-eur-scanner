@@ -14,13 +14,13 @@ function incidentContext(v,elapsed,connected,now=Date.now()){
  if(issues.some(i=>i?.check==="runtime_supervisor"&&["WARNING","CRITICAL"].includes(i.severity)))codes.push("SUPERVISOR_WARNING");
  if(h?.status==="CRITICAL"||issues.some(i=>i?.severity==="CRITICAL"))codes.push("HOST_CRITICAL");
  else if(h?.status==="WARNING"||issues.some(i=>i?.severity==="WARNING"))codes.push("HOST_WARNING");
- if(!connected||elapsed>75||now-Date.parse(v.read_at)>180000)codes.push("CLOUD_READ_NOT_CURRENT");
+ if(!connected||elapsed>CLOUD_RESPONSE_STALE_SEC||now-Date.parse(v.read_at)>180000)codes.push("CLOUD_READ_NOT_CURRENT");
  const exactHostAge=at?(Date.parse(v.read_at)-Date.parse(at))/1000+elapsed:NaN;
- if(!Number.isFinite(exactHostAge)||m.hostAge===null||exactHostAge>360)codes.push("HOST_REPORT_NOT_CURRENT");
+ if(!Number.isFinite(exactHostAge)||m.hostAge===null||exactHostAge>HOST_REPORT_DUE_SEC)codes.push("HOST_REPORT_NOT_CURRENT");
  if(!s)codes.push("ACTIVE_SERIES_UNCONFIRMED");
  if(!codes.length)codes.push("HEALTH_NOT_CONFIRMED");
  const readAt=new Date(Date.parse(v.read_at)).toISOString();
- const current=!!connected&&elapsed<=75&&now-Date.parse(v.read_at)<=180000&&!!at&&m.hostAge!==null&&exactHostAge<=600;
+ const current=!!connected&&elapsed<=CLOUD_RESPONSE_STALE_SEC&&now-Date.parse(v.read_at)<=180000&&!!at&&m.hostAge!==null&&exactHostAge<=HOST_REPORT_STALE_SEC;
  const ctx={series:s,hostAt:at,readAt,codes,tone:m.tone,current};
  ctx.diagnostics=incidentDiagnostics(v,ctx);
  ctx.key=JSON.stringify([s,at,codes,current,m.tone,ctx.diagnostics]);
@@ -49,7 +49,7 @@ function incidentDiagnostics(v,ctx){
  }
  if(ctx.codes.includes("SUPERVISOR_WARNING")){
  const raw=issue("runtime_supervisor")?.detail,m=typeof raw==="string"&&raw.length<=500&&raw.match(/^status=(HEALTHY|WARNING|CRITICAL|ERROR|FAILED|UNKNOWN) age_sec=(-?\d{1,9}(?:[.,]\d{1,6})?) restarted=([^\r\n]*)$/),n=m?age(m[2]):null;
- if(m&&n!==null){add("SUPERVISOR_OBSERVATION","Supervisor","Status "+m[1]+"; Berichtsalter beim Hostcheck: "+n+" s. "+(m[3]===""?"Restart-Liste im Bericht leer.":"Restart-Angaben nicht übernommen."),"Ursprünglichen Supervisor-Zustand und konkrete Warnungsursache prüfen. Eine leere Restart-Liste beweist keinen ausgebliebenen Neustart.");
+ if(m&&n!==null){add("SUPERVISOR_OBSERVATION","Supervisor","Status "+m[1]+"; Berichtsalter beim Hostcheck: "+n+" s. "+(m[3]===""?"Restart-Liste im Bericht leer.":"Restart-Angaben nicht übernommen."),"Ursprünglichen Supervisor-Zustand prüfen: Fence-Modus, Nachfolgerbindung, Maintenance, failed_restarts, error und alle überwachten Tasks. CLOUD_COMMITTED kann eine erwartete Schutzwarnung sein; dieser kompakte Bericht unterscheidet das nicht sicher. Keine Reparatur oder Unterdrückung daraus ableiten.");
  if(n>300)add("SUPERVISOR_OLD","Supervisor-Bericht","Älter als die ursprüngliche 300-s-Prüfgrenze.","Zeitstempel und Original-Supervisor-Meldung prüfen.");}
  else if(raw==="task installed but state missing")add("SUPERVISOR_STATE_MISSING","Supervisor-Zustand","Task installiert, Zustandsdatei laut Watchdog fehlt.","Vorhandenen Supervisor-Task und Original-Zustandsbeleg lesend prüfen.");
  else add("SUPERVISOR_DETAIL_UNCONFIRMED","Supervisor-Details","Kein eindeutig strukturiertes Detail verfügbar.","Originalen Supervisor-Bericht und zugehörige Warnung lesend prüfen.");

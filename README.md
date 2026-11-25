@@ -63,3 +63,6 @@ Explicit trusted-device session option persists the existing read-only app acces
 
 ## 0.18.4
 Display the original-host verified 60-second nominal health and status-sync intervals (25 Nov 2026, HEALTH60 LOCAL PASS). Browser data polling remains 30 seconds while visible; actual host-report age remains authoritative. Health thresholds, authentication, API and trading behavior unchanged. Runtime task changes were applied separately on the original host; main installer defaults are not changed by this Pages update.
+
+## 0.18.5
+Shared host freshness thresholds: report due after 180 seconds, stale after 300 seconds, cloud response stale after 75 seconds; 30-second browser polling unchanged. Writer overview and incident context consume the same thresholds. Negative core/critical observations remain visible even when stale, positive core checks with other warnings are distinguished without claiming the supervisor cause. The compact original cloud projection does not prove expected fence-only protection vs actual supervisor faults. No runtime or API changes. Margins allow the measured ~15-second watchdog runtime, two independent 60-second schedules and 30-second app polling; network delays remain possible.

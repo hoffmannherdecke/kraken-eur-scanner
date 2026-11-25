@@ -9,14 +9,17 @@ function healthModel(v,elapsedSec,connected){
  const age=Math.max(0,baseAge+elapsedSec),issues=Array.isArray(h.issues)?h.issues:[],writerIssue=issues.find(i=>i?.check==="v3_paper_single_writer");
  const writer=h.writer?.ok===false||writerIssue?false:h.writer?.ok===true?true:null,scanner=h.scanner_ok===true?true:h.scanner_ok===false?false:null;
  const critical=h.status==="CRITICAL"||issues.some(i=>i?.severity==="CRITICAL"),negative=critical||writer===false||scanner===false;
- const stale=!connected||elapsedSec>75||age>600;
+ const stale=!connected||elapsedSec>CLOUD_RESPONSE_STALE_SEC||age>HOST_REPORT_STALE_SEC;
  const active=Array.isArray(v.series)&&v.series.length===1&&v.series[0]?.status==="active";
  const result={hostAge:Math.floor(age),hostAt:h.observed_at,writer:writer===true?"Beim Bericht OK":writer===false?"Prüfung fehlgeschlagen":"Nicht belegt",scanner:scanner===true?"Beim Bericht OK":scanner===false?"Prüfung fehlgeschlagen":"Nicht belegt"};
  if(negative)return {...result,tone:"bad",label:stale?"Letzter Bericht: Störung – aktueller Status unklar":"Betriebsstörung gemeldet",note:stale?"Letzter negativer Beleg bleibt sichtbar. Keine aktuelle Entwarnung.":writer===false?"V3-Writer-Prüfung fehlgeschlagen. Betriebszustand beim Originalhost klären.":scanner===false?"Scanner-Prüfung fehlgeschlagen.":"Mini-PC meldet kritischen Fehler."};
- if(stale)return {...result,tone:"unknown",label:"Systemstatus nicht aktuell",note:!connected?"Cloud-Verbindung nicht bestätigt.":elapsedSec>75?"Cloud-Abfrage überfällig.":"Hostbericht älter als 10 Minuten."};
- if(h.status==="WARNING"||issues.some(i=>i?.severity==="WARNING"))return {...result,tone:"warn",label:"Systemwarnung gemeldet",note:"Mindestens eine Hostprüfung meldet eine Warnung."};
+ if(stale)return {...result,tone:"unknown",label:"Systemstatus nicht aktuell",note:!connected?"Cloud-Verbindung nicht bestätigt.":elapsedSec>CLOUD_RESPONSE_STALE_SEC?"Cloud-Abfrage überfällig.":"Hostbericht älter als fünf Minuten."};
+ if(age>HOST_REPORT_DUE_SEC)return {...result,tone:"warn",label:"Neuer Hostbericht fällig",note:"Hostbericht älter als drei Minuten. Letzte Befunde bleiben sichtbar; aktuelle Gesundheit nicht bestätigt."};
+ if(h.status==="WARNING"||issues.some(i=>i?.severity==="WARNING")){
+  const core=active&&writer===true&&scanner===true;
+  return {...result,tone:"warn",label:core?"Writer und Scanner bestätigt – Systemwarnung":"Systemwarnung gemeldet",note:core?"Die Kernprüfungen waren beim letzten Bericht positiv. Weitere Hostwarnungen sind separat zu klären; kein Writer-Ausfall daraus ableiten.":"Mindestens eine Hostprüfung meldet eine Warnung."};
+ }
  if(!active||writer!==true||scanner!==true||h.status!=="HEALTHY"||!Array.isArray(h.issues))return {...result,tone:"unknown",label:"Gesundheit nicht vollständig belegt",note:"Aktive Serie, Scanner, Writer und Hoststatus müssen eindeutig bestätigt sein."};
- if(age>360)return {...result,tone:"warn",label:"Letzter Bericht gesund – neuer Bericht fällig",note:"Hostbericht älter als sechs Minuten; erneute Bestätigung ausstehend."};
  return {...result,tone:"good",label:"System beim letzten Bericht gesund",note:"Scanner und Writer bestätigt. Zeitgestempelter Nachweis, keine Echtzeitgarantie."};
 }
 let healthReceiptMs=null,healthConnected=false,healthLastPollMs=null;
