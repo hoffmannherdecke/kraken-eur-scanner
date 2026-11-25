@@ -1087,8 +1087,8 @@ class LiveOwnerReadbackTests(unittest.TestCase):
         def fetch(url):
             item, link = self.fake_fetch(url)
             if url.endswith("/issues/comments/6742581400"):
-                body = re.sub(r"(?m)^- \\[[ x]\\] \\*\\*(AP(?:00|01|02|03|04|05A|05B|05C|06A|06B)) [A-Z0-9_]+:\\*\\*",
-                              r"- [x] **\\1 DONE:**", item["body"])
+                body = re.sub(r"(?m)^- \[[ x]\] \*\*(AP(?:00|01|02|03|04|05A|05B|05C|06A|06B)) [A-Z0-9_]+:\*\*",
+                              r"- [x] **\1 DONE:**", item["body"])
                 item = dict(item, body=body)
             return item, link
         state = read_v3_release_dashboard(fetcher=fetch)
