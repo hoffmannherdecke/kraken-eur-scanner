@@ -1612,7 +1612,6 @@ def compact_decision_brief(packet: dict) -> dict:
         "status": packet["status"],
         "fingerprint": packet["fingerprint"],
         "declared_as_of_utc": packet["declared_status"]["as_of_utc"],
-        "operational_release_snapshot": packet["declared_status"].get("operational_release_snapshot"),
         "operational_identity_requires_fresh_original_readback": True,
         "owner": "PROJECT_BACKLOG.md / Issue #353 for project-wide execution",
         "decision_order": list(selector["decision_order"]),
