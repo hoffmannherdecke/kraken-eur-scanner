@@ -20,7 +20,7 @@ function healthModel(v,elapsedSec,connected){
  return {...result,tone:"good",label:"System beim letzten Bericht gesund",note:"Scanner und Writer bestätigt. Zeitgestempelter Nachweis, keine Echtzeitgarantie."};
 }
 let healthReceiptMs=null,healthConnected=false,healthLastPollMs=null;
-function healthReset(){healthReceiptMs=null;healthConnected=false;healthLastPollMs=null;$('health-banner').hidden=true;}
+function healthReset(){healthReceiptMs=null;healthConnected=false;healthLastPollMs=null;$('health-banner').hidden=true;closeHealthDetails();$('health-details-list').replaceChildren();delete $('health-details-list').dataset.key;$('health-details-time').textContent='';}
 function healthReceived(){healthReceiptMs=Date.now();healthConnected=true;paintHealth();}
 function healthFailed(){healthConnected=false;paintHealth();}
 function paintHealth(){
@@ -32,7 +32,7 @@ function paintHealth(){
  $('health-note').textContent=m.note;
  const age=m.hostAge===null?'nicht belegt':m.hostAge<60?m.hostAge+' Sek.':Math.floor(m.hostAge/60)+' Min. '+(m.hostAge%60)+' Sek.';
  $('health-age').textContent='Hostbericht: '+age+' alt · '+(m.hostAt?time(m.hostAt):'Zeit nicht belegt');
- $('health-writer').textContent='Writer: '+m.writer;$('health-scanner').textContent='Scanner: '+m.scanner;paintIncident();
+ $('health-writer').textContent='Writer: '+m.writer;$('health-scanner').textContent='Scanner: '+m.scanner;renderHealthDetails(m);paintIncident();
 }
 function healthTick(){
  if(document.hidden||!access)return;
@@ -41,4 +41,22 @@ function healthTick(){
 }
 window.addEventListener('offline',healthFailed);
 window.addEventListener('online',()=>{if(!document.hidden&&access)refresh();});
-$('health-details').addEventListener('click',()=>document.querySelector('nav button[data-page="system"]').click());
+function closeHealthDetails(){
+ const button=$('health-details');button.setAttribute('aria-expanded','false');button.textContent='Details';$('health-details-content').hidden=true;
+}
+function renderHealthDetails(m){
+ const box=$('health-details-list'),hosts=Array.isArray(data?.hosts)?data.hosts.filter(h=>h?.node_id==='MINI-PC'):[],h=hosts.length===1?hosts[0]:null;
+ const issues=Array.isArray(h?.issues)?h.issues.slice(0,30):[];
+ const labels={v3_paper_single_writer:'V3-Writer',runtime_supervisor:'Laufzeitüberwachung',kraken_universe_heartbeat:'Kraken-Scanner',minipc_status_sync:'Statusübertragung',v2r4_ws_shadow_outcomes:'V2R4-Nachbetrachtung',v2r4_paper_wait:'V2R4-Warteüberwachung',v2r4_paper_candidates:'V2R4-Kandidaten'};
+ const list=issues.map(i=>({label:labels[i?.check]||(/^[a-z0-9_]{1,80}$/i.test(i?.check||'')?i.check:'Weitere Hostprüfung'),severity:['WARNING','CRITICAL'].includes(i?.severity)?i.severity:'Nicht eingeordnet',detail:typeof i?.detail==='string'?i.detail.slice(0,500):'Kein Detail übermittelt.'}));
+ const key=JSON.stringify([m.label,m.note,h?.observed_at,list]);
+ if(box.dataset.key===key)return;
+ box.dataset.key=key;$('health-details-time').textContent='Hostbericht: '+time(h?.observed_at)+' · '+m.label;
+ box.replaceChildren(el('p',m.note,'sub'),...list.map(i=>{const row=el('div',undefined,'health-detail-row');row.append(el('strong',i.label+' · '+(i.severity==='WARNING'?'Warnung':i.severity==='CRITICAL'?'Kritisch':i.severity)),el('p',i.detail));return row;}));
+ if(!list.length)box.append(el('p','Keine einzelnen Warnungen im vorhandenen Bericht übermittelt. Keine zusätzliche Ursachenfeststellung.','sub'));
+}
+$('health-details').addEventListener('click',()=>{
+ if(!data)return;
+ if(!$('health-details-content').hidden){closeHealthDetails();return;}
+ const button=$('health-details');$('health-details-content').hidden=false;button.setAttribute('aria-expanded','true');button.textContent='Schließen';paintHealth();
+});

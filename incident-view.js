@@ -108,15 +108,17 @@ function paintIncident(){
  $('incident-create').disabled=!ctx;
  $('incident-detected').textContent=ctx?'Abweichung / Klärungsbedarf':'Kein Störungsauftrag verfügbar';
  $('incident-context').textContent=ctx?'App-Abruf: '+time(ctx.readAt)+' · Hostbericht: '+time(ctx.hostAt)+' · '+(ctx.current?'Zeitgestempelter Befund':'Aktualität nicht bestätigt'):'Kein aktuell vorbereitbarer Störungsauftrag.';
- const lines=ctx?.diagnostics||[],diagnosticKey=JSON.stringify(lines),box=$('incident-diagnostics');
- if(box.dataset.key!==diagnosticKey||(!box.childNodes.length&&lines.length)){box.dataset.key=diagnosticKey;box.replaceChildren(...lines.map(d=>{const p=el('div',undefined,'incident-detail');p.append(el('strong',d.label),el('p',d.value),el('small',d.next));return p;}));}
+ const lines=ctx?.diagnostics||[],diagnosticKey=JSON.stringify([!!ctx,lines]),box=$('incident-diagnostics');
+ if(box.dataset.key!==diagnosticKey||(!box.childNodes.length&&lines.length)){box.dataset.key=diagnosticKey;box.replaceChildren(...(lines.length?lines.map(d=>{const p=el('div',undefined,'incident-detail');p.append(el('strong',d.label),el('p',d.value),el('small',d.next));return p;}):[el('p',ctx?'Die gemeldete Warnung ist noch nicht einer strukturierten Fehlerkategorie zugeordnet. Die konkreten Originalmeldungen stehen unter Details.':'Kein aktueller Störungsauftrag verfügbar.','sub')]));}
  if(incidentPrepared&&(!ctx||ctx.key!==incidentPrepared.key))clearIncident('Befund geändert oder nicht mehr verfügbar. Auftrag anhand der neuen Lage vorbereiten.');
 }
 $('incident-action').addEventListener('click',()=>{
  if(!activeIncident())return;
+ closeHealthDetails();
  document.querySelector('nav button[data-page="system"]').click();
- $('incident-view').scrollIntoView({block:'start',behavior:'auto'});
- $('incident-create').focus({preventScroll:true});
+ const banner=$('health-banner'),target=$('incident-view');
+ target.style.scrollMarginTop=Math.ceil(banner.getBoundingClientRect().height+Math.max(0,parseFloat(getComputedStyle(banner).top)||0)+12)+'px';
+ requestAnimationFrame(()=>{if(!$('system').hidden&&activeIncident())target.scrollIntoView({block:'start',behavior:'auto'});});
 });
 $('incident-create').addEventListener('click',()=>{
  const ctx=activeIncident(),draft=incidentDraft(ctx);
