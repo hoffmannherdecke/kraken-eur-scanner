@@ -8,6 +8,7 @@ name: Autonomous project milestone control
     branches: [main]
     paths:
       - 'tools/project_milestone_controller.py'
+      - 'tools/context_before_action.py'
       - 'tools/select-autonomous-implementation.py'
       - 'research/autonomous-implementation-queue-v1.json'
       - 'project-current-state.json'

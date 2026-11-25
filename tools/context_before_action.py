@@ -182,9 +182,24 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
         last = re.search(r'<([^<>]+)>;\s*rel="last"', link)
         if last:
             last_url = last.group(1)
-            require(last_url.startswith(GITHUB_API_BASE + f"/issues/{number}/comments?"),
+            # GitHub can emit its stable numeric repository route in Link.
+            # Validate the exact repository/issue and reconstruct the named
+            # canonical request; never send credentials to a supplied URL.
+            from urllib.parse import urlsplit, parse_qs
+            target = urlsplit(last_url)
+            valid_paths = {
+                f"/repos/{CANONICAL_GITHUB_REPO}/issues/{number}/comments",
+                f"/repositories/1379466125/issues/{number}/comments",
+            }
+            params = parse_qs(target.query, keep_blank_values=True)
+            pages = params.get("page", [])
+            require(target.scheme == "https" and target.netloc == "api.github.com"
+                    and target.path in valid_paths and not target.fragment
+                    and set(params) == {"per_page", "page"}
+                    and params["per_page"] == ["10"] and len(pages) == 1
+                    and bool(re.fullmatch(r"[1-9][0-9]*", pages[0])),
                     "unexpected GitHub owner pagination link")
-            comments, _ = getter(last_url)
+            comments, _ = getter(comments_url + "&page=" + pages[0])
             require(isinstance(comments, list), "latest owner comments unavailable")
         # Keep the last five original owner receipts in the handoff. A stale
         # structured action view is never permission to replay a completed step.
