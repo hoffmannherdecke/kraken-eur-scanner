@@ -28,3 +28,14 @@ nav{background:#101b2bee;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur
 @media(max-width:540px){main{padding:18px 13px calc(105px + env(safe-area-inset-bottom))}header{margin-bottom:14px}.brand img{width:39px;height:39px}.brand h1{font-size:24px}.brand .sub{font-size:11px}.panel{padding:13px;border-radius:14px}.hero{padding:15px}.num{font-size:28px}.metrics .panel{padding:13px}h2{font-size:19px}nav{flex-wrap:nowrap;gap:2px;padding-left:3px;padding-right:3px}nav button{flex:1 1 0;max-width:none;min-width:0;padding:5px 0;min-height:52px;font-size:10px;letter-spacing:-.2px}nav button svg{width:19px;height:19px}.quote-number{font-size:22px}}
 @media(max-width:355px){nav button{font-size:9px}.brand .sub{font-size:10px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* Persistent operational status across all app sections */
+.health-banner{position:sticky;top:0;z-index:4;margin:0 0 14px;padding:13px 16px;border:1px solid #536172;border-left:5px solid #adbed1;border-radius:12px;background:#192636;box-shadow:0 5px 22px #0005;color:var(--fg)}
+.health-banner[hidden]{display:none}
+.health-banner[data-tone=good]{border-left-color:#7de0ac;background:#15352d}
+.health-banner[data-tone=warn]{border-left-color:#f4cf8a;background:#392e20}
+.health-banner[data-tone=bad]{border-left-color:#ff858c;background:#3b202c;border-color:#b55e6a}
+.health-banner[data-tone=unknown]{border-left-color:#adbed1;background:#253041}
+.health-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.health-top strong{font-size:18px;line-height:1.25}.health-top strong:before{content:"●";margin-right:8px;color:#adbed1}.health-banner[data-tone=good] strong:before{color:#7de0ac}.health-banner[data-tone=warn] strong:before{color:#f4cf8a}.health-banner[data-tone=bad] strong:before{color:#ff858c}
+#health-details{padding:5px 9px;min-height:34px;font-size:12px;background:#ffffff0d;border:1px solid #ffffff35;flex-shrink:0}.health-banner p{font-size:13px;margin:5px 0}.health-checks{display:flex;gap:6px 15px;flex-wrap:wrap;font-size:12px;font-weight:600}.health-banner small{display:block;margin-top:5px;color:#d4deea;font-size:11px}
+@media(max-width:540px){.health-banner{padding:9px 10px;top:0;border-radius:9px;margin-bottom:10px}.health-top strong{font-size:15px}.health-banner p{font-size:12px;line-height:1.35}.health-checks{font-size:11px;gap:3px 9px}.health-banner small{font-size:10px}}
