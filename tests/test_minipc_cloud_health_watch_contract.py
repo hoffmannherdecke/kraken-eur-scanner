@@ -48,9 +48,10 @@ class Response:
 
 class CloudWatchContract(unittest.TestCase):
     @staticmethod
-    def row(status="HEALTHY", minutes_ago=2):
+    def row(status="HEALTHY", minutes_ago=2, writer_ok=True, scanner_ok=True):
         when = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=minutes_ago)
-        return {"node_id": "MINI-PC", "observed_at": when.isoformat(), "status": status}
+        return {"node_id": "MINI-PC", "observed_at": when.isoformat(), "status": status,
+                "writer_ok": writer_ok, "scanner_ok": scanner_ok}
 
     def execute_existing_code(self, row=None, previous="OK", last_alert=None):
         logs = io.StringIO()
@@ -61,6 +62,9 @@ class CloudWatchContract(unittest.TestCase):
             url = request.full_url
             method = request.get_method()
             if method == "GET" and "minipc_status_current?" in url:
+                self.assertIn("node_id=eq.MINI-PC", url)
+                self.assertIn("writer_ok:payload", url)
+                self.assertIn("scanner_ok:payload", url)
                 return Response([] if row is None else [row])
             if method == "GET" and "minipc_status_alert_state?" in url:
                 return Response([{
@@ -111,7 +115,7 @@ class CloudWatchContract(unittest.TestCase):
         self.assertEqual(x["writes"], [])
 
     def test_stale_source_alerts(self):
-        x = self.execute_existing_code(self.row(minutes_ago=25))
+        x = self.execute_existing_code(self.row(minutes_ago=6))
         self.assertEqual(x["reports"][-1]["condition"], "STALE")
         self.assertEqual(len(x["slack"]), 1)
 
@@ -134,18 +138,45 @@ class CloudWatchContract(unittest.TestCase):
         self.assertIn("wieder erreichbar", x["slack"][0])
         self.assertIsNotNone(x["writes"][-1]["last_recovery_at"])
 
-    def test_known_warning_gap_alert_ok_is_not_host_health(self):
+    def test_other_warning_with_positive_core_checks_is_quiet(self):
         x = self.execute_existing_code(self.row(status="WARNING"))
         self.assertEqual(x["reports"][-1]["status"], "WARNING")
         self.assertEqual(x["reports"][-1]["condition"], "OK")
         self.assertEqual(x["slack"], [])
-        # CHARACTERIZATION ONLY: never present this alert OK as HEALTHY.
+        # Core checks are positive, but other warnings remain visible in the app.
 
-    def test_known_future_timestamp_gap_alert_ok_is_not_host_health(self):
+    def test_future_timestamp_requests_diagnosis_not_repair(self):
         x = self.execute_existing_code(self.row(minutes_ago=-3))
-        self.assertLess(x["reports"][-1]["age_minutes"], -2)
-        self.assertEqual(x["reports"][-1]["condition"], "OK")
-        # CHARACTERIZATION ONLY: future proof remains invalid.
+        self.assertEqual(x["reports"][-1]["condition"], "STALE")
+        self.assertEqual(x["reports"][-1]["reason"], "HOST_CLOCK_UNCONFIRMED")
+        self.assertIn("KRYPTO_V3_DIAGNOSE_V1", x["slack"][0])
+
+    def test_writer_failure_inside_warning_escalates(self):
+        x = self.execute_existing_code(self.row("WARNING", writer_ok=False))
+        self.assertEqual(x["reports"][-1]["reason"], "V3_WRITER_CHECK_FAILED")
+        self.assertEqual(len(x["slack"]), 1)
+        self.assertIn("KRYPTO_V3_DIAGNOSE_V1", x["slack"][0])
+        self.assertIn("Keine automatische Reparatur", x["slack"][0])
+
+    def test_scanner_failure_inside_warning_escalates(self):
+        x = self.execute_existing_code(self.row("WARNING", scanner_ok=False))
+        self.assertEqual(x["reports"][-1]["reason"], "SCANNER_CHECK_FAILED")
+        self.assertEqual(len(x["slack"]), 1)
+
+    def test_stale_negative_is_not_current_core_failure(self):
+        x = self.execute_existing_code(self.row("WARNING", minutes_ago=6, writer_ok=False))
+        self.assertEqual(x["reports"][-1]["reason"], "HOST_REPORT_STALE")
+
+    def test_missing_core_evidence_does_not_clear_incident(self):
+        x = self.execute_existing_code(self.row("WARNING", writer_ok=None), previous="CRITICAL")
+        self.assertEqual(x["reports"][-1]["condition"], "UNKNOWN")
+        self.assertEqual(x["writes"], [])
+        self.assertEqual(x["slack"], [])
+
+    def test_strings_are_not_positive_boolean_evidence(self):
+        x = self.execute_existing_code(self.row("HEALTHY", writer_ok="true"))
+        self.assertEqual(x["reports"][-1]["condition"], "UNKNOWN")
+        self.assertEqual(x["writes"], [])
 
     def test_warning_recovery_is_only_reachability(self):
         x = self.execute_existing_code(self.row(status="WARNING"), previous="CRITICAL")

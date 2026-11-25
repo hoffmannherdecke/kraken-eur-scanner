@@ -61,7 +61,7 @@ jobs:
 
           _,rows=request(
               "GET",
-              "/rest/v1/minipc_status_current?select=node_id,observed_at,status&order=observed_at.desc&limit=1"
+              "/rest/v1/minipc_status_current?select=node_id,observed_at,status,writer_ok:payload->checks->v3_paper_single_writer->ok,scanner_ok:payload->checks->kraken_universe_heartbeat->ok&node_id=eq.MINI-PC&limit=1"
           )
           if not rows:
               print("MINIPC_STATUS_NOT_ACTIVATED")
@@ -74,12 +74,32 @@ jobs:
           age_min=(now-observed).total_seconds()/60.0
           status=str(row.get("status") or "UNKNOWN").upper()
 
-          if age_min>20:
+          writer=row.get("writer_ok")
+          scanner=row.get("scanner_ok")
+          # One existing alert owner; no trading or restart authorization.
+          reason="NO_ACTIONABLE_CORE_FAILURE"
+          if age_min < -0.5:
               condition="STALE"
+              reason="HOST_CLOCK_UNCONFIRMED"
+          elif age_min>5:
+              condition="STALE"
+              reason="HOST_REPORT_STALE"
           elif status=="CRITICAL":
               condition="CRITICAL"
-          else:
+              reason="HOST_CRITICAL"
+          elif writer is False:
+              condition="CRITICAL"
+              reason="V3_WRITER_CHECK_FAILED"
+          elif scanner is False:
+              condition="CRITICAL"
+              reason="SCANNER_CHECK_FAILED"
+          elif writer is True and scanner is True and status in {"HEALTHY","WARNING"}:
               condition="OK"
+          else:
+              # Missing evidence cannot clear an existing incident.
+              print(json.dumps({"node_id":node,"status":status,
+                                "condition":"UNKNOWN","reason":"CORE_CHECKS_UNCONFIRMED"}))
+              raise SystemExit(0)
 
           state_path=(
               "/rest/v1/minipc_status_alert_state?select=node_id,last_condition,last_alert_at,last_recovery_at"
@@ -117,21 +137,17 @@ jobs:
                   or (now-last_alert).total_seconds()>=7200
               )
               if due:
-                  if condition=="STALE":
-                      slack(
-                          f"MINI-PC Status ist seit {age_min:.0f} Minuten veraltet. "
-                          "Bitte Netzwerk/Strom/Windows-Dienste prüfen. Kein Handelssignal."
-                      )
-                  else:
-                      slack(
-                          f"MINI-PC meldet CRITICAL (letzter Status vor {age_min:.0f} Min.). "
-                          "Bitte Infrastruktur prüfen. Kein Handelssignal."
-                      )
+                  slack(
+                      f"KRYPTO_V3_DIAGNOSE_V1 | {reason} | MINI-PC | "
+                      f"Hostbericht UTC {observed.isoformat()} | Alter {age_min:.1f} Min. | "
+                      "Nur Diagnose: aktuellen Originalnachweis und bestehenden Arbeitsauftrag abgleichen. "
+                      "Keine automatische Reparatur, kein Neustart, kein Handelssignal."
+                  )
                   sent_alert=True
           elif previous in {"STALE","CRITICAL"}:
               slack(
                   f"MINI-PC Status wieder erreichbar: {status}, Alter {age_min:.1f} Min. "
-                  "Recovery bestätigt. Keine Handelsaktion."
+                  "Kernprüfungen zuletzt positiv; kein vollständiger Gesundheits- oder Dauerbetriebsnachweis. Keine Handelsaktion."
               )
               sent_recovery=True
 
@@ -154,6 +170,7 @@ jobs:
               "status":status,
               "age_minutes":round(age_min,2),
               "condition":condition,
+              "reason":reason,
               "previous":previous,
               "alert_sent":sent_alert,
               "recovery_sent":sent_recovery,
