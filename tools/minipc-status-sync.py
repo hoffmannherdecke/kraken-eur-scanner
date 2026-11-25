@@ -120,7 +120,7 @@ def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser()
     ap.add_argument("--trading-root", type=Path, default=Path.home() / "Trading")
     ap.add_argument("--endpoint", default=DEFAULT_ENDPOINT)
-    ap.add_argument("--interval-seconds", type=int, default=300)
+    ap.add_argument("--interval-seconds", type=int, default=60)
     ap.add_argument("--once", action="store_true")
     args = ap.parse_args()
     if args.interval_seconds < 60 or args.interval_seconds > 3600:

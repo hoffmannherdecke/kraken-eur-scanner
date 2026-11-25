@@ -29,7 +29,7 @@ $cleanupArgs = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$clea
 $backupArgs = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$backup`" -TradingRoot `"$TradingRoot`""
 
 $healthAction = New-ScheduledTaskAction -Execute $ps -Argument $healthArgs
-$healthTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
+$healthTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 3650)
 $healthStartup = New-ScheduledTaskTrigger -AtStartup
 $healthSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
 Register-ScheduledTask -TaskName "CryptoMiniPC-Health" -Action $healthAction -Trigger @($healthTrigger,$healthStartup) -Settings $healthSettings -User "SYSTEM" -RunLevel Highest -Force | Out-Null
@@ -56,7 +56,7 @@ $exit = $LASTEXITCODE
 
 Write-Host ""
 Write-Host "Installiert:"
-Write-Host "  CryptoMiniPC-Health      -> alle 5 Minuten + bei Systemstart"
+Write-Host "  CryptoMiniPC-Health      -> jede Minute + bei Systemstart"
 Write-Host "  CryptoMiniPC-LogCleanup  -> täglich 04:20"
 Write-Host "  CryptoMiniPC-Backup      -> täglich 04:00"
 Write-Host "Health state: $(Join-Path $TradingRoot 'State\minipc-health.json')"
