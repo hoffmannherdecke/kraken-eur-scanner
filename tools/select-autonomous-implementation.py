@@ -10,9 +10,11 @@ import hashlib
 import json
 from pathlib import Path
 try:
-    from tools.project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments, historical_backlog_reconciliation
+    from tools.project_followthrough_router import (v3_five_source_followthrough, project_implementation_commitments,
+        historical_backlog_reconciliation, operational_release_snapshot)
 except ModuleNotFoundError:
-    from project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments, historical_backlog_reconciliation
+    from project_followthrough_router import (v3_five_source_followthrough, project_implementation_commitments,
+        historical_backlog_reconciliation, operational_release_snapshot)
 import datetime as dt
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -119,6 +121,20 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1","status":"BLOCKED","errors":errs,
                 "ready":[],"safe_work_requested":False,"strategy_changed":False,"orders":False,
                 "real_money_actions":False}
+    milestone=operational_release_snapshot(state,dt.datetime.now(dt.timezone.utc))
+    if milestone is not None:
+        # Offline queue selection is not evidence of a live task. Existing
+        # owner routing exposes candidate obligations, but only current
+        # original evidence and an actual owner decision can select new work.
+        return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1",
+                "status":"CURRENT_ORIGINAL_OWNER_REVIEW_REQUIRED",
+                "ready":[], "safe_work_requested":False,
+                "last_verified_operational_release":milestone,
+                "active_work_package_ids":active_work_packages,
+                "active_implementation_pr_count":active_pr_count,
+                "next":"READ_CURRENT_MAIN_AND_OWNER_AND_RELEVANT_HOST_CLOUD_ORIGINALS",
+                "registered_candidate_source":"research/project-followthrough-routing-v1.json",
+                "strategy_changed":False,"orders":False,"real_money_actions":False}
     open_work=[]
     tracks=state.get("observational_research_tracks") or []
     h10=next((x for x in tracks if x.get("id")=="V3-H10-CAPTURE-001"),None)

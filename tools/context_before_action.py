@@ -254,12 +254,22 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
     dashboard = (read_v3_release_dashboard(getter)
                  if work_domain == "strategy_release" and strategy_version == "V3"
                  else None)
+    if dashboard is not None and all(v == "DONE" for v in dashboard["states"].values()):
+        # The AP work selector is terminal, even if the old action view still
+        # carries a historical NEXT. Never treat completion as permission.
+        release_view = {"status": "V3_RELEASE_WORK_COMPLETE_NO_NEXT",
+                        "next_open_gate": None, "ready_to_execute": False,
+                        "candidate_verdict": "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE",
+                        "no_repeat_without_new_original_defect": True}
     for number, version in issue_versions.items():
         repeat, _ = getter(GITHUB_API_BASE + f"/issues/{number}")
         require(isinstance(repeat, dict) and isinstance(repeat.get("body"), str)
                 and (repeat.get("updated_at"), hashlib.sha256(
                     repeat["body"].encode("utf-8")).hexdigest()) == version,
                 f"issue #{number} changed during owner readback; retry with fresh original")
+    if dashboard is not None:
+        require(read_v3_release_dashboard(getter) == dashboard,
+                "canonical V3 dashboard changed during readback; retry before action")
     after, _ = getter(GITHUB_API_BASE + "/commits/main")
     require(isinstance(after, dict) and after.get("sha") == sha,
             "GitHub main changed during owner readback; retry before action")
@@ -1537,6 +1547,14 @@ def build(root: Path, scope: str, work_domain: str = "project_general", strategy
         ],
         "required_next_step": "Use connected GitHub/Cloud first; then check reviewed bounded Mini-PC tasks. Read original decisions and request manual user action only after documenting a concrete blocker.",
     }
+    if operational_release is not None:
+        payload["legacy_control_decisions_not_current_work"] = True
+        for entry in payload["control_decision_ack_reconciliation"]:
+            entry["historical_baseline_not_current_work"] = True
+        # Source-only packet must not advertise the archived release path as
+        # the next operation; fresh owner reader decides actual work.
+        if "existing_transition_execution_path" in payload["next_action_selector"]:
+            payload["next_action_selector"]["historical_transition_execution_path"] = payload["next_action_selector"].pop("existing_transition_execution_path")
     if scope in ("strategy", "research") and work_domain in ("strategy_development", "strategy_release") and strategy_version == "V3":
         payload["strategy_learning_routes"] = v3_decision_inheritance(root)
         payload["strategy_learning_routes"]["scope_warning"] = (

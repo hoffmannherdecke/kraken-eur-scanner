@@ -11,9 +11,20 @@ spec=importlib.util.spec_from_file_location("selector",ROOT/"tools/select-autono
 selector=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(selector)
 QUEUE=json.loads((ROOT/"research/autonomous-implementation-queue-v1.json").read_text())
-STATE=json.loads((ROOT/"project-current-state.json").read_text())
+CURRENT_STATE=json.loads((ROOT/"project-current-state.json").read_text())
+# Existing tests deliberately exercise the historical predecessor selector.
+STATE=copy.deepcopy(CURRENT_STATE)
+STATE.pop("operational_release_snapshot", None)
 
 class SafeAutonomyTests(unittest.TestCase):
+    def test_current_release_does_not_requeue_archived_work(self):
+        result=selector.select(ROOT,QUEUE,CURRENT_STATE,{})
+        self.assertEqual(result["status"],"CURRENT_ORIGINAL_OWNER_REVIEW_REQUIRED")
+        self.assertEqual(result["ready"],[])
+        self.assertFalse(result["safe_work_requested"])
+        self.assertFalse(result["orders"])
+        self.assertFalse(result["real_money_actions"])
+
     def test_post_v3_source_adoption_is_safe_real_work_only_after_verified_cutover(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)

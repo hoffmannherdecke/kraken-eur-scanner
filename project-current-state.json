@@ -1280,6 +1280,9 @@
     "automatic_activation_allowed": false,
     "live_runtime_independently_checked": false,
     "requires_fresh_original_readback": true,
-    "legacy_active_strategy_is_research_baseline": true
+    "legacy_active_strategy_is_research_baseline": true,
+    "strategy_revision": "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001",
+    "identity_last_readback_at_utc": "2026-11-25T09:17:14.123779Z",
+    "identity_source": "public.paper_series active row, independent read-only Cloud lookup; release proof remains original #99"
   }
 }

@@ -54,6 +54,44 @@ def valid_receipt(root: Path, reviews: dict, key: str, due: dt.datetime, now: dt
     return due <= completion <= now and (root / report).is_file()
 
 
+def operational_release_snapshot(state: dict, now: dt.datetime) -> dict | None:
+    """Dated release milestone, never a live health or work authorization.
+
+    Explicit historical simulations before this observation retain old contracts.
+    Normal current selection cannot fall back to the frozen predecessor.
+    """
+    item = state.get("operational_release_snapshot")
+    if item is None:
+        return None
+    require(isinstance(item, dict)
+            and item.get("kind") == "LAST_VERIFIED_OPERATIONAL_RELEASE_NOT_LIVE_STATUS"
+            and item.get("mode") == "PAPER"
+            and item.get("real_money_actions") is False
+            and item.get("automatic_activation_allowed") is False
+            and item.get("requires_fresh_original_readback") is True
+            and item.get("legacy_active_strategy_is_research_baseline") is True
+            and item.get("live_runtime_independently_checked") is False
+            and isinstance(item.get("source"), str)
+            and re.fullmatch(r"https://github[.]com/hoffmannherdecke/kraken-eur-scanner/issues/[0-9]+#issuecomment-[0-9]+", item["source"])
+            and isinstance(item.get("strategy_version"), str)
+            and isinstance(item.get("strategy_revision"), str)
+            and isinstance(item.get("series_id"), str)
+            and item["strategy_revision"].startswith(item["strategy_version"] + "-")
+            and item["series_id"].startswith("PAPER-" + item["strategy_version"] + "-")
+            and item.get("release_milestone") == item["strategy_version"] + "_PAPER_OPERATIONAL",
+            "invalid operational release evidence; never fall back to predecessor")
+    observed = utc(item["observed_at_utc"])
+    return item if now >= observed else None
+
+
+# These are predecessor/initial-cutover obligations, not recurring operations.
+# Keep their original evidence and historical simulation, without a new PASS.
+HISTORICAL_RELEASE_OBLIGATIONS = frozenset((
+    "V3_EXPERIMENTAL_PAPER_SIX_PROOFS", "V3_CANARY_28H_PHYSICAL_CLOSURE",
+    "V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH",
+))
+
+
 # The daily existing Work route is the executor handoff, not itself an executor.
 # Documentary ACKs need original owner+consumer references; these are not a
 # substitute for an independent Supabase/physical Mini-PC readback.
@@ -88,6 +126,16 @@ def v3_five_source_followthrough(root: Path, state: dict, ack: dict,
             and tuple(r.get("stream_id") for r in roles)==expected_streams
             and all(r.get("owner") and r.get("acceptance") for r in roles),
             "five-source role/stream mapping inconsistent")
+    milestone = operational_release_snapshot(state, now)
+    if milestone is not None:
+        return {"kind": plan["kind"],
+                "status": "POST_RELEASE_SOURCE_REVIEW_REQUIRES_CURRENT_ORIGINAL_EVIDENCE",
+                "open_roles": [], "acknowledged_roles": [], "next_safe_actions": [],
+                "registered_roles": [r["id"] for r in roles],
+                "last_verified_release_source": milestone["source"],
+                "no_paper_start_block": True, "runtime_changed": False,
+                "no_source_pass_claim": True,
+                "existing_source_steward_and_fachowner_remain_responsible": True}
     transition=state.get("pending_strategy_transition") or {}
     active=state.get("active_strategy") or {}
     revision=active.get("strategy_revision")
@@ -178,6 +226,7 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
     ids=[o.get("id") for o in obligations]
     require(len(ids)==len(set(ids)) and all(isinstance(x,str) for x in ids),
             "duplicate/unregistered future commitment")
+    milestone = operational_release_snapshot(state, now)
     t=state.get("pending_strategy_transition") or {}
     a=state.get("active_strategy") or {}
     physical=(str(a.get("strategy_revision") or "").startswith("V3-")
@@ -252,6 +301,16 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
                     else "READY_SAFE_IMPLEMENTATION" if ready and ob["safe_work"]
                     else "READY_REVIEW_RELEASE_GATED" if ready
                     else "WAIT_FOR_EVIDENCE_GATE")
+        if milestone is not None:
+            # No automatic work from old dates, historical V2R4 rows or the
+            # fact that a release was once successful. Keep genuine followups
+            # discoverable at their existing owners, requiring current facts.
+            if ident in HISTORICAL_RELEASE_OBLIGATIONS:
+                state_name = "HISTORICAL_NOT_CURRENT_WORK_NO_NEW_PASS"
+                block = "INITIAL_RELEASE_OR_PREDECESSOR_ONLY"
+            elif not audited:
+                state_name = "WAIT_CURRENT_ORIGINAL_OWNER_EVIDENCE"
+                block = "CURRENT_MATERIAL_NEED_AND_RELEVANT_ORIGINAL_ACK_REQUIRED"
         states.append({"id":ident,"stream_id":ob["stream_id"],
             "owner":ob["owner"],"trigger":trigger,
             "state":state_name,"blocker":block,
@@ -261,7 +320,8 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
             "requires_user_release":ob["requires_user_release"],
             "safe_work":ob["safe_work"],
             "completion_is_documentary_not_independent_runtime_proof":audited})
-    open_tasks=[s for s in states if not s["completion_is_documentary_not_independent_runtime_proof"]]
+    open_tasks=[s for s in states if not s["completion_is_documentary_not_independent_runtime_proof"]
+                and s["state"] != "HISTORICAL_NOT_CURRENT_WORK_NO_NEW_PASS"]
     # Return ALL ready obligations. The existing Work selector reserves at most
     # two CONCURRENT active packages, then refills on a genuine receipt in the
     # same bounded 10:15 run. Never silently truncate due owners here.
@@ -276,7 +336,8 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
             "no_auto_paper_release":True,"no_auto_trades":True}
 
 
-def historical_backlog_reconciliation(root:Path,ack:dict,now:dt.datetime)->dict:
+def historical_backlog_reconciliation(root:Path,ack:dict,now:dt.datetime,
+                                      state:dict | None = None)->dict:
     """All unchecked historic notes remain visible until independently disposed."""
     config=read_json(root,"research/project-followthrough-routing-v1.json").get(
         "historical_backlog_reconciliation") or {}
@@ -289,6 +350,12 @@ def historical_backlog_reconciliation(root:Path,ack:dict,now:dt.datetime)->dict:
                  "no_new_schedule","no_auto_release","no_auto_cleanup",
                  "no_runtime_truth_from_backlog"):
         require(config.get(flag) is True,"unsafe historic backlog handling "+flag)
+    if state is not None and operational_release_snapshot(state, now) is not None:
+        return {"kind": config["kind"], "status": "HISTORICAL_ONLY_TARGETED_OWNER_REVIEW",
+                "open_checkboxes_total": None, "dispositions_provenance_reviewed": None,
+                "still_unclassified": None, "next_review": [],
+                "legacy_open_box_not_a_live_task_without_review": True,
+                "no_auto_changes": True}
     ledger=((ack.get("acknowledgements") or {})
             .get("historical_backlog_dispositions") or {})
     require(isinstance(ledger,dict),"historic backlog ACK malformed")
@@ -395,11 +462,16 @@ def route(root: Path, now: dt.datetime) -> dict:
     decision_ids = [d.get("id") for d in decisions]
     require(len(decision_ids) == len(set(decision_ids)), "duplicate control decisions")
     reviews = ((ack.get("acknowledgements") or {}).get("control_decision_reviews") or {})
+    milestone = operational_release_snapshot(state, now)
     ready, gated, closed = [], [], []
     for task in decisions:
         task_id = task.get("id")
         require(isinstance(task_id, str) and task_id and task.get("trigger")
                 and task.get("action"), "control decision has no trigger/action")
+        if milestone is not None:
+            gated.append({"id": task_id, "gate": "DECLARED_BASELINE_NOT_CURRENT_WORK",
+                          "requires_current_original_owner_evidence": True})
+            continue
         due_str, key, lag = (task.get("due_at_utc"),
                              task.get("followthrough_ack_key"),
                              task.get("followthrough_max_lag_hours"))
@@ -425,13 +497,16 @@ def route(root: Path, now: dt.datetime) -> dict:
             gated.append({"id": task_id, "gate": "CHECK_DECLARED_TRIGGER_NO_AUTO_START"})
     source_followthrough=v3_five_source_followthrough(root,state,ack,now)
     generic_commitments=project_implementation_commitments(root,state,ack,now)
-    legacy_backlog=historical_backlog_reconciliation(root,ack,now)
+    legacy_backlog=historical_backlog_reconciliation(root,ack,now,state)
     return {
         "v3_paper_five_source_followthrough":source_followthrough,
         "project_implementation_commitments":generic_commitments,
         "historical_backlog_reconciliation":legacy_backlog,
         "kind": "PROJECT_WIDE_WORK_HANDOFF_V1",
-        "status": "REVIEW_DUE" if ready else "NO_DUE_CONTROL_GATE",
+        "status": ("CURRENT_ORIGINAL_OWNER_REVIEW_REQUIRED_NOT_A_WORK_ORDER"
+                   if milestone is not None else "REVIEW_DUE" if ready else "NO_DUE_CONTROL_GATE"),
+        "last_verified_operational_release": milestone,
+        "live_runtime_independently_checked": False,
         "stream_coverage_count": len(streams),
         "crosscut_coverage_count": len(extra),
         "covered_stream_ids": stream_ids,

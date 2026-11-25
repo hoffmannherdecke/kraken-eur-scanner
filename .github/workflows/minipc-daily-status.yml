@@ -200,9 +200,9 @@ jobs:
                               f"Outcomes {completed_outcomes} | "
                               f"aktuell laut Watchdog aktiv {active_outcomes}")
           else:
-              series_metrics=(f"V3 Paper {current_paper['candidate_outcomes']} Kandidaten, "
+              series_metrics=(f"V3 Paper Readiness-View {current_paper['candidate_outcomes']} Ergebniszeilen, "
                               f"{current_paper.get('completed_trades')} Trades | "
-                              "V2R4-Shadow historisch, nicht aktiv")
+                              "kein nativer Journal-Gesamtzähler; V2R4-Shadow historisch, nicht aktiv")
           message=(
               f"{icon} MINI-PC 10:30: {health_state} | "
               f"Status {age_min:.1f}m alt | Kraken {observed_pairs}/{pairs} ({coverage}%) | "

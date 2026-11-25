@@ -1094,6 +1094,11 @@ class LiveOwnerReadbackTests(unittest.TestCase):
         state = read_v3_release_dashboard(fetcher=fetch)
         self.assertIsNone(state["next_task_id"])
         self.assertTrue(all(v == "DONE" for v in state["states"].values()))
+        from tools.context_before_action import live_owner_readback
+        packet=live_owner_readback("strategy_release","V3",fetcher=fetch)
+        self.assertEqual(packet["named_release_gate"]["status"],"V3_RELEASE_WORK_COMPLETE_NO_NEXT")
+        self.assertIsNone(packet["named_release_gate"]["next_open_gate"])
+        self.assertFalse(packet["named_release_gate"]["ready_to_execute"])
 
     def test_stale_main_pin_fails_closed(self):
         from tools.context_before_action import live_owner_readback, ContextGateError
