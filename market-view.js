@@ -70,7 +70,7 @@ async function loadMarket(force=false){
  const jobs=[];if(phase){marketPhaseAttempt=now;jobs.push(['market-phase',episodePanel,readMarketEpisode()]);}
  if(catalog){marketCatalogAttempt=now;jobs.push(['market-registry',registryPanel,marketJSON(MARKET_RAW+'source-registry.json')],['market-candidates',candidatesPanel,marketJSON(MARKET_RAW+'market-source-candidates-v1.json')]);}
  const results=await Promise.allSettled(jobs.map(j=>j[2]));if(g!==marketGeneration)return;let good=0;
- for(let i=0;i<jobs.length;i++){try{if(results[i].status!=='fulfilled')throw Error('Nicht verfügbar');put(jobs[i][0],jobs[i][1](results[i].value));good++;}catch{put(jobs[i][0],panel(el('h3','Datenquelle derzeit nicht verfügbar','warn'),el('p','Kein aktueller Abruf bestätigt. Keine Ersatzwerte.')));}}
+ for(let i=0;i<jobs.length;i++){try{if(results[i].status!=='fulfilled')throw Error('Nicht verfügbar');put(jobs[i][0],jobs[i][1](results[i].value));if(jobs[i][0]==='market-candidates')renderNewsPilots(results[i].value);good++;}catch{if(jobs[i][0]==='market-candidates')put('news-pilots',panel(el('p','Quellenkatalog nicht verfügbar.','warn')));put(jobs[i][0],panel(el('h3','Datenquelle derzeit nicht verfügbar','warn'),el('p','Kein aktueller Abruf bestätigt. Keine Ersatzwerte.')));}}
  $('market-note').textContent=good===jobs.length?'Forschungsabruf: '+time(new Date().toISOString())+' · Phase alle 15 Min., Kataloge stündlich bei sichtbarer Marktansicht.':'Abruf teilweise oder vollständig fehlgeschlagen. Erneut manuell abrufbar.';
  marketBusy=false;$('market-refresh').disabled=false;
 }
