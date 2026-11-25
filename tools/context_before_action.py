@@ -162,7 +162,7 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
     if expected_main is not None:
         require(expected_main == sha, "GitHub main moved; re-read before action")
     owner_numbers = [353]
-    if work_domain == "strategy_release" and strategy_version == "V3":
+    if work_domain in ("operations", "strategy_development", "strategy_release", "research") and strategy_version == "V3":
         owner_numbers.append(99)
     owners = []
     issue_versions = {}
@@ -194,7 +194,7 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
                 f"issue #{number} latest comment shape invalid")
         issue_versions[number] = (issue.get("updated_at"), hashlib.sha256(
             issue["body"].encode("utf-8")).hexdigest())
-        if number == 99:
+        if number == 99 and work_domain == "strategy_release":
             release_view = existing_owner_gate_decision(issue["body"], candidate_id)
             if release_view["status"] == "OWNER_DECLARED_VIEW_CHECKED_NOT_ORIGINAL_RUNTIME_PROOF":
                 # GitHub issue BODY can change without a new comment. PR613
@@ -1502,6 +1502,18 @@ def build(root: Path, scope: str, work_domain: str = "project_general", strategy
         "real_money_actions": active.get("real_money_actions"),
         "live_runtime_independently_checked": False,
     }
+    operational_release = state.get("operational_release_snapshot")
+    if operational_release is not None:
+        # Preserve historical V2R4 research/lineage contract without exposing it
+        # as the current operational strategy. No snapshot is a live heartbeat.
+        declared["legacy_research_baseline"] = {
+            "strategy_revision": declared.pop("strategy_revision"),
+            "strategy_epoch_anchor": declared.pop("strategy_epoch_anchor"),
+            "technical_series_last_verified": declared.pop("technical_series_last_verified"),
+            "declared_paper_status": declared.pop("declared_paper_status"),
+        }
+        declared["operational_release_snapshot"] = operational_release
+        declared["operational_identity_requires_fresh_original_readback"] = True
     operational = existing_operational_evidence_handoff(config, index)
     payload = {
         "kind": "CONTEXT_BEFORE_ACTION_PACKET_V1",
@@ -1600,6 +1612,8 @@ def compact_decision_brief(packet: dict) -> dict:
         "status": packet["status"],
         "fingerprint": packet["fingerprint"],
         "declared_as_of_utc": packet["declared_status"]["as_of_utc"],
+        "operational_release_snapshot": packet["declared_status"].get("operational_release_snapshot"),
+        "operational_identity_requires_fresh_original_readback": True,
         "owner": "PROJECT_BACKLOG.md / Issue #353 for project-wide execution",
         "decision_order": list(selector["decision_order"]),
         "bounded_capabilities": list(selector["bounded_capabilities"]),
@@ -1634,7 +1648,7 @@ def main() -> int:
     p.add_argument("--work-domain", default="project_general",
                    choices=("project_general", "infrastructure", "operations",
                             "strategy_development", "strategy_release", "research"),
-                   help="Task area independent from source scope; only named strategy_release uses a strategy release owner.")
+                   help="Task area independent from source scope; named V3 operational/research/development work also reads its Fachowner.")
     p.add_argument("--strategy-version", default=None,
                    help="Explicit target like V3 or V2R4; scope alone never selects a strategy.")
     p.add_argument("--brief", action="store_true",

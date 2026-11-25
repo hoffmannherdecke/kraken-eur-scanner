@@ -1071,6 +1071,30 @@ class LiveOwnerReadbackTests(unittest.TestCase):
                 packet = live_owner_readback(domain, None, fetcher=self.fake_fetch)
                 self.assertEqual([x["issue"] for x in packet["owners"]], [353])
 
+    def test_named_v3_operations_and_research_read_fachowner_without_release_gate(self):
+        from tools.context_before_action import live_owner_readback
+        for domain in ("operations", "research", "strategy_development"):
+            with self.subTest(domain=domain):
+                packet = live_owner_readback(domain, "V3", fetcher=self.fake_fetch)
+                self.assertEqual([x["issue"] for x in packet["owners"]], [353, 99])
+                self.assertIsNone(packet["named_release_gate"])
+                self.assertIsNone(packet["canonical_v3_task_dashboard"])
+                self.assertTrue(packet["no_trading_or_release_authority"])
+
+    def test_completed_dashboard_has_no_next_ap(self):
+        from tools.context_before_action import read_v3_release_dashboard
+        import re
+        def fetch(url):
+            item, link = self.fake_fetch(url)
+            if url.endswith("/issues/comments/6742581400"):
+                body = re.sub(r"(?m)^- \\[[ x]\\] \\*\\*(AP(?:00|01|02|03|04|05A|05B|05C|06A|06B)) [A-Z0-9_]+:\\*\\*",
+                              r"- [x] **\\1 DONE:**", item["body"])
+                item = dict(item, body=body)
+            return item, link
+        state = read_v3_release_dashboard(fetcher=fetch)
+        self.assertIsNone(state["next_task_id"])
+        self.assertTrue(all(v == "DONE" for v in state["states"].values()))
+
     def test_stale_main_pin_fails_closed(self):
         from tools.context_before_action import live_owner_readback, ContextGateError
         with self.assertRaisesRegex(ContextGateError, "main moved"):

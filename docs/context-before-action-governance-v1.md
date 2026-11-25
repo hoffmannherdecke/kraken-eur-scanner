@@ -1,5 +1,12 @@
 # Kontext vor Aktion — projektübergreifender Arbeitsvertrag v1
 
+**Regulärer Projektbetrieb (Ownerauftrag 25.11.2026):** Dient die Maßnahme dem zuverlässigen, wirtschaftlich erfolgreichen Handelsbetrieb, seiner gezielten Weiterentwicklung oder der notwendigen Vorbereitung des Echtgeldbetriebs? Priorität: stabiler Paper-Dauerbetrieb und Datenintegrität, messbare Wirtschaftlichkeit nach Kosten und Risiko, isoliertes evidenzbasiertes Lernen, gesonderte Echtgeldqualifikation, transparente modulare App. V3_PAPER_OPERATIONAL ist am 25.11.2026 08:42:41 MEZ nachgewiesen ([Original](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-7156221932)); abgeschlossene APs sind keine Arbeitsaufträge. Aktuelle Betriebs- und Wirtschaftsqualität gesondert belegen. Keine automatischen Echtgeldrechte, Strategiewechsel, Lease-Verlängerung, STOP/CAS/Writer-Aktion, neue Scheduler/Manager oder Kosten.
+
+**Aktualität vor jeder materiellen Aktion und Fortsetzung:** Arbeitsdomäne/Strategie bestimmen, tatsächlichen GitHub-main-SHA und [#353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353) sowie bei V3-Fachfragen (auch operations/research/strategy_development) [#99](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99), die jeweils jüngsten einschlägigen Entscheidungen und Original-ACKs frisch abrufen. Für Betriebszustand zusätzlich frische Host-/Cloud-Originale; für Freigaben gültige exakte Ownerentscheidung. Bei widersprüchlichen oder während des Abrufs geänderten Quellen gezielt neu lesen, andernfalls UNKNOWN/NEEDS_TARGETED_ACK; niemals ältere NEXT, Statuswerte, Hashes oder Chatzusammenfassungen als Ersatz nutzen. Vorhandener Reader `python tools/context_before_action.py --scope operations --work-domain operations --strategy-version V3 --live-brief` liefert nur GitHub-Steuerung; Source-Pakete/Hashes und GitHub-ACKs sind kein aktueller Host-/Cloud-Beleg. Keine automatischen Chat- oder Live-Synchronisationsbehauptungen.
+
+**Historische Abschnitte und frühere Release-NEXTs sind keine gegenwärtige Arbeitsauswahl.** Alte V2R4-Lern-/Epochendaten bleiben unverändert nachvollziehbar; technischer Paper-Betrieb und wirtschaftliche Strategiequalifikation sind verschiedene Nachweise.
+
+
 **Stand:** 2026-10-11. **Umfang:** Arbeits- und Entwicklungsprozess, KEINE Trading- oder Runtime-Freigabe.
 
 ## Warum

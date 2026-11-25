@@ -6,6 +6,7 @@
   "authority": {
     "purpose": "Single machine-readable authority for current project/strategy/control-plane state.",
     "precedence": [
+      "For operational strategy identity and work selection, read the current original owner and host/cloud proofs; operational_release_snapshot is a dated last verified record, never live status. Legacy active_strategy and pending_strategy_transition below retain the historical V2R4 research/validator contract and must not be used as current operational identity.",
       "Live runtime evidence in Supabase/MINI-PC is authoritative for instantaneous health/evidence counts.",
       "This file is authoritative for declared strategy/research freeze and shadow lineage; technical live series may rotate independently; the last-verified operational-series snapshot below is dated and never supersedes real-time Supabase/MINI-PC.",
       "docs/master-version-register.md is authoritative for version/history/component records.",
@@ -76,7 +77,8 @@
         "observed_at_utc": "2026-10-09T19:50:40Z"
       }
     ],
-    "strategy_epoch_closed_segments_rule": "APPEND_ONLY_EACH_AUTHORIZED_TECHNICAL_ROTATION_SUM_DISJOINT_CLOSED_SEGMENTS_PLUS_ONE_LIVE_SEGMENT_NEVER_RESET_OR_DOUBLE_COUNT"
+    "strategy_epoch_closed_segments_rule": "APPEND_ONLY_EACH_AUTHORIZED_TECHNICAL_ROTATION_SUM_DISJOINT_CLOSED_SEGMENTS_PLUS_ONE_LIVE_SEGMENT_NEVER_RESET_OR_DOUBLE_COUNT",
+    "status_semantics": "HISTORICAL_V2R4_RESEARCH_LINEAGE_NOT_CURRENT_OPERATIONAL_STRATEGY"
   },
   "predecessor": {
     "strategy_revision": "V2R3-2026-09-28",
@@ -1248,7 +1250,8 @@
       "canary_deadline_utc": "2026-10-13T12:00:12.2795431Z",
       "work_final_ack": "NOT_CLAIMED",
       "runtime_change_authorized": false
-    }
+    },
+    "status_semantics": "HISTORICAL_PRE_AP06B_TRANSITION_CONTRACT_NOT_CURRENT_OPERATIONAL_STATUS"
   },
   "v3_release_work_selection": {
     "kind": "V3_RELEASE_LIVE_OWNER_POINTER_V1",
@@ -1261,5 +1264,22 @@
     "legacy_strategy_series_is_historical": true,
     "isolated_aftercare_equivalence": "PR699_SCOPED_AND_INDEPENDENTLY_WITNESSED",
     "no_auto_stage4_stop_cas_writer": true
+  },
+  "operational_release_snapshot": {
+    "kind": "LAST_VERIFIED_OPERATIONAL_RELEASE_NOT_LIVE_STATUS",
+    "strategy_version": "V3",
+    "mode": "PAPER",
+    "release_milestone": "V3_PAPER_OPERATIONAL",
+    "observed_at_utc": "2026-11-25T07:42:41Z",
+    "series_id": "PAPER-V3-20261124T140152Z",
+    "source": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-7156221932",
+    "work_selection_owner": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353",
+    "ap_dashboard": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6742581400",
+    "economic_qualification": "NOT_DEMONSTRATED_BY_AP06B",
+    "real_money_actions": false,
+    "automatic_activation_allowed": false,
+    "live_runtime_independently_checked": false,
+    "requires_fresh_original_readback": true,
+    "legacy_active_strategy_is_research_baseline": true
   }
 }
