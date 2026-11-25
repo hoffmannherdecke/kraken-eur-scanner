@@ -4,10 +4,11 @@ function parseMarketEpisode(c){
  const b=c.body.trim();
  if(!/^MARKET_REGIME_EPISODE_V1(?:\s|$)/.test(b))return null;
  const field=(names)=>{for(const n of names){const m=b.match(new RegExp("(?:^|[;\\n])\\s*(?:-\\s*)?"+n+"\\s*[:=]\\s*([^;\\n]+)","m"));if(m)return m[1].trim();}return "";};
- const state=field(["state"]),prior=field(["prior_state"]),observed=field(["observed_at_utc","observed_at"]),known=field(["known_at_utc","known_at"]),bar=field(["last_closed_bar_end_utc"]),source=field(["source"]);
+ const lineField=(names)=>{for(const n of names){const m=b.match(new RegExp("^\\s*(?:-\\s*)?"+n+"\\s*[:=]\\s*([^\\r\\n]+)","m"));if(m)return m[1].trim();}return "";};
+ const state=field(["state"]).replace(/\.$/,""),prior=field(["prior_state"]).replace(/\.$/,""),observed=field(["observed_at_utc","observed_at"]),known=field(["known_at_utc","known_at"]),bar=field(["last_closed_bar_end_utc"]),source=field(["source"]);
  const states=["RISK_OFF","STABILIZING","RECOVERY_CONFIRMED","UNKNOWN"];
- if(!states.includes(state)||!Number.isFinite(Date.parse(observed))||!Number.isFinite(Date.parse(known))||!Number.isFinite(Date.parse(bar))||Date.parse(bar)>Date.parse(observed)||Date.parse(observed)>Date.parse(known)||!(/kraken.*(?:eur|EUR)/i.test(source)))return null;
- return {id:c.id,state,prior:states.includes(prior)?prior:null,observed,known,bar,source,core:field(["core_valid"]),refs:field(["reference_pairs_valid"]),window:field(["current_window_returns_pct","window_2_utc"]),counter:field(["counterevidence","near_term_counterevidence"])};
+ if(!states.includes(state)||!Number.isFinite(Date.parse(observed))||!Number.isFinite(Date.parse(known))||!Number.isFinite(Date.parse(bar))||Date.parse(bar)>Date.parse(observed)||Date.parse(observed)>Date.parse(known)||!(/kraken.*eur/i.test(source)))return null;
+ return {id:c.id,state,prior:states.includes(prior)?prior:null,observed,known,bar,source,core:field(["core_valid"]),refs:field(["reference_pairs_valid"]),window:lineField(["current_window_returns_pct","window_2_utc"]),counter:lineField(["counterevidence","near_term_counterevidence"])};
 }
 function chooseEpisode(comments,now=Date.now()){
  return comments.map(parseMarketEpisode).filter(e=>e&&Date.parse(e.known)<=now).sort((a,b)=>Date.parse(b.known)-Date.parse(a.known)||b.id-a.id)[0]||null;
