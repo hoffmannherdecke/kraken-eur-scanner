@@ -15,3 +15,6 @@ Learning tab: existing Cloud API v2 for 24h candidate/entry/exit evidence and bo
 
 ## 0.10
 In-app lease preparation notice on the overview only when the existing project controller's <=72h rule is due, or the last documented expiry has passed. System shows the last documented lease, verified from the existing public #99 current owner marker and matching original comment, bound to the active Cloud API v2 series. No runtime authorization claim; missing, stale, mismatched evidence is unknown. The existing open-app refresh piggybacks a bounded owner read at most once per 15 minutes per series; no additional timer or background job. Existing Slack/iPhone alert router stays unchanged; no new native app push or duplicate routing. No secrets sent to GitHub.
+
+## 0.11
+System tab: local, copyable review-request drafts for pause of new entries, controlled HOLD, authorized resumption and configuration review. Current unambiguous V3 Cloud series and recent snapshot required; no remote command or POST, no execution approval, no new credentials, no host changes. Existing #99/#353 and working chat remain the only execution route. Old V2R4 STOP and read-only PaperResume are not reused as controls. Direct control and safe selective entry-pause contract remain open. Draft is cleared on logout or changed series.

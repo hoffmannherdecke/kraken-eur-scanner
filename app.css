@@ -6,3 +6,5 @@ nav button{min-width:0;padding-left:3px;padding-right:3px}#market .split>small{m
 #learning a{overflow-wrap:anywhere}#learning .split>div{min-width:0;width:100%}@media(max-width:540px){nav{flex-wrap:wrap}nav button{flex:1 1 29%;max-width:none;min-height:40px}main{padding-bottom:145px}}
 
 .action-notice{border-color:#75613e}#notice-system a,#action-notices a{overflow-wrap:anywhere}
+
+#control-action,#control-draft{display:block;width:100%;margin:8px 0;padding:10px;font:inherit;color:var(--fg);background:var(--bg);border:1px solid #456080;border-radius:10px}#control-draft[hidden]{display:none}#control-view button:disabled{opacity:.45;cursor:not-allowed}#control-draft{resize:vertical}
