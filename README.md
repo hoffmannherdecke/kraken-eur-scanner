@@ -66,3 +66,7 @@ Display the original-host verified 60-second nominal health and status-sync inte
 
 ## 0.18.5
 Shared host freshness thresholds: report due after 180 seconds, stale after 300 seconds, cloud response stale after 75 seconds; 30-second browser polling unchanged. Writer overview and incident context consume the same thresholds. Negative core/critical observations remain visible even when stale, positive core checks with other warnings are distinguished without claiming the supervisor cause. The compact original cloud projection does not prove expected fence-only protection vs actual supervisor faults. No runtime or API changes. Margins allow the measured ~15-second watchdog runtime, two independent 60-second schedules and 30-second app polling; network delays remain possible.
+
+
+### 0.18.6 (candidate)
+Only an exact fresh EXPECTED_V3_FENCE_ONLY_V1 original-host watchdog marker permits a positive protection label. Legacy, missing, stale or ambiguous reports remain warnings/unknown. Other host warnings and negative core/critical evidence take precedence. No change to Supervisor, cloud API, polling, permissions or trading. Requires protected source review and real host/cloud marker acceptance before completion.

@@ -11,9 +11,9 @@ function incidentContext(v,elapsed,connected,now=Date.now()){
  const codes=[];
  if(h?.writer?.ok===false||issues.some(i=>i?.check==="v3_paper_single_writer"))codes.push("WRITER_CHECK_FAILED");
  if(h?.scanner_ok===false)codes.push("SCANNER_CHECK_FAILED");
- if(issues.some(i=>i?.check==="runtime_supervisor"&&["WARNING","CRITICAL"].includes(i.severity)))codes.push("SUPERVISOR_WARNING");
- if(h?.status==="CRITICAL"||issues.some(i=>i?.severity==="CRITICAL"))codes.push("HOST_CRITICAL");
- else if(h?.status==="WARNING"||issues.some(i=>i?.severity==="WARNING"))codes.push("HOST_WARNING");
+ if(!m.fenceProtected&&issues.some(i=>i?.check==="runtime_supervisor"&&["WARNING","CRITICAL"].includes(i.severity)))codes.push("SUPERVISOR_WARNING");
+ if(h?.status==="CRITICAL"||issues.some(i=>i?.severity==="CRITICAL")||supervisorCritical(issues))codes.push("HOST_CRITICAL");
+ else if((h?.status==="WARNING"&&!m.fenceProtected)||issues.some(i=>i?.severity==="WARNING"&&!(m.fenceProtected&&i.check==="runtime_supervisor")))codes.push("HOST_WARNING");
  if(!connected||elapsed>CLOUD_RESPONSE_STALE_SEC||now-Date.parse(v.read_at)>180000)codes.push("CLOUD_READ_NOT_CURRENT");
  const exactHostAge=at?(Date.parse(v.read_at)-Date.parse(at))/1000+elapsed:NaN;
  if(!Number.isFinite(exactHostAge)||m.hostAge===null||exactHostAge>HOST_REPORT_DUE_SEC)codes.push("HOST_REPORT_NOT_CURRENT");
