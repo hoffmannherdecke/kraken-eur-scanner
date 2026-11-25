@@ -89,3 +89,5 @@ async function loadQuoteChart(){
 }
 $('quote-chart-btn').addEventListener('click',loadQuoteChart);
 $('quote-pair').addEventListener('change',()=>{chartGeneration++;chartBusy=false;put('quote-chart');});
+
+function markQuotesStale(){quotesGeneration++;quotesBusy=false;quotesAttempt=0;if(quotesLast)quoteRender(quotesLast.rows,quotesLast.at,true);else $('quote-note').textContent='Kein aktueller Cloud-Abruf – automatische Kursaktualisierung pausiert.';}
