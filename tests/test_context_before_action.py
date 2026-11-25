@@ -1033,6 +1033,20 @@ class LiveOwnerReadbackTests(unittest.TestCase):
         self.assertNotIn("historical PR593",
                          packet["owners"][1]["latest_comments"][-1]["excerpt"])
 
+    def test_numeric_repository_pagination_is_canonicalized_without_following_link(self):
+        from tools.context_before_action import live_owner_readback, ContextGateError
+        def numeric_fetch(url):
+            item, link = self.fake_fetch(url)
+            return item, link.replace(self.BASE, "https://api.github.com/repositories/1379466125")
+        packet = live_owner_readback("operations", "V3", fetcher=numeric_fetch)
+        self.assertEqual([x["issue"] for x in packet["owners"]], [353, 99])
+        self.assertIn("CURRENT original ACK", packet["owners"][1]["latest_comments"][-1]["excerpt"])
+        def wrong_repo(url):
+            item, link = numeric_fetch(url)
+            return item, link.replace("/repositories/1379466125/", "/repositories/1/")
+        with self.assertRaisesRegex(ContextGateError, "pagination link"):
+            live_owner_readback("operations", "V3", fetcher=wrong_repo)
+
     def test_current_owner_section_is_not_cut_before_operative_priority(self):
         from tools.context_before_action import live_owner_readback
         current = "Current decision " + ("reviewed evidence " * 270)
