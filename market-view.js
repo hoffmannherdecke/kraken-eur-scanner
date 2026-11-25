@@ -30,8 +30,8 @@ async function readMarketEpisode(){
  let comments=await marketJSON(MARKET_API+'/issues/7/comments?per_page=20&page='+last);
  if(!Array.isArray(comments))throw Error('Ungültige Quelle');
  // The latest page can have changed since the issue count was read. Read at most one more page.
- if(last>1&&!chooseEpisode(comments)){const older=await marketJSON(MARKET_API+'/issues/7/comments?per_page=20&page='+(last-1));if(Array.isArray(older))comments=older.concat(comments);}
- return chooseEpisode(comments);
+ if(last>1){try{const older=await marketJSON(MARKET_API+'/issues/7/comments?per_page=20&page='+(last-1));if(Array.isArray(older))comments=older.concat(comments);}catch{/* latest page remains usable */}}
+ return {episode:chooseEpisode(comments),comments};
 }
 function episodePanel(e){
  if(!e)return panel(el('h3','Marktphase nicht belegt','warn'),el('p','In den zuletzt gelesenen Forschungsereignissen ist keine gültige Marktphase enthalten.'),marketLink('Originale Marktbeobachtung öffnen',MARKET_ISSUE));
@@ -67,10 +67,10 @@ async function loadMarket(force=false){
  const now=Date.now(),phase=force||now-marketPhaseAttempt>=900000,catalog=force||now-marketCatalogAttempt>=3600000;
  if(!phase&&!catalog)return;
  const g=marketGeneration;marketBusy=true;$('market-refresh').disabled=true;$('market-note').textContent='Vorhandene Forschungsbelege werden gelesen …';
- const jobs=[];if(phase){marketPhaseAttempt=now;jobs.push(['market-phase',episodePanel,readMarketEpisode()]);}
+ const jobs=[];if(phase){marketPhaseAttempt=now;jobs.push(['market-phase',v=>{renderProjectNews(v.comments);return episodePanel(v.episode);},readMarketEpisode()]);}
  if(catalog){marketCatalogAttempt=now;jobs.push(['market-registry',registryPanel,marketJSON(MARKET_RAW+'source-registry.json')],['market-candidates',candidatesPanel,marketJSON(MARKET_RAW+'market-source-candidates-v1.json')]);}
  const results=await Promise.allSettled(jobs.map(j=>j[2]));if(g!==marketGeneration)return;let good=0;
- for(let i=0;i<jobs.length;i++){try{if(results[i].status!=='fulfilled')throw Error('Nicht verfügbar');put(jobs[i][0],jobs[i][1](results[i].value));if(jobs[i][0]==='market-candidates')renderNewsPilots(results[i].value);good++;}catch{if(jobs[i][0]==='market-candidates')put('news-pilots',panel(el('p','Quellenkatalog nicht verfügbar.','warn')));put(jobs[i][0],panel(el('h3','Datenquelle derzeit nicht verfügbar','warn'),el('p','Kein aktueller Abruf bestätigt. Keine Ersatzwerte.')));}}
+ for(let i=0;i<jobs.length;i++){try{if(results[i].status!=='fulfilled')throw Error('Nicht verfügbar');put(jobs[i][0],jobs[i][1](results[i].value));if(jobs[i][0]==='market-candidates')renderNewsPilots(results[i].value);good++;}catch{if(jobs[i][0]==='market-phase')markProjectNewsUnavailable();if(jobs[i][0]==='market-candidates')put('news-pilots',panel(el('p','Quellenkatalog nicht verfügbar.','warn')));put(jobs[i][0],panel(el('h3','Datenquelle derzeit nicht verfügbar','warn'),el('p','Kein aktueller Abruf bestätigt. Keine Ersatzwerte.')));}}
  $('market-note').textContent=good===jobs.length?'Forschungsabruf: '+time(new Date().toISOString())+' · Phase alle 15 Min., Kataloge stündlich bei sichtbarer Marktansicht.':'Abruf teilweise oder vollständig fehlgeschlagen. Erneut manuell abrufbar.';
  marketBusy=false;$('market-refresh').disabled=false;
 }
