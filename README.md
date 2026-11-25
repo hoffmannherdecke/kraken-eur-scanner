@@ -6,3 +6,6 @@ Writer status uses the existing MINI-PC cloud report, with a 10-minute freshness
 
 ## 0.7
 Trade view on unchanged API v2: 24-hour entry/exit receipt counts, recent available trade decisions, explicit absence of live position inventory and net P&L. No realized results inferred from followup estimates. The separate richer ledger backend is not deployed.
+
+## 0.8
+Market tab reads only existing public GitHub research Issue #7 phase-change records and the existing source registry / research candidate catalog, on first opening or explicit refresh. Distinguishes historical phase changes from current market phase, registered source roles from runtime use and source quality. No credential is sent to GitHub. No change to Cloud API v2, trader, scheduler, or source routing. Market parser supports both existing episode formats; bounded latest comment pages, not full history.
