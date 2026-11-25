@@ -91,12 +91,18 @@ def get_rows(base: str, key: str, view: str) -> list:
                          "status=eq.active&limit=2", 2),
         "paper_series_completion_readiness": ("*", "limit=101", 100),
         "v3_h3_shadow_status": ("*", "", 1),
+        "paper_series_runtime_identity": (
+            "series_id,strategy_revision,status,release_repo_sha:config->>release_repo_sha,"
+            "runtime_bundle_sha256:config->>runtime_bundle_fingerprint_sha256,"
+            "strategy_sha256:config->>strategy_fingerprint_sha256",
+            "status=eq.active&limit=2", 2),
     }
     require(view in allowed, "unapproved evidence view")
     projection, options, max_rows = allowed[view]
     # Preserve explicit bounded GET only. No scripts, service calls, RPCs,
     # Paper mutation, model spend or alternate Work schedule.
-    url = base.rstrip("/") + "/rest/v1/" + view + "?select=" + projection
+    table = "paper_series" if view=="paper_series_runtime_identity" else view
+    url = base.rstrip("/") + "/rest/v1/" + table + "?select=" + projection
     if options:
         url += "&" + options
     headers = {"apikey": key, "Accept": "application/json",
@@ -234,7 +240,8 @@ def native_paper_evidence(base: str, key: str, paper: dict, now: dt.datetime) ->
             "economic_qualification_verified":False,"host_health_verified":False}
 
 
-def current_host_report(base: str, key: str, paper: dict, now: dt.datetime) -> dict:
+def current_host_report(base: str, key: str, paper: dict, now: dt.datetime,
+                        runtime_identity: dict, lease_expires_at_utc: str) -> dict:
     """Read existing host-relay report, not a direct physical health proof."""
     require(re.fullmatch(r"https://[a-z0-9-]+[.]supabase[.]co", base.rstrip("/")) is not None,
             "unapproved evidence host")
@@ -251,9 +258,23 @@ def current_host_report(base: str, key: str, paper: dict, now: dt.datetime) -> d
     native=((payload.get("native_task_readback") or {}).get("observations") or {}).get("v3_paper_single_writer") or {}
     identity=payload.get("paper_successor_observation") or {}
     fresh= -30<=age<=1200
+    pins=("release_repo_sha","runtime_bundle_sha256","strategy_sha256")
+    pins_match=all(isinstance(runtime_identity.get(k),str)
+                   and re.fullmatch(r"[a-f0-9]{40}" if k=="release_repo_sha" else r"[a-f0-9]{64}",runtime_identity[k])
+                   and identity.get(k)==runtime_identity[k] for k in pins)
+    try:
+        reported_clock=iso_time(identity["observed_at_utc"])
+        reported_expiry=iso_time(identity["expires_at_utc"])
+        clock_and_lease_match=(-30<=(iso_time(row["observed_at"])-reported_clock).total_seconds()<=180
+                              and reported_expiry==iso_time(lease_expires_at_utc)
+                              and reported_expiry>now)
+    except (KeyError,ValueError,TypeError):
+        clock_and_lease_match=False
     reported_ok=(fresh and writer.get("ok") is True and native.get("task_state")=="Running"
                  and identity.get("series_id")==paper["series_id"]
-                 and identity.get("strategy_revision")==paper["strategy_revision"])
+                 and identity.get("host_report_only") is True
+                 and identity.get("independent_runtime_proof") is False
+                 and pins_match and clock_and_lease_match)
     return {"status":("HOST_REPORT_V3_MATCH_NOT_INDEPENDENT_PROOF" if reported_ok else
                       "HOST_REPORT_STALE" if not fresh else "V3_HEARTBEAT_NOT_PROVEN_BY_HOST_REPORT"),
             "host_reported_status":row.get("status"),"observed_at":row["observed_at"],
@@ -287,14 +308,17 @@ def read_operational_evidence(state: dict, base: str, key: str, now: dt.datetime
     require(paper["series_id"]==current["series_id"] and paper["strategy_revision"]==current["strategy_revision"],
             "CURRENT_CLOUD_IDENTITY_DIFFERS_FROM_OWNER_ORIGINAL")
     journal=native_paper_evidence(base,key,paper,now)
-    host=current_host_report(base,key,paper,dt.datetime.now(UTC))
+    runtime=get_rows(base,key,"paper_series_runtime_identity")
+    require(len(runtime)==1 and runtime[0].get("series_id")==paper["series_id"]
+            and runtime[0].get("strategy_revision")==paper["strategy_revision"],
+            "Cloud runtime identity changed during operational read")
+    host=current_host_report(base,key,paper,dt.datetime.now(UTC),runtime[0],record["lease_expires_at_utc"])
     due=current_review_basis(record,journal)
     repeated=live_owner_readback("operations","V3",expected_main=owner["main_sha"])
     require(repeated["owners"]==owner["owners"],"owner changed during operational read")
     # Check the same Cloud active identity after the bounded original reads.
-    active=get_rows(base,key,"paper_series")
-    require(len(active)==1 and active[0].get("series_id")==paper["series_id"]
-            and active[0].get("strategy_revision")==paper["strategy_revision"],
+    active=get_rows(base,key,"paper_series_runtime_identity")
+    require(active==runtime,
             "Cloud identity changed during operational read")
     evidence={"kind":"CURRENT_OPERATIONAL_REVIEW_EVIDENCE_V1","main_sha":owner["main_sha"],
               "series_id":paper["series_id"],"strategy_revision":paper["strategy_revision"],

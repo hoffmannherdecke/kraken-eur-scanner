@@ -155,3 +155,15 @@ class CloudWatchContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SuccessorWatchdogSourceTests(unittest.TestCase):
+    def test_watchdog_neutralizes_only_fenced_disabled_intake_and_reads_successor(self):
+        source=(ROOT/"tools/minipc-watchdog.ps1").read_text(encoding="utf-8")
+        self.assertIn("RETIRED_INTAKE_DISABLED_COMMITTED_FENCE",source)
+        self.assertIn('Add-NativeTaskReadback -Key "v3_paper_single_writer"',source)
+        self.assertIn('V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1',source)
+        self.assertIn('committed fence requires predecessor intake Disabled',source)
+        self.assertIn('paper_successor_observation = $paperSuccessorObservation',source)
+        self.assertIn('independent_runtime_proof=$false',source)
+        self.assertNotIn('strategy_revision=[string]$h.strategy_revision',source)
