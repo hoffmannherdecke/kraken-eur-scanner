@@ -24,7 +24,7 @@ function healthReset(){healthReceiptMs=null;healthConnected=false;healthLastPoll
 function healthReceived(){healthReceiptMs=Date.now();healthConnected=true;paintHealth();}
 function healthFailed(){healthConnected=false;paintHealth();}
 function paintHealth(){
- const box=$('health-banner');if(!data){box.hidden=true;return;}box.hidden=false;
+ const box=$('health-banner');if(!data){box.hidden=true;paintIncident();return;}box.hidden=false;
  const elapsed=healthReceiptMs===null?NaN:(Date.now()-healthReceiptMs)/1000;
  const m=healthModel(data,elapsed,healthConnected);
  box.dataset.tone=m.tone;
@@ -32,7 +32,7 @@ function paintHealth(){
  $('health-note').textContent=m.note;
  const age=m.hostAge===null?'nicht belegt':m.hostAge<60?m.hostAge+' Sek.':Math.floor(m.hostAge/60)+' Min. '+(m.hostAge%60)+' Sek.';
  $('health-age').textContent='Hostbericht: '+age+' alt · '+(m.hostAt?time(m.hostAt):'Zeit nicht belegt');
- $('health-writer').textContent='Writer: '+m.writer;$('health-scanner').textContent='Scanner: '+m.scanner;
+ $('health-writer').textContent='Writer: '+m.writer;$('health-scanner').textContent='Scanner: '+m.scanner;paintIncident();
 }
 function healthTick(){
  if(document.hidden||!access)return;
