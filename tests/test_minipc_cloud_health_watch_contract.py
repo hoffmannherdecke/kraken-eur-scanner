@@ -184,6 +184,39 @@ class CloudWatchContract(unittest.TestCase):
         self.assertIn("wieder erreichbar: WARNING", x["slack"][0])
 
 
+class SyntheticWorkProbeContract(unittest.TestCase):
+    def probe(self):
+        workflow = WATCH.read_text(encoding="utf-8")
+        original, probe = workflow.split("      - name: Send fixed synthetic Work test")
+        self.assertIn("github.event_name != 'workflow_dispatch' || !inputs.work_test", original)
+        self.assertIn("github.event_name == 'workflow_dispatch' && inputs.work_test", probe)
+        self.assertNotIn("SUPABASE", probe)
+        code = probe.split("python - <<'PY'\n", 1)[1].rsplit("          PY", 1)[0]
+        return compile(textwrap.dedent(code), str(WATCH), "exec")
+
+    def test_synthetic_message_uses_only_the_existing_webhook(self):
+        response = Response(None)
+        response.read = lambda _size: b"ok"
+        with patch.dict(os.environ, {"SLACK_WEBHOOK_URL": "https://slack.invalid/hook"}, clear=True), patch(
+            "urllib.request.urlopen", return_value=response
+        ) as network, contextlib.redirect_stdout(io.StringIO()) as logs:
+            exec(self.probe(), {})
+        network.assert_called_once()
+        request = network.call_args.args[0]
+        self.assertEqual(request.full_url, "https://slack.invalid/hook")
+        self.assertEqual(request.get_method(), "POST")
+        self.assertEqual(json.loads(request.data), {
+            "text": "KRYPTO_V3_WORK_TEST_V1 | 1b9f8281-772e-488e-a167-6c4a5d2ab813"
+        })
+        self.assertIn("KRYPTO_V3_WORK_TEST_WEBHOOK_ACCEPTED", logs.getvalue())
+
+    def test_missing_webhook_fails_without_any_network_request(self):
+        with patch.dict(os.environ, {}, clear=True), patch("urllib.request.urlopen") as network:
+            with self.assertRaisesRegex(SystemExit, "Existing Slack webhook is unavailable"):
+                exec(self.probe(), {})
+        network.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
 
