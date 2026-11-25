@@ -126,6 +126,7 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         # Offline queue selection is not evidence of a live task. Existing
         # owner routing exposes candidate obligations, but only current
         # original evidence and an actual owner decision can select new work.
+        registered = project_implementation_commitments(root,state,ack or {},dt.datetime.now(dt.timezone.utc)) if all((root/p).is_file() for p in ("research/project-followthrough-routing-v1.json","research/monitoring-evidence-routing-v1.json","PROJECT_BACKLOG.md")) else None
         return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1",
                 "status":"CURRENT_ORIGINAL_OWNER_REVIEW_REQUIRED",
                 "ready":[], "safe_work_requested":False,
@@ -134,6 +135,7 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
                 "active_implementation_pr_count":active_pr_count,
                 "next":"READ_CURRENT_MAIN_AND_OWNER_AND_RELEVANT_HOST_CLOUD_ORIGINALS",
                 "registered_candidate_source":"research/project-followthrough-routing-v1.json",
+                "registered_review_candidates":registered["items"] if registered else [],
                 "strategy_changed":False,"orders":False,"real_money_actions":False}
     open_work=[]
     tracks=state.get("observational_research_tracks") or []

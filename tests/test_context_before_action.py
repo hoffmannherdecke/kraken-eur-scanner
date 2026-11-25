@@ -25,7 +25,9 @@ class ContextBeforeActionTests(unittest.TestCase):
         for barrier in result["known_source_barriers"]:
             self.assertIn(barrier["guard"], lines[barrier["line"] - 1])
         packet = build(ROOT, "operations", work_domain="strategy_release", strategy_version="V3")
-        self.assertEqual(compact_decision_brief(packet)["existing_transition_execution_path"], result)
+        self.assertEqual(packet["next_action_selector"]["historical_transition_execution_path"], result)
+        self.assertNotIn("existing_transition_execution_path", compact_decision_brief(packet))
+        self.assertTrue(packet["legacy_control_decisions_not_current_work"])
         self.assertFalse(result["baseline_device_retest_can_resolve_this"])
         self.assertFalse(result["executable_success_path_proven"])
         self.assertFalse(result["production_or_physical_execution_authorized"])

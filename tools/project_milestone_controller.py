@@ -275,7 +275,8 @@ def evaluate_operational_paper(milestone: dict, paper: dict) -> dict:
     """
     require(paper.get("series_id") == milestone["series_id"]
             and paper.get("strategy_revision") == milestone["strategy_revision"],
-            "CURRENT_CLOUD_IDENTITY_DIFFERS_FROM_LAST_AUTHORIZED_RELEASE_NEEDS_OWNER_ACK")
+            "CURRENT_CLOUD_IDENTITY_DIFFERS_FROM_LAST_AUTHORIZED_RELEASE_NEEDS_OWNER_ACK: "
+            + str(paper.get("series_id")) + " / " + str(paper.get("strategy_revision")))
     for field in ("candidate_outcomes", "completed_trades"):
         require(type(paper.get(field)) is int and paper[field] >= 0,
                 "missing or invalid readiness view count: " + field)
