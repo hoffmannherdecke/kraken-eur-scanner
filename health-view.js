@@ -42,11 +42,20 @@ function healthModel(v,elapsedSec,connected){
  const levelLabel={1:"Stufe 1 · Normalbetrieb",2:"Stufe 2 · Warnung",3:"Stufe 3 · Eingeschränkter Betrieb"}[level];
  const result={hostAge:Math.floor(age),hostAt:h.observed_at,writer:levelLabel??(writer===true?"Beim Bericht OK":writer===false?"Prüfung fehlgeschlagen":"Nicht belegt"),scanner:scanner===true?"Beim Bericht OK":scanner===false?"Prüfung fehlgeschlagen":"Nicht belegt"};
  if(level===3&&!critical&&scanner===true)return {...result,tone:"warn",label:"V3-Paper-Betrieb eingeschränkt",note:"Eine Writer-Teilfunktion pausiert. Die gemeldeten Hostbefunde stehen unter Details."};
+ const diagnosis=h.writer?.diagnosis;
+ const holdAt=Date.parse(diagnosis?.checked_at_utc);
+ const holdAge=(observed-holdAt)/1000;
+ if(!critical&&!stale&&age<=HOST_REPORT_DUE_SEC&&active&&writer===false&&h.writer?.ok===false&&
+    diagnosis?.series_id===v.series[0].series_id&&/^HOLD_[A-Z0-9_]{1,100}$/.test(diagnosis.cycle_status)&&
+    Number.isFinite(holdAge)&&holdAge>=-30&&holdAge<=180){
+  return {...result,tone:"bad",writer:"Writer-HOLD bestätigt",label:"V3-Writer gestoppt",note:"Der Originalhost meldet einen Stopp für die aktive Serie. Der konkrete Befund steht unter Details."};
+ }
  if(negative)return {...result,tone:"bad",label:stale?"Letzter Bericht: Störung – aktueller Status unklar":"Betriebsstörung gemeldet",note:stale?"Letzter negativer Beleg bleibt sichtbar. Keine aktuelle Entwarnung.":writer===false?"V3-Writer-Prüfung fehlgeschlagen. Betriebszustand beim Originalhost klären.":scanner===false?"Scanner-Prüfung fehlgeschlagen.":"Mini-PC meldet kritischen Fehler."};
  if(stale)return {...result,tone:"unknown",label:"Systemstatus nicht aktuell",note:!connected?"Cloud-Verbindung nicht bestätigt.":elapsedSec>CLOUD_RESPONSE_STALE_SEC?"Cloud-Abfrage überfällig.":"Hostbericht älter als fünf Minuten."};
  if(age>HOST_REPORT_DUE_SEC)return {...result,tone:"warn",label:"Neuer Hostbericht fällig",note:"Hostbericht älter als drei Minuten. Letzte Befunde bleiben sichtbar; aktuelle Gesundheit nicht bestätigt."};
  const fenceProtected=active&&writer===true&&scanner===true&&h.status==="WARNING"&&supervisorProtection(issues);
  const shadowAdvisory=active&&/^PAPER-V3-\d{8}T\d{6}Z$/.test(v.series[0]?.series_id||"")&&writer===true&&scanner===true&&h.status==="WARNING"&&shadowResearchAdvisory(issues)&&issues.length===(fenceProtected?2:1)&&issues.every(i=>i?.check==="v2r4_ws_shadow_outcomes"||(fenceProtected&&i?.check==="runtime_supervisor"));
+ if(level===2&&scanner===true)return {...result,tone:"warn",fenceProtected,shadowAdvisory,label:"V3-Paper-Betrieb aktiv · Warnung",note:"Eine Verarbeitung wurde zurückgestellt. Weitere Hostbefunde stehen unter Details."};
  if(shadowAdvisory)return {...result,tone:"good",fenceProtected,shadowAdvisory:true,label:"V3-Paper-Betrieb aktiv",note:"Writer und Scanner beim letzten Bericht bestätigt. Separater Forschungshinweis unter Details; Originalwarnung bleibt erhalten. Keine Echtzeitgarantie."};
  if(fenceProtected&&issues.length===1)return {...result,tone:"good",fenceProtected:true,label:"Sicherheitsmechanismus aktiv",note:"Vorgänger-Writer geschützt. Writer und Scanner beim letzten Bericht bestätigt. Kein Reparaturbedarf aus diesem Schutzbefund; keine Echtzeitgarantie."};
  if(fenceProtected)return {...result,tone:"warn",fenceProtected:true,label:"Sicherheitsmechanismus aktiv – weitere Systemwarnung",note:"Vorgänger-Writer geschützt. Weitere Hostwarnungen separat prüfen."};
@@ -55,7 +64,7 @@ function healthModel(v,elapsedSec,connected){
   return {...result,tone:"warn",label:core?"Writer und Scanner bestätigt – Systemwarnung":"Systemwarnung gemeldet",note:core?"Die Kernprüfungen waren beim letzten Bericht positiv. Weitere Hostwarnungen sind separat zu klären; kein Writer-Ausfall daraus ableiten.":"Mindestens eine Hostprüfung meldet eine Warnung."};
  }
  if(!active||writer!==true||scanner!==true||h.status!=="HEALTHY"||!Array.isArray(h.issues))return {...result,tone:"unknown",label:"Gesundheit nicht vollständig belegt",note:"Aktive Serie, Scanner, Writer und Hoststatus müssen eindeutig bestätigt sein."};
- if(level===2)return {...result,tone:"warn",label:"V3-Paper-Betrieb aktiv · Warnung",note:"Writer und Scanner bestätigt. Eine einzelne Verarbeitung wurde zurückgestellt."};
+
  return {...result,tone:"good",label:"System beim letzten Bericht gesund",note:"Scanner und Writer bestätigt. Zeitgestempelter Nachweis, keine Echtzeitgarantie."};
 }
 let healthReceiptMs=null,healthConnected=false,healthLastPollMs=null;
