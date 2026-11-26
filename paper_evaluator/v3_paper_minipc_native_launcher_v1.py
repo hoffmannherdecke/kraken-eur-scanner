@@ -1539,11 +1539,18 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
                         raise ValueError("V3 Paper follow-up original identity mismatch")
                     followup = run_phase("FOLLOWUP_6H24H72H", candidate)
                     status = str(followup.get("status", ""))
-                    if (status.startswith("NONCANARY_FOLLOWUP_HOLD_") and
-                            status != "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
+                    deferred = status == (
+                        "NONCANARY_FOLLOWUP_HOLD_MODEL_NOT_FINAL_NO_AUTOMATIC_SPEND_OR_FOLLOWUP"
+                    )
+                    if (status.startswith("NONCANARY_FOLLOWUP_HOLD_") and not deferred
+                            and status != "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
                         raise ValueError("V3 Paper followup requires reconciliation")
+                    # Rotate past an unfinished candidate without replaying its
+                    # model or changing its immutable journal.
                     checked[cid] = time.monotonic()
-                    if prepared is None and scanner_ready:
+                    if deferred:
+                        cycle_status = "FOLLOWUP_DEFERRED_MODEL_NOT_FINAL"
+                    elif prepared is None and scanner_ready:
                         cycle_status = "FOLLOWUP_CYCLE_COMPLETE"
                 if prepared is not None or pending:
                     run_phase("CLOUD_RECEIPT_ACK")
