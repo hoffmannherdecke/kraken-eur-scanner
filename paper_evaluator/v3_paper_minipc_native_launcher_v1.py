@@ -531,8 +531,9 @@ def dispatch_after_native_release_readback(*,
     report = originalhost_readback()
     if not isinstance(report, dict):
         raise ValueError("original native host readback missing")
-    research = release_packet["bounded_research_scope"]
-    unbounded_packet = research["max_observation_days"] is None
+    research = release_packet.get("bounded_research_scope")
+    unbounded_packet = (isinstance(research, dict) and "max_observation_days" in research
+                        and research["max_observation_days"] is None)
     runtime_lease = report.get("runtime_lease", {})
     if unbounded_packet != (runtime_lease.get("scope") == UNBOUNDED_SCOPE):
         raise ValueError("Paper packet and authenticated runtime scope disagree")
