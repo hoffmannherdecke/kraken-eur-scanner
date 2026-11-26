@@ -16,7 +16,7 @@ function shadowResearchAdvisory(issues){
  const m=rows[0].detail.match(/^status=HEALTHY age_sec=(\d{1,3}(?:[.,]\d{1,6})?) active=(\d{1,9}) sampled_active=(\d{1,9}) recent_active_samples=(\d{1,9}) freshest_active_sample_age_sec=(\d{1,3}(?:[.,]\d{1,6})?) oldest_active_sample_age_sec=(\d{1,3}(?:[.,]\d{1,6})?) enrolled=(\d{1,12}) completed=(\d{1,12})$/);
  if(!m)return false;
  const [age,active,sampled,recent,freshest,oldest,enrolled,completed]=m.slice(1).map(x=>Number(x.replace(",",".")));
- return age>30&&age<=60&&active>0&&sampled===active&&recent===active&&freshest<=oldest&&oldest<=240&&completed<=enrolled&&active<=enrolled;
+ return age>=0&&age<=60&&active>0&&sampled===active&&recent>0&&recent<=sampled&&freshest<=60&&freshest<=oldest&&completed<=enrolled&&active<=enrolled;
 }
 function supervisorCritical(issues){
  return issues.some(i=>i?.check==="runtime_supervisor"&&typeof i.detail==="string"&&/^status=CRITICAL age_sec=/.test(i.detail));
@@ -61,7 +61,7 @@ function healthModel(v,elapsedSec,connected){
  const shadowAdvisory=active&&/^PAPER-V3-\d{8}T\d{6}Z$/.test(v.series[0]?.series_id||"")&&writer===true&&scanner===true&&h.status==="WARNING"&&shadowResearchAdvisory(issues)&&issues.length===(fenceProtected?2:1)&&issues.every(i=>i?.check==="v2r4_ws_shadow_outcomes"||(fenceProtected&&i?.check==="runtime_supervisor"));
  if(level===2&&scanner===true)return {...result,tone:"warn",fenceProtected,shadowAdvisory,label:"V3-Paper-Betrieb aktiv · Warnung",note:"Eine Verarbeitung wurde zurückgestellt. Weitere Hostbefunde stehen unter Details."};
  if(shadowAdvisory)return {...result,tone:"good",fenceProtected,shadowAdvisory:true,label:"V3-Paper-Betrieb aktiv",note:"Writer und Scanner beim letzten Bericht bestätigt. Separater Forschungshinweis unter Details; Originalwarnung bleibt erhalten. Keine Echtzeitgarantie."};
- if(fenceProtected&&issues.length===1)return {...result,tone:"good",fenceProtected:true,label:"Sicherheitsmechanismus aktiv",note:"Vorgänger-Writer geschützt. Writer und Scanner beim letzten Bericht bestätigt. Kein Reparaturbedarf aus diesem Schutzbefund; keine Echtzeitgarantie."};
+ if(fenceProtected&&issues.length===1)return {...result,tone:"good",fenceProtected:true,label:"V3-Paper-Betrieb aktiv",note:"Vorgänger-Writer geschützt. Writer und Scanner beim letzten Bericht bestätigt. Kein Reparaturbedarf aus diesem Schutzbefund; keine Echtzeitgarantie."};
  if(fenceProtected)return {...result,tone:"warn",fenceProtected:true,label:"Sicherheitsmechanismus aktiv – weitere Systemwarnung",note:"Vorgänger-Writer geschützt. Weitere Hostwarnungen separat prüfen."};
  if(h.status==="WARNING"||issues.some(i=>i?.severity==="WARNING")){
   const core=active&&writer===true&&scanner===true;
@@ -69,7 +69,7 @@ function healthModel(v,elapsedSec,connected){
  }
  if(!active||writer!==true||scanner!==true||h.status!=="HEALTHY"||!Array.isArray(h.issues))return {...result,tone:"unknown",label:"Gesundheit nicht vollständig belegt",note:"Aktive Serie, Scanner, Writer und Hoststatus müssen eindeutig bestätigt sein."};
 
- return {...result,tone:"good",label:"System beim letzten Bericht gesund",note:"Scanner und Writer bestätigt. Zeitgestempelter Nachweis, keine Echtzeitgarantie."};
+ return {...result,tone:"good",label:"V3-Paper-Betrieb aktiv",note:"Scanner und Writer bestätigt. Zeitgestempelter Nachweis, keine Echtzeitgarantie."};
 }
 let healthReceiptMs=null,healthConnected=false,healthLastPollMs=null;
 function healthReset(){healthReceiptMs=null;healthConnected=false;healthLastPollMs=null;$('health-banner').hidden=true;closeHealthDetails();$('health-details-list').replaceChildren();delete $('health-details-list').dataset.key;$('health-details-time').textContent='';}
