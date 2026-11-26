@@ -7,6 +7,17 @@ function supervisorProtection(issues){
  const m=rows[0].detail.match(/^status=WARNING age_sec=(\d{1,3}(?:[.,]\d{1,6})?) restarted= classification=EXPECTED_V3_FENCE_ONLY_V1$/);
  return !!m&&Number(m[1].replace(",","."))<=300;
 }
+// UI-only advisory classification. No change to the original watchdog or its limits.
+// Require a complete, narrowly bounded positive research sample summary.
+function shadowResearchAdvisory(issues){
+ if(!Array.isArray(issues))return false;
+ const rows=issues.filter(i=>i?.check==="v2r4_ws_shadow_outcomes");
+ if(rows.length!==1||rows[0].severity!=="WARNING"||typeof rows[0].detail!=="string")return false;
+ const m=rows[0].detail.match(/^status=HEALTHY age_sec=(\d{1,3}(?:[.,]\d{1,6})?) active=(\d{1,9}) sampled_active=(\d{1,9}) recent_active_samples=(\d{1,9}) freshest_active_sample_age_sec=(\d{1,3}(?:[.,]\d{1,6})?) oldest_active_sample_age_sec=(\d{1,3}(?:[.,]\d{1,6})?) enrolled=(\d{1,12}) completed=(\d{1,12})$/);
+ if(!m)return false;
+ const [age,active,sampled,recent,freshest,oldest,enrolled,completed]=m.slice(1).map(x=>Number(x.replace(",",".")));
+ return age>30&&age<=60&&active>0&&sampled===active&&recent===active&&freshest<=oldest&&oldest<=240&&completed<=enrolled&&active<=enrolled;
+}
 function supervisorCritical(issues){
  return issues.some(i=>i?.check==="runtime_supervisor"&&typeof i.detail==="string"&&/^status=CRITICAL age_sec=/.test(i.detail));
 }
@@ -27,6 +38,8 @@ function healthModel(v,elapsedSec,connected){
  if(stale)return {...result,tone:"unknown",label:"Systemstatus nicht aktuell",note:!connected?"Cloud-Verbindung nicht bestätigt.":elapsedSec>CLOUD_RESPONSE_STALE_SEC?"Cloud-Abfrage überfällig.":"Hostbericht älter als fünf Minuten."};
  if(age>HOST_REPORT_DUE_SEC)return {...result,tone:"warn",label:"Neuer Hostbericht fällig",note:"Hostbericht älter als drei Minuten. Letzte Befunde bleiben sichtbar; aktuelle Gesundheit nicht bestätigt."};
  const fenceProtected=active&&writer===true&&scanner===true&&h.status==="WARNING"&&supervisorProtection(issues);
+ const shadowAdvisory=active&&/^PAPER-V3-\d{8}T\d{6}Z$/.test(v.series[0]?.series_id||"")&&writer===true&&scanner===true&&h.status==="WARNING"&&shadowResearchAdvisory(issues)&&issues.length===(fenceProtected?2:1)&&issues.every(i=>i?.check==="v2r4_ws_shadow_outcomes"||(fenceProtected&&i?.check==="runtime_supervisor"));
+ if(shadowAdvisory)return {...result,tone:"good",fenceProtected,shadowAdvisory:true,label:"V3-Paper-Betrieb aktiv",note:"Writer und Scanner beim letzten Bericht bestätigt. Separater Forschungshinweis unter Details; Originalwarnung bleibt erhalten. Keine Echtzeitgarantie."};
  if(fenceProtected&&issues.length===1)return {...result,tone:"good",fenceProtected:true,label:"Sicherheitsmechanismus aktiv",note:"Vorgänger-Writer geschützt. Writer und Scanner beim letzten Bericht bestätigt. Kein Reparaturbedarf aus diesem Schutzbefund; keine Echtzeitgarantie."};
  if(fenceProtected)return {...result,tone:"warn",fenceProtected:true,label:"Sicherheitsmechanismus aktiv – weitere Systemwarnung",note:"Vorgänger-Writer geschützt. Weitere Hostwarnungen separat prüfen."};
  if(h.status==="WARNING"||issues.some(i=>i?.severity==="WARNING")){
@@ -65,7 +78,7 @@ function renderHealthDetails(m){
  const box=$('health-details-list'),hosts=Array.isArray(data?.hosts)?data.hosts.filter(h=>h?.node_id==='MINI-PC'):[],h=hosts.length===1?hosts[0]:null;
  const issues=Array.isArray(h?.issues)?h.issues.slice(0,30):[];
  const labels={v3_paper_single_writer:'V3-Writer',runtime_supervisor:'Laufzeitüberwachung',kraken_universe_heartbeat:'Kraken-Scanner',minipc_status_sync:'Statusübertragung',v2r4_ws_shadow_outcomes:'V2R4-Nachbetrachtung',v2r4_paper_wait:'V2R4-Warteüberwachung',v2r4_paper_candidates:'V2R4-Kandidaten'};
- const list=issues.map(i=>({label:m.fenceProtected&&i?.check==='runtime_supervisor'?'Sicherheitsmechanismus aktiv':labels[i?.check]||(/^[a-z0-9_]{1,80}$/i.test(i?.check||'')?i.check:'Weitere Hostprüfung'),severity:m.fenceProtected&&i?.check==='runtime_supervisor'?'Schutz bestätigt':['WARNING','CRITICAL'].includes(i?.severity)?i.severity:'Nicht eingeordnet',detail:m.fenceProtected&&i?.check==='runtime_supervisor'?'Vorgänger-Writer geschützt. Kein Reparaturbedarf aus diesem Befund.':typeof i?.detail==='string'?i.detail.slice(0,500):'Kein Detail übermittelt.'}));
+ const list=issues.map(i=>({label:m.fenceProtected&&i?.check==='runtime_supervisor'?'Sicherheitsmechanismus aktiv':m.shadowAdvisory&&i?.check==='v2r4_ws_shadow_outcomes'?'Forschungshinweis (V2R4)':labels[i?.check]||(/^[a-z0-9_]{1,80}$/i.test(i?.check||'')?i.check:'Weitere Hostprüfung'),severity:m.fenceProtected&&i?.check==='runtime_supervisor'?'Schutz bestätigt':m.shadowAdvisory&&i?.check==='v2r4_ws_shadow_outcomes'?'Separate Originalwarnung':['WARNING','CRITICAL'].includes(i?.severity)?i.severity:'Nicht eingeordnet',detail:m.fenceProtected&&i?.check==='runtime_supervisor'?'Vorgänger-Writer geschützt. Kein Reparaturbedarf aus diesem Befund.':typeof i?.detail==='string'?i.detail.slice(0,500):'Kein Detail übermittelt.'}));
  const key=JSON.stringify([m.label,m.note,h?.observed_at,list]);
  if(box.dataset.key===key)return;
  box.dataset.key=key;$('health-details-time').textContent='Hostbericht: '+time(h?.observed_at)+' · '+m.label;

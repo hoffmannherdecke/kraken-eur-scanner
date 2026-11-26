@@ -3,17 +3,19 @@ function incidentContext(v,elapsed,connected,now=Date.now()){
  if(!v||!Number.isFinite(now)||!Number.isFinite(elapsed)||elapsed<0||!Number.isFinite(Date.parse(v.read_at))||Date.parse(v.read_at)>now+30000)return null;
  const s=Array.isArray(v.series)&&v.series.length===1&&v.series[0]?.status==="active"&&/^PAPER-V3-\d{8}T\d{6}Z$/.test(v.series[0].series_id)?v.series[0].series_id:null;
  const m=healthModel(v,elapsed,connected);
- if(m.tone==="good"&&now-Date.parse(v.read_at)<=180000)return null;
+ const advisoryOnly=m.tone==="good"&&m.shadowAdvisory===true&&now-Date.parse(v.read_at)<=180000;
+ if(m.tone==="good"&&!advisoryOnly&&now-Date.parse(v.read_at)<=180000)return null;
  const hs=Array.isArray(v.hosts)?v.hosts.filter(h=>h?.node_id==="MINI-PC"):[];
  const h=hs.length===1?hs[0]:null;
  const at=h&&Number.isFinite(Date.parse(h.observed_at))&&Date.parse(h.observed_at)<=Date.parse(v.read_at)+30000?new Date(Date.parse(h.observed_at)).toISOString():null;
  const issues=Array.isArray(h?.issues)?h.issues:[];
  const codes=[];
+ if(advisoryOnly)codes.push("RESEARCH_SHADOW_WARNING");
  if(h?.writer?.ok===false||issues.some(i=>i?.check==="v3_paper_single_writer"))codes.push("WRITER_CHECK_FAILED");
  if(h?.scanner_ok===false)codes.push("SCANNER_CHECK_FAILED");
  if(!m.fenceProtected&&issues.some(i=>i?.check==="runtime_supervisor"&&["WARNING","CRITICAL"].includes(i.severity)))codes.push("SUPERVISOR_WARNING");
  if(h?.status==="CRITICAL"||issues.some(i=>i?.severity==="CRITICAL")||supervisorCritical(issues))codes.push("HOST_CRITICAL");
- else if((h?.status==="WARNING"&&!m.fenceProtected)||issues.some(i=>i?.severity==="WARNING"&&!(m.fenceProtected&&i.check==="runtime_supervisor")))codes.push("HOST_WARNING");
+ else if(!advisoryOnly&&((h?.status==="WARNING"&&!m.fenceProtected)||issues.some(i=>i?.severity==="WARNING"&&!(m.fenceProtected&&i.check==="runtime_supervisor"))))codes.push("HOST_WARNING");
  if(!connected||elapsed>CLOUD_RESPONSE_STALE_SEC||now-Date.parse(v.read_at)>180000)codes.push("CLOUD_READ_NOT_CURRENT");
  const exactHostAge=at?(Date.parse(v.read_at)-Date.parse(at))/1000+elapsed:NaN;
  if(!Number.isFinite(exactHostAge)||m.hostAge===null||exactHostAge>HOST_REPORT_DUE_SEC)codes.push("HOST_REPORT_NOT_CURRENT");
@@ -21,7 +23,7 @@ function incidentContext(v,elapsed,connected,now=Date.now()){
  if(!codes.length)codes.push("HEALTH_NOT_CONFIRMED");
  const readAt=new Date(Date.parse(v.read_at)).toISOString();
  const current=!!connected&&elapsed<=CLOUD_RESPONSE_STALE_SEC&&now-Date.parse(v.read_at)<=180000&&!!at&&m.hostAge!==null&&exactHostAge<=HOST_REPORT_STALE_SEC;
- const ctx={series:s,hostAt:at,readAt,codes,tone:m.tone,current};
+ const ctx={series:s,hostAt:at,readAt,codes,tone:m.tone,current,advisoryOnly:advisoryOnly&&codes.length===1};
  ctx.diagnostics=incidentDiagnostics(v,ctx);
  ctx.key=JSON.stringify([s,at,codes,current,m.tone,ctx.diagnostics]);
  return ctx;
@@ -63,6 +65,7 @@ function incidentDiagnostics(v,ctx){
  else if(raw==="task installed but state missing")add("SUPERVISOR_STATE_MISSING","Supervisor-Zustand","Task installiert, Zustandsdatei laut Watchdog fehlt.","Vorhandenen Supervisor-Task und Original-Zustandsbeleg lesend prüfen.");
  else add("SUPERVISOR_DETAIL_UNCONFIRMED","Supervisor-Details","Kein eindeutig strukturiertes Detail verfügbar.","Originalen Supervisor-Bericht und zugehörige Warnung lesend prüfen.");
  }
+ if(ctx.codes.includes("RESEARCH_SHADOW_WARNING"))add("RESEARCH_SHADOW_WARNING","V2R4-Forschungshinweis",issue("v2r4_ws_shadow_outcomes")?.detail||"Originalwarnung liegt vor.","Nur im bestehenden Forschungs-/Watchdog-Auftrag die Heartbeat-Frische und übrigen Originalprädikate prüfen. Kein V3-Writer-Ausfall aus diesem Befund ableiten, kein Neustart.");
  if(ctx.codes.includes("SCANNER_CHECK_FAILED"))add("SCANNER_OBSERVATION","Scanner","Kraken-EUR-Universe-Prüfung meldet einen Fehler.","Originalen Universe-Heartbeat, Verbindungszustand, Ticker-Alter, Paarabdeckung und Subscription-Fehler prüfen.");
  if(issues.some(i=>i?.check==="minipc_status_sync"&&["WARNING","CRITICAL"].includes(i.severity)))add("SYNC_OBSERVATION","Statusübertragung","StatusSync-Prüfung meldet einen Fehler.","Vorhandenen StatusSync-Heartbeat und Relay-Fehlerbeleg lesen. Keine neuen Übertragungswege oder Rechte.");
  if(ctx.codes.includes("HOST_REPORT_NOT_CURRENT")||ctx.codes.includes("CLOUD_READ_NOT_CURRENT"))add("FRESHNESS","Aktualität","Befund ist nicht als aktueller Live-Zustand bestätigt.","Zuerst neueren Originalhost-/Cloud-Nachweis beschaffen; keine Reparatur aus altem Bericht auslösen.");
@@ -70,10 +73,10 @@ function incidentDiagnostics(v,ctx){
 }
 function incidentDraft(ctx){
  if(!ctx)return null;
- const labels={WRITER_CHECK_FAILED:"Writer-Prüfung fehlgeschlagen",SCANNER_CHECK_FAILED:"Scanner-Prüfung fehlgeschlagen",SUPERVISOR_WARNING:"Supervisor meldet Warnung",HOST_CRITICAL:"Kritischer Hostbericht",HOST_WARNING:"Hostwarnung",CLOUD_READ_NOT_CURRENT:"Cloud-Abruf nicht aktuell",HOST_REPORT_NOT_CURRENT:"Hostbericht überfällig oder zeitlich nicht belegt",ACTIVE_SERIES_UNCONFIRMED:"Aktive V3-Serie nicht eindeutig",HEALTH_NOT_CONFIRMED:"Systemgesundheit nicht bestätigt"};
+ const labels={RESEARCH_SHADOW_WARNING:"Separater V2R4-Forschungshinweis (V3-Kernbetrieb bestätigt)",WRITER_CHECK_FAILED:"Writer-Prüfung fehlgeschlagen",SCANNER_CHECK_FAILED:"Scanner-Prüfung fehlgeschlagen",SUPERVISOR_WARNING:"Supervisor meldet Warnung",HOST_CRITICAL:"Kritischer Hostbericht",HOST_WARNING:"Hostwarnung",CLOUD_READ_NOT_CURRENT:"Cloud-Abruf nicht aktuell",HOST_REPORT_NOT_CURRENT:"Hostbericht überfällig oder zeitlich nicht belegt",ACTIVE_SERIES_UNCONFIRMED:"Aktive V3-Serie nicht eindeutig",HEALTH_NOT_CONFIRMED:"Systemgesundheit nicht bestätigt"};
  if(!Array.isArray(ctx.codes)||!ctx.codes.length||!ctx.codes.every(c=>Object.hasOwn(labels,c)))return null;
  return [
- "KRYPTO-V3 – Störungsaufnahme und gezielte Fortsetzung",
+ ctx.advisoryOnly?"KRYPTO – Separaten Forschungshinweis prüfen (kein V3-Stopp belegt)":"KRYPTO-V3 – Störungsaufnahme und gezielte Fortsetzung",
  "",
  "Repository: hoffmannherdecke/kraken-eur-scanner",
  "Projektmanager: https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353",
@@ -113,9 +116,9 @@ function resetIncident(){
 }
 function paintIncident(){
  const ctx=activeIncident();
- $('incident-action').hidden=!ctx;
+ $('incident-action').hidden=!ctx||ctx.advisoryOnly;
  $('incident-create').disabled=!ctx;
- $('incident-detected').textContent=ctx?'Abweichung / Klärungsbedarf':'Kein Störungsauftrag verfügbar';
+ $('incident-detected').textContent=ctx?(ctx.advisoryOnly?'Separater Forschungshinweis':'Abweichung / Klärungsbedarf'):'Kein Störungsauftrag verfügbar';
  $('incident-context').textContent=ctx?'App-Abruf: '+time(ctx.readAt)+' · Hostbericht: '+time(ctx.hostAt)+' · '+(ctx.current?'Zeitgestempelter Befund':'Aktualität nicht bestätigt'):'Kein aktuell vorbereitbarer Störungsauftrag.';
  const lines=ctx?.diagnostics||[],diagnosticKey=JSON.stringify([!!ctx,lines]),box=$('incident-diagnostics');
  if(box.dataset.key!==diagnosticKey||(!box.childNodes.length&&lines.length)){box.dataset.key=diagnosticKey;box.replaceChildren(...(lines.length?lines.map(d=>{const p=el('div',undefined,'incident-detail');p.append(el('strong',d.label),el('p',d.value),el('small',d.next));return p;}):[el('p',ctx?'Die gemeldete Warnung ist noch nicht einer strukturierten Fehlerkategorie zugeordnet. Die konkreten Originalmeldungen stehen unter Details.':'Kein aktueller Störungsauftrag verfügbar.','sub')]));}
