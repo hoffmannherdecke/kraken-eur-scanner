@@ -52,6 +52,10 @@ def _post_to_existing_relay(url:str,token:str,payload:dict[str,Any], *, timeout:
         return json.loads(response.read(50000).decode("utf-8"))
 
 
+class TransientCloudReadUnavailable(ValueError):
+    """The active-series read exhausted its retry on transient transport errors."""
+
+
 def _transient_read_error(exc: OSError) -> bool:
     if isinstance(exc, urllib.error.HTTPError):
         return exc.code in (408, 502, 503, 504)
@@ -93,6 +97,10 @@ def read_active_paper_series(*,series_id:str,token:str,
             else:
                 reply = post(relay_url, token, payload)
         except OSError as retry_exc:
+            if _transient_read_error(retry_exc):
+                raise TransientCloudReadUnavailable(
+                    "temporary active Paper series readback unavailable"
+                ) from retry_exc
             raise ValueError("authenticated original Cloud readback unavailable") from retry_exc
     if (not isinstance(reply,dict) or reply.get("ok") is not True
             or reply.get("kind")!="V3_PAPER_ACTIVE_SERIES_READONLY_V1"
