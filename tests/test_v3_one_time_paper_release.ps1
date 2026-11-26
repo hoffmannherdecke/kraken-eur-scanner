@@ -271,13 +271,13 @@ try{
  }
  $startupContext=[pscustomobject]@{commit=$commit;authorization=(ReadRuntimeFixture);plan=$plan}
  $observedCloud=Read-V3PaperIndependentReceipt $startupContext $cloudJson $cloudCms
- $startLease=Get-V3PaperRepeatedStart $startupContext @{release_packet=$packetPath} $observedCloud
+ $startLease=Get-V3PaperRepeatedStart $startupContext @{kind='V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1';release_packet=$packetPath} $observedCloud
  Need ($startLease.scope -ceq 'V3_PAPER_RUNTIME_REPEATED') 'SIGNED_START_REQUIRES_LIVE_TASK'
  $observedCloud.successor_series_id='PAPER-V3-20261108T120000Z'
- Reject {Get-V3PaperRepeatedStart $startupContext @{release_packet=$packetPath} $observedCloud} 'START_CLOUD_RECEIPT_HOLD'
+ Reject {Get-V3PaperRepeatedStart $startupContext @{kind='V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1';release_packet=$packetPath} $observedCloud} 'START_CLOUD_RECEIPT_HOLD'
  $observedCloud.successor_series_id=$sid
  [IO.File]::AppendAllText($packetPath,' ')
- Reject {Get-V3PaperRepeatedStart $startupContext @{release_packet=$packetPath} $observedCloud} 'START_PROOF_BINDING_HOLD'
+ Reject {Get-V3PaperRepeatedStart $startupContext @{kind='V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1';release_packet=$packetPath} $observedCloud} 'START_PROOF_BINDING_HOLD'
  $claims.expires_at_utc=[datetime]::UtcNow.AddSeconds(-1).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
  Reject {ReadRuntimeFixture} 'APPROVAL_EXPIRED_OR_FUTURE_HOLD'
  # Durable latch is crash-safe and cannot be reopened as a second attempt.

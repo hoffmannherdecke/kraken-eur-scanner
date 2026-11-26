@@ -23,7 +23,7 @@ function Assert-V3PaperRuntimeSpec([object]$Spec,[object]$Plan) {
  $phaseMatchesKind=(
   ([string]$Spec.kind -ceq 'V3_NATIVE_RELEASE_RUNTIME_SPEC_V1' -and
    [string]$Spec.phase -cin @('FIRST_SCANNER_MODEL_P4','FOLLOWUP_6H24H72H','CLOUD_RECEIPT_ACK')) -or
-  ([string]$Spec.kind -ceq 'V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1' -and
+  ([string]$Spec.kind -cin @('V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1','V3_NATIVE_UNBOUNDED_PAPER_RUNTIME_SPEC_V1') -and
    [string]$Spec.phase -ceq 'REPEATED_PAPER' -and
    $null -eq $Spec.candidate -and $null -eq $Spec.preflight))
  if(-not $phaseMatchesKind -or
@@ -40,7 +40,7 @@ function Write-V3PaperReceipt([string]$Path,[object]$Value) {
  try{$f.Write($bytes,0,$bytes.Length);$f.Flush($true)}finally{$f.Dispose()}
 }
 function Assert-V3PaperDeadline([object]$Context) {
- if([datetimeoffset]::UtcNow -ge $Context.authorization.expires_at){throw 'V3_PAPER_AUTHORIZATION_EXPIRED_FENCE_PRESERVED'}
+ if($null -ne $Context.authorization.expires_at -and [datetimeoffset]::UtcNow -ge $Context.authorization.expires_at){throw 'V3_PAPER_AUTHORIZATION_EXPIRED_FENCE_PRESERVED'}
 }
 function Read-V3PaperIndependentReceipt([object]$Context,[string]$Json,[string]$Cms,[string]$ExpectedSha256) {
  $raw=Read-V3ReleaseLocalBytes $Json
@@ -51,7 +51,7 @@ function Read-V3PaperIndependentReceipt([object]$Context,[string]$Json,[string]$
  $now=[datetimeoffset]::UtcNow
  $fresh=0 -le ($now-$at).TotalSeconds -and ($now-$at).TotalSeconds -le 90
  if($Context.authorization.claims.PSObject.Properties['scope'] -and
-    $Context.authorization.claims.scope -ceq 'V3_PAPER_RUNTIME_REPEATED'){
+    $Context.authorization.claims.scope -cin @('V3_PAPER_RUNTIME_REPEATED','V3_PAPER_RUNTIME_UNTIL_REVOKED')){
   # The independent lease pins this exact post-CAS witness. Its creation
   # must be contemporaneous with lease issuance; live host checks still run
   # below on every phase and after every restart.
@@ -67,6 +67,8 @@ function Get-V3PaperRepeatedStart([object]$Context,[object]$Spec,[object]$CloudR
  $plan=$Context.plan
  $config=$plan.cas_request.new_v3_config
  $auth=$Context.authorization
+ $unbounded=[string]$Spec.kind -ceq 'V3_NATIVE_UNBOUNDED_PAPER_RUNTIME_SPEC_V1'
+ if($unbounded -ne ([string]$auth.claims.scope -ceq 'V3_PAPER_RUNTIME_UNTIL_REVOKED')){throw 'V3_PAPER_RUNTIME_SCOPE_DRIFT'}
  $Receipt=$auth.claims.bindings.start_authority
  if($Receipt -isnot [pscustomobject] -or [string]$CloudReceipt.kind -cne 'V3_PAPER_RELEASE_EPOCH_READER_V1' -or
     [string]$CloudReceipt.state -cne 'CAS_COMMITTED_EXACT_SUCCESSOR_SINGLE_ACTIVE' -or
@@ -100,11 +102,18 @@ function Get-V3PaperRepeatedStart([object]$Context,[object]$Spec,[object]$CloudR
     [string]$assignment.strategy_fingerprint_sha256 -cne [string]$plan.strategy_sha256){
   throw 'V3_PAPER_RUNTIME_START_PROOF_BINDING_HOLD'
  }
- if(($packet.bounded_research_scope.max_candidates -isnot [int] -and $packet.bounded_research_scope.max_candidates -isnot [long]) -or
-    $packet.bounded_research_scope.max_candidates -notin (1..500) -or
-    ($packet.bounded_research_scope.max_observation_days -isnot [int] -and $packet.bounded_research_scope.max_observation_days -isnot [long]) -or
-    $packet.bounded_research_scope.max_observation_days -notin (1..21) -or
-    ($auth.expires_at-$auth.not_before).TotalDays -gt $packet.bounded_research_scope.max_observation_days){
+ $research=$packet.bounded_research_scope
+ if($unbounded){
+  if($null -eq $research -or -not $research.PSObject.Properties['max_observation_days'] -or
+     -not $research.PSObject.Properties['max_candidates'] -or
+     $null -ne $research.max_observation_days -or $null -ne $research.max_candidates){
+   throw 'V3_PAPER_RUNTIME_START_OBSERVATION_WINDOW_HOLD'
+  }
+ }elseif(($research.max_candidates -isnot [int] -and $research.max_candidates -isnot [long]) -or
+    $research.max_candidates -notin (1..500) -or
+    ($research.max_observation_days -isnot [int] -and $research.max_observation_days -isnot [long]) -or
+    $research.max_observation_days -notin (1..21) -or
+    ($auth.expires_at-$auth.not_before).TotalDays -gt $research.max_observation_days){
   throw 'V3_PAPER_RUNTIME_START_OBSERVATION_WINDOW_HOLD'
  }
  if([string]$Receipt.maintenance_release_repo_sha -cne $Context.commit -or
@@ -128,9 +137,9 @@ function Get-V3PaperRepeatedStart([object]$Context,[object]$Spec,[object]$CloudR
  }
  Assert-V3PaperDeadline $Context
  return [ordered]@{
-  scope='V3_PAPER_RUNTIME_REPEATED';approval_sha256=$auth.approval_sha256
+  scope=$auth.claims.scope;approval_sha256=$auth.approval_sha256
   not_before_utc=$auth.not_before.ToUniversalTime().ToString('o')
-  expires_at_utc=$auth.expires_at.ToUniversalTime().ToString('o');runtime_spec=$Spec
+  expires_at_utc=$(if(-not $unbounded){$auth.expires_at.ToUniversalTime().ToString('o')});runtime_spec=$Spec
  }
 }
 function Get-V3PaperTaskActionSha256([object]$Action) {
@@ -172,7 +181,8 @@ function Get-V3PaperRepeatedHealth([object]$Context,[object]$Runtime,[object]$Ac
     [string]$heartbeat.runtime_bundle_sha256 -cne [string]$plan.bundle_sha256 -or
     [string]$heartbeat.strategy_sha256 -cne [string]$plan.strategy_sha256 -or
     [string]$heartbeat.runtime_approval_sha256 -cne $Runtime.approval_sha256 -or
-    [datetimeoffset]$heartbeat.expires_at_utc -ne $Runtime.expires_at -or
+    ($null -eq $heartbeat.expires_at_utc) -ne ($null -eq $Runtime.expires_at) -or
+    ($null -ne $Runtime.expires_at -and [datetimeoffset]$heartbeat.expires_at_utc -ne $Runtime.expires_at) -or
     $heartbeat.paper_only -ne $true -or $heartbeat.orders -ne $false -or $heartbeat.real_money_actions -ne $false -or
     [string]$super.v3_paper_old_intake_fence.mode -cne 'CLOUD_COMMITTED' -or
     [string]$super.v3_paper_successor_readonly.status -cne 'LOCAL_TASK_AND_HEARTBEAT_MATCH_NOT_RELEASE_PROOF'){return}
@@ -922,8 +932,9 @@ function Invoke-V3OneTimePaperRelease {
    # This untrusted discriminator selects the signature scope only.
    # The original bytes are pinned and checked again after CMS verification.
    $runtimeHeader=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes $RuntimeSpecJson)
-   $repeated=[string]$runtimeHeader.kind -ceq 'V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1'
-   if($repeated){$scope='V3_PAPER_RUNTIME_REPEATED'}
+   $repeated=[string]$runtimeHeader.kind -cin @('V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1','V3_NATIVE_UNBOUNDED_PAPER_RUNTIME_SPEC_V1')
+   if([string]$runtimeHeader.kind -ceq 'V3_NATIVE_UNBOUNDED_PAPER_RUNTIME_SPEC_V1'){$scope='V3_PAPER_RUNTIME_UNTIL_REVOKED'}
+   elseif($repeated){$scope='V3_PAPER_RUNTIME_REPEATED'}
    elseif($Mode -eq 'PaperRuntimeBootstrap'){throw 'V3_PAPER_RUNTIME_SCOPE_DRIFT'}
   }
   $auth=Assert-V3OneTimeReleaseAuthorization -Payload (Read-V3ReleaseLocalBytes $ApprovalJson) -Cms (Read-V3ReleaseLocalBytes $ApprovalCms 32768) `
@@ -949,7 +960,7 @@ function Invoke-V3OneTimePaperRelease {
    $spec=Read-V3PaperPinnedJson $RuntimeSpecJson $b.runtime_spec_sha256
    $plan=Read-V3PaperPinnedJson $spec.paper_plan $b.plan_sha256;$ctx.plan=$plan
    Assert-V3PaperRuntimeSpec $spec $plan
-   if($repeated -ne ([string]$spec.kind -ceq 'V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1')){
+   if($repeated -ne ([string]$spec.kind -cin @('V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1','V3_NATIVE_UNBOUNDED_PAPER_RUNTIME_SPEC_V1'))){
     throw 'V3_PAPER_RUNTIME_SCOPE_DRIFT'
    }
    if($repeated){
@@ -1298,11 +1309,12 @@ function Invoke-V3OneTimePaperRelease {
     throw 'V3_PAPER_REVIEWED_DISABLED_NATIVE_ACTION_REQUIRED'
    }
    $attempt=@{approval_sha256=$auth.approval_sha256}
-   if([string]$spec.kind -cne 'V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1'){throw 'V3_PAPER_ACTIVATION_REPEATED_RUNTIME_REQUIRED'}
+   if([string]$spec.kind -cnotin @('V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1','V3_NATIVE_UNBOUNDED_PAPER_RUNTIME_SPEC_V1')){throw 'V3_PAPER_ACTIVATION_REPEATED_RUNTIME_REQUIRED'}
    $boot=$plan.runtime_bootstrap
+   $runtimeScope=if([string]$spec.kind -ceq 'V3_NATIVE_UNBOUNDED_PAPER_RUNTIME_SPEC_V1'){'V3_PAPER_RUNTIME_UNTIL_REVOKED'}else{'V3_PAPER_RUNTIME_REPEATED'}
    $runtime=Assert-V3OneTimeReleaseAuthorization -Payload (Read-V3ReleaseLocalBytes $boot.approval_json) `
     -Cms (Read-V3ReleaseLocalBytes $boot.approval_cms 32768) -ReviewedAuthorityCertificateSha256 $pin `
-    -Scope V3_PAPER_RUNTIME_REPEATED -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $inventory
+    -Scope $runtimeScope -ExpectedReleaseCommit $ExpectedReleaseCommit -ExpectedArtifacts $inventory
    $runtimeBindings=$runtime.claims.bindings
    if([string]$runtime.claims.release_id -cne [string]$auth.claims.release_id -or
       [string]$runtimeBindings.plan_sha256 -cne [string]$b.plan_sha256 -or
