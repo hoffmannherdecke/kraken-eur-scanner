@@ -2187,6 +2187,25 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
                     publish("DEGRADED_CLOUD_ACK", "WAITING_TO_RECONCILE_PAPER_RECEIPTS")
                 except _OriginalhostReadbackHold as exc:
                     _check_runtime_deadline(deadline)
+                    if exc.detail["category"] == "POWERSHELL_TIMEOUT":
+                        # A timed-out readback child is terminated by subprocess.run.
+                        # Spend one attempt for this signed lease before retrying.
+                        timeout_attempt = state / (
+                            "v3-paper-readback-timeout-" + approval_sha + ".attempted"
+                        )
+                        try:
+                            with timeout_attempt.open("xb") as receipt:
+                                receipt.write(b"PaperHostReadback timeout\n")
+                                receipt.flush()
+                                os.fsync(receipt.fileno())
+                        except OSError:
+                            raise exc from None
+                        persist_readback_failure(exc)
+                        publish("DEGRADED_AUTHORITY_READ", "WAITING_TO_RECHECK_HOST_READBACK",
+                                failure_detail=exc.detail)
+                        time.sleep(min(30, max(0, (
+                            deadline - _originalhost_wall_clock_utc()).total_seconds())))
+                        continue
                     owner_retry_at = _owner_http_retry_at(exc, _originalhost_wall_clock_utc())
                     if owner_retry_at is None:
                         raise
