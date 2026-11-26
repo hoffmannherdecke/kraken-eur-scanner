@@ -2,12 +2,14 @@
 """Paper-only position lifecycle tracker with explicit market-data quality gates."""
 from __future__ import annotations
 import hashlib, json, math, time, urllib.parse, urllib.request
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from itertools import islice
 
-ROOT=Path(__file__).resolve().parent
+SOURCE_FILE=Path(__file__).resolve()
+ROOT=SOURCE_FILE.parent
 FEE_PCT=0.60
 FEE=FEE_PCT/100.0
 
@@ -63,7 +65,7 @@ def trailing_rule(entry,peak):
 def lifecycle_code_fingerprint():
     h=hashlib.sha256()
     for rel in ("paper_position_tracker.py","paper_strategy_spec.json"):
-        p=ROOT/rel
+        p=SOURCE_FILE if rel=="paper_position_tracker.py" else ROOT/rel
         h.update(rel.encode("utf-8")+b"\0")
         h.update(p.read_bytes())
         h.update(b"\0")
@@ -364,4 +366,16 @@ def main():
     },sort_keys=True))
 
 if __name__=="__main__":
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--app-root",type=Path)
+    args=parser.parse_args()
+    if args.app_root is not None:
+        if not args.app_root.is_absolute():
+            raise ValueError("technical aftercare app root must be absolute")
+        ROOT=args.app_root.resolve(strict=True)
+        if not ROOT.is_dir():
+            raise ValueError("technical aftercare app root must be a directory")
+        control=json.loads((ROOT/"paper_runtime_control.json").read_text("utf-8"))
+        if control.get("real_money_actions_enabled") is not False:
+            raise RuntimeError("unsafe V2R4 technical aftercare control")
     main()
