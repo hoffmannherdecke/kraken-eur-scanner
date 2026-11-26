@@ -235,43 +235,50 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                                               candidate_id=cid,now_at_utc=clock_now())
             elif type(ttl) is int and 1<=ttl<=60:
                 # Real closed source is requested only while the window is live.
-                coin=fetch(altname,pair)
-                q=ticker(altname)
-                reentry_coin=coin
-                # The existing Kraken public ticker client does not carry an
-                # exchange observation timestamp. Its real local completion
-                # time is known only AFTER the quote was acquired.
-                reentry_quote=dict(q,observed_at_utc=(
-                    q.get("observed_at_utc") or clock_now()))
-                reentry_quote.setdefault("pair",pair)
-                frames=coin.get("frames") or {}
-                frame=frames.get("5") or {}
-                frame1=frames.get("1") or {}
-                frame15=frames.get("15") or {}
-                now_at=clock_now()
-                evidence={
-                    "pair":pair,"observed_at_utc":coin.get("observed_at_utc"),
-                    "known_at_utc":now_at,
-                    "closed_5m_end_utc":frame.get("last_closed_bar_end_utc"),
-                    "values":{
-                        "last_eur":q.get("last"),
-                        "bid_eur":q.get("bid"),
-                        "ask_eur":q.get("ask"),
-                        "spread_pct":q.get("spread_pct"),
-                        "closed_1m_close_eur":frame1.get("closed_close_eur"),
-                        "closed_1m_volume_ratio_5":frame1.get("volume_ratio_prior_5"),
-                        "closed_5m_close_eur":frame.get("closed_close_eur"),
-                        "closed_5m_volume_ratio_5":frame.get("volume_ratio_prior_5"),
-                        "closed_15m_close_eur":frame15.get("closed_close_eur"),
-                        "closed_15m_volume_ratio_4":frame15.get("volume_ratio_prior_4"),
-                    },
-                }
-                if frame.get("status")!="VALID" or coin.get("pair")!=pair:
-                    results["wait"]={"status":"WAIT_5M_SOURCE_UNVERIFIED_NO_ACTION",
+                try:
+                    coin=fetch(altname,pair)
+                    q=ticker(altname)
+                except (OSError, RuntimeError, ValueError, KeyError, TypeError, IndexError, StopIteration, ZeroDivisionError):
+                    coin, q = None, None
+                if not isinstance(coin, dict) or not isinstance(q, dict) or not q:
+                    results["wait"]={"status":"WAIT_PUBLIC_MARKET_SOURCE_UNAVAILABLE_NO_ACTION",
                                      "authorized_buy":False}
                 else:
-                    results["wait"]=observe_wait(journal=journal,series_id=series_id,
-                        candidate_id=cid,snapshot=evidence,now_at_utc=now_at)
+                    reentry_coin=coin
+                    # The existing Kraken public ticker client does not carry an
+                    # exchange observation timestamp. Its real local completion
+                    # time is known only AFTER the quote was acquired.
+                    reentry_quote=dict(q,observed_at_utc=(
+                        q.get("observed_at_utc") or clock_now()))
+                    reentry_quote.setdefault("pair",pair)
+                    frames=coin.get("frames") or {}
+                    frame=frames.get("5") or {}
+                    frame1=frames.get("1") or {}
+                    frame15=frames.get("15") or {}
+                    now_at=clock_now()
+                    evidence={
+                        "pair":pair,"observed_at_utc":coin.get("observed_at_utc"),
+                        "known_at_utc":now_at,
+                        "closed_5m_end_utc":frame.get("last_closed_bar_end_utc"),
+                        "values":{
+                            "last_eur":q.get("last"),
+                            "bid_eur":q.get("bid"),
+                            "ask_eur":q.get("ask"),
+                            "spread_pct":q.get("spread_pct"),
+                            "closed_1m_close_eur":frame1.get("closed_close_eur"),
+                            "closed_1m_volume_ratio_5":frame1.get("volume_ratio_prior_5"),
+                            "closed_5m_close_eur":frame.get("closed_close_eur"),
+                            "closed_5m_volume_ratio_5":frame.get("volume_ratio_prior_5"),
+                            "closed_15m_close_eur":frame15.get("closed_close_eur"),
+                            "closed_15m_volume_ratio_4":frame15.get("volume_ratio_prior_4"),
+                        },
+                    }
+                    if frame.get("status")!="VALID" or coin.get("pair")!=pair:
+                        results["wait"]={"status":"WAIT_5M_SOURCE_UNVERIFIED_NO_ACTION",
+                                         "authorized_buy":False}
+                    else:
+                        results["wait"]=observe_wait(journal=journal,series_id=series_id,
+                            candidate_id=cid,snapshot=evidence,now_at_utc=now_at)
     # Build verified archive ONCE for both original lifecycle and the later
     # P1 structural base. A new bar cannot be inferred from a late download.
     capture_path=assemble(snapshots=capture_dir,pair=pair,
