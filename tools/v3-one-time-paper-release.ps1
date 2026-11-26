@@ -263,28 +263,56 @@ function Test-V3PaperHistoricalAftercareDelayOnHost($Observed,[string]$Successor
 function Assert-V3PaperProcesses([object]$Plan,[switch]$Absent) {
  if(@($Plan.intake_processes).Count -lt 2 -or @($Plan.intake_processes).Count -gt 8){throw 'V3_PAPER_ORIGINAL_PROCESS_SET_REQUIRED'}
  $seen=@{}
+ $commandHashes=@{}
  foreach($row in $Plan.intake_processes){
   $idValue=[int]$row.pid
-  if($idValue -le 0 -or $seen.ContainsKey($idValue)){throw 'V3_PAPER_PROCESS_IDENTITY_HOLD'}
-  $seen[$idValue]=$true
+  if($idValue -le 0 -or $seen.ContainsKey($idValue) -or
+     [string]$row.started_at_utc -cnotmatch '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{7}Z$' -or
+     [string]$row.command_sha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_PAPER_PROCESS_IDENTITY_HOLD'}
+  $seen[$idValue]=[string]$row.started_at_utc
+  $commandHashes[[string]$row.command_sha256]=$true
+  if($Absent){continue}
   $p=@(Get-CimInstance Win32_Process -Filter "ProcessId=$idValue" -ErrorAction Stop)
-  if($Absent){if($p.Count){throw 'V3_PAPER_OLD_PROCESS_REMAINS'};continue}
   if($p.Count -ne 1 -or [string]$p[0].Name -cnotmatch '^pythonw?\.exe$' -or
     ([datetime]$p[0].CreationDate).ToUniversalTime().ToString('o') -cne [string]$row.started_at_utc -or
     (Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes([string]$p[0].CommandLine))) -cne [string]$row.command_sha256){
    throw 'V3_PAPER_PROCESS_BIRTH_OR_COMMAND_DRIFT'
   }
  }
- # Also reject orphan/restarted descendants with the exact two original
- # native action signatures. PID absence alone cannot establish quiescence.
- if($Absent){
-  foreach($row in @($Plan.tasks|Where-Object {$_.name -cin @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')})){
-   [xml]$xml=[Text.Encoding]::UTF8.GetString((Read-V3ReleaseLocalBytes $row.xml_path 1048576))
+ if(-not $Absent){return}
+ # Use a single inventory for both checks. A recycled PID cannot establish
+ # identity, and an orphan or replacement can run under any PID.
+ $intakes=@($Plan.tasks|Where-Object {$_.name -cin @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')})
+ if($intakes.Count -ne 2 -or (@($intakes.name|Sort-Object)-join '|') -cne 'CryptoMiniPC-V2R4PaperCandidates|CryptoMiniPC-V2R4PaperWait'){
+  throw 'V3_PAPER_PROCESS_ACTION_AMBIGUOUS'
+ }
+ $signatures=@(
+  foreach($row in $intakes){
+   $bytes=Read-V3ReleaseLocalBytes $row.xml_path 1048576
+   if((Get-V3ReleaseSha256 $bytes) -cne [string]$row.xml_sha256){throw 'V3_PAPER_TASK_BACKUP_HASH_HOLD'}
+   [xml]$xml=[Text.Encoding]::UTF8.GetString($bytes)
    $signature=[string]$xml.Task.Actions.Exec.Arguments
    if($signature.Length -lt 10){throw 'V3_PAPER_PROCESS_ACTION_AMBIGUOUS'}
-   if(@(Get-CimInstance Win32_Process|Where-Object {
-      [string]$_.Name -match '^pythonw?\.exe$' -and ([string]$_.CommandLine).Contains($signature)
-     }).Count){throw 'V3_PAPER_REPLACEMENT_INTAKE_PROCESS_HOLD'}
+   $signature
+  }
+ )
+ foreach($process in @(Get-CimInstance Win32_Process -ErrorAction Stop)){
+  $processId=[int]$process.ProcessId
+  if($seen.ContainsKey($processId)){
+   if($null -eq $process.CreationDate){throw 'V3_PAPER_PROCESS_IDENTITY_HOLD'}
+   $birth=([datetime]$process.CreationDate).ToUniversalTime().ToString('o')
+   if($birth -ceq $seen[$processId]){throw 'V3_PAPER_OLD_PROCESS_REMAINS'}
+  }
+  if([string]$process.Name -notmatch '^pythonw?\.exe$'){continue}
+  $command=[string]$process.CommandLine
+  if([string]::IsNullOrWhiteSpace($command)){throw 'V3_PAPER_PROCESS_IDENTITY_HOLD'}
+  if($commandHashes.ContainsKey((Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($command))))){
+   throw 'V3_PAPER_REPLACEMENT_INTAKE_PROCESS_HOLD'
+  }
+  foreach($signature in $signatures){
+   if($command.IndexOf($signature,[StringComparison]::OrdinalIgnoreCase) -ge 0){
+    throw 'V3_PAPER_REPLACEMENT_INTAKE_PROCESS_HOLD'
+   }
   }
  }
 }

@@ -15,6 +15,52 @@ foreach($file in @('tools/v3-one-time-paper-release.ps1','tools/v3-one-time-rele
  $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root $file),[ref]$t,[ref]$e)
  Need ($e.Count -eq 0) 'PAPER_PARSE_FAILURE'
 }
+# Original process identity and replacement detection use the same inventory.
+& {
+ $old=[datetime]::new(2026,11,23,15,53,45,[DateTimeKind]::Utc)
+ $recent=$old.AddDays(3)
+ $oldCommand='python.exe candidate-worker.py --original-intake'
+ $hash=Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($oldCommand))
+ $fixtureTaskXml='<Task><Actions><Exec><Arguments>wait-worker.py --paper-intake</Arguments></Exec></Actions></Task>'
+ $xmlHash=Get-V3ReleaseSha256 ([Text.Encoding]::UTF8.GetBytes($fixtureTaskXml))
+ $plan=[pscustomobject]@{
+  intake_processes=@(
+   [pscustomobject]@{pid=15336;started_at_utc=$old.ToString('o');command_sha256=$hash}
+   [pscustomobject]@{pid=18196;started_at_utc=$old.ToString('o');command_sha256=$hash}
+  )
+  tasks=@(
+   [pscustomobject]@{name='CryptoMiniPC-V2R4PaperCandidates';xml_path='candidate.xml';xml_sha256=$xmlHash}
+   [pscustomobject]@{name='CryptoMiniPC-V2R4PaperWait';xml_path='wait.xml';xml_sha256=$xmlHash}
+  )
+ }
+ function Read-V3ReleaseLocalBytes { return ,[Text.Encoding]::UTF8.GetBytes($fixtureTaskXml) }
+ function Get-CimInstance {
+  param($ClassName,$Filter,$ErrorAction)
+  if($Filter){throw 'EXPECTED_SINGLE_UNFILTERED_INVENTORY'}
+  if($inventoryFailure){throw 'SIMULATED_CIM_FAILURE'}
+  $inventory
+ }
+ $inventoryFailure=$false
+ $inventory=@([pscustomobject]@{ProcessId=15336;CreationDate=$recent;Name='python.exe';CommandLine='python.exe unrelated.py'})
+ Assert-V3PaperProcesses $plan -Absent
+ $inventory[0].CreationDate=$old
+ Reject {Assert-V3PaperProcesses $plan -Absent} 'V3_PAPER_OLD_PROCESS_REMAINS'
+ $inventory[0].CreationDate=$null
+ Reject {Assert-V3PaperProcesses $plan -Absent} 'V3_PAPER_PROCESS_IDENTITY_HOLD'
+ $inventory[0].CreationDate=$recent
+ $inventory[0].CommandLine=$oldCommand
+ Reject {Assert-V3PaperProcesses $plan -Absent} 'V3_PAPER_REPLACEMENT_INTAKE_PROCESS_HOLD'
+ $inventory[0].ProcessId=1234
+ Reject {Assert-V3PaperProcesses $plan -Absent} 'V3_PAPER_REPLACEMENT_INTAKE_PROCESS_HOLD'
+ $inventory[0].CommandLine='python.exe WAIT-WORKER.PY --paper-intake'
+ Reject {Assert-V3PaperProcesses $plan -Absent} 'V3_PAPER_REPLACEMENT_INTAKE_PROCESS_HOLD'
+ $inventory[0].CommandLine=$null
+ Reject {Assert-V3PaperProcesses $plan -Absent} 'V3_PAPER_PROCESS_IDENTITY_HOLD'
+ $inventory=@()
+ Assert-V3PaperProcesses $plan -Absent
+ $inventoryFailure=$true
+ Reject {Assert-V3PaperProcesses $plan -Absent} 'SIMULATED_CIM_FAILURE'
+}
 # Exact historical completion-delay policy. No real host, network or task access.
 & {
  $now=[datetimeoffset]::Parse('2026-11-26T15:00:00Z')
