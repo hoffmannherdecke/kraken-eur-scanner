@@ -131,6 +131,40 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
             self.assertEqual(mirror["decision"]["decision"], "REJECT")
             self.assertEqual(mirror["kind"], "V2R4_WAIT_EXPIRY_V1")
 
+            # A second sweep must preserve the exact bytes without writing
+            # either an expiry receipt or its already-current legacy mirror.
+            mirror_path = app / "paper_revalidations" / initial_path.name
+            original_bytes = mirror_path.read_bytes()
+            with patch.object(Path, "write_text", side_effect=AssertionError("unexpected duplicate write")):
+                self.local_runtime.reconcile_rechecks_and_expiry(app, now=now)
+            self.assertEqual(mirror_path.read_bytes(), original_bytes)
+
+            # A damaged or missing mirror is repaired, not treated as cached.
+            mirror_path.write_bytes(b"invalid")
+            self.local_runtime.reconcile_rechecks_and_expiry(app, now=now)
+            self.assertEqual(mirror_path.read_bytes(), original_bytes)
+            mirror_path.unlink()
+            self.local_runtime.reconcile_rechecks_and_expiry(app, now=now)
+            self.assertEqual(mirror_path.read_bytes(), original_bytes)
+
+    def test_revalidation_mirror_write_boundary_and_changed_content(self):
+        tool = self.local_runtime
+        with tempfile.TemporaryDirectory() as td:
+            mirror = Path(td) / "mirror.json"
+            first = {"series_id": "S", "decision": {"decision": "REJECT"}, "note": "ä\nβ"}
+            second = {"series_id": "S", "decision": {"decision": "BUY_SCOUT"}}
+            self.assertTrue(tool._write_revalidation_if_changed(mirror, first))
+            original = mirror.read_bytes()
+            with patch.object(Path, "write_text", side_effect=AssertionError("unexpected duplicate write")):
+                self.assertFalse(tool._write_revalidation_if_changed(mirror, first))
+            self.assertEqual(mirror.read_bytes(), original)
+            self.assertTrue(tool._write_revalidation_if_changed(mirror, second))
+            self.assertEqual(json.loads(mirror.read_text("utf-8")), second)
+            # An inability to open/write a mirror is not a successful no-op.
+            with patch.object(Path, "open", side_effect=PermissionError("denied")):
+                with self.assertRaises(PermissionError):
+                    tool._write_revalidation_if_changed(mirror, second)
+
     def test_wait_without_followup_plan_fails_closed(self):
         now = datetime(2026, 10, 7, 18, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as td:
