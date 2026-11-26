@@ -50,6 +50,10 @@ function healthModel(v,elapsedSec,connected){
     Number.isFinite(holdAge)&&holdAge>=-30&&holdAge<=180){
   return {...result,tone:"bad",writer:"Writer-HOLD bestätigt",label:"V3-Writer gestoppt",note:"Der Originalhost meldet einen Stopp für die aktive Serie. Der konkrete Befund steht unter Details."};
  }
+ const fenceStopRequired=!stale&&age<=HOST_REPORT_DUE_SEC&&issues.some(i=>
+  i?.check==="runtime_supervisor"&&i.severity==="WARNING"&&typeof i.detail==="string"&&
+  /^status=CRITICAL age_sec=.* classification=V3_SECURITY_STOP_REQUIRED_PREDECESSOR_FENCE$/.test(i.detail));
+ if(fenceStopRequired)return {...result,tone:"bad",label:"Stufe 4 · Sicherheitsstopp erforderlich",note:"Der Supervisor meldet eine aktivierte Vorgänger-Task trotz produktiver Sperre. Der Stopp muss am Originalhost bestätigt werden."};
  if(negative)return {...result,tone:"bad",label:stale?"Letzter Bericht: Störung – aktueller Status unklar":"Betriebsstörung gemeldet",note:stale?"Letzter negativer Beleg bleibt sichtbar. Keine aktuelle Entwarnung.":writer===false?"V3-Writer-Prüfung fehlgeschlagen. Betriebszustand beim Originalhost klären.":scanner===false?"Scanner-Prüfung fehlgeschlagen.":"Mini-PC meldet kritischen Fehler."};
  if(stale)return {...result,tone:"unknown",label:"Systemstatus nicht aktuell",note:!connected?"Cloud-Verbindung nicht bestätigt.":elapsedSec>CLOUD_RESPONSE_STALE_SEC?"Cloud-Abfrage überfällig.":"Hostbericht älter als fünf Minuten."};
  if(age>HOST_REPORT_DUE_SEC)return {...result,tone:"warn",label:"Neuer Hostbericht fällig",note:"Hostbericht älter als drei Minuten. Letzte Befunde bleiben sichtbar; aktuelle Gesundheit nicht bestätigt."};
