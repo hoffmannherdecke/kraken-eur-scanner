@@ -41,8 +41,35 @@ class ProductiveNativeBootstrapTests(unittest.TestCase):
             'approval_cms','admission_json','admission_sha256','expected_source_sha','host_receipt','host_cms')})
         for code, out in ((1,'{}'), (0,''), (0,'[]'), (0,'x'*65537)):
             with self.subTest(code=code, length=len(out)), patch.object(native.subprocess,
-                'run', return_value=argparse.Namespace(returncode=code,stdout=out)), self.assertRaises(ValueError):
+                'run', return_value=argparse.Namespace(returncode=code,stdout=out,stderr='')), self.assertRaises(ValueError):
                 native.authenticated_originalhost_release_provider(args=args)
+
+
+    def test_native_error_markers_are_bounded_and_quota_pause_is_exact(self):
+        now = datetime(2026, 11, 26, tzinfo=timezone.utc)
+        record = {"status": 429, "remaining": 0, "reset_epoch": None,
+                  "retry_after_sec": 90, "web_status": "ProtocolError"}
+        def failure(row, category="POWERSHELL_UNCLASSIFIED_ERROR", code=1):
+            exc = native._OriginalhostReadbackHold(category, returncode=code)
+            exc.native_diagnostics = native._originalhost_native_diagnostics(
+                "V3_OWNER_HTTP_FAILURE_V1 " + json.dumps(row))
+            return exc
+        self.assertEqual(native._owner_http_retry_at(failure(record), now),
+                         now + timedelta(seconds=91))
+        self.assertEqual(native._owner_http_retry_at(failure({**record, "status":403}), now),
+                         now + timedelta(seconds=91))
+        for row in ({**record, "status":403, "remaining":1},
+                    {**record, "status":401},
+                    {**record, "web_status":"TrustFailure"},
+                    {**record, "private":"must not persist"},
+                    {**record, "retry_after_sec":True}):
+            with self.subTest(row=row):
+                self.assertIsNone(native._owner_http_retry_at(failure(row), now))
+        self.assertIsNone(native._owner_http_retry_at(
+            failure(record, "POWERSHELL_REPORTED_FIXED_CODE"), now))
+        self.assertEqual(native._originalhost_native_diagnostics(
+            "V3_OWNER_HTTP_FAILURE_V1 " + json.dumps(record) + "\n" +
+            "V3_OWNER_HTTP_FAILURE_V1 " + json.dumps(record)), {})
 
     def test_runtime_spec_forbids_paid_model_and_transport_injection(self):
         spec = dict.fromkeys(('kind','series_id','repo_sha','bundle_sha256','strategy_sha256',
