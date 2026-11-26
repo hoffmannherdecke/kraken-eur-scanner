@@ -272,6 +272,21 @@ def _terminal_wait_expiry(control, source, now, reason):
 def _expiry_path(rdir, now, cid, suffix):
     return rdir/f"{now.strftime('%Y%m%dT%H%M%SZ')}-{cid}-{suffix}.json"
 
+def _write_revalidation_if_changed(mirror:Path, record:dict) -> bool:
+    """Avoid rewriting a byte-identical legacy mirror, never skip changed data."""
+    payload=json.dumps(record,indent=2,sort_keys=True)+'\n'
+    expected=payload.replace('\n',os.linesep).encode('utf-8')
+    try:
+        # Non-truncating read/write open preserves the existing write-access
+        # boundary. A missing/unreadable mirror follows the original write path.
+        with mirror.open('r+b') as stream:
+            if stream.read(len(expected)+1)==expected:
+                return False
+    except OSError:
+        pass
+    mirror.write_text(payload,'utf-8')
+    return True
+
 def reconcile_rechecks_and_expiry(app:Path, now=None):
     control=load_json(app/'paper_runtime_control.json'); series_id=control['series_id']
     if control.get('real_money_actions_enabled') is not False:
@@ -333,7 +348,7 @@ def reconcile_rechecks_and_expiry(app:Path, now=None):
 
         if rr is not None:
             mirror=legacy/dp.name
-            mirror.write_text(json.dumps(rr,indent=2,sort_keys=True)+'\n','utf-8')
+            _write_revalidation_if_changed(mirror,rr)
 
 def run_lifecycle(args):
     app=args.app_root; trading=args.trading_root; hb=trading/'State/v2r4-paper-lifecycle-heartbeat.json'
