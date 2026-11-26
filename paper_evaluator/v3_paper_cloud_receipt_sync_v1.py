@@ -5,6 +5,10 @@ No activation endpoint, no orders, no V2R4 runtime modifications, no schedule.
 Only push bytes already durably journalled on the isolated V3 host directory.
 """
 from __future__ import annotations
+import errno
+import socket
+import ssl
+import time
 import argparse,hashlib,json,os,re,urllib.request,urllib.error,uuid
 from pathlib import Path
 from typing import Any
@@ -37,15 +41,28 @@ def batch(journal:Path,series_id:str,acked:set[str],limit:int=30)->list[dict[str
         if len(rows)>=limit:break
     return rows
 
-def _post_to_existing_relay(url:str,token:str,payload:dict[str,Any])->dict[str,Any]:
+def _post_to_existing_relay(url:str,token:str,payload:dict[str,Any], *, timeout: int = 25)->dict[str,Any]:
     """Original authenticated Edge transport; bounded response, no logging tokens."""
     request=urllib.request.Request(
         url,data=json.dumps(payload).encode("utf-8"),method="POST",
         headers={"Content-Type":"application/json",
                  "X-V3-Paper-Evidence-Token":token,
                  "User-Agent":"minipc-v3-paper-cloud/1"})
-    with urllib.request.urlopen(request,timeout=25) as response:
+    with urllib.request.urlopen(request,timeout=timeout) as response:
         return json.loads(response.read(50000).decode("utf-8"))
+
+
+def _transient_read_error(exc: OSError) -> bool:
+    if isinstance(exc, urllib.error.HTTPError):
+        return exc.code in (408, 502, 503, 504)
+    reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
+    if isinstance(reason, ssl.SSLError):
+        return False
+    if isinstance(reason, socket.gaierror):
+        return reason.errno == socket.EAI_AGAIN
+    return isinstance(reason, (TimeoutError, ConnectionResetError, ConnectionAbortedError)) or (
+        isinstance(reason, OSError) and reason.errno in (errno.ETIMEDOUT, errno.ECONNRESET)
+    )
 
 
 def read_active_paper_series(*,series_id:str,token:str,
@@ -63,9 +80,20 @@ def read_active_paper_series(*,series_id:str,token:str,
         raise ValueError("exact non-CANARY Paper series and relay credential required")
     payload={"action":"read_active_paper_series","series_id":series_id}
     try:
-        reply=(post or _post_to_existing_relay)(relay_url,token,payload)
-    except (urllib.error.HTTPError,urllib.error.URLError) as exc:
-        raise ValueError("authenticated original Cloud readback unavailable") from exc
+        reply = (post or _post_to_existing_relay)(relay_url, token, payload)
+    except OSError as exc:
+        if not _transient_read_error(exc):
+            raise ValueError("authenticated original Cloud readback unavailable") from exc
+        # Repeat only the read-only action. Keep the extra wait short and
+        # leave the original reply validation and writer gates in place.
+        time.sleep(0.25)
+        try:
+            if post is None:
+                reply = _post_to_existing_relay(relay_url, token, payload, timeout=5)
+            else:
+                reply = post(relay_url, token, payload)
+        except OSError as retry_exc:
+            raise ValueError("authenticated original Cloud readback unavailable") from retry_exc
     if (not isinstance(reply,dict) or reply.get("ok") is not True
             or reply.get("kind")!="V3_PAPER_ACTIVE_SERIES_READONLY_V1"
             or reply.get("series_id")!=series_id
