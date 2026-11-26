@@ -93,6 +93,19 @@ try {
  $null=Assert-V3OneTimeReleaseAuthorization @lease
  $repeated.expires_at_utc=$now.AddDays(5).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
  $lease=Sign-Claims $repeated;$lease.Scope='V3_PAPER_RUNTIME_REPEATED';Deny $lease
+ # The distinct scope accepts a signed JSON null expiry. Finite signatures
+ # keep their old interpretation and cannot be replayed into this scope.
+ $wrong=$lease.Clone();$wrong.Scope='V3_PAPER_RUNTIME_UNTIL_REVOKED';Deny $wrong
+ $repeated.scope='V3_PAPER_RUNTIME_UNTIL_REVOKED';$repeated.expires_at_utc=$null
+ $permanent=Sign-Claims $repeated;$permanent.Scope=$repeated.scope
+ $permanent.Now=$now.AddDays(100)
+ $verified=Assert-V3OneTimeReleaseAuthorization @permanent
+ if($null -ne $verified.expires_at){throw 'UNBOUNDED_SCOPE_HAS_EXPIRY'}
+ $wrong=$permanent.Clone();$wrong.Scope='V3_PAPER_RUNTIME_REPEATED';Deny $wrong
+ $wrong=$permanent.Clone();$wrong.Now=$now.AddMinutes(-1);Deny $wrong
+ $wrong=$permanent.Clone();$wrong.Cms=[byte[]]@();Deny $wrong
+ $repeated.expires_at_utc=$now.AddDays(5).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+ $wrong=Sign-Claims $repeated;$wrong.Scope=$repeated.scope;Deny $wrong
  $duplicate=[Text.Encoding]::UTF8.GetBytes('{"kind":"x","kind":"y"}')
  $denied=$false;try{$null=Read-V3ReleaseJson $duplicate}catch{$denied=$true}
  if(-not $denied){throw 'RELEASE_DUPLICATE_KEYS_ACCEPTED'};$checks++
