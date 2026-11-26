@@ -994,6 +994,21 @@ try {
         if ($archived.Count -ne 1 -or $archived[0].action -cne "ARCHIVED_BASELINE_NOT_RESTARTED") { $fenceOnly = $false }
       }
       if ($fenceOnly) { $detail += " classification=EXPECTED_V3_FENCE_ONLY_V1" }
+      $currentFenceViolation = (
+        $s.kind -ceq "MINIPC_RUNTIME_SUPERVISOR_V1" -and $s.schema_version -eq 1 -and
+        $s.status -ceq "CRITICAL" -and $exactAge -ge 0 -and $exactAge -le 180 -and
+        $s.v3_paper_old_intake_fence.mode -ceq "CLOUD_COMMITTED" -and
+        $s.v3_paper_old_intake_fence.marker_present -is [bool] -and
+        $s.v3_paper_old_intake_fence.marker_present -eq $true -and
+        $s.tasks -is [array] -and @($s.tasks | Where-Object {
+          $_.task -cin $protected -and $_.installed -is [bool] -and $_.installed -eq $true -and
+          $_.action -ceq "V3_FENCE_VIOLATION_WINDOWS_TASK_NOT_DISABLED" -and
+          $_.before.scheduler_state -cin @("Ready","Running","Queued")
+        }).Count -gt 0
+      )
+      if ($currentFenceViolation) {
+        $detail += " classification=V3_SECURITY_STOP_REQUIRED_PREDECESSOR_FENCE"
+      }
       Add-Check "runtime_supervisor" $ok $detail "WARNING"
     }
   } else {
