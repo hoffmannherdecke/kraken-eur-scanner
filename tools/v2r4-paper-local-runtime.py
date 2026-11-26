@@ -371,6 +371,19 @@ def reconcile_rechecks_and_expiry(app:Path, now=None):
             mirror=legacy/dp.name
             _write_revalidation_if_changed(mirror,rr)
 
+_TECHNICAL_AFTERCARE_TRACKER_SHA256="0f2ad8608fa4b9563135ca1e1c8197434755c0d0fb44f832198e0b7bc20ad82a"
+
+def _aftercare_tracker_command(app):
+    # The historical app's frozen original source remains intact. An explicitly
+    # installed adjacent technical tracker is identified by its actual bytes.
+    source=Path(__file__).resolve()
+    tracker=source.with_name("v2r4-aftercare-position-tracker-v1.py")
+    if source.parent!=app.resolve() and (tracker.exists() or tracker.is_symlink()):
+        if not tracker.is_file() or tracker.is_symlink() or hashlib.sha256(tracker.read_bytes()).hexdigest()!=_TECHNICAL_AFTERCARE_TRACKER_SHA256:
+            raise RuntimeError("technical aftercare tracker source mismatch")
+        return [sys.executable,"-I","-B",str(tracker),"--app-root",str(app.resolve())]
+    return [sys.executable,str(app/"paper_position_tracker.py")]
+
 def run_lifecycle(args):
     app=args.app_root; trading=args.trading_root; hb=trading/'State/v2r4-paper-lifecycle-heartbeat.json'
     while True:
@@ -381,7 +394,8 @@ def run_lifecycle(args):
         errors.append(f'recheck_reconciliation:{type(exc).__name__}:{exc}')
       for script in ('paper_position_tracker.py','paper_followup.py'):
         try:
-          p=subprocess.run([sys.executable,str(app/script)],cwd=str(app),text=True,capture_output=True,timeout=180)
+          command=_aftercare_tracker_command(app) if script=="paper_position_tracker.py" else [sys.executable,str(app/script)]
+          p=subprocess.run(command,cwd=str(app),text=True,capture_output=True,timeout=180)
           if p.returncode!=0: errors.append(f'{script}:{p.stderr[-200:]}')
           else: ran.append(script)
         except Exception as exc: errors.append(f'{script}:{type(exc).__name__}:{exc}')
