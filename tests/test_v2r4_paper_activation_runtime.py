@@ -24,6 +24,75 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
         cls.local_runtime = load_tool("v2r4-paper-local-runtime.py", "v2r4_paper_local_runtime")
         cls.cloud_sync = load_tool("v2r4-paper-cloud-sync.py", "v2r4_paper_cloud_sync")
 
+
+    def test_ordered_aftercare_reads_match_original_and_revisit_changes(self):
+        tool = self.local_runtime
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for i in range(260):
+                (root / f"{i:04d}.json").write_text(json.dumps({"n": i}), "utf-8")
+            bad = root / "corrupt.json"
+            bad.write_text("{", "utf-8")
+            def serial():
+                rows = []
+                for p in root.glob("*.json"):
+                    try:
+                        rows.append((p, tool.load_json(p)))
+                    except Exception:
+                        continue
+                return rows
+            self.assertEqual(list(tool._aftercare_records(root)), serial())
+            bad.write_text('{"n": 999}', "utf-8")
+            (root / "0000.json").unlink()
+            (root / "0001.json").write_text('{"n": 12345}', "utf-8")
+            self.assertEqual(list(tool._aftercare_records(root)), serial())
+
+    def test_position_source_parallel_preserves_original_selection(self):
+        import paper_position_tracker as tracker
+        control = {"series_id": "S"}
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for name in ("paper_decisions", "paper_revalidations", "paper_rechecks"):
+                (root / name).mkdir()
+            def record(cid, at, label, series="S", decision="BUY_SCOUT"):
+                return {"series_id": series, "candidate_id": cid,
+                        "decision": {"decision": decision},
+                        "paper_entry": {"opened_at_utc": at}, "label": label}
+            def save(directory, filename, row):
+                (root / directory / filename).write_text(json.dumps(row), "utf-8")
+            t0 = "2026-10-07T17:00:00Z"
+            t1 = "2026-10-07T18:00:00Z"
+            for i in range(260):
+                save("paper_decisions", f"{i:04d}.json", record(str(i), t0, "original"))
+            save("paper_revalidations", "tie.json", record("1", t0, "tie"))
+            save("paper_rechecks", "later.json", record("2", t1, "later"))
+            save("paper_rechecks", "other.json", record("3", t1, "foreign", "OTHER"))
+            save("paper_rechecks", "reject.json", record("4", t1, "reject", decision="REJECT"))
+            bad = root / "paper_rechecks" / "corrupt.json"
+            bad.write_text("{", "utf-8")
+            def serial(directory, pool):
+                for p in directory.glob("*.json"):
+                    try:
+                        rec = json.loads(p.read_text("utf-8"))
+                    except Exception:
+                        continue
+                    yield rec
+            with patch.object(tracker, "ROOT", root):
+                with patch.object(tracker, "_iter_source_records", serial):
+                    expected = tracker.source_buys(control)
+                actual = tracker.source_buys(control)
+                self.assertEqual(actual, expected)
+                self.assertEqual(actual["1"]["label"], "original")
+                self.assertEqual(actual["2"]["label"], "later")
+                self.assertEqual(actual["3"]["label"], "original")
+                self.assertEqual(actual["4"]["label"], "original")
+                self.assertEqual(len(actual), 260)
+                save("paper_rechecks", "later.json", record("2", t1, "corrected"))
+                self.assertEqual(tracker.source_buys(control)["2"]["label"], "corrected")
+                bad.write_text("[]", "utf-8")
+                with self.assertRaises(AttributeError):
+                    tracker.source_buys(control)
+
     def test_candidate_event_cache_is_memory_only_bounded_and_revalidates(self):
         tool = self.local_runtime
         with tempfile.TemporaryDirectory() as td:
