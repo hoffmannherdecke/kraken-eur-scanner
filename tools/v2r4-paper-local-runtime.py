@@ -2,6 +2,8 @@
 from __future__ import annotations
 import argparse, hashlib, json, os, subprocess, sys, time
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+from itertools import islice
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -287,6 +289,29 @@ def _write_revalidation_if_changed(mirror:Path, record:dict) -> bool:
     mirror.write_text(payload,'utf-8')
     return True
 
+def _aftercare_read_batch(paths):
+    records=[]
+    for path in paths:
+        try: record=load_json(path)
+        except Exception: continue
+        records.append((path,record))
+    return records
+
+def _aftercare_records(directory):
+    # Read only; keep original directory iteration and tie order. Bound
+    # outstanding work to 128 files, without a persistent negative cache.
+    paths=iter(directory.glob('*.json'))
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        while True:
+            batches=[]
+            for _ in range(4):
+                batch=tuple(islice(paths,32))
+                if not batch: break
+                batches.append(batch)
+            if not batches: return
+            for records in pool.map(_aftercare_read_batch,batches):
+                yield from records
+
 def reconcile_rechecks_and_expiry(app:Path, now=None):
     control=load_json(app/'paper_runtime_control.json'); series_id=control['series_id']
     if control.get('real_money_actions_enabled') is not False:
@@ -294,9 +319,7 @@ def reconcile_rechecks_and_expiry(app:Path, now=None):
     rdir=app/'paper_rechecks'; legacy=app/'paper_revalidations'
     rdir.mkdir(exist_ok=True); legacy.mkdir(exist_ok=True)
     latest={}
-    for rp in rdir.glob('*.json'):
-        try: rr=load_json(rp)
-        except Exception: continue
+    for rp,rr in _aftercare_records(rdir):
         if rr.get('series_id')!=series_id or not rr.get('candidate_id'): continue
         when=rr.get('recheck_completed_at_utc') or rr.get('completed_at_utc') or rr.get('revalidated_at_utc') or ''
         cid=rr['candidate_id']
@@ -304,9 +327,7 @@ def reconcile_rechecks_and_expiry(app:Path, now=None):
             latest[cid]=(when,rr)
 
     now=(now or utcnow()).astimezone(timezone.utc)
-    for dp in (app/'paper_decisions').glob('*.json'):
-        try: d=load_json(dp)
-        except Exception: continue
+    for dp,d in _aftercare_records(app/'paper_decisions'):
         if d.get('series_id')!=series_id or (d.get('decision') or {}).get('decision')!='WAIT':
             continue
         cid=d.get('candidate_id')
