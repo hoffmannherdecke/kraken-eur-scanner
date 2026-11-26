@@ -33,7 +33,15 @@ function healthModel(v,elapsedSec,connected){
  const critical=h.status==="CRITICAL"||issues.some(i=>i?.severity==="CRITICAL")||supervisorCritical(issues),negative=critical||writer===false||scanner===false;
  const stale=!connected||elapsedSec>CLOUD_RESPONSE_STALE_SEC||age>HOST_REPORT_STALE_SEC;
  const active=Array.isArray(v.series)&&v.series.length===1&&v.series[0]?.status==="active";
- const result={hostAge:Math.floor(age),hostAt:h.observed_at,writer:writer===true?"Beim Bericht OK":writer===false?"Prüfung fehlgeschlagen":"Nicht belegt",scanner:scanner===true?"Beim Bericht OK":scanner===false?"Prüfung fehlgeschlagen":"Nicht belegt"};
+ const levelMatch=active&&/^PAPER-V3-\d{8}T\d{6}Z$/.test(v.series[0]?.series_id||"")&&
+  !stale&&age<=HOST_REPORT_DUE_SEC&&typeof h.writer?.detail==="string"?
+  /^local task\/process\/heartbeat match=(True|False) age_sec=-?\d{1,3}(?:[.,]\d{1,6})? operating_level=([123])$/.exec(h.writer.detail):null;
+ const level=levelMatch&&(levelMatch[1]==="True"&&writer===true&&levelMatch[2]!=="3"||
+  levelMatch[1]==="False"&&h.writer.ok===false&&levelMatch[2]==="3"&&writerIssue?.severity==="WARNING"&&
+  writerIssue.detail===h.writer.detail)?Number(levelMatch[2]):null;
+ const levelLabel={1:"Stufe 1 · Normalbetrieb",2:"Stufe 2 · Warnung",3:"Stufe 3 · Eingeschränkter Betrieb"}[level];
+ const result={hostAge:Math.floor(age),hostAt:h.observed_at,writer:levelLabel??(writer===true?"Beim Bericht OK":writer===false?"Prüfung fehlgeschlagen":"Nicht belegt"),scanner:scanner===true?"Beim Bericht OK":scanner===false?"Prüfung fehlgeschlagen":"Nicht belegt"};
+ if(level===3&&!critical&&scanner===true)return {...result,tone:"warn",label:"V3-Paper-Betrieb eingeschränkt",note:"Eine Writer-Teilfunktion pausiert. Die gemeldeten Hostbefunde stehen unter Details."};
  if(negative)return {...result,tone:"bad",label:stale?"Letzter Bericht: Störung – aktueller Status unklar":"Betriebsstörung gemeldet",note:stale?"Letzter negativer Beleg bleibt sichtbar. Keine aktuelle Entwarnung.":writer===false?"V3-Writer-Prüfung fehlgeschlagen. Betriebszustand beim Originalhost klären.":scanner===false?"Scanner-Prüfung fehlgeschlagen.":"Mini-PC meldet kritischen Fehler."};
  if(stale)return {...result,tone:"unknown",label:"Systemstatus nicht aktuell",note:!connected?"Cloud-Verbindung nicht bestätigt.":elapsedSec>CLOUD_RESPONSE_STALE_SEC?"Cloud-Abfrage überfällig.":"Hostbericht älter als fünf Minuten."};
  if(age>HOST_REPORT_DUE_SEC)return {...result,tone:"warn",label:"Neuer Hostbericht fällig",note:"Hostbericht älter als drei Minuten. Letzte Befunde bleiben sichtbar; aktuelle Gesundheit nicht bestätigt."};
@@ -47,6 +55,7 @@ function healthModel(v,elapsedSec,connected){
   return {...result,tone:"warn",label:core?"Writer und Scanner bestätigt – Systemwarnung":"Systemwarnung gemeldet",note:core?"Die Kernprüfungen waren beim letzten Bericht positiv. Weitere Hostwarnungen sind separat zu klären; kein Writer-Ausfall daraus ableiten.":"Mindestens eine Hostprüfung meldet eine Warnung."};
  }
  if(!active||writer!==true||scanner!==true||h.status!=="HEALTHY"||!Array.isArray(h.issues))return {...result,tone:"unknown",label:"Gesundheit nicht vollständig belegt",note:"Aktive Serie, Scanner, Writer und Hoststatus müssen eindeutig bestätigt sein."};
+ if(level===2)return {...result,tone:"warn",label:"V3-Paper-Betrieb aktiv · Warnung",note:"Writer und Scanner bestätigt. Eine einzelne Verarbeitung wurde zurückgestellt."};
  return {...result,tone:"good",label:"System beim letzten Bericht gesund",note:"Scanner und Writer bestätigt. Zeitgestempelter Nachweis, keine Echtzeitgarantie."};
 }
 let healthReceiptMs=null,healthConnected=false,healthLastPollMs=null;
