@@ -248,7 +248,7 @@ from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 from paper_evaluator.v3_paper_native_scanner_input_v1 import prepare_next_scanner_input
 from paper_evaluator.v3_paper_positive_source_entry_v1 import utc
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import (
-    _post_to_existing_relay, _replace_json, read_active_paper_series,
+    TransientCloudReadUnavailable, _post_to_existing_relay, _replace_json, read_active_paper_series,
 )
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
     released_paper_first_scanner_rule_once,
@@ -1474,88 +1474,92 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
         try:
             while True:
                 _check_runtime_deadline(deadline)
-                # Retain the same independently authorized Cloud/journal phase
-                # even while waiting for the next real Scanner opportunity.
-                run_phase("CLOUD_RECEIPT_ACK")
-                seen, pending = _scanner_journal_progress(params["journal"], series_id)
-                cycle_status = "WAITING_FOR_FRESH_ELIGIBLE_SCANNER_INPUT"
-                scanner_ready = False
                 try:
-                    scanner = _bounded_release_json(state / "v2r4-ws-shadow-heartbeat.json")
-                    scanner_ready = (
-                        scanner.get("kind") == "V2R4_WS_SHADOW_HEARTBEAT_V1"
-                        and scanner.get("status") in ("HEALTHY", "DUPLICATE_SKIPPED")
-                        and scanner.get("paper_only") is True
-                        and scanner.get("real_money_actions") is False
-                        and 0 <= (_originalhost_wall_clock_utc()
-                                  - utc(scanner["checked_at_utc"])).total_seconds() <= 45)
-                except (KeyError, OSError, TypeError, ValueError):
-                    pass
-
-                prepared = None
-                if not scanner_ready:
-                    cycle_status = "HOLD_ORIGINAL_SCANNER_HEARTBEAT"
-                elif len(seen) >= max_candidates:
-                    cycle_status = "SIGNED_CANDIDATE_LIMIT_FOLLOWUP_ONLY"
-                else:
-                    moment = scanner_clock()
-                    if next_retry is None or moment >= next_retry:
-                        attempted.clear()
-                        next_retry = moment + timedelta(minutes=2)
-                    try:
-                        prepared = prepare_next_scanner_input(
-                            source=state / "v2r4-ws-shadow-events", series_id=series_id,
-                            series_started=series_started, seen=seen, attempted=attempted,
-                            clock=scanner_clock, read_json=_bounded_release_json)
-                    except PaperRuntimeLeaseExpired:
-                        raise
-                    except (OSError, RuntimeError, ValueError):
-                        cycle_status = "HOLD_ORIGINAL_SCANNER_INPUT"
-                        scanner_ready = False
-
-                if prepared is not None:
-                    candidate, preflight = prepared
-                    cid = candidate["candidate_id"]
-                    path = _scanner_candidate_capture(capture_dir, series_id, cid)
-                    _check_runtime_deadline(deadline)
-                    if path.exists():
-                        if _bounded_release_json(path) != candidate:
-                            raise ValueError("immutable Paper scanner capture identity drift")
-                    else:
-                        _replace_json(path, candidate)
-                    scan = run_phase("FIRST_SCANNER_MODEL_P4", candidate, preflight)
-                    if scan.get("status") != "FIRST_SCANNER_FREE_RULE_P4_DURABLE_WAIT_FOR_FOLLOWUP":
-                        raise ValueError("V3 Paper Scanner phase requires reconciliation")
-                    pending.add(cid)
-                    cycle_status = "SCANNER_FREE_RULE_P4_COMPLETE"
-
-                # Bound work to one follow-up per cycle, rotating even across
-                # WAIT candidates. The captured original survives task restart.
-                if pending:
-                    cid = min(pending, key=lambda item: (checked.get(item, 0), item))
-                    path = _scanner_candidate_capture(capture_dir, series_id, cid)
-                    candidate = _bounded_release_json(path)
-                    if candidate.get("candidate_id") != cid:
-                        raise ValueError("V3 Paper follow-up original identity mismatch")
-                    followup = run_phase("FOLLOWUP_6H24H72H", candidate)
-                    status = str(followup.get("status", ""))
-                    deferred = status == (
-                        "NONCANARY_FOLLOWUP_HOLD_MODEL_NOT_FINAL_NO_AUTOMATIC_SPEND_OR_FOLLOWUP"
-                    )
-                    if (status.startswith("NONCANARY_FOLLOWUP_HOLD_") and not deferred
-                            and status != "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
-                        raise ValueError("V3 Paper followup requires reconciliation")
-                    # Rotate past an unfinished candidate without replaying its
-                    # model or changing its immutable journal.
-                    checked[cid] = time.monotonic()
-                    if deferred:
-                        cycle_status = "FOLLOWUP_DEFERRED_MODEL_NOT_FINAL"
-                    elif prepared is None and scanner_ready:
-                        cycle_status = "FOLLOWUP_CYCLE_COMPLETE"
-                if prepared is not None or pending:
+                    # Retain the same independently authorized Cloud/journal phase
+                    # even while waiting for the next real Scanner opportunity.
                     run_phase("CLOUD_RECEIPT_ACK")
-                _check_runtime_deadline(deadline)
-                publish("HEALTHY" if scanner_ready else "DEGRADED_SCANNER_INPUT", cycle_status)
+                    seen, pending = _scanner_journal_progress(params["journal"], series_id)
+                    cycle_status = "WAITING_FOR_FRESH_ELIGIBLE_SCANNER_INPUT"
+                    scanner_ready = False
+                    try:
+                        scanner = _bounded_release_json(state / "v2r4-ws-shadow-heartbeat.json")
+                        scanner_ready = (
+                            scanner.get("kind") == "V2R4_WS_SHADOW_HEARTBEAT_V1"
+                            and scanner.get("status") in ("HEALTHY", "DUPLICATE_SKIPPED")
+                            and scanner.get("paper_only") is True
+                            and scanner.get("real_money_actions") is False
+                            and 0 <= (_originalhost_wall_clock_utc()
+                                      - utc(scanner["checked_at_utc"])).total_seconds() <= 45)
+                    except (KeyError, OSError, TypeError, ValueError):
+                        pass
+
+                    prepared = None
+                    if not scanner_ready:
+                        cycle_status = "HOLD_ORIGINAL_SCANNER_HEARTBEAT"
+                    elif len(seen) >= max_candidates:
+                        cycle_status = "SIGNED_CANDIDATE_LIMIT_FOLLOWUP_ONLY"
+                    else:
+                        moment = scanner_clock()
+                        if next_retry is None or moment >= next_retry:
+                            attempted.clear()
+                            next_retry = moment + timedelta(minutes=2)
+                        try:
+                            prepared = prepare_next_scanner_input(
+                                source=state / "v2r4-ws-shadow-events", series_id=series_id,
+                                series_started=series_started, seen=seen, attempted=attempted,
+                                clock=scanner_clock, read_json=_bounded_release_json)
+                        except PaperRuntimeLeaseExpired:
+                            raise
+                        except (OSError, RuntimeError, ValueError):
+                            cycle_status = "HOLD_ORIGINAL_SCANNER_INPUT"
+                            scanner_ready = False
+
+                    if prepared is not None:
+                        candidate, preflight = prepared
+                        cid = candidate["candidate_id"]
+                        path = _scanner_candidate_capture(capture_dir, series_id, cid)
+                        _check_runtime_deadline(deadline)
+                        if path.exists():
+                            if _bounded_release_json(path) != candidate:
+                                raise ValueError("immutable Paper scanner capture identity drift")
+                        else:
+                            _replace_json(path, candidate)
+                        scan = run_phase("FIRST_SCANNER_MODEL_P4", candidate, preflight)
+                        if scan.get("status") != "FIRST_SCANNER_FREE_RULE_P4_DURABLE_WAIT_FOR_FOLLOWUP":
+                            raise ValueError("V3 Paper Scanner phase requires reconciliation")
+                        pending.add(cid)
+                        cycle_status = "SCANNER_FREE_RULE_P4_COMPLETE"
+
+                    # Bound work to one follow-up per cycle, rotating even across
+                    # WAIT candidates. The captured original survives task restart.
+                    if pending:
+                        cid = min(pending, key=lambda item: (checked.get(item, 0), item))
+                        path = _scanner_candidate_capture(capture_dir, series_id, cid)
+                        candidate = _bounded_release_json(path)
+                        if candidate.get("candidate_id") != cid:
+                            raise ValueError("V3 Paper follow-up original identity mismatch")
+                        followup = run_phase("FOLLOWUP_6H24H72H", candidate)
+                        status = str(followup.get("status", ""))
+                        deferred = status == (
+                            "NONCANARY_FOLLOWUP_HOLD_MODEL_NOT_FINAL_NO_AUTOMATIC_SPEND_OR_FOLLOWUP"
+                        )
+                        if (status.startswith("NONCANARY_FOLLOWUP_HOLD_") and not deferred
+                                and status != "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
+                            raise ValueError("V3 Paper followup requires reconciliation")
+                        # Rotate past an unfinished candidate without replaying its
+                        # model or changing its immutable journal.
+                        checked[cid] = time.monotonic()
+                        if deferred:
+                            cycle_status = "FOLLOWUP_DEFERRED_MODEL_NOT_FINAL"
+                        elif prepared is None and scanner_ready:
+                            cycle_status = "FOLLOWUP_CYCLE_COMPLETE"
+                    if prepared is not None or pending:
+                        run_phase("CLOUD_RECEIPT_ACK")
+                    _check_runtime_deadline(deadline)
+                    publish("HEALTHY" if scanner_ready else "DEGRADED_SCANNER_INPUT", cycle_status)
+                except TransientCloudReadUnavailable:
+                    _check_runtime_deadline(deadline)
+                    publish("DEGRADED_CLOUD_READ", "WAITING_FOR_FRESH_ACTIVE_PAPER_SERIES")
                 time.sleep(min(30, max(0, (deadline - _originalhost_wall_clock_utc()).total_seconds())))
         except PaperRuntimeLeaseExpired:
             publish("EXPIRED")
