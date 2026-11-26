@@ -348,8 +348,8 @@ try {
       if([string]$h.pid -match '^[1-9][0-9]*$'){
         $writerPresent=$null -ne (Get-Process -Id ([int]$h.pid) -ErrorAction SilentlyContinue)
       }
-      $ok=($null -ne $v3Task -and [string]$v3Task.State -ceq "Running" -and
-           $h.kind -ceq "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1" -and $h.status -ceq "HEALTHY" -and
+      $writerBound=($null -ne $v3Task -and [string]$v3Task.State -ceq "Running" -and
+           $h.kind -ceq "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1" -and
            $h.series_id -ceq [string]$fence.proposed_successor_series_id -and
            [string]$h.release_repo_sha -ceq [string]$fence.proposed_v3_repo_sha -and
            [string]$h.runtime_bundle_sha256 -ceq [string]$fence.proposed_v3_bundle_sha256 -and
@@ -358,6 +358,18 @@ try {
            $h.paper_only -eq $true -and $h.orders -eq $false -and $h.real_money_actions -eq $false -and
            $writerPresent -and $expiry -gt [datetime]::UtcNow -and
            $age -ge -30 -and $age -le 180)
+      $ok=($writerBound -and $h.status -ceq "HEALTHY")
+      $level=$null
+      if($writerBound -and ($h.PSObject.Properties["operating_level"] -and
+          ($h.operating_level -is [int] -or $h.operating_level -is [long]))){
+        if($h.status -ceq "HEALTHY" -and $h.operating_level -in @(1,2)){
+          $level=$h.operating_level
+        } elseif($h.operating_level -eq 3 -and $h.status -cin @(
+            "DEGRADED_SCANNER_INPUT","DEGRADED_CLOUD_READ","DEGRADED_CLOUD_ACK",
+            "DEGRADED_AUTHORITY_READ","DEGRADED_FOLLOWUP_SOURCE")){
+          $level=3
+        }
+      }
       # AP06B heartbeat has no strategy_revision. Relay its existing pins,
       # never the PID, runtime arguments or paths.
       $paperSuccessorObservation=[ordered]@{
@@ -370,7 +382,9 @@ try {
         host_report_only=$true
         independent_runtime_proof=$false
       }
-      Add-Check "v3_paper_single_writer" $ok ("local task/process/heartbeat match="+$ok+" age_sec="+[math]::Round($age,1)) "WARNING"
+      $writerDetail="local task/process/heartbeat match="+$ok+" age_sec="+[math]::Round($age,1)
+      if($null -ne $level){$writerDetail+=" operating_level="+$level}
+      Add-Check "v3_paper_single_writer" $ok $writerDetail "WARNING"
       if ($h.kind -ceq "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1" -and $h.status -ceq "HOLD" -and
           $h.series_id -ceq $fence.proposed_successor_series_id -and
           $h.release_repo_sha -ceq $fence.proposed_v3_repo_sha -and
