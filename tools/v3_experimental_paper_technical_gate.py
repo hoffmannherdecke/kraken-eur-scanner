@@ -1337,6 +1337,10 @@ def validate_experimental_paper_packet(root: Path, revision: str,
         if free_rule and k=="max_model_http_attempts_including_retries":
             if type(v) is not int or v!=0:
                 block("free-rule max_model_http_attempts_including_retries must be zero")
+        elif (free_rule and k in ("max_candidates", "max_observation_days")
+              and all(field in scope and scope[field] is None
+                      for field in ("max_candidates", "max_observation_days"))):
+            continue
         elif type(v) is not int or not 1<=v<=maximum:
             block("missing/invalid finite "+k)
     for k in ("deduplicate_pair_clock","mandatory_real_6h_24h_and_censored_followups",

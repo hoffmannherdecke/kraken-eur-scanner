@@ -171,12 +171,16 @@ def resolve_current_paper_owner(state: dict, owner: dict, now: dt.datetime,
     require(current["release_milestone"] in proof, "current original lacks operating milestone")
     if current["series_id"] != prior["series_id"] or current["strategy_revision"] != prior["strategy_revision"]:
         require(current["strategy_revision"] in proof, "successor original lacks exact revision")
-    expiry = iso_time(record["lease_expires_at_utc"])
-    require(expiry > iso_time(record["observed_at_utc"]), "invalid last recorded lease")
     lease = proof if record["lease_source"] == record["source"] else original(record["lease_source"])
-    require("lease" in lease.lower() and expiry.strftime("%H:%M:%S") in lease
-            and (expiry.strftime("%d.%m.%Y") in lease or expiry.strftime("%Y-%m-%d") in lease),
-            "last recorded lease expiry not present in original")
+    if record["lease_expires_at_utc"] is None:
+        require("V3_PAPER_RUNTIME_UNTIL_REVOKED" in lease,
+                "unbounded runtime scope not present in original")
+    else:
+        expiry = iso_time(record["lease_expires_at_utc"])
+        require(expiry > iso_time(record["observed_at_utc"]), "invalid last recorded lease")
+        require("lease" in lease.lower() and expiry.strftime("%H:%M:%S") in lease
+                and (expiry.strftime("%d.%m.%Y") in lease or expiry.strftime("%Y-%m-%d") in lease),
+                "last recorded lease expiry not present in original")
     requests=record["review_requests"]
     require(isinstance(requests,dict) and len(requests)<=16
             and all(isinstance(x,str) for x in requests), "invalid current owner review list")
@@ -241,7 +245,7 @@ def native_paper_evidence(base: str, key: str, paper: dict, now: dt.datetime) ->
 
 
 def current_host_report(base: str, key: str, paper: dict, now: dt.datetime,
-                        runtime_identity: dict, lease_expires_at_utc: str) -> dict:
+                        runtime_identity: dict, lease_expires_at_utc: str | None) -> dict:
     """Read existing host-relay report, not a direct physical health proof."""
     require(re.fullmatch(r"https://[a-z0-9-]+[.]supabase[.]co", base.rstrip("/")) is not None,
             "unapproved evidence host")
@@ -264,10 +268,16 @@ def current_host_report(base: str, key: str, paper: dict, now: dt.datetime,
                    and identity.get(k)==runtime_identity[k] for k in pins)
     try:
         reported_clock=iso_time(identity["observed_at_utc"])
-        reported_expiry=iso_time(identity["expires_at_utc"])
-        clock_and_lease_match=(-30<=(iso_time(row["observed_at"])-reported_clock).total_seconds()<=180
-                              and reported_expiry==iso_time(lease_expires_at_utc)
-                              and reported_expiry>now)
+        if lease_expires_at_utc is None:
+            lease_matches = (identity["expires_at_utc"] is None
+                             and identity.get("runtime_scope") == "V3_PAPER_RUNTIME_UNTIL_REVOKED")
+        else:
+            reported_expiry = iso_time(identity["expires_at_utc"])
+            lease_matches = reported_expiry == iso_time(lease_expires_at_utc) and reported_expiry > now
+        clock_and_lease_match = (
+            -30 <= (iso_time(row["observed_at"]) - reported_clock).total_seconds() <= 180
+            and lease_matches
+        )
     except (KeyError,ValueError,TypeError):
         clock_and_lease_match=False
     reported_ok=(fresh and writer.get("ok") is True and native.get("task_state")=="Running"
@@ -1001,8 +1011,9 @@ def main() -> int:
         if operational_evidence["host"]["status"]!="HOST_REPORT_V3_MATCH_NOT_INDEPENDENT_PROOF":
             result["events"].append(event("PAPER_NATIVE_HEALTH_REVIEW",paper["series_id"],
                 "Aktuelle Host-Relay-Evidenz belegt den Paper-Writer nicht; gezielt Originalheartbeat/Task prüfen. Kein Neustart oder erneuter Release."))
-        expiry=iso_time(operational_evidence["lease_expires_at_utc"])
-        if expiry-now <= dt.timedelta(hours=72):
+        recorded_expiry = operational_evidence["lease_expires_at_utc"]
+        expiry = iso_time(recorded_expiry) if recorded_expiry is not None else None
+        if expiry is not None and expiry-now <= dt.timedelta(hours=72):
             result["statuses"].append("PAPER:LAST_RECORDED_LEASE_REVIEW_DUE")
             result["events"].append(event("PAPER_RUNTIME_LEASE_REVIEW",paper["series_id"]+"|"+expiry.isoformat(),
                 "Zuletzt belegte Lease endet "+expiry.isoformat()+". Aktuellen Originalhost/CMS-Vertrag prüfen und persönliche Verlängerungsfreigabe rechtzeitig vorbereiten. Keine automatische Verlängerung."))

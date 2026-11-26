@@ -129,6 +129,47 @@ class RepeatedPaperTests(unittest.TestCase):
                     "bounded_research_scope":{"max_observation_days":1, "max_candidates":4}},
             token="offline")
 
+    def test_unbounded_runs_after_both_limits_and_holds_on_removed_approval(self):
+        self.spec["kind"] = native.UNBOUNDED_SPEC
+        self.lease.update(scope=native.UNBOUNDED_SCOPE, runtime_spec=self.spec.copy(),
+                          expires_at_utc=None)
+        revoked = False
+
+        def observe(**kwargs):
+            if revoked:
+                raise ValueError("signed approval unavailable")
+            return {"kind": "V3_PAPER_RUNTIME_BOOTSTRAP_V1" if kwargs["bootstrap"] else "live",
+                    "runtime_lease": self.lease}
+
+        def dispatch(**kwargs):
+            kwargs["originalhost_release_readback"]()
+            self.phases.append(kwargs["phase"])
+
+        def pause(seconds):
+            nonlocal revoked
+            self.heartbeats.append(json.loads(self.heartbeat.read_text()))
+            self.now += timedelta(days=22)
+            self.write_scanner_heartbeat()
+            revoked = len(self.heartbeats) == 2
+
+        with patch.object(native, "ORIGINALHOST_TRADING_ROOT", str(self.root)), \
+             patch.object(native, "_originalhost_wall_clock_utc", side_effect=lambda: self.now), \
+             patch.object(native, "authenticated_originalhost_release_provider", side_effect=observe), \
+             patch.object(native, "dispatch_from_original_windows_one_shot", side_effect=dispatch), \
+             patch.object(native, "prepare_next_scanner_input", return_value=None), \
+             patch.object(native.time, "sleep", side_effect=pause):
+            with self.assertRaisesRegex(ValueError, "signed approval unavailable"):
+                native._run_repeated_paper(args=None, spec=self.spec,
+                    params={"journal": self.journal, "capture_dir": self.capture_dir},
+                    packet={"primary_decision_route": native.FREE_RULE_ROUTE,
+                            "bounded_research_scope": {"max_observation_days": None,
+                                                       "max_candidates": None}},
+                    token="offline")
+        self.assertEqual(self.phases, ["CLOUD_RECEIPT_ACK", "CLOUD_RECEIPT_ACK"])
+        self.assertEqual([beat["status"] for beat in self.heartbeats], ["HEALTHY", "HEALTHY"])
+        self.assertTrue(all(beat["expires_at_utc"] is None for beat in self.heartbeats))
+        self.assertEqual(json.loads(self.heartbeat.read_text())["status"], "HOLD")
+
     def test_multiple_cycles_expiry_and_restart_use_one_owner(self):
         def observe(**kwargs):
             if not kwargs["bootstrap"]:

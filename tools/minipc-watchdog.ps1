@@ -342,7 +342,10 @@ try {
       if(-not (Test-Path -LiteralPath $hbPath)){ throw "V3 successor heartbeat missing" }
       $h=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
       $stamp=([datetimeoffset]::Parse([string]$h.checked_at_utc)).UtcDateTime
-      $expiry=([datetimeoffset]::Parse([string]$h.expires_at_utc)).UtcDateTime
+      $unbounded=($h.PSObject.Properties['runtime_scope'] -and
+        $h.runtime_scope -ceq 'V3_PAPER_RUNTIME_UNTIL_REVOKED' -and
+        $h.PSObject.Properties['expires_at_utc'] -and $null -eq $h.expires_at_utc)
+      $expiry=if(-not $unbounded){([datetimeoffset]::Parse([string]$h.expires_at_utc)).UtcDateTime}
       $age=([datetime]::UtcNow-$stamp).TotalSeconds
       $writerPresent=$false
       if([string]$h.pid -match '^[1-9][0-9]*$'){
@@ -356,7 +359,7 @@ try {
            [string]$h.strategy_sha256 -ceq [string]$fence.proposed_v3_strategy_sha256 -and
            [string]$h.runtime_approval_sha256 -cmatch '^[0-9a-f]{64}$' -and
            $h.paper_only -eq $true -and $h.orders -eq $false -and $h.real_money_actions -eq $false -and
-           $writerPresent -and $expiry -gt [datetime]::UtcNow -and
+           $writerPresent -and ($unbounded -or $expiry -gt [datetime]::UtcNow) -and
            $age -ge -30 -and $age -le 180)
       $ok=($writerBound -and $h.status -ceq "HEALTHY")
       $level=$null
@@ -378,10 +381,11 @@ try {
         runtime_bundle_sha256=[string]$h.runtime_bundle_sha256
         strategy_sha256=[string]$h.strategy_sha256
         observed_at_utc=$stamp.ToString("o")
-        expires_at_utc=$expiry.ToString("o")
+        expires_at_utc=$(if(-not $unbounded){$expiry.ToString("o")})
         host_report_only=$true
         independent_runtime_proof=$false
       }
+      if($unbounded){$paperSuccessorObservation.runtime_scope="V3_PAPER_RUNTIME_UNTIL_REVOKED"}
       $writerDetail="local task/process/heartbeat match="+$ok+" age_sec="+[math]::Round($age,1)
       if($null -ne $level){$writerDetail+=" operating_level="+$level}
       Add-Check "v3_paper_single_writer" $ok $writerDetail "WARNING"

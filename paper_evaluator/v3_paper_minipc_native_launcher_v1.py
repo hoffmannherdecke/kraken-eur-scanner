@@ -266,14 +266,16 @@ def _originalhost_wall_clock_utc() -> datetime:
 
 PHASES = ("FIRST_SCANNER_MODEL_P4", "FOLLOWUP_6H24H72H", "CLOUD_RECEIPT_ACK")
 REPEATED_SPEC = "V3_NATIVE_REPEATED_PAPER_RUNTIME_SPEC_V1"
+UNBOUNDED_SPEC = "V3_NATIVE_UNBOUNDED_PAPER_RUNTIME_SPEC_V1"
+UNBOUNDED_SCOPE = "V3_PAPER_RUNTIME_UNTIL_REVOKED"
 
 
 class PaperRuntimeLeaseExpired(ValueError):
     pass
 
 
-def _check_runtime_deadline(deadline: datetime) -> None:
-    if _originalhost_wall_clock_utc() >= deadline:
+def _check_runtime_deadline(deadline: datetime | None) -> None:
+    if deadline is not None and _originalhost_wall_clock_utc() >= deadline:
         raise PaperRuntimeLeaseExpired("signed V3 Paper operating window expired")
 SERIES = re.compile(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z")
 REPO_SHA = re.compile(r"[0-9a-f]{40}")
@@ -529,6 +531,11 @@ def dispatch_after_native_release_readback(*,
     report = originalhost_readback()
     if not isinstance(report, dict):
         raise ValueError("original native host readback missing")
+    research = release_packet["bounded_research_scope"]
+    unbounded_packet = research["max_observation_days"] is None
+    runtime_lease = report.get("runtime_lease", {})
+    if unbounded_packet != (runtime_lease.get("scope") == UNBOUNDED_SCOPE):
+        raise ValueError("Paper packet and authenticated runtime scope disagree")
     # Enforce the SAME native Python process correlation even if callers use
     # this lower-level source-only release seam rather than the higher-level
     # Windows one-shot wrapper. A host callback's good-looking approval flags
@@ -649,7 +656,10 @@ def dispatch_after_native_release_readback(*,
     # No additional run loop, schedule, model call, Paper authority or Cloud
     # writer is introduced here; the existing worker locks and guards own it.
     if "runtime_lease" in report:
-        deadline = datetime.fromisoformat(report["runtime_lease"]["expires_at_utc"])
+        lease = report["runtime_lease"]
+        expiry = lease["expires_at_utc"]
+        deadline = (None if lease.get("scope") == UNBOUNDED_SCOPE and expiry is None
+                    else datetime.fromisoformat(expiry))
         original_cloud_readback = phase_args["read_active_series"]
 
         def guarded_cloud(series_id):
@@ -1917,7 +1927,7 @@ def run_authenticated_windows_spec(*, args, spec: dict[str, Any]) -> int:
     required = {"kind", "series_id", "repo_sha", "bundle_sha256", "strategy_sha256",
                 "phase", "journal", "capture_dir", "model_reservations", "ack_file",
                 "release_root", "release_packet", "candidate", "preflight", "paper_plan"}
-    repeated = spec.get("kind") == REPEATED_SPEC
+    repeated = spec.get("kind") in (REPEATED_SPEC, UNBOUNDED_SPEC)
     if (set(spec) != required or spec["repo_sha"] != args.expected_source_sha
             or ((spec["phase"] != "REPEATED_PAPER" or spec["candidate"] is not None
                  or spec["preflight"] is not None)
@@ -1981,7 +1991,12 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
         raise ValueError("separate existing V3 journal and Originalhost state required")
     research = packet.get("bounded_research_scope", {})
     max_days, max_candidates = research.get("max_observation_days"), research.get("max_candidates")
-    if type(max_candidates) is not int or not 1 <= max_candidates <= 500:
+    unbounded = spec.get("kind") == UNBOUNDED_SPEC
+    if unbounded:
+        if any(key not in research or research[key] is not None
+               for key in ("max_observation_days", "max_candidates")):
+            raise ValueError("unbounded Paper requires signed null observation limits")
+    elif type(max_candidates) is not int or not 1 <= max_candidates <= 500:
         raise ValueError("signed V3 Paper candidate ceiling required")
     capture_dir = params["capture_dir"]
     if (not capture_dir.is_dir() or any(p.is_symlink() or getattr(p, "is_junction", lambda: False)()
@@ -1992,7 +2007,7 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
     checked = {}
     attempted = set()
     next_retry = None
-    if type(max_days) is not int or not 1 <= max_days <= 21:
+    if not unbounded and (type(max_days) is not int or not 1 <= max_days <= 21):
         raise ValueError("repeated V3 Paper requires a signed finite observation scope")
     heartbeat = state / "v3-paper-single-writer-heartbeat.json"
     deadline = None
@@ -2007,19 +2022,32 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
             raise ValueError("authenticated V3 Paper startup authority required")
         lease = report.get("runtime_lease")
         if (not isinstance(lease, dict)
-                or lease.get("scope") != "V3_PAPER_RUNTIME_REPEATED"
+                or lease.get("scope") != (UNBOUNDED_SCOPE if unbounded else "V3_PAPER_RUNTIME_REPEATED")
                 or lease.get("runtime_spec") != spec
                 or not FILE_SHA.fullmatch(str(lease.get("approval_sha256", "")))):
             raise ValueError("exact independent repeated Paper operating signature required")
         start = datetime.fromisoformat(lease["not_before_utc"])
-        deadline = datetime.fromisoformat(lease["expires_at_utc"])
-        if (deadline.tzinfo is None or start.tzinfo is None
-                or not 0 < (deadline-start).total_seconds() <= max_days*86400
-                or start > _originalhost_wall_clock_utc()):
+        expiry = lease["expires_at_utc"]
+        if unbounded and expiry is not None:
+            raise ValueError("unbounded Paper authorization must have null expiry")
+        deadline = None if unbounded else datetime.fromisoformat(expiry)
+        if (start.utcoffset() is None or start > _originalhost_wall_clock_utc()
+                or (deadline is not None and (deadline.utcoffset() is None
+                    or not 0 < (deadline-start).total_seconds() <= max_days*86400))):
             raise ValueError("signed V3 Paper operating window outside observation scope")
         _check_runtime_deadline(deadline)
+        if unbounded and approval_sha is not None and approval_sha != lease["approval_sha256"]:
+            raise ValueError("unbounded Paper approval changed during this writer session")
         approval_sha = lease["approval_sha256"]
         return report
+
+    def pause(until=None):
+        limits = [30]
+        now = _originalhost_wall_clock_utc()
+        for bound in (deadline, until):
+            if bound is not None:
+                limits.append((bound - now).total_seconds())
+        time.sleep(max(0, min(limits)))
 
     def scanner_clock():
         _check_runtime_deadline(deadline)
@@ -2049,6 +2077,7 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
             "strategy_sha256": spec["strategy_sha256"],
             "runtime_approval_sha256": approval_sha, "pid": os.getpid(),
             "expires_at_utc": deadline.isoformat() if deadline else None,
+            **({"runtime_scope": UNBOUNDED_SCOPE} if unbounded else {}),
             "paper_only": True, "orders": False, "real_money_actions": False,
         })
 
@@ -2093,7 +2122,7 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
                 if owner_retry_at is not None and moment < owner_retry_at:
                     # No phase, Cloud write, model call or authority request until due.
                     publish("DEGRADED_AUTHORITY_READ", "WAITING_FOR_OWNER_RATE_LIMIT_RESET")
-                    time.sleep(min(30, max(0, (min(owner_retry_at, deadline) - moment).total_seconds())))
+                    pause(owner_retry_at)
                     continue
                 owner_retry_at = None
                 try:
@@ -2118,7 +2147,7 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
                     prepared = None
                     if not scanner_ready:
                         cycle_status = "HOLD_ORIGINAL_SCANNER_HEARTBEAT"
-                    elif len(seen) >= max_candidates:
+                    elif max_candidates is not None and len(seen) >= max_candidates:
                         cycle_status = "SIGNED_CANDIDATE_LIMIT_FOLLOWUP_ONLY"
                     else:
                         moment = scanner_clock()
@@ -2203,8 +2232,7 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
                         persist_readback_failure(exc)
                         publish("DEGRADED_AUTHORITY_READ", "WAITING_TO_RECHECK_HOST_READBACK",
                                 failure_detail=exc.detail)
-                        time.sleep(min(30, max(0, (
-                            deadline - _originalhost_wall_clock_utc()).total_seconds())))
+                        pause()
                         continue
                     owner_retry_at = _owner_http_retry_at(exc, _originalhost_wall_clock_utc())
                     if owner_retry_at is None:
@@ -2212,7 +2240,7 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
                     persist_readback_failure(exc, owner_retry_at)
                     publish("DEGRADED_AUTHORITY_READ", "WAITING_FOR_OWNER_RATE_LIMIT_RESET",
                             failure_detail=exc.detail)
-                time.sleep(min(30, max(0, (deadline - _originalhost_wall_clock_utc()).total_seconds())))
+                pause()
         except PaperRuntimeLeaseExpired:
             publish("EXPIRED")
         except Exception as exc:
