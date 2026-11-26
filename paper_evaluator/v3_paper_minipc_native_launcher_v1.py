@@ -248,7 +248,8 @@ from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 from paper_evaluator.v3_paper_native_scanner_input_v1 import prepare_next_scanner_input
 from paper_evaluator.v3_paper_positive_source_entry_v1 import utc
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import (
-    TransientCloudReadUnavailable, _post_to_existing_relay, _replace_json, read_active_paper_series,
+    TransientCloudReadUnavailable, TransientCloudReceiptAckUnavailable,
+    _post_to_existing_relay, _replace_json, read_active_paper_series,
 )
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
     released_paper_first_scanner_rule_once,
@@ -2029,6 +2030,7 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
             "HEALTHY": 1,
             "DEGRADED_SCANNER_INPUT": 3,
             "DEGRADED_CLOUD_READ": 3,
+            "DEGRADED_CLOUD_ACK": 3,
             "DEGRADED_AUTHORITY_READ": 3,
             "HOLD": 4,
             "EXPIRED": 4,
@@ -2180,6 +2182,9 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
                 except TransientCloudReadUnavailable:
                     _check_runtime_deadline(deadline)
                     publish("DEGRADED_CLOUD_READ", "WAITING_FOR_FRESH_ACTIVE_PAPER_SERIES")
+                except TransientCloudReceiptAckUnavailable:
+                    _check_runtime_deadline(deadline)
+                    publish("DEGRADED_CLOUD_ACK", "WAITING_TO_RECONCILE_PAPER_RECEIPTS")
                 except _OriginalhostReadbackHold as exc:
                     _check_runtime_deadline(deadline)
                     owner_retry_at = _owner_http_retry_at(exc, _originalhost_wall_clock_utc())

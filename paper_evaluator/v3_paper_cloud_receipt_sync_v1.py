@@ -56,7 +56,11 @@ class TransientCloudReadUnavailable(ValueError):
     """The active-series read exhausted its retry on transient transport errors."""
 
 
-def _transient_read_error(exc: OSError) -> bool:
+class TransientCloudReceiptAckUnavailable(ValueError):
+    """A released series receipt upload has no confirmed transport outcome."""
+
+
+def _transient_transport_error(exc: OSError) -> bool:
     if isinstance(exc, urllib.error.HTTPError):
         return exc.code in (408, 502, 503, 504)
     reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
@@ -86,7 +90,7 @@ def read_active_paper_series(*,series_id:str,token:str,
     try:
         reply = (post or _post_to_existing_relay)(relay_url, token, payload)
     except OSError as exc:
-        if not _transient_read_error(exc):
+        if not _transient_transport_error(exc):
             raise ValueError("authenticated original Cloud readback unavailable") from exc
         # Repeat only the read-only action. Keep the extra wait short and
         # leave the original reply validation and writer gates in place.
@@ -97,7 +101,7 @@ def read_active_paper_series(*,series_id:str,token:str,
             else:
                 reply = post(relay_url, token, payload)
         except OSError as retry_exc:
-            if _transient_read_error(retry_exc):
+            if _transient_transport_error(retry_exc):
                 raise TransientCloudReadUnavailable(
                     "temporary active Paper series readback unavailable"
                 ) from retry_exc
@@ -157,7 +161,17 @@ def sync_once(*,journal:Path,series_id:str,ack_file:Path,token:str,
     if not out:return {"status":"NO_UNSYNCED_V3_RECEIPTS","count":0,"paper_only":True}
     payload={"action":"sync_paper_receipts","series_id":series_id,
              "strategy_revision":REVISION,"receipts":out}
-    response=(post or _post_to_existing_relay)(relay_url,token,payload)
+    try:
+        response = (post or _post_to_existing_relay)(relay_url, token, payload)
+    except OSError as exc:
+        if (_released_cloud_sync_capability is _RELEASED_CLOUD_SYNC_NATIVE_OWNER
+                and _transient_transport_error(exc)):
+            # The next authorized cycle resends immutable receipts. The relay
+            # accepts existing event IDs only when their content hashes match.
+            raise TransientCloudReceiptAckUnavailable(
+                "temporary Paper receipt acknowledgement unavailable"
+            ) from exc
+        raise
     if (not isinstance(response,dict) or response.get("ok") is not True
             or response.get("accepted_receipts")!=len(out)
             or response.get("series_id")!=series_id):
