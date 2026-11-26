@@ -171,8 +171,13 @@ try{
  # A real long-running SYSTEM process: verify stop while both definitions
  # are held, rather than testing only tasks that have already exited.
  $workerScript=Join-Path $temp 'worker.ps1';$workerPid=Join-Path $temp 'worker.pid'
- [IO.File]::WriteAllText($workerScript,
-  ("[IO.File]::WriteAllText('"+$workerPid.Replace("'","''")+"',[string]`$PID); Start-Sleep -Seconds 120"),
+ # The reader uses file existence as the publication signal.
+ $worker=@'
+[IO.File]::WriteAllText('__PID__.tmp',[string]$PID)
+[IO.File]::Move('__PID__.tmp','__PID__')
+Start-Sleep -Seconds 120
+'@
+ [IO.File]::WriteAllText($workerScript,$worker.Replace('__PID__',$workerPid.Replace("'","''")),
   [Text.UTF8Encoding]::new($false))
  $task=Register-Fixture $name (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') ('-NoProfile -File "'+$workerScript+'"')
  $secondTask=Register-Fixture $secondName (Join-Path $env:SystemRoot 'System32\cmd.exe') '/c exit 0'
@@ -367,11 +372,12 @@ try{$null=$f.GetTask('__TASK__').RunEx($null,2,0,$null)}catch{$runEx='DENIED'}
   $scriptFile=Join-Path $operatorRoot ($role+'.ps1');$pidFile=Join-Path $operatorRoot ($role+'.pid')
   $beat=Join-Path $state ('v2r4-paper-'+$role+'-runtime-heartbeat.json')
   $worker=@'
-[IO.File]::WriteAllText('__PID__',[string]$PID)
+[IO.File]::WriteAllText('__PID__.tmp',[string]$PID)
+[IO.File]::Move('__PID__.tmp','__PID__')
 [IO.File]::WriteAllText('__BEAT__',(@{status='HEALTHY';checked_at_utc=[datetimeoffset]::UtcNow.ToString('o')}|ConvertTo-Json -Compress))
 Start-Sleep -Seconds 120
 '@
-  [IO.File]::WriteAllText($scriptFile,$worker.Replace('__PID__',$pidFile).Replace('__BEAT__',$beat))
+  [IO.File]::WriteAllText($scriptFile,$worker.Replace('__PID__',$pidFile.Replace("'","''")).Replace('__BEAT__',$beat.Replace("'","''")))
   $argsLine='-NoProfile -File "'+$scriptFile+'"'
   $task=Register-Fixture $n (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') $argsLine
   $null=$task.Run($null)
