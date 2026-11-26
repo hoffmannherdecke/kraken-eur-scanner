@@ -93,6 +93,46 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
                 with self.assertRaises(AttributeError):
                     tracker.source_buys(control)
 
+            # Versioned technical aftercare uses the exact reviewed source,
+            # never the historical frozen app copy or its old code fingerprint.
+            import hashlib
+            import subprocess
+            import sys
+            tool = self.local_runtime
+            external = root / "technical"
+            external.mkdir()
+            wrapper = external / "v2r4-paper-local-runtime.py"
+            wrapper.touch()
+            original = root / "paper_position_tracker.py"
+            original.write_bytes(b"frozen original")
+            original_bytes = original.read_bytes()
+            control_file = root / "paper_runtime_control.json"
+            control_file.write_text(json.dumps({"enabled": False, "real_money_actions_enabled": False}), "utf-8")
+            strategy = root / "paper_strategy_spec.json"
+            strategy.write_bytes(b"historical spec")
+            companion = external / "v2r4-aftercare-position-tracker-v1.py"
+            with patch.object(tool, "__file__", str(wrapper)):
+                self.assertEqual(tool._aftercare_tracker_command(root), [sys.executable, str(original)])
+                companion.write_bytes(tracker.SOURCE_FILE.read_bytes())
+                command = tool._aftercare_tracker_command(root)
+                self.assertEqual(command, [sys.executable, "-I", "-B", str(companion), "--app-root", str(root)])
+                result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("PAPER_RUNTIME_DISABLED", result.stdout)
+                control_file.write_text(json.dumps({"enabled": False, "real_money_actions_enabled": True}), "utf-8")
+                result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+                self.assertNotEqual(result.returncode, 0)
+                with patch.object(tracker, "ROOT", root), patch.object(tracker, "SOURCE_FILE", companion):
+                    expected_hash = hashlib.sha256(
+                        b"paper_position_tracker.py\0" + companion.read_bytes() +
+                        b"\0paper_strategy_spec.json\0" + strategy.read_bytes() + b"\0"
+                    ).hexdigest()
+                    self.assertEqual(tracker.lifecycle_code_fingerprint(), expected_hash)
+                companion.write_bytes(b"wrong source")
+                with self.assertRaises(RuntimeError):
+                    tool._aftercare_tracker_command(root)
+            self.assertEqual(original.read_bytes(), original_bytes)
+
     def test_candidate_event_cache_is_memory_only_bounded_and_revalidates(self):
         tool = self.local_runtime
         with tempfile.TemporaryDirectory() as td:
