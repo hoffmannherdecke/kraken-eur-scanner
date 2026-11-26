@@ -1442,7 +1442,17 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
         return _originalhost_wall_clock_utc()
 
     def publish(status, cycle_status=None):
+        operating_level = {
+            "HEALTHY": 1,
+            "DEGRADED_SCANNER_INPUT": 3,
+            "DEGRADED_CLOUD_READ": 3,
+            "HOLD": 4,
+            "EXPIRED": 4,
+        }.get(status)
+        if operating_level == 1 and cycle_status == "FOLLOWUP_DEFERRED_MODEL_NOT_FINAL":
+            operating_level = 2
         _replace_json(heartbeat, {
+            "operating_level": operating_level,
             "kind": "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1", "status": status,
             "cycle_status": cycle_status,
             "checked_at_utc": _originalhost_wall_clock_utc().isoformat(),
