@@ -24,6 +24,115 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
         cls.local_runtime = load_tool("v2r4-paper-local-runtime.py", "v2r4_paper_local_runtime")
         cls.cloud_sync = load_tool("v2r4-paper-cloud-sync.py", "v2r4_paper_cloud_sync")
 
+
+    def test_ordered_aftercare_reads_match_original_and_revisit_changes(self):
+        tool = self.local_runtime
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for i in range(260):
+                (root / f"{i:04d}.json").write_text(json.dumps({"n": i}), "utf-8")
+            bad = root / "corrupt.json"
+            bad.write_text("{", "utf-8")
+            def serial():
+                rows = []
+                for p in root.glob("*.json"):
+                    try:
+                        rows.append((p, tool.load_json(p)))
+                    except Exception:
+                        continue
+                return rows
+            self.assertEqual(list(tool._aftercare_records(root)), serial())
+            bad.write_text('{"n": 999}', "utf-8")
+            (root / "0000.json").unlink()
+            (root / "0001.json").write_text('{"n": 12345}', "utf-8")
+            self.assertEqual(list(tool._aftercare_records(root)), serial())
+
+    def test_position_source_parallel_preserves_original_selection(self):
+        import paper_position_tracker as tracker
+        control = {"series_id": "S"}
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for name in ("paper_decisions", "paper_revalidations", "paper_rechecks"):
+                (root / name).mkdir()
+            def record(cid, at, label, series="S", decision="BUY_SCOUT"):
+                return {"series_id": series, "candidate_id": cid,
+                        "decision": {"decision": decision},
+                        "paper_entry": {"opened_at_utc": at}, "label": label}
+            def save(directory, filename, row):
+                (root / directory / filename).write_text(json.dumps(row), "utf-8")
+            t0 = "2026-10-07T17:00:00Z"
+            t1 = "2026-10-07T18:00:00Z"
+            for i in range(260):
+                save("paper_decisions", f"{i:04d}.json", record(str(i), t0, "original"))
+            save("paper_revalidations", "tie.json", record("1", t0, "tie"))
+            save("paper_rechecks", "later.json", record("2", t1, "later"))
+            save("paper_rechecks", "other.json", record("3", t1, "foreign", "OTHER"))
+            save("paper_rechecks", "reject.json", record("4", t1, "reject", decision="REJECT"))
+            bad = root / "paper_rechecks" / "corrupt.json"
+            bad.write_text("{", "utf-8")
+            def serial(directory, pool):
+                for p in directory.glob("*.json"):
+                    try:
+                        rec = json.loads(p.read_text("utf-8"))
+                    except Exception:
+                        continue
+                    yield rec
+            with patch.object(tracker, "ROOT", root):
+                with patch.object(tracker, "_iter_source_records", serial):
+                    expected = tracker.source_buys(control)
+                actual = tracker.source_buys(control)
+                self.assertEqual(actual, expected)
+                self.assertEqual(actual["1"]["label"], "original")
+                self.assertEqual(actual["2"]["label"], "later")
+                self.assertEqual(actual["3"]["label"], "original")
+                self.assertEqual(actual["4"]["label"], "original")
+                self.assertEqual(len(actual), 260)
+                save("paper_rechecks", "later.json", record("2", t1, "corrected"))
+                self.assertEqual(tracker.source_buys(control)["2"]["label"], "corrected")
+                bad.write_text("[]", "utf-8")
+                with self.assertRaises(AttributeError):
+                    tracker.source_buys(control)
+
+            # Versioned technical aftercare uses the exact reviewed source,
+            # never the historical frozen app copy or its old code fingerprint.
+            import hashlib
+            import subprocess
+            import sys
+            tool = self.local_runtime
+            external = root / "technical"
+            external.mkdir()
+            wrapper = external / "v2r4-paper-local-runtime.py"
+            wrapper.touch()
+            original = root / "paper_position_tracker.py"
+            original.write_bytes(b"frozen original")
+            original_bytes = original.read_bytes()
+            control_file = root / "paper_runtime_control.json"
+            control_file.write_text(json.dumps({"enabled": False, "real_money_actions_enabled": False}), "utf-8")
+            strategy = root / "paper_strategy_spec.json"
+            strategy.write_bytes(b"historical spec")
+            companion = external / "v2r4-aftercare-position-tracker-v1.py"
+            with patch.object(tool, "__file__", str(wrapper)):
+                self.assertEqual(tool._aftercare_tracker_command(root), [sys.executable, str(original)])
+                companion.write_bytes(tracker.SOURCE_FILE.read_bytes())
+                command = tool._aftercare_tracker_command(root)
+                self.assertEqual(command, [sys.executable, "-I", "-B", str(companion), "--app-root", str(root)])
+                result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("PAPER_RUNTIME_DISABLED", result.stdout)
+                control_file.write_text(json.dumps({"enabled": False, "real_money_actions_enabled": True}), "utf-8")
+                result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+                self.assertNotEqual(result.returncode, 0)
+                with patch.object(tracker, "ROOT", root), patch.object(tracker, "SOURCE_FILE", companion):
+                    expected_hash = hashlib.sha256(
+                        b"paper_position_tracker.py\0" + companion.read_bytes() +
+                        b"\0paper_strategy_spec.json\0" + strategy.read_bytes() + b"\0"
+                    ).hexdigest()
+                    self.assertEqual(tracker.lifecycle_code_fingerprint(), expected_hash)
+                companion.write_bytes(b"wrong source")
+                with self.assertRaises(RuntimeError):
+                    tool._aftercare_tracker_command(root)
+            self.assertEqual(original.read_bytes(), original_bytes)
+
     def test_candidate_event_cache_is_memory_only_bounded_and_revalidates(self):
         tool = self.local_runtime
         with tempfile.TemporaryDirectory() as td:
@@ -130,6 +239,40 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
             )
             self.assertEqual(mirror["decision"]["decision"], "REJECT")
             self.assertEqual(mirror["kind"], "V2R4_WAIT_EXPIRY_V1")
+
+            # A second sweep must preserve the exact bytes without writing
+            # either an expiry receipt or its already-current legacy mirror.
+            mirror_path = app / "paper_revalidations" / initial_path.name
+            original_bytes = mirror_path.read_bytes()
+            with patch.object(Path, "write_text", side_effect=AssertionError("unexpected duplicate write")):
+                self.local_runtime.reconcile_rechecks_and_expiry(app, now=now)
+            self.assertEqual(mirror_path.read_bytes(), original_bytes)
+
+            # A damaged or missing mirror is repaired, not treated as cached.
+            mirror_path.write_bytes(b"invalid")
+            self.local_runtime.reconcile_rechecks_and_expiry(app, now=now)
+            self.assertEqual(mirror_path.read_bytes(), original_bytes)
+            mirror_path.unlink()
+            self.local_runtime.reconcile_rechecks_and_expiry(app, now=now)
+            self.assertEqual(mirror_path.read_bytes(), original_bytes)
+
+    def test_revalidation_mirror_write_boundary_and_changed_content(self):
+        tool = self.local_runtime
+        with tempfile.TemporaryDirectory() as td:
+            mirror = Path(td) / "mirror.json"
+            first = {"series_id": "S", "decision": {"decision": "REJECT"}, "note": "ä\nβ"}
+            second = {"series_id": "S", "decision": {"decision": "BUY_SCOUT"}}
+            self.assertTrue(tool._write_revalidation_if_changed(mirror, first))
+            original = mirror.read_bytes()
+            with patch.object(Path, "write_text", side_effect=AssertionError("unexpected duplicate write")):
+                self.assertFalse(tool._write_revalidation_if_changed(mirror, first))
+            self.assertEqual(mirror.read_bytes(), original)
+            self.assertTrue(tool._write_revalidation_if_changed(mirror, second))
+            self.assertEqual(json.loads(mirror.read_text("utf-8")), second)
+            # An inability to open/write a mirror is not a successful no-op.
+            with patch.object(Path, "open", side_effect=PermissionError("denied")):
+                with self.assertRaises(PermissionError):
+                    tool._write_revalidation_if_changed(mirror, second)
 
     def test_wait_without_followup_plan_fails_closed(self):
         now = datetime(2026, 10, 7, 18, 0, tzinfo=timezone.utc)

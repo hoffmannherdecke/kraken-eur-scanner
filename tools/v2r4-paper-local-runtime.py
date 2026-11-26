@@ -2,6 +2,8 @@
 from __future__ import annotations
 import argparse, hashlib, json, os, subprocess, sys, time
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+from itertools import islice
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -272,6 +274,44 @@ def _terminal_wait_expiry(control, source, now, reason):
 def _expiry_path(rdir, now, cid, suffix):
     return rdir/f"{now.strftime('%Y%m%dT%H%M%SZ')}-{cid}-{suffix}.json"
 
+def _write_revalidation_if_changed(mirror:Path, record:dict) -> bool:
+    """Avoid rewriting a byte-identical legacy mirror, never skip changed data."""
+    payload=json.dumps(record,indent=2,sort_keys=True)+'\n'
+    expected=payload.replace('\n',os.linesep).encode('utf-8')
+    try:
+        # Non-truncating read/write open preserves the existing write-access
+        # boundary. A missing/unreadable mirror follows the original write path.
+        with mirror.open('r+b') as stream:
+            if stream.read(len(expected)+1)==expected:
+                return False
+    except OSError:
+        pass
+    mirror.write_text(payload,'utf-8')
+    return True
+
+def _aftercare_read_batch(paths):
+    records=[]
+    for path in paths:
+        try: record=load_json(path)
+        except Exception: continue
+        records.append((path,record))
+    return records
+
+def _aftercare_records(directory):
+    # Read only; keep original directory iteration and tie order. Bound
+    # outstanding work to 128 files, without a persistent negative cache.
+    paths=iter(directory.glob('*.json'))
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        while True:
+            batches=[]
+            for _ in range(4):
+                batch=tuple(islice(paths,32))
+                if not batch: break
+                batches.append(batch)
+            if not batches: return
+            for records in pool.map(_aftercare_read_batch,batches):
+                yield from records
+
 def reconcile_rechecks_and_expiry(app:Path, now=None):
     control=load_json(app/'paper_runtime_control.json'); series_id=control['series_id']
     if control.get('real_money_actions_enabled') is not False:
@@ -279,9 +319,7 @@ def reconcile_rechecks_and_expiry(app:Path, now=None):
     rdir=app/'paper_rechecks'; legacy=app/'paper_revalidations'
     rdir.mkdir(exist_ok=True); legacy.mkdir(exist_ok=True)
     latest={}
-    for rp in rdir.glob('*.json'):
-        try: rr=load_json(rp)
-        except Exception: continue
+    for rp,rr in _aftercare_records(rdir):
         if rr.get('series_id')!=series_id or not rr.get('candidate_id'): continue
         when=rr.get('recheck_completed_at_utc') or rr.get('completed_at_utc') or rr.get('revalidated_at_utc') or ''
         cid=rr['candidate_id']
@@ -289,9 +327,7 @@ def reconcile_rechecks_and_expiry(app:Path, now=None):
             latest[cid]=(when,rr)
 
     now=(now or utcnow()).astimezone(timezone.utc)
-    for dp in (app/'paper_decisions').glob('*.json'):
-        try: d=load_json(dp)
-        except Exception: continue
+    for dp,d in _aftercare_records(app/'paper_decisions'):
         if d.get('series_id')!=series_id or (d.get('decision') or {}).get('decision')!='WAIT':
             continue
         cid=d.get('candidate_id')
@@ -333,7 +369,20 @@ def reconcile_rechecks_and_expiry(app:Path, now=None):
 
         if rr is not None:
             mirror=legacy/dp.name
-            mirror.write_text(json.dumps(rr,indent=2,sort_keys=True)+'\n','utf-8')
+            _write_revalidation_if_changed(mirror,rr)
+
+_TECHNICAL_AFTERCARE_TRACKER_SHA256="0f2ad8608fa4b9563135ca1e1c8197434755c0d0fb44f832198e0b7bc20ad82a"
+
+def _aftercare_tracker_command(app):
+    # The historical app's frozen original source remains intact. An explicitly
+    # installed adjacent technical tracker is identified by its actual bytes.
+    source=Path(__file__).resolve()
+    tracker=source.with_name("v2r4-aftercare-position-tracker-v1.py")
+    if source.parent!=app.resolve() and (tracker.exists() or tracker.is_symlink()):
+        if not tracker.is_file() or tracker.is_symlink() or hashlib.sha256(tracker.read_bytes()).hexdigest()!=_TECHNICAL_AFTERCARE_TRACKER_SHA256:
+            raise RuntimeError("technical aftercare tracker source mismatch")
+        return [sys.executable,"-I","-B",str(tracker),"--app-root",str(app.resolve())]
+    return [sys.executable,str(app/"paper_position_tracker.py")]
 
 def run_lifecycle(args):
     app=args.app_root; trading=args.trading_root; hb=trading/'State/v2r4-paper-lifecycle-heartbeat.json'
@@ -345,7 +394,8 @@ def run_lifecycle(args):
         errors.append(f'recheck_reconciliation:{type(exc).__name__}:{exc}')
       for script in ('paper_position_tracker.py','paper_followup.py'):
         try:
-          p=subprocess.run([sys.executable,str(app/script)],cwd=str(app),text=True,capture_output=True,timeout=180)
+          command=_aftercare_tracker_command(app) if script=="paper_position_tracker.py" else [sys.executable,str(app/script)]
+          p=subprocess.run(command,cwd=str(app),text=True,capture_output=True,timeout=180)
           if p.returncode!=0: errors.append(f'{script}:{p.stderr[-200:]}')
           else: ran.append(script)
         except Exception as exc: errors.append(f'{script}:{type(exc).__name__}:{exc}')

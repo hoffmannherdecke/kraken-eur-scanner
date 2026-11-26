@@ -26,6 +26,18 @@ jobs:
           python -m unittest tests.test_minipc_reviewed_task_source_contract tests.test_minipc_runner_local_guard_contract tests.test_minipc_runner_bounded_availability_contract -v
           python tools/project_context_change_guard.py --base HEAD^1 --head HEAD --template
           python tools/project_context_change_guard.py --base HEAD^1 --head HEAD --event "$GITHUB_EVENT_PATH"
+      - name: V2R4 historical aftercare exact-order and mirror regression (offline)
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(tools/v2r4-paper-local-runtime\.py|paper_position_tracker\.py|tests/test_v2r4_paper_activation_runtime\.py)$'; then
+            python -m unittest \
+              tests.test_v2r4_paper_activation_runtime.V2R4PaperActivationRuntimeTests.test_ordered_aftercare_reads_match_original_and_revisit_changes \
+              tests.test_v2r4_paper_activation_runtime.V2R4PaperActivationRuntimeTests.test_position_source_parallel_preserves_original_selection \
+              tests.test_v2r4_paper_activation_runtime.V2R4PaperActivationRuntimeTests.test_chained_wait_expiry_becomes_terminal_reject \
+              tests.test_v2r4_paper_activation_runtime.V2R4PaperActivationRuntimeTests.test_revalidation_mirror_write_boundary_and_changed_content \
+              tests.test_v2r4_paper_activation_runtime.V2R4PaperActivationRuntimeTests.test_wait_without_followup_plan_fails_closed -v
+          else
+            echo 'V2R4_AFTERCARE_UNCHANGED_SKIP'
+          fi
       - name: Parse every reviewed MINI-PC PowerShell task on hosted CI (source-only)
         shell: pwsh
         run: |

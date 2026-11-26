@@ -2,10 +2,14 @@
 """Paper-only position lifecycle tracker with explicit market-data quality gates."""
 from __future__ import annotations
 import hashlib, json, math, time, urllib.parse, urllib.request
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+from itertools import islice
 
-ROOT=Path(__file__).resolve().parent
+SOURCE_FILE=Path(__file__).resolve()
+ROOT=SOURCE_FILE.parent
 FEE_PCT=0.60
 FEE=FEE_PCT/100.0
 
@@ -61,29 +65,49 @@ def trailing_rule(entry,peak):
 def lifecycle_code_fingerprint():
     h=hashlib.sha256()
     for rel in ("paper_position_tracker.py","paper_strategy_spec.json"):
-        p=ROOT/rel
+        p=SOURCE_FILE if rel=="paper_position_tracker.py" else ROOT/rel
         h.update(rel.encode("utf-8")+b"\0")
         h.update(p.read_bytes())
         h.update(b"\0")
     return h.hexdigest()
 
+def _read_source_batch(paths):
+    records=[]
+    for p in paths:
+        try: rec=json.loads(p.read_text("utf-8"))
+        except Exception: continue
+        records.append(rec)
+    return records
+
+def _iter_source_records(directory, pool):
+    # At most four batches of 32 originals in flight; map preserves order.
+    paths=iter(directory.glob("*.json"))
+    while True:
+        batches=[]
+        for _ in range(4):
+            batch=tuple(islice(paths,32))
+            if not batch: break
+            batches.append(batch)
+        if not batches: return
+        for records in pool.map(_read_source_batch,batches):
+            yield from records
+
 def source_buys(control):
     series_id=control["series_id"]
     found={}
-    for dirname in ("paper_decisions","paper_revalidations","paper_rechecks"):
-        d=ROOT/dirname
-        if not d.exists():
-            continue
-        for p in d.glob("*.json"):
-            try: rec=json.loads(p.read_text("utf-8"))
-            except Exception: continue
-            if rec.get("series_id")!=series_id: continue
-            if rec.get("decision",{}).get("decision")!="BUY_SCOUT" or not rec.get("paper_entry"): continue
-            cid=rec["candidate_id"]
-            old=found.get(cid)
-            opened=zdt(rec["paper_entry"]["opened_at_utc"])
-            if old is None or zdt(old["paper_entry"]["opened_at_utc"])<opened:
-                found[cid]=rec
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for dirname in ("paper_decisions","paper_revalidations","paper_rechecks"):
+            d=ROOT/dirname
+            if not d.exists():
+                continue
+            for rec in _iter_source_records(d,pool):
+                if rec.get("series_id")!=series_id: continue
+                if rec.get("decision",{}).get("decision")!="BUY_SCOUT" or not rec.get("paper_entry"): continue
+                cid=rec["candidate_id"]
+                old=found.get(cid)
+                opened=zdt(rec["paper_entry"]["opened_at_utc"])
+                if old is None or zdt(old["paper_entry"]["opened_at_utc"])<opened:
+                    found[cid]=rec
     return found
 
 def aggregate(state):
@@ -342,4 +366,16 @@ def main():
     },sort_keys=True))
 
 if __name__=="__main__":
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--app-root",type=Path)
+    args=parser.parse_args()
+    if args.app_root is not None:
+        if not args.app_root.is_absolute():
+            raise ValueError("technical aftercare app root must be absolute")
+        ROOT=args.app_root.resolve(strict=True)
+        if not ROOT.is_dir():
+            raise ValueError("technical aftercare app root must be a directory")
+        control=json.loads((ROOT/"paper_runtime_control.json").read_text("utf-8"))
+        if control.get("real_money_actions_enabled") is not False:
+            raise RuntimeError("unsafe V2R4 technical aftercare control")
     main()
