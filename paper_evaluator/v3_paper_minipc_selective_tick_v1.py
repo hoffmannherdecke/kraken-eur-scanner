@@ -240,10 +240,7 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                     q=ticker(altname)
                 except (OSError, RuntimeError, ValueError, KeyError, TypeError, IndexError, StopIteration, ZeroDivisionError):
                     coin, q = None, None
-                if not isinstance(coin, dict) or not isinstance(q, dict) or any(
-                    type(q.get(key)) not in (int, float) or not math.isfinite(q[key])
-                    for key in ("last", "bid", "ask", "spread_pct")
-                ):
+                if not isinstance(coin, dict) or not isinstance(q, dict) or not q:
                     results["wait"]={"status":"WAIT_PUBLIC_MARKET_SOURCE_UNAVAILABLE_NO_ACTION",
                                      "authorized_buy":False}
                 else:
