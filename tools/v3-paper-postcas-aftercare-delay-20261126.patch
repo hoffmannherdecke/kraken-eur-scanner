@@ -64,8 +64,7 @@
 +    $aftercareReady=Test-V3PaperHistoricalAftercareDelayOnHost $observed ([string]$plan.series_id)
 +   }
     if([string]$local.native_task_state -cne 'Running' -or
-       $local.native_task_has_one_action -ne $true -or
-       $local.native_task_principal_system -ne $true -or
+       $local.native_task_has_one_action -ne $true -or $local.native_task_principal_system -ne $true -or
        $local.native_python_parent_matches_task_action_hint -ne $true -or
        $local.native_powershell_process_token_is_system -ne $true -or
 -      $local.old_intake_tasks_disabled -ne $true -or $local.protected_old_aftercare_running -ne $true -or
