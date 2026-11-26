@@ -15,6 +15,51 @@ foreach($file in @('tools/v3-one-time-paper-release.ps1','tools/v3-one-time-rele
  $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root $file),[ref]$t,[ref]$e)
  Need ($e.Count -eq 0) 'PAPER_PARSE_FAILURE'
 }
+# Exact historical completion-delay policy. No real host, network or task access.
+& {
+ $now=[datetimeoffset]::Parse('2026-11-26T15:00:00Z')
+ $series='PAPER-V3-20261124T140152Z'
+ function Life { [pscustomobject]@{
+  schema_version=1;kind='V2R4_PAPER_LIFECYCLE_HEARTBEAT_V1';status='HEALTHY'
+  paper_only=$true;order_api=$false;real_money_actions=$false;checked_at_utc='2026-11-26T14:51:22.4Z'
+  errors=@();ran=@('recheck_reconciliation','paper_position_tracker.py','paper_followup.py')
+ } }
+ function Sync { [pscustomobject]@{
+  schema_version=1;kind='V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1';status='HEALTHY'
+  paper_only=$true;order_api=$false;real_money_actions=$false;checked_at_utc='2026-11-26T14:59:02Z'
+  mode='CLOSED_ORIGINAL_AFTERCARE';series_id='PAPER-V2R4-20261009T110135Z';successor_series_id=$series
+ } }
+ Need (Test-V3PaperHistoricalAftercareDelay (Life) (Sync) $series $now) 'LIFECYCLE_DELAY_NOT_ISOLATED'
+ $l=Life;$c=Sync;$l.checked_at_utc='2026-11-26T14:59:02Z';$c.checked_at_utc='2026-11-26T14:51:22Z'
+ Need (Test-V3PaperHistoricalAftercareDelay $l $c $series $now) 'CLOUDSYNC_DELAY_NOT_ISOLATED'
+ $l=Life;$c=Sync;$c.checked_at_utc=$l.checked_at_utc
+ Need (Test-V3PaperHistoricalAftercareDelay $l $c $series $now) 'JOINT_DELAY_NOT_ISOLATED'
+ foreach($bad in @('status','paper_only','order_api','real_money_actions','kind','checked_at_utc','ran','errors')){
+  $l=Life;$c=Sync
+  switch($bad){
+   status{$l.status='DEGRADED'};paper_only{$l.paper_only='true'};order_api{$l.order_api=$true}
+   real_money_actions{$l.real_money_actions=$true};kind{$l.kind='OTHER'}
+   checked_at_utc{$l.checked_at_utc='2026-11-26T15:01:00Z'}
+   ran{$l.ran=@('paper_followup.py')};errors{$l.errors=@('failure')}
+  }
+  Need (-not (Test-V3PaperHistoricalAftercareDelay $l $c $series $now)) "INVALID_LIFECYCLE_ACCEPTED_$bad"
+ }
+ foreach($bad in @('mode','series_id','successor_series_id','status','order_api')){
+  $l=Life;$c=Sync
+  switch($bad){
+   mode{$c.mode='ACTIVE_ORIGINAL'};series_id{$c.series_id=$series}
+   successor_series_id{$c.successor_series_id='PAPER-V3-20261125T000000Z'}
+   status{$c.status='DEGRADED'};order_api{$c.order_api=$true}
+  }
+  Need (-not (Test-V3PaperHistoricalAftercareDelay $l $c $series $now)) "INVALID_CLOUDSYNC_ACCEPTED_$bad"
+ }
+ Need (-not (Test-V3PaperHistoricalAftercareDelay $null (Sync) $series $now)) 'MISSING_LIFECYCLE_ACCEPTED'
+ $l=Life;$c=Sync;$l.checked_at_utc=$c.checked_at_utc
+ Need (-not (Test-V3PaperHistoricalAftercareDelay $l $c $series $now)) 'FRESH_CASE_NOT_DELAY'
+ $release=(Get-Command Invoke-V3OneTimePaperRelease).ScriptBlock.ToString()
+ Need ($release.Contains('if($repeated -and -not $aftercareReady)') -and $release.Contains('Assert-V3PaperTaskPins $plan -AllowDisabledIntake -AllowRunningWriter') -and $release.Contains('Assert-V3PaperProcesses $plan -Absent') -and $release.Contains("Assert-V3PaperFence " + '$ctx' + " @('CLOUD_COMMITTED')")) 'HISTORICAL_DELAY_SAFETY_CONTEXT_LOST'
+}
+
 # The native module reloads authorization, so restore the caller's commands
 # before the archive branch reads its local fence or writes an attempt.
 $archiveSource = (Get-Command Invoke-V3PaperPostStopFenceArchive).ScriptBlock.ToString()

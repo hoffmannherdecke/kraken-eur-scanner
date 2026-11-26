@@ -214,6 +214,52 @@ function Assert-V3PaperTaskPins([object]$Plan,[switch]$AllowDisabledIntake,[swit
      [string]$task.State -cne 'Running'){throw 'V3_PAPER_AFTERCARE_MUST_REMAIN_RUNNING'}
  }
 }
+# Historical completion freshness is not a second-writer safety proof.
+# Only repeated post-commit Paper readback may use this narrow alternative.
+# The caller must already have checked the exact task XML, disabled old intake,
+# absence of old/competing workers, committed fence and its ACL.
+function Test-V3PaperHistoricalAftercareDelay($Lifecycle,$CloudSync,[string]$Successor,[datetimeoffset]$Now) {
+ try{
+  if($Successor -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$'){return $false}
+  $stale=$false
+  foreach($hb in @($Lifecycle,$CloudSync)){
+   if($null -eq $hb -or $hb.schema_version -ne 1 -or
+      [string]$hb.status -cne 'HEALTHY' -or
+      $hb.paper_only -isnot [bool] -or $hb.paper_only -ne $true -or
+      $hb.order_api -isnot [bool] -or $hb.order_api -ne $false -or
+      $hb.real_money_actions -isnot [bool] -or $hb.real_money_actions -ne $false){return $false}
+   if([string]$hb.checked_at_utc -cnotmatch '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,7})?(?:Z|\+00:00)$'){return $false}
+   $age=($Now-[datetimeoffset]::Parse([string]$hb.checked_at_utc)).TotalSeconds
+   if($age -lt -30){return $false}
+   if($age -gt 180){$stale=$true}
+  }
+  if([string]$Lifecycle.kind -cne 'V2R4_PAPER_LIFECYCLE_HEARTBEAT_V1' -or
+     $null -eq $Lifecycle.errors -or @($Lifecycle.errors).Count -ne 0 -or
+     (@($Lifecycle.ran|Sort-Object)-join '|') -cne 'paper_followup.py|paper_position_tracker.py|recheck_reconciliation'){return $false}
+  if([string]$CloudSync.kind -cne 'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1' -or
+     [string]$CloudSync.mode -cne 'CLOSED_ORIGINAL_AFTERCARE' -or
+     [string]$CloudSync.series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+     [string]$CloudSync.successor_series_id -cne $Successor){return $false}
+  return $stale
+ }catch{return $false}
+}
+
+function Test-V3PaperHistoricalAftercareDelayOnHost($Observed,[string]$Successor) {
+ try{
+  $rows=@($Observed.physical_v2r4_paper_task_readback|Where-Object {$_.task_name -cin @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')})
+  if($rows.Count -ne 2 -or (@($rows.task_name|Sort-Object)-join '|') -cne 'CryptoMiniPC-V2R4PaperCloudSync|CryptoMiniPC-V2R4PaperLifecycle'){return $false}
+  foreach($row in $rows){
+   if([string]$row.state -cne 'Running' -or $row.principal_is_system -ne $true -or
+      $row.action_count -ne 1 -or [string]$row.multiple_instances -cne 'IgnoreNew' -or
+      $row.documented_script_basename_hint_matches -ne $true){return $false}
+   if([string]$row.task_name -ceq 'CryptoMiniPC-V2R4PaperLifecycle' -and [string]$row.paper_task_mode -cne 'lifecycle'){return $false}
+  }
+  $life=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes 'C:\Users\ADMIN\Trading\State\v2r4-paper-lifecycle-heartbeat.json' 131072)
+  $sync=Read-V3ReleaseJson (Read-V3ReleaseLocalBytes 'C:\Users\ADMIN\Trading\State\v2r4-paper-cloud-sync-heartbeat.json' 131072)
+  return (Test-V3PaperHistoricalAftercareDelay $life $sync $Successor ([datetimeoffset]::UtcNow))
+ }catch{return $false}
+}
+
 function Assert-V3PaperProcesses([object]$Plan,[switch]$Absent) {
  if(@($Plan.intake_processes).Count -lt 2 -or @($Plan.intake_processes).Count -gt 8){throw 'V3_PAPER_ORIGINAL_PROCESS_SET_REQUIRED'}
  $seen=@{}
@@ -907,11 +953,17 @@ function Invoke-V3OneTimePaperRelease {
    $wire=@(& (Join-Path $PSScriptRoot 'check-minipc-v3-physical-writer-readiness.ps1') -TradingRoot 'C:\Users\ADMIN\Trading')
    $observed=($wire -join "`n")|ConvertFrom-Json
    $local=$observed.physical_v3_postcas_local_inventory
+   $aftercareReady=($local.protected_old_aftercare_running -eq $true)
+   if($repeated -and -not $aftercareReady){
+    # This does not mark aftercare healthy. The existing supervisor/watchdog
+    # retains its own warning and recovery. No pre-CAS or initial release relaxation.
+    $aftercareReady=Test-V3PaperHistoricalAftercareDelayOnHost $observed ([string]$plan.series_id)
+   }
    if([string]$local.native_task_state -cne 'Running' -or
       $local.native_task_has_one_action -ne $true -or $local.native_task_principal_system -ne $true -or
       $local.native_python_parent_matches_task_action_hint -ne $true -or
       $local.native_powershell_process_token_is_system -ne $true -or
-      $local.old_intake_tasks_disabled -ne $true -or $local.protected_old_aftercare_running -ne $true -or
+      $local.old_intake_tasks_disabled -ne $true -or -not $aftercareReady -or
       [string]$local.native_task_action_sha256 -cne [string]$receipt.native_task_action_sha256 -or
       [string]$local.native_task_launcher_file_sha256 -cne [string]$receipt.native_task_launcher_file_sha256){
     throw 'V3_PAPER_ACTUAL_NATIVE_TASK_PROCESS_SOURCE_HOLD'
