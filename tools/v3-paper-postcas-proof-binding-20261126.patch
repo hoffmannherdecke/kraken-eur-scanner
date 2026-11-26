@@ -1,0 +1,50 @@
+--- a/tools/v3_experimental_paper_technical_gate.py
++++ b/tools/v3_experimental_paper_technical_gate.py
+@@ -1119,6 +1119,27 @@
+         # have to normalize to the original approved PR693 inventory.
+         # This branch never applies to a pre-CAS packet or another series.
+         if postcas_reuse:
++            # 26 Nov: exact installed resilience/readback delta. Normalize only
++            # the full reviewed four-file successor to the prior approved inventory.
++            # Original proof files, scope, interpreter, CMS and live identity remain required.
++            readback_resilience_delta = {
++                "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py": (
++                    "178939f69cd3682d3d6400308e4f0970dc72f1c3d16f1183c675ab3e4e56463f",
++                    "416ad4667f92d2d519f093b82fd4652caf6ca78fd0471ebc4e8cdfb4610fcac3"),
++                "paper_evaluator/v3_paper_minipc_native_launcher_v1.py": (
++                    "fcfd6080cce997e39894b74f24e45450487f452285a178fcca3ba4fcbccf60f6",
++                    "0e1e558ea8c18a8eda7ef52bdd91e44ee4606644c90f3b5a80713dac25b34366"),
++                "tools/v3-one-time-release.ps1": (
++                    "f806d51c7c16fb55390cf03b27659d93ca33ad7431c97e4c7caa75f010dc0d35",
++                    "55fd1e9a47fb91c9b30e564b43c82c48055471e03a00bf3ca99f3784b4f5dd11"),
++                "tools/v3-one-time-release-authorization.psm1": (
++                    "02ad00ab3880246f5aeea5d9d23165051f77a891e72b18c34b6042ab419096c2",
++                    "9e4fa94f44548f7625dae442d82a7cea04181f66640b9e9f03f57f5cdc0c6a2c"),
++            }
++            if all(inventory.get(path) == new
++                   for path, (_, new) in readback_resilience_delta.items()):
++                for path, (old, _) in readback_resilience_delta.items():
++                    inventory[path] = old
+             # 25 Nov: isolated/native-tested public OHLC resilience delta.
+             # This is a narrowly pinned historical provenance mapping only.
+             # It does not grant runtime authorization, or alter evidence.
+--- a/v3-paper-inactive-source-manifest.json
++++ b/v3-paper-inactive-source-manifest.json
+@@ -319,7 +319,7 @@
+     },
+     {
+       "relative_path": "tools/v3_experimental_paper_technical_gate.py",
+-      "sha256": "efe7f430d13ce5bcea26a40be675923772b74e5f1d8c552558b2800a69968946"
++      "sha256": "b1b3db8610f7e0e17e85f548e81cc4ff0ffdaaeaab6303ba90ae52804c421d75"
+     },
+     {
+       "relative_path": "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1",
+@@ -397,7 +397,7 @@
+     "tools/v3_experimental_paper_technical_gate.py",
+     "tools/v3-paper-positive-source-candidate.py"
+   ],
+-  "static_transitive_closure_sha256": "7e3147f5f86d579cc857a9fbc3c77b22b12a019e56ae6bcb9bcbd7ba1710716d",
++  "static_transitive_closure_sha256": "adace93add2f956d15f3f0426f8d77552612cf1bb7057740f752d4fd219ded30",
+   "status": "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED",
+   "supervisor_restart": false,
+   "target_directory": "V3Paper-INACTIVE-46c5abbd6af1",
