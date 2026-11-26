@@ -148,8 +148,37 @@ function Assert-V3ReleaseAuthorityAdmission([byte[]]$Bytes,[string]$ExpectedSha2
  # HTTPS. No redirects, arbitrary URL, token, secondary owner or new service.
  $id=([regex]::Match([string]$a.original_approval_url,'issuecomment-([0-9]+)$')).Groups[1].Value
  $url='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/comments/'+$id
+ try{
  $original=Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 10 -MaximumRedirection 0 `
   -Headers @{Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}
+ }catch{
+  $ownerError=$_
+  try{
+   $row=[ordered]@{status=$null;remaining=$null;reset_epoch=$null;retry_after_sec=$null;web_status='OTHER'}
+   $e=$ownerError.Exception
+   for($i=0;$i -lt 8 -and $null -ne $e;$i++){
+    if($e -is [System.Net.WebException]){
+     $row.web_status=[string]$e.Status
+     if($e.Response -is [System.Net.HttpWebResponse]){
+      $row.status=[int]$e.Response.StatusCode
+      foreach($pair in @(
+       @{header='X-RateLimit-Remaining';key='remaining';max=10000000}
+       @{header='X-RateLimit-Reset';key='reset_epoch';max=4102444800}
+       @{header='Retry-After';key='retry_after_sec';max=86400}
+      )){
+       $raw=[string]$e.Response.Headers[[string]$pair.header]
+       $num=[long]0
+       if($raw -cmatch '^\d{1,12}$' -and [long]::TryParse($raw,[ref]$num) -and $num -ge 0 -and $num -le $pair.max){$row[[string]$pair.key]=$num}
+      }
+     }
+     break
+    }
+    $e=$e.InnerException
+   }
+   [Console]::Error.WriteLine('V3_OWNER_HTTP_FAILURE_V1 '+($row|ConvertTo-Json -Compress))
+  }catch{}
+  throw
+ }
  if([string]$original.id -cne $id -or [string]$original.user.login -cne 'hoffmannherdecke' -or
     [string]$original.user.id -cne '331995561' -or
     [string]$original.issue_url -cne 'https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/99'){

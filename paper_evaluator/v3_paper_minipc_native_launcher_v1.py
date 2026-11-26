@@ -1305,6 +1305,571 @@ def preflight_native_windows_one_shot(*,
 
 
 
+# Diagnostics only: exact static codes from the existing PowerShell operator and
+# its helpers. Never publish stderr/stdout, exception arguments or input values.
+_ORIGINALHOST_PS_CODES = frozenset("""
+V3_ARMED_TWO_CYCLE_AFTERCARE_NOT_RUNNING
+V3_ARMED_TWO_CYCLE_BACKUP_OR_PR515_MISMATCH
+V3_ARMED_TWO_CYCLE_FENCE_CHANGED
+V3_ARMED_TWO_CYCLE_FENCE_UNSAFE
+V3_ARMED_TWO_CYCLE_FINAL_FENCE_CHANGED
+V3_ARMED_TWO_CYCLE_FINAL_PR515_SOURCE_CHANGED
+V3_ARMED_TWO_CYCLE_FOREIGN_FENCE
+V3_ARMED_TWO_CYCLE_FUTURE_READBACK
+V3_ARMED_TWO_CYCLE_OLD_INTAKE_REARMED
+V3_ARMED_TWO_CYCLE_ORIGINALHOST_OR_PINS_INVALID
+V3_ARMED_TWO_CYCLE_ORIGINAL_WINDOWS_REQUIRED
+V3_ARMED_TWO_CYCLE_SEMANTICS_FAIL
+V3_ARMED_TWO_CYCLE_TIMEOUT_HOLD
+V3_ARMED_TWO_CYCLE_TIMESTAMP_INVALID
+V3_EXCLUSIVE_ARCHIVE_ACL_NOT_PROTECTED
+V3_EXCLUSIVE_ARCHIVE_FOREIGN_WRITER
+V3_EXCLUSIVE_ARCHIVE_PATH_SCOPE_HOLD
+V3_EXCLUSIVE_ARCHIVE_TARGET_EXISTS
+V3_EXCLUSIVE_ARCHIVE_UNSAFE_SOURCE
+V3_EXCLUSIVE_ARCHIVE_WRONG_HOST_OR_HASH
+V3_FORWARD_T0_DUPLICATE_FIELD
+V3_FORWARD_T0_NONZERO_OR_WRONG_TYPE
+V3_FORWARD_T0_OLD_ONLY_DRIFT
+V3_FORWARD_T0_SCHEMA_DRIFT
+V3_FORWARD_T0_STALE_OR_ACTOR_DRIFT
+V3_FORWARD_T0_UNSAFE_AUTHORITY_FLAG
+V3_FORWARD_T0_UTC_FORMAT
+V3_FORWARD_T0_UTC_INVALID
+V3_GATEB_COORDINATED_ARCHIVE_HOLD
+V3_GATEB_COORDINATED_ARCHIVE_TIME_HOLD
+V3_GATEB_COORDINATED_ENVELOPE_CMS_HOLD
+V3_GATEB_COORDINATED_ENVELOPE_ENCODING_HOLD
+V3_GATEB_COORDINATED_ENVELOPE_IDENTITY_HOLD
+V3_GATEB_COORDINATED_ENVELOPE_SIZE_HOLD
+V3_GATEB_COORDINATED_ENVELOPE_STALE_HOLD
+V3_GATEB_COORDINATED_PARTIAL_INPUT_HOLD
+V3_GATEB_COORDINATED_REQUEST_EXISTS_HOLD
+V3_GATEB_COORDINATED_SCOPE_HOLD
+V3_GATE_A_BINDINGS_HOLD
+V3_GATE_A_EXISTING_ISSUER_SECRET_HOLD
+V3_GATE_A_FRESH_ISSUER_READER_HOLD
+V3_GATE_A_HASH_BINDING_HOLD
+V3_GATE_A_INDEPENDENT_NOTEBOOK_REQUIRED
+V3_GATE_A_INDEPENDENT_READBACK_HOLD_NO_RETRY
+V3_GATE_A_ORIGINAL_RECEIPT_HOLD
+V3_GATE_A_SQL_EPOCH_HOLD
+V3_GATE_A_SQL_HASH_HOLD
+V3_INTAKE_LEASE_PAIR_EXACT_TWO_DISTINCT_REQUIRED
+V3_INTAKE_LEASE_PAIR_HANDLE_CLOSED
+V3_INTAKE_LEASE_PAIR_ORIGINAL_SCOPE_HOLD
+V3_INTAKE_LEASE_PAIR_SANDBOX_SCOPE_HOLD
+V3_ISSUER_BOUND_NATIVE_RESTORE_ARMED_FENCE_OR_V3_STATE_HOLD
+V3_ISSUER_BOUND_NATIVE_RESTORE_HELD_PAIR_HOLD
+V3_ISSUER_BOUND_NATIVE_RESTORE_PRODUCTION_RELEASE_HOLD
+V3_ISSUER_BOUND_NATIVE_RESTORE_PROTECTED_AFTERCARE_HOLD
+V3_ISSUER_BOUND_NATIVE_RESTORE_TASK_NOT_DISABLED
+V3_ISSUER_BOUND_NATIVE_RESTORE_TERMINAL_ABORT_HOLD
+V3_ISSUER_BOUND_NATIVE_STOP_CURRENT_TASK_IDENTITY_HOLD
+V3_ISSUER_BOUND_NATIVE_STOP_FENCE_OR_V3_STATE_HOLD
+V3_ISSUER_BOUND_NATIVE_STOP_PRODUCTION_RELEASE_HOLD
+V3_ISSUER_BOUND_NATIVE_STOP_PROTECTED_SCOPE_HOLD
+V3_ISSUER_BOUND_NATIVE_STOP_SIGNATURE_OR_PIN_HOLD
+V3_MARKER_CANCEL_ARCHIVE_EXISTS_OR_FENCE_DRIFT
+V3_MARKER_CANCEL_ATOMIC_RENAME_PHYSICAL_ANTIRACE_GATE_NOT_WIRED
+V3_MARKER_CANCEL_BAD_HOST_OR_RELEASE_PINS
+V3_MARKER_CANCEL_FENCE_CHANGED
+V3_MARKER_CANCEL_FOREIGN_MAINTENANCE
+V3_MARKER_CANCEL_INDEPENDENT_CLOUD_OR_UNKNOWN_CUSTODY_HOLD
+V3_MARKER_CANCEL_INVALID_FENCE_FILE
+V3_MARKER_CANCEL_NOT_EXACT_PRESTOP_ARMED
+V3_MARKER_CANCEL_ORIGINALHOST_ADMIN_REQUIRED
+V3_MARKER_CANCEL_ORIGINALHOST_WINDOWS_REQUIRED
+V3_MARKER_CANCEL_POST_EPOCH_CANNOT_USE_PRE_EPOCH_SNAPSHOT
+V3_MARKER_CANCEL_POST_EPOCH_ID_INVALID
+V3_MARKER_CANCEL_POST_RENAME_READBACK_HOLD_PRESERVE_ARCHIVE
+V3_MARKER_CANCEL_PRE_EPOCH_CANNOT_USE_POST_EPOCH_ABORT
+V3_MARKER_CANCEL_PRE_EPOCH_EPOCH_ID_FORBIDDEN
+V3_MARKER_CANCEL_PRE_EPOCH_INDEPENDENT_CUSTODY_AND_ANTIRACE_HOLD
+V3_MARKER_CANCEL_PRE_EPOCH_PHYSICAL_ARCHIVE_NOT_RELEASED
+V3_MARKER_CANCEL_PRE_EPOCH_SIGNED_T0_OR_CLOUD_MISMATCH
+V3_MARKER_CANCEL_SIGNED_TERMINAL_ABORT_MISMATCH
+V3_MARKER_CANCEL_V2R4_ORIGINAL_TASK_STATE_CHANGED
+V3_MARKER_CANCEL_V3_TASK_NOT_DISABLED
+V3_NATIVE_SOURCE_ONLY_ORIGINAL_WINDOWS_REQUIRED
+V3_NOTEBOOK_READER_AUTHENTICATED_INVENTORY_MISMATCH
+V3_NOTEBOOK_READER_EXTRA_FIELDS
+V3_NOTEBOOK_READER_MISSING_OR_DUPLICATE_FIELD
+V3_NOTEBOOK_READER_TIMESTAMP_INVALID
+V3_NOTEBOOK_READER_TIMESTAMP_UNPARSEABLE
+V3_PAPER_ABANDONED_OPERATOR_HOLD
+V3_PAPER_ACTIVATION_REPEATED_RUNTIME_REQUIRED
+V3_PAPER_ACTIVATION_REQUEST_DRIFT
+V3_PAPER_ACTIVATION_RUNTIME_BINDING_HOLD
+V3_PAPER_ACTIVATION_RUNTIME_START_BYTES_HOLD
+V3_PAPER_ACTUAL_NATIVE_TASK_PROCESS_SOURCE_HOLD
+V3_PAPER_AFTERCARE_MUST_REMAIN_RUNNING
+V3_PAPER_AUTHORIZATION_EXPIRED_FENCE_PRESERVED
+V3_PAPER_BOOTSTRAP_ARGUMENT_HOLD
+V3_PAPER_BOOTSTRAP_DESTINATION_HOLD
+V3_PAPER_BOOTSTRAP_LOCAL_TRADING_PATH_REQUIRED
+V3_PAPER_CAS_AUDIT_ID_HOLD
+V3_PAPER_CAS_AUDIT_PIN_HOLD
+V3_PAPER_CAS_DEADLINE_HOLD
+V3_PAPER_CAS_EXACT_16_ARGUMENTS_REQUIRED
+V3_PAPER_CAS_INDEPENDENT_REQUEST_DRIFT
+V3_PAPER_CAS_INSTALL_READER_HOLD
+V3_PAPER_CAS_ORIGINAL_INSTALL_SEAM_DRIFT
+V3_PAPER_CAS_RESULT_UNKNOWN_NO_RETRY
+V3_PAPER_CAS_RUNTIME_BINDING_HOLD
+V3_PAPER_COMMITTED_INDEPENDENT_READER_REQUIRED
+V3_PAPER_COMPETING_NATIVE_WRITER_HOLD
+V3_PAPER_CONCURRENT_OPERATOR_HOLD
+V3_PAPER_CURRENT_SUPERVISOR_NO_REARM_ACK_REQUIRED
+V3_PAPER_EXACT_EXISTING_TASK_SET_REQUIRED
+V3_PAPER_EXISTING_ADMIN_CREDENTIAL_REQUIRED
+V3_PAPER_EXISTING_EXECUTOR_CREDENTIAL_REQUIRED
+V3_PAPER_FENCE_ACL_HOLD
+V3_PAPER_FENCE_FOREIGN_WRITER_HOLD
+V3_PAPER_FOLLOWUP_PLAN_EPOCH_PINS_HOLD
+V3_PAPER_FOLLOWUP_PREPARED_FENCE_DRIFT
+V3_PAPER_FOLLOWUP_READER_EPOCH_DRIFT
+V3_PAPER_FOLLOWUP_READER_KIND_HOLD
+V3_PAPER_FOLLOWUP_SEAL_ORIGINAL_STOP_DRIFT
+V3_PAPER_FOLLOWUP_SEAL_READER_OR_FENCE_HOLD
+V3_PAPER_HOST_RECEIPT_KIND_HOLD
+V3_PAPER_INDEPENDENT_CURRENT_RECEIPT_HOLD
+V3_PAPER_INDEPENDENT_READER_PIN_REQUIRED
+V3_PAPER_INDEPENDENT_RECEIPT_BYTES_DRIFT
+V3_PAPER_NATIVE_SYSTEM_TASK_REQUIRED
+V3_PAPER_NATIVE_TASK_SCOPE_HOLD
+V3_PAPER_OLD_INTAKE_NOT_DISABLED
+V3_PAPER_OLD_PROCESS_REMAINS
+V3_PAPER_OPEN_EPOCH_EXISTING_FENCE_ATTEMPT_OR_WRITER_HOLD
+V3_PAPER_ORIGINALHOST_REQUIRED
+V3_PAPER_ORIGINAL_FENCE_IDENTITY_HOLD
+V3_PAPER_ORIGINAL_PROCESS_SET_REQUIRED
+V3_PAPER_ORIGINAL_TASK_XML_DRIFT
+V3_PAPER_PINNED_BYTES_HOLD
+V3_PAPER_PINNED_STAGE_REQUIRED
+V3_PAPER_PLAN_IDENTITY_HOLD
+V3_PAPER_POST_START_HEALTH_READBACK_HOLD_NO_RETRY
+V3_PAPER_PRECAS_INDEPENDENT_READER_HOLD
+V3_PAPER_PRECAS_ROLLBACK_V3_WRITER_NOT_DISABLED
+V3_PAPER_PREPARE_DISABLED_ACK_REQUIRED
+V3_PAPER_PREPARE_EXISTING_FENCE_OR_UNSAFE_READER_HOLD
+V3_PAPER_PREPARE_WRITER_MUST_BE_DISABLED
+V3_PAPER_PRESTOP_FENCE_EPOCH_DRIFT
+V3_PAPER_PRESTOP_INDEPENDENT_INHIBIT_REQUIRED
+V3_PAPER_PRESTOP_ROLLBACK_FENCE_DRIFT
+V3_PAPER_PRESTOP_ROLLBACK_ORIGINAL_INTAKE_NOT_RUNNING
+V3_PAPER_PRESTOP_ROLLBACK_V3_WRITER_NOT_DISABLED
+V3_PAPER_PROCESS_ACTION_AMBIGUOUS
+V3_PAPER_PROCESS_BIRTH_OR_COMMAND_DRIFT
+V3_PAPER_PROCESS_IDENTITY_HOLD
+V3_PAPER_RELEASE_COMMIT_REQUIRED
+V3_PAPER_REPLACEMENT_INTAKE_PROCESS_HOLD
+V3_PAPER_RESTORE_ARCHIVE_COLLISION_PRESERVE_FENCE
+V3_PAPER_RESTORE_ARMED_FENCE_DRIFT
+V3_PAPER_RESTORE_HEARTBEATS_MISSING_PRESERVE_FENCE
+V3_PAPER_REVIEWED_DISABLED_NATIVE_ACTION_REQUIRED
+V3_PAPER_ROLLBACK_INDEPENDENT_TERMINAL_ABORT_REQUIRED
+V3_PAPER_RUNTIME_ACTIVATION_BINDING_HOLD
+V3_PAPER_RUNTIME_SCOPE_DRIFT
+V3_PAPER_RUNTIME_SPEC_BINDING_HOLD
+V3_PAPER_RUNTIME_START_CAS_BINDING_HOLD
+V3_PAPER_RUNTIME_START_CLOUD_RECEIPT_HOLD
+V3_PAPER_RUNTIME_START_MAINTENANCE_HOLD
+V3_PAPER_RUNTIME_START_OBSERVATION_WINDOW_HOLD
+V3_PAPER_RUNTIME_START_ORIGINAL_PROOF_HOLD
+V3_PAPER_RUNTIME_START_PROOF_BINDING_HOLD
+V3_PAPER_SEAL_PARAMETER_HOLD
+V3_PAPER_SEAL_PINS_HOLD
+V3_PAPER_SEAL_SIGNED_REQUEST_DRIFT
+V3_PAPER_SEAL_SOURCE_LOCK_DRIFT
+V3_PAPER_STARTED_TASK_ACTION_DRIFT
+V3_PAPER_SUCCESSOR_SERIES_OUTSIDE_CAS_WINDOW
+V3_PAPER_SUPERSESSION_DIGEST_HOLD
+V3_PAPER_SUPERSESSION_PINS_REQUIRED
+V3_PAPER_TASK_BACKUP_HASH_HOLD
+V3_PAPER_UNKNOWN_MODE
+V3_PR515_ARMED_ONLY_FENCE_ACL_HOLD
+V3_PR515_ARMED_ONLY_FENCE_FILE_OR_SHA_HOLD
+V3_PR515_ARMED_ONLY_FOREIGN_FENCE_HOLD
+V3_PR515_ARMED_ONLY_FOREIGN_FENCE_WRITER_HOLD
+V3_PR515_ARMED_ONLY_FOREIGN_MAINTENANCE_HOLD
+V3_PR515_ARMED_ONLY_RECOVERY_HOST_OR_PIN_HOLD
+V3_PR515_ARMED_TO_QUIESCED_SOURCE_UNCONDITIONALLY_LOCKED
+V3_PR515_MARKER_ONLY_CANCEL_SOURCE_LOCKED_INDEPENDENT_ABORT_CUSTODY_NOT_WIRED
+V3_PR515_NATIVE_PHASE_CONFLICT
+V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED
+V3_PR515_PHASE_B_EXACT_SIGNED_ISSUER_COMMIT_HOLD
+V3_PR515_PHASE_B_EXTERNAL_SCHEDULER_CUSTODY_RELEASE_NOT_AUTHORIZED
+V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED
+V3_PR515_QUIESCED_EXTERNAL_PID_AND_CAS_CUSTODY_NOT_WIRED
+V3_PR661_ABANDONED_MUTEX_HOLD
+V3_PR661_ABANDONED_OPERATOR_MUTEX_HOLD
+V3_PR661_COMPLETE_SESSION_PRODUCTION_RELEASE_LOCKED
+V3_PR661_CONCURRENT_OPERATOR_HOLD
+V3_PR661_CURRENT_INTAKE_PROCESS_FAMILIES_MISSING
+V3_PR661_EXACT_ARMED_FENCE_HOLD
+V3_PR661_FENCE_ACL_UNPROTECTED
+V3_PR661_FENCE_ARCHIVE_PRODUCTION_RELEASE_LOCKED
+V3_PR661_FENCE_CHANGED_BEFORE_STOP
+V3_PR661_FENCE_FOREIGN_WRITER_HOLD
+V3_PR661_FENCE_OR_FOREIGN_MAINTENANCE_HOLD
+V3_PR661_INDEPENDENT_ISSUER_ACK_REQUIRED
+V3_PR661_INTAKE_ACTION_DRIFT
+V3_PR661_INTAKE_ACTION_NOT_DISJOINT_FROM_PROTECTED
+V3_PR661_INTAKE_ARGUMENT_AMBIGUOUS
+V3_PR661_MARKER_PHASE_OR_REPO_HOLD
+V3_PR661_NATIVE_ADMIN_HOLD
+V3_PR661_NATIVE_HELPER_BLOB_HOLD
+V3_PR661_NATIVE_HELPER_PATH_HOLD
+V3_PR661_NATIVE_HELPER_READONLY_HOLD
+V3_PR661_NATIVE_SIGNED_T0_OR_DRIFT_HOLD
+V3_PR661_NATIVE_STOP_ORIGINAL_BACKUP_OR_SOURCE_HOLD
+V3_PR661_NATIVE_STOP_UNRELEASED_EFFECTFUL_SOURCE_HARDLOCK
+V3_PR661_NATIVE_TASK_OR_PID_NOT_QUIESCENT_LEAVE_FENCE
+V3_PR661_NATIVE_WINDOWS_OR_SOURCE_PIN_HOLD
+V3_PR661_ORIGINAL_TASK_IDENTITY_OR_STATE_HOLD
+V3_PR661_POSTSTOP_FENCE_DRIFT_LEAVE_FENCE
+V3_PR661_PROTECTED_ACTION_DRIFT
+V3_PR661_RESUME_SESSION_SCOPE_HOLD
+V3_PR661_SCHEDULER_PID_EXCLUSIVE_GATE_NOT_YET_PROVEN
+V3_PR661_SCOPED_TASK_SET_HOLD
+V3_PR661_SESSION_ABORT_FILE_SCOPE_HOLD
+V3_PR661_SESSION_NATIVE_NOT_QUIET
+V3_PR661_SESSION_NEW_INTAKE_PROCESS_SURVIVED
+V3_PR661_SESSION_PRIOR_PROCESS_SURVIVED
+V3_PR661_SESSION_REAL_PAIR_REQUIRED
+V3_PR661_SESSION_TASK_SCOPE_DRIFT
+V3_PR661_SIGNED_ISSUER_PRESTOP_HOLD
+V3_PR661_V3_WRITER_NOT_DISABLED
+V3_PRECAS_ADMINISTRATOR_REQUIRED
+V3_PRECAS_ARMED_FENCE_ACL_DRIFT_LEAVE_FENCE
+V3_PRECAS_ARMED_FENCE_CONTENT_DRIFT_LEAVE_FENCE
+V3_PRECAS_ARMED_FENCE_FILE_DRIFT_LEAVE_FENCE
+V3_PRECAS_ARMED_FENCE_FOREIGN_WRITER_LEAVE_FENCE
+V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE
+V3_PRECAS_BAD_PROCESS_INVENTORY
+V3_PRECAS_CONFLICTING_OR_EXISTING_FENCE
+V3_PRECAS_FENCE_RACE
+V3_PRECAS_FRESH_XML_OR_PR515_PREVIEW_MISSING
+V3_PRECAS_INTAKE_IDENTITY_CHANGED
+V3_PRECAS_NATIVE_ARGUMENTS_AMBIGUOUS
+V3_PRECAS_NATIVE_PROCESS_OWNER_NOT_UNIQUE
+V3_PRECAS_NATIVE_PROCESS_ROOTS_UNVERIFIED
+V3_PRECAS_NATIVE_QUIESCENCE_UNKNOWN_LEAVE_ARMED_FENCE
+V3_PRECAS_NOT_EXACT_READY_V2R4
+V3_PRECAS_PROTECTED_AFTERCARE_MUST_KEEP_RUNNING
+V3_PRECAS_SOURCE_OR_REVIEWED_PINS_INVALID
+V3_PRECAS_SUPERVISOR_SCHEDULE_OR_OWNER_DRIFT
+V3_PRECAS_UNEXPECTED_NATIVE_INTAKE_STATE_LEAVE_FENCE
+V3_PRECOMMIT_ARCHIVE_COLLISION_PRESERVE_PAIR_AND_FENCE
+V3_PRECOMMIT_ARMED_FENCE_CHANGED_BEFORE_MANUAL_RECOVERY
+V3_PRECOMMIT_CURRENT_TWO_XML_AND_PR515_RECOVERY_RECHECK_FAILED
+V3_PRECOMMIT_FENCE_CHANGED_DURING_RECOVERY
+V3_PRECOMMIT_FOREIGN_MAINTENANCE_MARKER
+V3_PRECOMMIT_FOREIGN_OR_NON_QUIESCED_MARKER
+V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED
+V3_PRECOMMIT_MARKER_CHANGED_BEFORE_ATOMIC_REPLACE
+V3_PRECOMMIT_NATIVE_RESTORE_NOT_REQUESTED_PRESERVE_FENCE
+V3_PRECOMMIT_ORIGINAL_FENCE_SHA_CHANGED
+V3_PRECOMMIT_PROTECTED_AFTERCARE_NOT_RUNNING
+V3_PRECOMMIT_RECEIPT_ORIGINAL_FENCE_PHASE_MISMATCH
+V3_PRECOMMIT_RESTORE_ADMIN_REQUIRED
+V3_PRECOMMIT_RESTORE_AFTERCARE_UNKNOWN_MANUAL_REVIEW_REQUIRED
+V3_PRECOMMIT_RESTORE_ARCHIVE_NOT_CONFIRMED
+V3_PRECOMMIT_RESTORE_HOST_OR_EXTERNAL_PINS_INVALID
+V3_PRECOMMIT_RESTORE_NOT_HEALTHY_PRESERVE_ARMED_FENCE
+V3_PRECOMMIT_RESTORE_NOT_MANUAL_REVIEW_ELIGIBLE
+V3_PRECOMMIT_RESTORE_ORIGINAL_WINDOWS_REQUIRED
+V3_PRECOMMIT_RESTORE_REAL_HELD_PAIR_REQUIRED
+V3_PREPARED_FENCE_BAD_PINS
+V3_PREPARED_FENCE_MISSING
+V3_PREPARED_FENCE_PIN_MISMATCH_BEFORE_WRITE
+V3_QUIESCED_ADMIN_REQUIRED
+V3_QUIESCED_AFTERCARE_NOT_RUNNING
+V3_QUIESCED_ARMED_FENCE_ACL_DRIFT
+V3_QUIESCED_FENCE_UNTRUSTED_WRITER
+V3_QUIESCED_MARKER_SCOPE_NOT_ARMED
+V3_QUIESCED_NATIVE_INTAKE_REARMED
+V3_QUIESCED_ORIGINAL_FENCE_RACE
+V3_QUIESCED_ORIGINAL_SOURCE_OR_FENCE_PIN_INVALID
+V3_QUIESCED_ORIGINAL_WINDOWS_ONLY
+V3_QUIESCED_PHASE_READBACK_HOLD_LEAVE_FENCE
+V3_QUIESCED_TEMP_COLLISION
+V3_QUIESCED_TWO_CYCLE_OR_PR515_ACK_INCOMPLETE
+V3_QUIESCED_UNTRUSTED_ARMED_FENCE
+V3_RECONCILE_ABANDONED_MUTEX_HOLD
+V3_RECONCILE_ADMIN_REQUIRED
+V3_RECONCILE_AFTERCARE_NOT_ORIGINAL
+V3_RECONCILE_ALREADY_COMPLETED_NO_REPLAY
+V3_RECONCILE_ARCHIVE_OR_FOREIGN_MAINTENANCE_HOLD
+V3_RECONCILE_ARCHIVE_UNKNOWN_NO_RETRY
+V3_RECONCILE_ATTEMPT_DRIFT
+V3_RECONCILE_AWAITING_RECEIPT_DRIFT
+V3_RECONCILE_BACKUP_DRIFT
+V3_RECONCILE_BACKUP_SCOPE_HOLD
+V3_RECONCILE_BACKUP_XML_DRIFT
+V3_RECONCILE_CONCURRENT_OPERATOR_HOLD
+V3_RECONCILE_CONTINUATION_AUTHORITY_DRIFT
+V3_RECONCILE_CONTINUATION_BINDING_DRIFT
+V3_RECONCILE_CONTINUATION_PIN_WITHOUT_ATTEMPT_HOLD
+V3_RECONCILE_DISABLED_DEFINITION_DRIFT
+V3_RECONCILE_ENABLED_DEFINITION_DRIFT
+V3_RECONCILE_ENABLED_XML_HOLD
+V3_RECONCILE_EVIDENCE_TASK_SCOPE_HOLD
+V3_RECONCILE_FINAL_READBACK_UNKNOWN_NO_RETRY
+V3_RECONCILE_FOREIGN_MAINTENANCE_HOLD
+V3_RECONCILE_HASH_BINDINGS_HOLD
+V3_RECONCILE_HEALTH_UNKNOWN_NO_RETRY
+V3_RECONCILE_HEARTBEAT_STALE_HOLD
+V3_RECONCILE_HEARTBEAT_TIME_HOLD
+V3_RECONCILE_HEARTBEAT_UNHEALTHY
+V3_RECONCILE_IDENTITY_OR_BINDINGS_HOLD
+V3_RECONCILE_INSTANCE_IDENTITY_UNKNOWN
+V3_RECONCILE_INTERACTIVE_ORIGINALHOST_ONLY
+V3_RECONCILE_LIVE_TASK_STATE_DRIFT
+V3_RECONCILE_NOT_CONTINUING_ORIGINAL_TASKS
+V3_RECONCILE_ORIGINAL_ARTIFACT_DRIFT
+V3_RECONCILE_ORIGINAL_BINDING_DRIFT
+V3_RECONCILE_ORIGINAL_BYTES_CHANGED
+V3_RECONCILE_ORIGINAL_EVIDENCE_HOLD
+V3_RECONCILE_ORIGINAL_LEASE_RACE
+V3_RECONCILE_ORIGINAL_PROCESS_IDENTITY_DRIFT
+V3_RECONCILE_ORIGINAL_SCOPE_DRIFT
+V3_RECONCILE_POST_ARCHIVE_ATTEMPT_DRIFT
+V3_RECONCILE_POST_ARCHIVE_CHECKPOINT_DRIFT
+V3_RECONCILE_POST_ARCHIVE_FENCE_HOLD
+V3_RECONCILE_POST_ARCHIVE_READER_UNKNOWN_NO_RETRY
+V3_RECONCILE_POST_ARCHIVE_SCOPE_OR_EXPIRY_HOLD
+V3_RECONCILE_PRE_ARCHIVE_ARCHIVE_CONFLICT_HOLD
+V3_RECONCILE_PRE_ARCHIVE_ARTIFACTS_HOLD
+V3_RECONCILE_PRE_ARCHIVE_ARTIFACT_DRIFT
+V3_RECONCILE_PRE_ARCHIVE_ATTEMPT_AUTHORITY_HOLD
+V3_RECONCILE_PRE_ARCHIVE_AWAITING_CONFLICT_HOLD
+V3_RECONCILE_PRE_ARCHIVE_BINDINGS_HOLD
+V3_RECONCILE_PRE_ARCHIVE_CHECKPOINT_HOLD
+V3_RECONCILE_PRE_ARCHIVE_HISTORICAL_PROOF_DRIFT
+V3_RECONCILE_PRE_ARCHIVE_IDENTITY_HOLD
+V3_RECONCILE_PRE_ARCHIVE_INSTANCE_REPLACED
+V3_RECONCILE_PRE_ARCHIVE_INTERRUPTED_PROOF_DRIFT
+V3_RECONCILE_PRE_ARCHIVE_LATCH_HOLD
+V3_RECONCILE_PRE_ARCHIVE_NO_REPAIR_HOLD
+V3_RECONCILE_PRE_ARCHIVE_STATE_CONFLICT_HOLD
+V3_RECONCILE_PROCESS_ACTION_HOLD
+V3_RECONCILE_PROCESS_COUNT_DRIFT
+V3_RECONCILE_PROCESS_NOT_OLDER_THAN_ORIGINAL_WINDOW
+V3_RECONCILE_PROCESS_SCOPE_HOLD
+V3_RECONCILE_REAL_PAIR_REQUIRED
+V3_RECONCILE_RUNNING_INSTANCE_REPLACED
+V3_RECONCILE_SESSION_EXPIRED_NO_RETRY
+V3_RECONCILE_STOP_FORBIDDEN
+V3_RECONCILE_TASK_MULTIPLE_INSTANCE_POLICY_HOLD
+V3_RECONCILE_UNKNOWN_BINDING_HOLD
+V3_RELEASE_APPROVAL_EXPIRED_OR_FUTURE_HOLD
+V3_RELEASE_APPROVAL_FIELDS_HOLD
+V3_RELEASE_APPROVAL_TIME_FORMAT_HOLD
+V3_RELEASE_ARMED_FENCE_DRIFT
+V3_RELEASE_ARTIFACT_HASH_HOLD
+V3_RELEASE_ARTIFACT_SET_HOLD
+V3_RELEASE_AUTHORITY_ADMISSION_CHANGED
+V3_RELEASE_AUTHORITY_PIN_OR_CMS_HOLD
+V3_RELEASE_BACKUP_MANIFEST_PIN_HOLD
+V3_RELEASE_BINDINGS_HOLD
+V3_RELEASE_DUPLICATE_KEY_HOLD
+V3_RELEASE_ENABLE_TASK_SCOPE_HOLD
+V3_RELEASE_EXISTING_ADMIN_OPERATOR_REQUIRED
+V3_RELEASE_FILE_SIZE_HOLD
+V3_RELEASE_FRESH_TERMINAL_ABORT_REQUIRED_NO_REARM
+V3_RELEASE_FUNCTION_ACL_COUNT_HOLD
+V3_RELEASE_FUNCTION_ACL_DRIFT
+V3_RELEASE_FUNCTION_SET_HOLD
+V3_RELEASE_HOST_BINDINGS_HOLD
+V3_RELEASE_HOST_HASH_BINDINGS_HOLD
+V3_RELEASE_INDEPENDENT_ADMISSION_HASH_HOLD
+V3_RELEASE_INDEPENDENT_AUTHORITY_NOT_ADMITTED
+V3_RELEASE_INDEPENDENT_PRESTOP_HOLD
+V3_RELEASE_INSTALL_COMMIT_BINDING_READBACK_HOLD
+V3_RELEASE_INSTALL_READBACK_DRIFT
+V3_RELEASE_INSTALL_SOURCE_BINDING_HOLD
+V3_RELEASE_INTERACTIVE_ORIGINALHOST_ONLY
+V3_RELEASE_ISSUER_EXPIRED_AFTER_LEASE
+V3_RELEASE_JSON_KEY_HOLD
+V3_RELEASE_JSON_OBJECT_HOLD
+V3_RELEASE_JSON_SIZE_HOLD
+V3_RELEASE_LOCAL_PATH_REQUIRED
+V3_RELEASE_ORIGINALHOST_AUTHORIZATION_NOT_LIVE
+V3_RELEASE_ORIGINALHOST_FINAL_ACK_NOT_CONFIRMED
+V3_RELEASE_ORIGINAL_FUNCTION_BODY_DRIFT
+V3_RELEASE_ORIGINAL_INSTALL_READBACK_REQUIRED
+V3_RELEASE_ORIGINAL_INTERACTIVE_MINIPC_REQUIRED
+V3_RELEASE_ORIGINAL_OWNER_ADMISSION_NOT_MATCHED
+V3_RELEASE_ORIGINAL_OWNER_IDENTITY_HOLD
+V3_RELEASE_ORIGINAL_POLICY_COUNT_HOLD
+V3_RELEASE_ORIGINAL_POLICY_DRIFT
+V3_RELEASE_ORIGINAL_READBACK_WIRE_HOLD
+V3_RELEASE_PACKAGE_CHANGED_BEFORE_READ_LEASE
+V3_RELEASE_PG_FAILED_OUTCOME_UNCONFIRMED_READBACK_REQUIRED_NO_RETRY
+V3_RELEASE_PG_START_FAILED
+V3_RELEASE_PG_TIMEOUT_OUTCOME_UNKNOWN_NO_RETRY
+V3_RELEASE_PROTECTED_TASK_DRIFT
+V3_RELEASE_REPARSE_PATH_HOLD
+V3_RELEASE_SCOPE_OR_IDENTITY_HOLD
+V3_RELEASE_SESSION_ALREADY_OWNED
+V3_RELEASE_SESSION_EXPIRED_FENCE_PRESERVED
+V3_RELEASE_SESSION_HANDLES_CLOSED_RECONCILIATION_REQUIRED
+V3_RELEASE_SIGNER_OR_VALIDITY_HOLD
+V3_RELEASE_SINGLE_DETACHED_SIGNER_REQUIRED
+V3_RELEASE_STOP_ALREADY_ATTEMPTED
+V3_RESTORE_HEARTBEAT_FILE_HOLD
+V3_RESTORE_HEARTBEAT_STALE_OR_FUTURE
+V3_RESTORE_HEARTBEAT_UTC_LITERAL_HOLD
+V3_STAGE4_EPOCH_COMMIT_READBACK_HOLD_NO_RETRY
+V3_STAGE4_EPOCH_INDEPENDENT_BINDINGS_HOLD
+V3_TASK_DEFINITION_LEASE_DISABLED_STATE_DRIFT
+V3_TASK_DEFINITION_LEASE_ORIGINAL_SCOPE_HOLD
+V3_TASK_DEFINITION_LEASE_REQUIRES_ALREADY_DISABLED
+V3_TASK_DEFINITION_LEASE_SANDBOX_NAME_HOLD
+V3_TASK_DEFINITION_LEASE_UNSAFE_FILE
+V3_TASK_DEFINITION_LEASE_WINDOWS_ONLY
+""".split())
+
+
+class _OriginalhostReadbackHold(ValueError):
+    def __init__(self, category, *, reported_code=None, returncode=None):
+        self.detail = {"kind": "ORIGINALHOST_READBACK_FAILURE_V1", "category": category}
+        if reported_code in _ORIGINALHOST_PS_CODES:
+            self.detail["reported_code"] = reported_code
+        if type(returncode) is int and -(2**31) <= returncode <= 2**32-1:
+            self.detail["returncode"] = returncode
+        super().__init__(category + (": " + self.detail["reported_code"]
+                                     if "reported_code" in self.detail else ""))
+
+
+def _originalhost_stderr_code(stderr):
+    if not isinstance(stderr, str) or len(stderr) > 65536:
+        return "POWERSHELL_ERROR_OUTPUT_UNAVAILABLE", None
+    found = set()
+    for line in stderr.splitlines():
+        line = re.sub(r"\x1b\[[0-9;]*m", "", line).strip()
+        match = re.fullmatch(r"(?:\+?\s*FullyQualifiedErrorId\s*:\s*)?(V3_[A-Z0-9_]+)(?:,[A-Za-z0-9_.-]+)?", line)
+        if not match:
+            match = re.fullmatch(r"[A-Za-z]:\\[^\r\n]+?\.ps1\s*:\s*(V3_[A-Z0-9_]+)", line, flags=re.IGNORECASE)
+        if match and match.group(1) in _ORIGINALHOST_PS_CODES:
+            found.add(match.group(1))
+    if len(found) == 1:
+        return "POWERSHELL_REPORTED_FIXED_CODE", next(iter(found))
+    if found:
+        return "POWERSHELL_MULTIPLE_FIXED_CODES", None
+    return "POWERSHELL_UNCLASSIFIED_ERROR", None
+
+
+# Native structured error markers are diagnostic only. They are never authority.
+_NATIVE_ERROR_FILES = frozenset((
+    "v3-one-time-release.ps1", "v3-one-time-paper-release.ps1",
+    "v3-one-time-release-authorization.psm1", "v3-one-time-originalhost-release.psm1",
+    "check-minipc-v3-physical-writer-readiness.ps1",
+))
+_NATIVE_ERROR_TYPES = frozenset((
+    "WebException", "HttpRequestException", "CimException", "IOException",
+    "UnauthorizedAccessException", "FileNotFoundException", "DirectoryNotFoundException",
+    "TimeoutException", "CryptographicException", "RuntimeException", "InvalidOperationException",
+    "ArgumentException", "InvalidCastException", "MethodInvocationException", "ParameterBindingException",
+    "OTHER",
+))
+_NATIVE_ERROR_COMMANDS = frozenset((
+    "Invoke-RestMethod", "Get-CimInstance", "Get-ScheduledTask", "Get-ScheduledTaskInfo",
+    "Get-Content", "Get-Item", "ConvertFrom-Json", "Import-Module",
+    "Assert-V3ReleaseAuthorityAdmission", "Assert-V3PaperProcesses", "Assert-V3PaperTaskPins",
+    "Read-V3ReleaseLocalBytes", "Invoke-V3OneTimePaperRelease", "OTHER",
+))
+_NATIVE_ERROR_CATEGORIES = frozenset((
+    "NotSpecified", "OpenError", "CloseError", "DeviceError", "DeadlockDetected", "InvalidArgument",
+    "InvalidData", "InvalidOperation", "InvalidResult", "InvalidType", "MetadataError", "NotImplemented",
+    "NotInstalled", "ObjectNotFound", "OperationStopped", "OperationTimeout", "SyntaxError", "ParserError",
+    "PermissionDenied", "ResourceBusy", "ResourceExists", "ResourceUnavailable", "ReadError", "WriteError",
+    "FromStdErr", "SecurityError", "ProtocolError", "ConnectionError", "AuthenticationError", "LimitsExceeded",
+    "QuotaExceeded", "NotEnabled", "OTHER",
+))
+_NATIVE_WEB_STATUS = frozenset((
+    "Success", "NameResolutionFailure", "ConnectFailure", "ReceiveFailure", "SendFailure",
+    "PipelineFailure", "RequestCanceled", "ProtocolError", "ConnectionClosed", "TrustFailure",
+    "SecureChannelFailure", "ServerProtocolViolation", "KeepAliveFailure", "Pending", "Timeout",
+    "ProxyNameResolutionFailure", "UnknownError", "MessageLengthLimitExceeded", "CacheEntryNotFound",
+    "RequestProhibitedByCachePolicy", "RequestProhibitedByProxy", "OTHER",
+))
+
+
+def _originalhost_native_diagnostics(stderr):
+    """Strictly project bounded structured markers; never retain raw stderr."""
+    if not isinstance(stderr, str) or len(stderr) > 65536:
+        return {}
+    result = {}
+    def int_between(x, lo, hi):
+        return type(x) is int and lo <= x <= hi
+    def no_duplicates(pairs):
+        d = {}
+        for k, v in pairs:
+            if k in d:
+                raise ValueError("duplicate marker field")
+            d[k] = v
+        return d
+    schemas = {
+        "V3_NATIVE_ERROR_V2 ": "native_error",
+        "V3_OWNER_HTTP_FAILURE_V1 ": "owner_http_failure",
+    }
+    for prefix, key in schemas.items():
+        lines = [line[len(prefix):] for line in stderr.splitlines() if line.startswith(prefix)]
+        if len(lines) != 1 or len(lines[0]) > 2048:
+            continue
+        try:
+            obj = json.loads(lines[0], object_pairs_hook=no_duplicates)
+        except (ValueError, RecursionError):
+            continue
+        if not isinstance(obj, dict):
+            continue
+        if key == "native_error":
+            if (set(obj) != {"type", "category", "hresult", "script", "line", "command"}
+                    or not isinstance(obj["type"], str) or obj["type"] not in _NATIVE_ERROR_TYPES
+                    or not isinstance(obj["category"], str) or obj["category"] not in _NATIVE_ERROR_CATEGORIES
+                    or not int_between(obj["hresult"], -(2**31), 2**31-1)
+                    or not isinstance(obj["script"], str) or obj["script"] not in _NATIVE_ERROR_FILES | {"OTHER"}
+                    or not int_between(obj["line"], 0, 100000)
+                    or not isinstance(obj["command"], str) or obj["command"] not in _NATIVE_ERROR_COMMANDS):
+                continue
+        else:
+            if (set(obj) != {"status", "remaining", "reset_epoch", "retry_after_sec", "web_status"}
+                    or not all(obj[k] is None or int_between(obj[k], lo, hi) for k,lo,hi in (
+                        ("status",100,599), ("remaining",0,10000000),
+                        ("reset_epoch",0,4102444800), ("retry_after_sec",0,86400)))
+                    or not isinstance(obj["web_status"], str) or obj["web_status"] not in _NATIVE_WEB_STATUS):
+                continue
+        result[key] = obj
+    return result
+
+
+def _owner_http_retry_at(exc, now):
+    """Pause only a typed temporary failure at the exact owner GET boundary.
+
+    No cached authority and no phase dispatch during this wait. Unknown errors,
+    conflicting fixed HOLDs, TLS, authorization and identity failures stay HOLD.
+    """
+    if (type(exc) is not _OriginalhostReadbackHold
+            or exc.detail.get("category") != "POWERSHELL_UNCLASSIFIED_ERROR"
+            or exc.detail.get("returncode") != 1):
+        return None
+    http = getattr(exc, "native_diagnostics", {}).get("owner_http_failure")
+    if not isinstance(http, dict):
+        return None
+    status = http["status"]
+    rate_limited = status == 429 or (status == 403 and http["remaining"] == 0)
+    if not rate_limited or http["web_status"] != "ProtocolError":
+        return None
+    retry_at = now + timedelta(seconds=max(60, (http["retry_after_sec"] or 0) + 1))
+    if http["reset_epoch"] is not None:
+        retry_at = max(retry_at, datetime.fromtimestamp(http["reset_epoch"], timezone.utc)
+                       + timedelta(seconds=1))
+    return retry_at
+
+
 def authenticated_originalhost_release_provider(*, args, repeated=False, bootstrap=False) -> dict[str, Any]:
     """Authenticate the signed operating scope and independent Cloud receipt.
 
@@ -1321,13 +1886,29 @@ def authenticated_originalhost_release_provider(*, args, repeated=False, bootstr
                "-ExpectedAuthorityAdmissionSha256", args.admission_sha256,
                "-ExpectedReleaseCommit", args.expected_source_sha,
                "-HostReceiptJson", args.host_receipt, "-HostReceiptCms", args.host_cms]
-    result = subprocess.run(command, capture_output=True, text=True,
-                            timeout=145 if repeated else 60, check=False)
-    if result.returncode or not 1 <= len(result.stdout) <= 65536:
-        raise ValueError("authenticated originalhost release readback HOLD")
-    report = json.loads(result.stdout)
+    try:
+        result = subprocess.run(command, capture_output=True, text=True,
+                                timeout=145 if repeated else 60, check=False)
+    except subprocess.TimeoutExpired:
+        raise _OriginalhostReadbackHold("POWERSHELL_TIMEOUT") from None
+    except OSError:
+        raise _OriginalhostReadbackHold("POWERSHELL_EXECUTION_ERROR") from None
+    except UnicodeError:
+        raise _OriginalhostReadbackHold("POWERSHELL_OUTPUT_DECODING_ERROR") from None
+    if result.returncode:
+        category, code = _originalhost_stderr_code(result.stderr)
+        failure = _OriginalhostReadbackHold(category, reported_code=code,
+                                            returncode=result.returncode)
+        failure.native_diagnostics = _originalhost_native_diagnostics(result.stderr)
+        raise failure
+    if not 1 <= len(result.stdout) <= 65536:
+        raise _OriginalhostReadbackHold("POWERSHELL_REPORT_SIZE_HOLD", returncode=0)
+    try:
+        report = json.loads(result.stdout)
+    except (ValueError, RecursionError):
+        raise _OriginalhostReadbackHold("POWERSHELL_REPORT_JSON_HOLD", returncode=0) from None
     if not isinstance(report, dict):
-        raise ValueError("authenticated originalhost report missing")
+        raise _OriginalhostReadbackHold("POWERSHELL_REPORT_OBJECT_HOLD", returncode=0)
     return report
 
 
@@ -1415,6 +1996,8 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
     heartbeat = state / "v3-paper-single-writer-heartbeat.json"
     deadline = None
     approval_sha = None
+    current_phase = "BOOTSTRAP"
+    owner_retry_at = None
 
     def authorize(*, bootstrap=False):
         nonlocal deadline, approval_sha
@@ -1441,11 +2024,12 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
         _check_runtime_deadline(deadline)
         return _originalhost_wall_clock_utc()
 
-    def publish(status, cycle_status=None):
+    def publish(status, cycle_status=None, failure_site=None, failure_detail=None):
         operating_level = {
             "HEALTHY": 1,
             "DEGRADED_SCANNER_INPUT": 3,
             "DEGRADED_CLOUD_READ": 3,
+            "DEGRADED_AUTHORITY_READ": 3,
             "HOLD": 4,
             "EXPIRED": 4,
         }.get(status)
@@ -1453,6 +2037,8 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
             operating_level = 2
         _replace_json(heartbeat, {
             "operating_level": operating_level,
+            **({"failure_site": failure_site} if failure_site is not None else {}),
+            **({"failure_detail": failure_detail} if failure_detail is not None else {}),
             "kind": "V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1", "status": status,
             "cycle_status": cycle_status,
             "checked_at_utc": _originalhost_wall_clock_utc().isoformat(),
@@ -1464,7 +2050,24 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
             "paper_only": True, "orders": False, "real_money_actions": False,
         })
 
+    def persist_readback_failure(exc, retry_at=None):
+        # Bounded local evidence, never authority or an input to a later phase.
+        try:
+            _replace_json(state / "v3-paper-originalhost-readback-error.json", {
+                "kind": "V3_ORIGINALHOST_LOCAL_ERROR_V2",
+                "checked_at_utc": _originalhost_wall_clock_utc().isoformat(),
+                "series_id": series_id, "runtime_bundle_sha256": spec["bundle_sha256"],
+                "runtime_approval_sha256": approval_sha, "pid": os.getpid(),
+                "phase": current_phase, "failure": exc.detail,
+                "native": getattr(exc, "native_diagnostics", {}),
+                "retry_at_utc": retry_at.isoformat() if retry_at is not None else None,
+            })
+        except OSError:
+            pass
+
     def run_phase(phase, candidate=None, preflight=None, readback=authorize):
+        nonlocal current_phase
+        current_phase = phase
         if deadline is not None:
             _check_runtime_deadline(deadline)
         return dispatch_from_original_windows_one_shot(
@@ -1484,6 +2087,13 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
         try:
             while True:
                 _check_runtime_deadline(deadline)
+                moment = _originalhost_wall_clock_utc()
+                if owner_retry_at is not None and moment < owner_retry_at:
+                    # No phase, Cloud write, model call or authority request until due.
+                    publish("DEGRADED_AUTHORITY_READ", "WAITING_FOR_OWNER_RATE_LIMIT_RESET")
+                    time.sleep(min(30, max(0, (min(owner_retry_at, deadline) - moment).total_seconds())))
+                    continue
+                owner_retry_at = None
                 try:
                     # Retain the same independently authorized Cloud/journal phase
                     # even while waiting for the next real Scanner opportunity.
@@ -1570,11 +2180,34 @@ def _run_repeated_paper(*, args, spec, params, packet, token) -> None:
                 except TransientCloudReadUnavailable:
                     _check_runtime_deadline(deadline)
                     publish("DEGRADED_CLOUD_READ", "WAITING_FOR_FRESH_ACTIVE_PAPER_SERIES")
+                except _OriginalhostReadbackHold as exc:
+                    _check_runtime_deadline(deadline)
+                    owner_retry_at = _owner_http_retry_at(exc, _originalhost_wall_clock_utc())
+                    if owner_retry_at is None:
+                        raise
+                    persist_readback_failure(exc, owner_retry_at)
+                    publish("DEGRADED_AUTHORITY_READ", "WAITING_FOR_OWNER_RATE_LIMIT_RESET",
+                            failure_detail=exc.detail)
                 time.sleep(min(30, max(0, (deadline - _originalhost_wall_clock_utc()).total_seconds())))
         except PaperRuntimeLeaseExpired:
             publish("EXPIRED")
-        except Exception:
-            publish("HOLD")
+        except Exception as exc:
+            failure_class = ("VALUEERROR" if type(exc) is _OriginalhostReadbackHold else
+                             re.sub(r"[^A-Z0-9_]", "_", type(exc).__name__.upper())[:60])
+            tb = exc.__traceback__
+            site = None
+            while tb is not None:
+                code = tb.tb_frame.f_code
+                basename = re.split(r"[/\\]", code.co_filename)[-1]
+                if re.fullmatch(r"[A-Za-z0-9_]{1,120}\.py", basename):
+                    site = {"file": basename,
+                            "function": re.sub(r"[^A-Za-z0-9_]", "_", code.co_name)[:100],
+                            "line": tb.tb_lineno}
+                tb = tb.tb_next
+            publish("HOLD", "HOLD_" + current_phase + "_" + failure_class, site,
+                    exc.detail if type(exc) is _OriginalhostReadbackHold else None)
+            if type(exc) is _OriginalhostReadbackHold:
+                persist_readback_failure(exc)
             raise
 
 def main() -> int:

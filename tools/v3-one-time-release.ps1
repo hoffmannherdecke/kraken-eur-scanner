@@ -133,13 +133,43 @@ if($Mode -eq 'PaperInventory'){
 }
 
 if($ReplaceExistingCas -and $Mode -cne 'InstallPaperCas'){throw 'V3_CAS_REPLACEMENT_ONLY_INSTALL_MODE_HOLD'}
+function Write-V3NativeReadbackError([System.Management.Automation.ErrorRecord]$Record) {
+ # Diagnostics must not change the existing error, authorization or report.
+ $types=@('WebException','HttpRequestException','CimException','IOException','UnauthorizedAccessException','FileNotFoundException','DirectoryNotFoundException','TimeoutException','CryptographicException','RuntimeException','InvalidOperationException','ArgumentException','InvalidCastException','MethodInvocationException','ParameterBindingException')
+ $files=@('v3-one-time-release.ps1','v3-one-time-paper-release.ps1','v3-one-time-release-authorization.psm1','v3-one-time-originalhost-release.psm1','check-minipc-v3-physical-writer-readiness.ps1')
+ $commands=@('Invoke-RestMethod','Get-CimInstance','Get-ScheduledTask','Get-ScheduledTaskInfo','Get-Content','Get-Item','ConvertFrom-Json','Import-Module','Assert-V3ReleaseAuthorityAdmission','Assert-V3PaperProcesses','Assert-V3PaperTaskPins','Read-V3ReleaseLocalBytes','Invoke-V3OneTimePaperRelease')
+ $e=$Record.Exception
+ $type='OTHER';$hr=0
+ for($i=0;$i -lt 8 -and $null -ne $e;$i++){
+  if($e.GetType().Name -cin $types){$type=$e.GetType().Name;$hr=[int]$e.HResult}
+  $e=$e.InnerException
+ }
+ $script='OTHER';$line=0;$command='OTHER'
+ if($null -ne $Record.InvocationInfo){
+  $v=$Record.InvocationInfo
+  $name=[IO.Path]::GetFileName([string]$v.ScriptName)
+  if($name -cin $files){$script=$name;$line=[int]$v.ScriptLineNumber}
+  if($null -ne $v.MyCommand -and [string]$v.MyCommand.Name -cin $commands){$command=[string]$v.MyCommand.Name}
+ }
+ $row=[ordered]@{type=$type;category=[string]$Record.CategoryInfo.Category;hresult=$hr;script=$script;line=$line;command=$command}
+ [Console]::Error.WriteLine('V3_NATIVE_ERROR_V2 '+($row|ConvertTo-Json -Compress))
+}
+
 if($Mode -in @('PaperOpenEpoch','PaperSealEpoch','PaperPrepare','PaperStop','PaperCas','InstallPaperCas','PaperActivate','PaperRollback','PaperPostStopFenceArchive','PaperPostArchiveRestore','PaperHostReadback','PaperRuntimeBootstrap','PaperResume')){
+ try {
  . (Join-Path $PSScriptRoot 'v3-one-time-paper-release.ps1')
  Invoke-V3OneTimePaperRelease -Mode $Mode -PackageRoot $PackageRoot -ApprovalJson $ApprovalJson -ApprovalCms $ApprovalCms `
   -AuthorityAdmissionJson $AuthorityAdmissionJson -ExpectedAuthorityAdmissionSha256 $ExpectedAuthorityAdmissionSha256 `
   -ExpectedReleaseCommit $ExpectedReleaseCommit -PaperPlanJson $PaperPlanJson -RuntimeSpecJson $RuntimeSpecJson `
   -HostReceiptJson $HostReceiptJson -HostReceiptCms $HostReceiptCms -PostgresPassword $PostgresPassword -CaFile $CaFile -ReplaceExistingCas:$ReplaceExistingCas |
   ConvertTo-Json -Depth 24 -Compress
+ }catch{
+  if($Mode -in @('PaperHostReadback','PaperRuntimeBootstrap')){
+   $nativeError=$_
+   try{Write-V3NativeReadbackError $nativeError}catch{}
+  }
+  throw
+ }
  return
 }
 
