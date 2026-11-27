@@ -1,0 +1,50 @@
+--- a/paper_evaluator/v3_paper_minipc_selective_tick_v1.py
++++ b/paper_evaluator/v3_paper_minipc_selective_tick_v1.py
+@@ -15,6 +15,7 @@
+ from typing import Any,Callable
+ from contextlib import contextmanager
+ import os
++from paper_evaluator.v3_experimental_paper_initial_review_v1 import CHECKS, MAX_SPREAD_PCT
+ from paper_evaluator import evaluate
+ from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
+     REVISION,one_candidate,preflight_budget,_RELEASED_MODEL_NATIVE_OWNER,
+@@ -910,7 +911,8 @@
+             _released_model_capability=_RELEASED_MODEL_NATIVE_OWNER)
+         if (ack_file is not None and (
+                 (result.get("status")=="NO_ELIGIBLE_INITIAL_V3_MODEL_REVIEW"
+-                 and result.get("review_status")=="UNKNOWN_REQUIRED_INITIAL_PIT_OR_QUOTE")
++                 and result.get("review_status") in ("UNKNOWN_REQUIRED_INITIAL_PIT_OR_QUOTE",
++                                                     "CORE_ENTRY_OR_TRADABILITY_NOT_READY"))
+                 or result.get("status")=="STAGED_ORIGINAL_EXPIRED_JOURNALED_NO_KRAKEN_NO_MODEL")):
+             # A return label alone never authorizes continuation. Validate the
+             # exact durable no-P4 lineage using the same restart disposition.
+@@ -1626,6 +1628,29 @@
+                 review=by_key[("FULL_REVIEW_ELIGIBILITY","FRESHRECHECK")]
+                 d=source["data"]
+                 rd=review["data"]
++                ask, bid = d.get("ask_eur"), d.get("bid_eur")
++                checks = rd.get("review_checks")
++                spread_check = "execution_spread_at_most_half_percent"
++                if (rd.get("review_status") == "CORE_ENTRY_OR_TRADABILITY_NOT_READY"
++                        and origins[0]["data"].get("source_status") == "ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY"
++                        and first["result"] == "PASS"
++                        and first["data"] == {"candidate_origin": "SCANNER",
++                                              "review_status": "INITIAL_FRESH_PIT_READY_FOR_FULL_V3_MODEL_ONLY"}
++                        and source["result"] == "PASS" and d.get("source_status") == "COMPLETE"
++                        and all(d.get("frame_status_" + k) == "VALID" for k in ("1m", "5m", "15m"))
++                        and review["result"] == "SKIP" and rd.get("candidate_origin") == "SCANNER"
++                        and rd.get("review_family") == "FIRST_SCANNER_EARLY_REVIEW"
++                        and rd.get("phase_failure_stage") is None
++                        and isinstance(checks, dict) and set(checks) == CHECKS
++                        and checks[spread_check] is False
++                        and all(checks[k] is True for k in CHECKS - {spread_check})
++                        and all(type(v) in (float, int) and math.isfinite(v) for v in (ask, bid))
++                        and 0 < bid <= ask
++                        and (ask - bid) / ((ask + bid) / 2) * 100 > MAX_SPREAD_PCT
++                        and clock(candidate["event_time_utc"]) <= clock(origins[0]["known_at_utc"])
++                        == clock(first["known_at_utc"]) <= clock(source["known_at_utc"])
++                        <= clock(review["known_at_utc"])):
++                    return block("ORIGINAL_SOURCE_REVIEW_SKIPPED_NO_P4_AUTHORITY")
+                 if (origins[0]["data"].get("source_status")=="ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY"
+                         and first["result"]=="PASS"
+                         and first["data"].get("candidate_origin")=="SCANNER"
