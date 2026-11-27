@@ -1,0 +1,1 @@
+SafeAccess isolated connectivity acceptance 2026-11-27. No project decision, runtime change or deployment authorization.
