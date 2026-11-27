@@ -1,0 +1,44 @@
+--- a/tools/v3_experimental_paper_technical_gate.py
++++ b/tools/v3_experimental_paper_technical_gate.py
+@@ -1129,6 +1129,12 @@
+             for path, (old, _) in unbounded_delta.items():
+                 inventory[path] = old
+         if postcas_reuse:
++            # 27 Nov: exact reviewed spread-only SKIP successor of the
++            # installed unbounded stage. Preserve original proof lineage only;
++            # all existing inventory, interpreter and CMS checks remain required.
++            spread_tick = "paper_evaluator/v3_paper_minipc_selective_tick_v1.py"
++            if unbounded_stage and inventory.get(spread_tick) == "9d5d277d0cfa5b5b6c7a3d11e7e3a08cb9100ba493e52eefd049728863ba75a0":
++                inventory[spread_tick] = "acb4bdda629dc7617d7f54750c107d665f840c70e36674df05fa427ded25b9ea"
+             # 26 Nov: exact installed resilience/readback delta. Normalize only
+             # the full reviewed four-file successor to the prior approved inventory.
+             # Original proof files, scope, interpreter, CMS and live identity remain required.
+--- a/v3-paper-inactive-source-manifest.json
++++ b/v3-paper-inactive-source-manifest.json
+@@ -215,7 +215,7 @@
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+-      "sha256": "acb4bdda629dc7617d7f54750c107d665f840c70e36674df05fa427ded25b9ea"
++      "sha256": "9d5d277d0cfa5b5b6c7a3d11e7e3a08cb9100ba493e52eefd049728863ba75a0"
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_single_writer_smoke_v1.py",
+@@ -319,7 +319,7 @@
+     },
+     {
+       "relative_path": "tools/v3_experimental_paper_technical_gate.py",
+-      "sha256": "7d84c939da75e473a4e4417a15b6b726fd7ec1c0d180985271b2ec9983642ce4"
++      "sha256": "f7f74b11a9dc5fec28570442184b2d2f5b26bea69216aaac2b730c50c0d8642b"
+     },
+     {
+       "relative_path": "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1",
+@@ -397,7 +397,7 @@
+     "tools/v3_experimental_paper_technical_gate.py",
+     "tools/v3-paper-positive-source-candidate.py"
+   ],
+-  "static_transitive_closure_sha256": "19db3a78718f846ebd1d00bc24eb7a5008aff1912a60fa820332fa8bd5c565ef",
++  "static_transitive_closure_sha256": "985f7c44ad2c13d5ce3b721d2369ee3a20e119f1f43ca7c531a25d6d2a5c1eb5",
+   "status": "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED",
+   "supervisor_restart": false,
+   "target_directory": "V3Paper-INACTIVE-46c5abbd6af1",
