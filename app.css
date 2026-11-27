@@ -29,8 +29,8 @@ nav{background:#101b2bee;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur
 @media(max-width:355px){nav button{font-size:9px}.brand .sub{font-size:10px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 
-/* Persistent operational status across all app sections */
-.health-banner{position:sticky;top:0;z-index:4;margin:0 0 14px;padding:13px 16px;border:1px solid #536172;border-left:5px solid #adbed1;border-radius:12px;background:#192636;box-shadow:0 5px 22px #0005;color:var(--fg)}
+/* Operational status in normal page flow; scrolls away with content. */
+.health-banner{position:relative;margin:0 0 14px;padding:13px 16px;border:1px solid #536172;border-left:5px solid #adbed1;border-radius:12px;background:#192636;box-shadow:0 5px 22px #0005;color:var(--fg)}
 .health-banner[hidden]{display:none}
 .health-banner[data-tone=good]{border-left-color:#7de0ac;background:#15352d}
 .health-banner[data-tone=warn]{border-left-color:#f4cf8a;background:#392e20}
@@ -38,7 +38,7 @@ nav{background:#101b2bee;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur
 .health-banner[data-tone=unknown]{border-left-color:#adbed1;background:#253041}
 .health-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.health-top strong{font-size:18px;line-height:1.25}.health-top strong:before{content:"●";margin-right:8px;color:#adbed1}.health-banner[data-tone=good] strong:before{color:#7de0ac}.health-banner[data-tone=warn] strong:before{color:#f4cf8a}.health-banner[data-tone=bad] strong:before{color:#ff858c}
 #health-details{padding:5px 9px;min-height:34px;font-size:12px;background:#ffffff0d;border:1px solid #ffffff35;flex-shrink:0}.health-banner p{font-size:13px;margin:5px 0}.health-checks{display:flex;gap:6px 15px;flex-wrap:wrap;font-size:12px;font-weight:600}.health-banner small{display:block;margin-top:5px;color:#d4deea;font-size:11px}
-@media(max-width:540px){.health-banner{padding:9px 10px;top:0;border-radius:9px;margin-bottom:10px}.health-top strong{font-size:15px}.health-banner p{font-size:12px;line-height:1.35}.health-checks{font-size:11px;gap:3px 9px}.health-banner small{font-size:10px}}
+@media(max-width:540px){.health-banner{padding:9px 10px;border-radius:9px;margin-bottom:10px}.health-top strong{font-size:15px}.health-banner p{font-size:12px;line-height:1.35}.health-checks{font-size:11px;gap:3px 9px}.health-banner small{font-size:10px}}
 
 /* 0.17.3 | Adaptive control center. Presentation only. */
 :root{--bg:#0b1019;--panel:#111a28;--line:#273448;--fg:#eef4fc;--muted:#aabbd0;--blue:#8ebdff;--amber:#f4ce8a;--green:#77dfb2;--rail:218px;--radius:16px}
@@ -50,7 +50,7 @@ h2{font-size:clamp(19px,2vw,26px);font-weight:700;letter-spacing:-.6px;line-heig
 .panel .panel{background:#162132;box-shadow:none;border-color:#2d3c51}.panel details{border-color:var(--line)}summary{min-height:36px;line-height:1.45;padding:7px 0;font-weight:550;cursor:pointer}
 button,.file{min-height:44px;border-radius:9px;background:#1c2d43;border-color:#3b5271;color:var(--fg)}button:hover:not(:disabled){background:#294564}button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid #a8d0ff;outline-offset:3px}
 .hero{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 20px;padding:15px 17px;background:#111e2e;border-color:#30435c}.hero strong{font-size:16px}.hero #read{font-size:12px;color:var(--muted);margin:5px 0}.hero #connection-note{font-size:12px}.connection-actions{margin:0;justify-content:flex-end;gap:7px}.connection-actions button{font-size:13px;padding:8px 12px}#session-info{grid-column:1/-1;border-top:1px solid var(--line);padding-top:7px;margin:0}
-.health-banner{top:env(safe-area-inset-top,0px);padding:14px 17px;margin:0 0 12px;border-radius:14px;z-index:8;box-shadow:0 5px 24px #0005}.health-top strong{font-size:clamp(16px,1.7vw,21px);font-weight:750}.health-banner p{font-size:13px}.health-checks{gap:6px 16px;font-size:12px}.health-checks span{padding:4px 8px;border:1px solid #ffffff26;border-radius:6px;background:#0002}.health-banner small{font-size:12px}#health-details{min-height:44px;padding:6px 12px}
+.health-banner{padding:14px 17px;margin:0 0 12px;border-radius:14px;z-index:8;box-shadow:0 5px 24px #0005}.health-top strong{font-size:clamp(16px,1.7vw,21px);font-weight:750}.health-banner p{font-size:13px}.health-checks{gap:6px 16px;font-size:12px}.health-checks span{padding:4px 8px;border:1px solid #ffffff26;border-radius:6px;background:#0002}.health-banner small{font-size:12px}#health-details{min-height:44px;padding:6px 12px}
 .page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:24px 0 12px}.page-heading h2{margin:4px 0 0;font-size:clamp(24px,3vw,34px)}.eyebrow{font-size:11px;font-weight:750;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}.context-label{font-size:12px;color:var(--muted);white-space:nowrap}
 #summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#summary>.panel{margin:0}.overview-metrics{grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metrics .panel{background:linear-gradient(155deg,#1b2d44,#111c2c);border-color:#304764;padding:16px;min-height:100px;display:flex;flex-direction:column;justify-content:space-between;gap:9px}.num{font-size:clamp(26px,3vw,38px);letter-spacing:-1.5px;line-height:1.1;font-weight:760}.metrics small{font-size:12px;line-height:1.4}
 .dashboard-stream,.market-workspace{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}.dashboard-stream>div,.market-workspace>div{min-width:0}.dashboard-stream h2{font-size:20px;margin-top:20px}
