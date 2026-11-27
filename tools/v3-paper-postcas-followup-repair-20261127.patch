@@ -1,0 +1,369 @@
+--- a/paper_evaluator/v3_paper_minipc_native_launcher_v1.py
++++ b/paper_evaluator/v3_paper_minipc_native_launcher_v1.py
+@@ -2011,7 +2011,7 @@
+     return 0
+ 
+ 
+-def _scanner_journal_progress(journal: Path, series_id: str):
++def _scanner_journal_progress(journal: Path, series_id: str, pair_index=None):
+     seen = set()
+     pending = set()
+     completed = {}
+@@ -2024,10 +2024,41 @@
+             seen.add(cid)
+             if row["event_key"] == "FIRST" and row["result"] == "SEEN":
+                 pending.add(cid)
++                if pair_index is not None:
++                    pair = row["pair"]
++                    if not isinstance(pair, str) or not pair.endswith("/EUR"):
++                        raise ValueError("invalid durable scanner pair")
++                    if cid in pair_index and pair_index[cid] != pair:
++                        raise ValueError("conflicting durable scanner pair")
++                    pair_index[cid] = pair
+         elif (phase in ("FOLLOWUP_6H", "FOLLOWUP_24H", "FOLLOWUP_72H")
+               and row["result"] in ("MATURE_COMPLETE", "CENSORED")):
+             completed.setdefault(cid, set()).add(phase)
+     return seen, {cid for cid in pending if len(completed.get(cid, ())) < 3}
++
++
++def _choose_followup_candidate(pending, pairs, checked, pair_checked):
++    """Rotate distinct market pairs first, then candidates within the pair.
++
++    Archive snapshots are pair-scoped. Scheduling one candidate per pair
++    before revisiting another candidate of the same pair minimizes avoidable
++    missed prospective capture windows without weakening a provenance gate.
++    The selected immutable candidate still passes the original phase checks.
++    """
++    return min(pending, key=lambda cid: (pair_checked.get(pairs[cid], 0),
++                                         checked.get(cid, 0), cid))
++
++
++def _followup_batch_candidates(pending, pairs, checked, pair_checked):
++    """At most four distinct pairs, oldest observation first; no second writer."""
++    remaining = set(pending)
++    selected = []
++    while remaining and len(selected) < 4:
++        cid = _choose_followup_candidate(remaining, pairs, checked, pair_checked)
++        selected.append(cid)
++        pair = pairs[cid]
++        remaining = {other for other in remaining if pairs[other] != pair}
++    return selected
+ 
+ 
+ def _scanner_candidate_capture(directory: Path, series_id: str, candidate_id: str) -> Path:
+@@ -2059,6 +2090,7 @@
+     series_id = spec["series_id"]
+     series_started = datetime.strptime(series_id, "PAPER-V3-%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+     checked = {}
++    pair_checked = {}
+     source_skipped = set()
+     attempted = set()
+     next_retry = None
+@@ -2096,8 +2128,8 @@
+         approval_sha = lease["approval_sha256"]
+         return report
+ 
+-    def pause(until=None):
+-        limits = [30]
++    def pause(until=None, *, busy=False):
++        limits = [2 if busy else 30]
+         now = _originalhost_wall_clock_utc()
+         for bound in (deadline, until):
+             if bound is not None:
+@@ -2182,12 +2214,20 @@
+                     pause(owner_retry_at)
+                     continue
+                 owner_retry_at = None
++                busy = False
++                followup_deferred = False
+                 try:
+                     # Retain the same independently authorized Cloud/journal phase
+                     # even while waiting for the next real Scanner opportunity.
+                     run_phase("CLOUD_RECEIPT_ACK")
+-                    seen, pending = _scanner_journal_progress(params["journal"], series_id)
++                    pairs = {}
++                    seen, pending = _scanner_journal_progress(params["journal"], series_id, pairs)
+                     pending -= source_skipped
++                    # No stale scheduling history for completed candidates.
++                    checked = {cid: stamp for cid, stamp in checked.items() if cid in pending}
++                    pending_pairs = {pairs[cid] for cid in pending}
++                    pair_checked = {pair: stamp for pair, stamp in pair_checked.items()
++                                    if pair in pending_pairs}
+                     cycle_status = "WAITING_FOR_FRESH_ELIGIBLE_SCANNER_INPUT"
+                     scanner_ready = False
+                     try:
+@@ -2239,18 +2279,24 @@
+                             cycle_status = "SCANNER_SOURCE_SKIP_NO_P4"
+                         elif scan.get("status") == "FIRST_SCANNER_FREE_RULE_P4_DURABLE_WAIT_FOR_FOLLOWUP":
+                             pending.add(cid)
++                            pairs[cid] = candidate["pair"]
+                             cycle_status = "SCANNER_FREE_RULE_P4_COMPLETE"
+                         else:
+                             raise ValueError("V3 Paper Scanner phase requires reconciliation")
+ 
+-                    # Bound work to one follow-up per cycle, rotating even across
+-                    # WAIT candidates. The captured original survives task restart.
++                    # A bounded batch retains one fresh originalhost and Cloud
++                    # readback per actual phase. No cached authority or parallel
++                    # writer. The 30s selection budget is a soft admission bound:
++                    # never kill an in-flight authorized phase.
+                     followup_deferred = False
+-                    if pending:
+-                        cid = min(pending, key=lambda item: (checked.get(item, 0), item))
++                    batch_started = time.monotonic()
++                    for cid in _followup_batch_candidates(pending, pairs, checked, pair_checked):
++                        if time.monotonic() - batch_started >= 30:
++                            break
+                         path = _scanner_candidate_capture(capture_dir, series_id, cid)
+                         candidate = _bounded_release_json(path)
+-                        if candidate.get("candidate_id") != cid:
++                        if (candidate.get("candidate_id") != cid
++                                or candidate.get("pair") != pairs[cid]):
+                             raise ValueError("V3 Paper follow-up original identity mismatch")
+                         followup = run_phase("FOLLOWUP_6H24H72H", candidate)
+                         status = str(followup.get("status", ""))
+@@ -2261,14 +2307,24 @@
+                                 and status != "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
+                             raise ValueError("V3 Paper followup requires reconciliation")
+                         checked[cid] = time.monotonic()
++                        if status not in ("NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4",
++                                          "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE") and not model_deferred:
++                            # Rotate on a source attempt, including a typed
++                            # temporary failure; do not hammer one pair.
++                            pair_checked[pairs[cid]] = checked[cid]
+                         if status == "NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4":
+                             source_skipped.add(cid)
+-                        followup_deferred = status == "FOLLOWUP_PUBLIC_OHLC_TEMPORARILY_UNAVAILABLE"
+-                        if followup_deferred:
++                        source_failed = status == "FOLLOWUP_PUBLIC_OHLC_TEMPORARILY_UNAVAILABLE"
++                        followup_deferred = followup_deferred or source_failed
++                        if not source_failed and not model_deferred and status not in (
++                                "NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4",
++                                "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
++                            busy = True
++                        if source_failed:
+                             cycle_status = status
+-                        elif model_deferred:
++                        elif model_deferred and not followup_deferred:
+                             cycle_status = "FOLLOWUP_DEFERRED_MODEL_NOT_FINAL"
+-                        elif prepared is None and scanner_ready:
++                        elif prepared is None and scanner_ready and not followup_deferred:
+                             cycle_status = ("SCANNER_SOURCE_SKIP_NO_P4" if status ==
+                                             "NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4"
+                                             else "FOLLOWUP_CYCLE_COMPLETE")
+@@ -2278,6 +2334,7 @@
+                     publish("DEGRADED_FOLLOWUP_SOURCE" if followup_deferred else
+                             "HEALTHY" if scanner_ready else "DEGRADED_SCANNER_INPUT", cycle_status)
+                 except TransientCloudReadUnavailable:
++                    busy = False
+                     _check_runtime_deadline(deadline)
+                     publish("DEGRADED_CLOUD_READ", "WAITING_FOR_FRESH_ACTIVE_PAPER_SERIES")
+                 except _OriginalhostReadbackHold as exc:
+@@ -2288,7 +2345,7 @@
+                     persist_readback_failure(exc, owner_retry_at)
+                     publish("DEGRADED_AUTHORITY_READ", "WAITING_FOR_OWNER_RATE_LIMIT_RESET",
+                             failure_detail=exc.detail)
+-                pause()
++                pause(busy=busy and not followup_deferred and owner_retry_at is None)
+         except PaperRuntimeLeaseExpired:
+             publish("EXPIRED")
+         except Exception as exc:
+--- a/paper_evaluator/v3_paper_minipc_followup_v1.py
++++ b/paper_evaluator/v3_paper_minipc_followup_v1.py
+@@ -47,6 +47,14 @@
+             or captured_1m.get("source")!="KRAKEN_SPOT_EUR_PUBLIC"
+             or not isinstance(captured_1m.get("closed_bars"),list)):
+         raise ValueError("no actual Kraken closed 1m provenance")
++    # The archive starts at the original signal, not necessarily at the
++    # durable Paper fill. The economics validator intentionally refuses
++    # any pre-fill candle (including the partial entry minute). Filter the
++    # already provenance-validated archive at the actual fill boundary;
++    # never create a candle, skip a missing post-fill minute or move the fill.
++    entry=clock(fill["known_at_utc"])
++    post_fill_bars=[bar for bar in captured_1m["closed_bars"]
++                    if clock(bar["start_at_utc"]) >= entry]
+     data=estimate_closed_1m_paper_path(
+         candidate_id=candidate_id,pair=fill["pair"],
+         entry_at_utc=fill["known_at_utc"],
+@@ -54,7 +62,7 @@
+         stop_eur=f["validated_stop_eur"],
+         stage2_trigger_eur=f["validated_stage2_eur"],
+         stage2_ttl_minutes=f["stage2_ttl_minutes"],
+-        closed_1m_bars=captured_1m["closed_bars"],
++        closed_1m_bars=post_fill_bars,
+         horizon_minutes=horizon_hours*60,
+     )
+     status=data["status"]
+--- a/tools/v3-one-time-release-authorization.psm1
++++ b/tools/v3-one-time-release-authorization.psm1
+@@ -136,7 +136,60 @@
+  return $out
+ }
+ 
+-function Assert-V3ReleaseAuthorityAdmission([byte[]]$Bytes,[string]$ExpectedSha256,[string]$ReleaseCommit) {
++function Read-V3ExistingCadenceOwnerComment([string]$CommentId) {
++ if($env:COMPUTERNAME -ine 'MINI-PC' -or
++    [Security.Principal.WindowsIdentity]::GetCurrent().User.Value -cne 'S-1-5-18' -or
++    $CommentId -cnotmatch '^[1-9][0-9]{0,18}$'){throw 'V3_RELEASE_CADENCE_OWNER_SCOPE_HOLD'}
++ $guard='C:\Users\ADMIN\Trading\Repos\kraken-eur-scanner\tools\minipc-github-cadence-guard.py'
++ $python='C:\Users\ADMIN\Trading\Runtime\kraken-eur-scanner-venv\Scripts\python.exe'
++ $null=Read-V3ReleaseLocalBytes $guard 1048576
++ $null=Read-V3ReleaseLocalBytes $python 16777216
++ $guardLease=[IO.File]::Open($guard,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
++ $pythonLease=$null
++ try{
++  $pythonLease=[IO.File]::Open($python,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
++  $h=[Security.Cryptography.SHA256]::Create()
++  try{
++   $guardSha=([BitConverter]::ToString($h.ComputeHash($guardLease))).Replace('-','').ToLowerInvariant()
++   $pythonSha=([BitConverter]::ToString($h.ComputeHash($pythonLease))).Replace('-','').ToLowerInvariant()
++  }finally{$h.Dispose()}
++  if($guardSha -cnotin @('82cf42210f8014a5eefd38458974d3592dd82df4cb3dedd7e9ebe12e8ff13630','3a34ac752d26084b901de5fa0400f8b321a9fd9f1f2729f7ccfecf329e81e41e') -or
++     $pythonSha -cne '72b29481593c5da37c99248c82777fbfb56217ea7809b771bc760d0a9ecb179b'){throw 'V3_RELEASE_CADENCE_SOURCE_PIN_HOLD'}
++  $psi=[Diagnostics.ProcessStartInfo]::new()
++  $psi.FileName=$python
++  $psi.Arguments='-I -B "'+$guard+'" --read-owner-admission '+$CommentId
++  $psi.WorkingDirectory=[IO.Path]::GetDirectoryName($guard)
++  $psi.UseShellExecute=$false;$psi.CreateNoWindow=$true
++  $psi.RedirectStandardOutput=$true;$psi.RedirectStandardError=$true
++  foreach($key in @($psi.EnvironmentVariables.Keys)){
++   if([string]$key -match '(?i)SECRET|TOKEN|PASSWORD|API_KEY|PRIVATE_KEY|^PG'){$psi.EnvironmentVariables.Remove([string]$key)}
++  }
++  $p=[Diagnostics.Process]::new();$p.StartInfo=$psi
++  try{
++   if(-not $p.Start()){throw 'V3_RELEASE_CADENCE_READ_START_HOLD'}
++   $stdout=$p.StandardOutput.ReadToEndAsync();$stderr=$p.StandardError.ReadToEndAsync()
++   if(-not $p.WaitForExit(15000)){$p.Kill();[void]$p.WaitForExit(3000);throw 'V3_RELEASE_CADENCE_READ_TIMEOUT_HOLD'}
++   $p.WaitForExit();$wire=$stdout.GetAwaiter().GetResult();$err=$stderr.GetAwaiter().GetResult()
++   if($p.ExitCode -ne 0 -or $wire.Length -gt 65536 -or $err.Length -ne 0){throw 'V3_RELEASE_CADENCE_READ_OUTPUT_HOLD'}
++   $r=$wire|ConvertFrom-Json -ErrorAction Stop
++  }finally{$p.Dispose()}
++  if($r.ok -isnot [bool]){throw 'V3_RELEASE_CADENCE_READ_SCHEMA_HOLD'}
++  if(-not $r.ok){
++   if('failure' -cin @($r.PSObject.Properties.Name)){
++    $f=$r.failure
++    if(@($f.PSObject.Properties.Name).Count -ne 5 -or $f.web_status -cne 'ProtocolError'){throw 'V3_RELEASE_CADENCE_FAILURE_SCHEMA_HOLD'}
++    # The existing Python classifier independently validates all five fields.
++    [Console]::Error.WriteLine('V3_OWNER_HTTP_FAILURE_V1 '+($f|ConvertTo-Json -Compress))
++    throw 'Authenticated GitHub owner HTTP read failed.'
++   }
++   throw 'V3_RELEASE_CADENCE_OWNER_READ_HOLD'
++  }
++  if([long]$r.limit -lt 1000 -or [long]$r.remaining -lt 0 -or [long]$r.remaining -gt [long]$r.limit){throw 'V3_RELEASE_CADENCE_QUOTA_HOLD'}
++  return $r.original
++ }finally{if($null -ne $pythonLease){$pythonLease.Dispose()};$guardLease.Dispose()}
++}
++
++function Assert-V3ReleaseAuthorityAdmission([byte[]]$Bytes,[string]$ExpectedSha256,[string]$ReleaseCommit,[switch]$UseExistingCadenceRead) {
+  if($ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     (Get-V3ReleaseSha256 $Bytes) -cne $ExpectedSha256){throw 'V3_RELEASE_INDEPENDENT_ADMISSION_HASH_HOLD'}
+  $a=Read-V3ReleaseJson $Bytes
+@@ -155,6 +208,11 @@
+  # HTTPS. No redirects, arbitrary URL, token, secondary owner or new service.
+  $id=([regex]::Match([string]$a.original_approval_url,'issuecomment-([0-9]+)$')).Groups[1].Value
+  $url='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/comments/'+$id
++ if($UseExistingCadenceRead){
++  # Only the existing credential owner's fixed GET mode. No fallback to
++  # anonymous or a cached admission, and no secret in V3's process or output.
++  $original=Read-V3ExistingCadenceOwnerComment $id
++ }else{
+  try{
+  $original=Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 10 -MaximumRedirection 0 `
+   -Headers @{Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}
+@@ -186,6 +244,7 @@
+   }catch{}
+   throw
+  }
++ }
+  if([string]$original.id -cne $id -or [string]$original.user.login -cne 'hoffmannherdecke' -or
+     [string]$original.user.id -cne '331995561' -or
+     [string]$original.issue_url -cne 'https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/99'){
+--- a/tools/v3-one-time-paper-release.ps1
++++ b/tools/v3-one-time-paper-release.ps1
+@@ -612,7 +612,7 @@
+  $leases=Open-V3ReleasePackageReadLease $PackageRoot $inventory
+  $mutex=$null;$held=$false;$intakePair=$null
+  try{
+-  $pin=Assert-V3ReleaseAuthorityAdmission (Read-V3ReleaseLocalBytes $AuthorityAdmissionJson) $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
++  $pin=Assert-V3ReleaseAuthorityAdmission (Read-V3ReleaseLocalBytes $AuthorityAdmissionJson) $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit -UseExistingCadenceRead:($Mode -in @('PaperHostReadback','PaperRuntimeBootstrap'))
+   $repeated=$false
+   if($Mode -in @('PaperHostReadback','PaperRuntimeBootstrap')){
+    # This untrusted discriminator selects the signature scope only.
+--- a/tools/v3_experimental_paper_technical_gate.py
++++ b/tools/v3_experimental_paper_technical_gate.py
+@@ -1118,6 +1118,19 @@
+         # proof adapter. Both deltas must match; all other source hashes still
+         # have to normalize to the original approved PR693 inventory.
+         # This branch never applies to a pre-CAS packet or another series.
++        # Proposed post-CAS repair lineage: exact all-or-nothing source delta.
++        # Prior proof files retain their original scope; new CMS and active
++        # runtime identity remain mandatory. No pre-CAS or mixed-stage reuse.
++        followup_repair_delta = {
++            "paper_evaluator/v3_paper_minipc_native_launcher_v1.py": ("021097daa7b2f159c61d86b914a6acd7af85179f96ea95a0402795ac597cd306", "51b7eff1c8b2289321991f00cb380e9c5f6b0febb36f2d8323b86c7b3edf15e4"),
++            "paper_evaluator/v3_paper_minipc_followup_v1.py": ("9116a9db0f69106a69d99bb5378b74b923c5c0d9518843e2ce6ecb19a285216e", "b35fc84a7ec10fd6fe2237e3e0e137125e2a5229822e5c7d7eed6dd0de2212f0"),
++            "tools/v3-one-time-release-authorization.psm1": ("a234a5e8110b1368b1358ce384ad94602d6299d405bf1243fdcdcfa732451a55", "831f4f2db83e99e42f268cb1d310b22030b66539a240029a442abbc777080fc5"),
++            "tools/v3-one-time-paper-release.ps1": ("e40a508e03135382af141fa25be138d74f5cb0bbc7fc6b30c8dade0c6773ea54", "afb4b5e9abec2eeb8f3567a9a7f7abe6058b34900ef601996b99e2cbd8802452"),
++        }
++        if postcas_reuse and all(inventory.get(path) == new
++                for path, (_, new) in followup_repair_delta.items()):
++            for path, (old, _) in followup_repair_delta.items():
++                inventory[path] = old
+         unbounded_delta = {
+                 "paper_evaluator/v3_paper_minipc_native_launcher_v1.py": ("0e1e558ea8c18a8eda7ef52bdd91e44ee4606644c90f3b5a80713dac25b34366", "021097daa7b2f159c61d86b914a6acd7af85179f96ea95a0402795ac597cd306"),
+                 "tools/v3-one-time-paper-release.ps1": ("d53be76e6b687e47670091ecbf931383f827b6c6de7f890d3a67f84de5f24200", "e40a508e03135382af141fa25be138d74f5cb0bbc7fc6b30c8dade0c6773ea54"),
+--- a/v3-paper-inactive-source-manifest.json
++++ b/v3-paper-inactive-source-manifest.json
+@@ -199,7 +199,7 @@
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_followup_v1.py",
+-      "sha256": "9116a9db0f69106a69d99bb5378b74b923c5c0d9518843e2ce6ecb19a285216e"
++      "sha256": "b35fc84a7ec10fd6fe2237e3e0e137125e2a5229822e5c7d7eed6dd0de2212f0"
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_learning_health_v1.py",
+@@ -207,7 +207,7 @@
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+-      "sha256": "021097daa7b2f159c61d86b914a6acd7af85179f96ea95a0402795ac597cd306"
++      "sha256": "51b7eff1c8b2289321991f00cb380e9c5f6b0febb36f2d8323b86c7b3edf15e4"
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+@@ -319,7 +319,7 @@
+     },
+     {
+       "relative_path": "tools/v3_experimental_paper_technical_gate.py",
+-      "sha256": "f7f74b11a9dc5fec28570442184b2d2f5b26bea69216aaac2b730c50c0d8642b"
++      "sha256": "dcaf40955e1de8e4defe0306a2c9515b7195000fe81c5f74fca7fd675dbd9388"
+     },
+     {
+       "relative_path": "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1",
+@@ -331,7 +331,7 @@
+     },
+     {
+       "relative_path": "tools/v3-one-time-paper-release.ps1",
+-      "sha256": "e40a508e03135382af141fa25be138d74f5cb0bbc7fc6b30c8dade0c6773ea54"
++      "sha256": "afb4b5e9abec2eeb8f3567a9a7f7abe6058b34900ef601996b99e2cbd8802452"
+     },
+     {
+       "relative_path": "tools/v3-one-time-release.ps1",
+@@ -339,7 +339,7 @@
+     },
+     {
+       "relative_path": "tools/v3-one-time-release-authorization.psm1",
+-      "sha256": "a234a5e8110b1368b1358ce384ad94602d6299d405bf1243fdcdcfa732451a55"
++      "sha256": "831f4f2db83e99e42f268cb1d310b22030b66539a240029a442abbc777080fc5"
+     },
+     {
+       "relative_path": "tools/v3-paper-positive-source-candidate.py",
+@@ -397,7 +397,7 @@
+     "tools/v3_experimental_paper_technical_gate.py",
+     "tools/v3-paper-positive-source-candidate.py"
+   ],
+-  "static_transitive_closure_sha256": "985f7c44ad2c13d5ce3b721d2369ee3a20e119f1f43ca7c531a25d6d2a5c1eb5",
++  "static_transitive_closure_sha256": "e1ad8d3bd16c000458b92b566242d7c8ee6f7fb0c7f6515861cac6d9b6ffee18",
+   "status": "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED",
+   "supervisor_restart": false,
+   "target_directory": "V3Paper-INACTIVE-46c5abbd6af1",

@@ -277,7 +277,70 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def read_owner_admission(comment_id: str) -> dict[str, Any]:
+    """Existing credential owner: one fresh, fixed public Issue GET, no dispatch."""
+    import re
+    if not isinstance(comment_id, str) or re.fullmatch(r"[1-9][0-9]{0,18}", comment_id) is None:
+        raise ValueError("owner comment ID invalid")
+    root = Path("C:/Users/ADMIN/Trading")
+    path = root / "Secrets" / "github-actions-dispatch-token.txt"
+    if (os.environ.get("MINIPC_GITHUB_ACTIONS_TOKEN") or not path.is_file()
+            or any(p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+                   for p in (path, *path.parents)) or not 20 <= path.stat().st_size <= 1024):
+        raise ValueError("existing credential source unavailable")
+    token = load_token(root)
+    if re.fullmatch(r"(?:github_pat_|ghp_)[A-Za-z0-9_]{20,}", token) is None:
+        raise ValueError("existing credential format invalid")
+    url = f"https://api.github.com/repos/{DEFAULT_REPO}/issues/comments/{comment_id}"
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+    opener = urllib.request.build_opener(NoRedirect())
+    req = urllib.request.Request(url, method="GET", headers={
+        "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "minipc-github-cadence-owner-read/1", "Authorization": "Bearer " + token})
+    def bounded_header(headers, key, upper):
+        raw = headers.get(key, "")
+        return int(raw) if re.fullmatch(r"[0-9]{1,12}", raw) and int(raw) <= upper else None
+    try:
+        with opener.open(req, timeout=10) as response:
+            raw = response.read(65537)
+            if response.status != 200 or len(raw) > 65536:
+                raise ValueError("owner response invalid")
+            original = json.loads(raw.decode("utf-8"))
+            limit = bounded_header(response.headers, "X-RateLimit-Limit", 10000000)
+            remaining = bounded_header(response.headers, "X-RateLimit-Remaining", 10000000)
+    except urllib.error.HTTPError as exc:
+        return {"ok": False, "failure": {"status": exc.code,
+                "remaining": bounded_header(exc.headers, "X-RateLimit-Remaining", 10000000),
+                "reset_epoch": bounded_header(exc.headers, "X-RateLimit-Reset", 4102444800),
+                "retry_after_sec": bounded_header(exc.headers, "Retry-After", 86400),
+                "web_status": "ProtocolError"}}
+    if (limit is None or limit < 1000 or remaining is None or remaining > limit
+            or str(original["id"]) != comment_id
+            or original["user"]["login"] != "hoffmannherdecke"
+            or original["user"]["id"] != 331995561
+            or original["issue_url"] != f"https://api.github.com/repos/{DEFAULT_REPO}/issues/99"
+            or not isinstance(original["body"], str)):
+        raise ValueError("authenticated owner identity or quota invalid")
+    return {"ok": True, "limit": limit, "remaining": remaining,
+            "original": {"id": original["id"], "user": {"id": original["user"]["id"],
+                "login": original["user"]["login"]}, "issue_url": original["issue_url"],
+                "body": original["body"]}}
+
+
 def main() -> int:
+    import sys
+    if sys.argv[1:2] == ["--read-owner-admission"]:
+        # Read-only mode cannot fall through to the existing dispatch path.
+        try:
+            if len(sys.argv) != 3:
+                raise ValueError("exact owner read arguments required")
+            result = read_owner_admission(sys.argv[2])
+        except Exception:
+            result = {"ok": False, "error": "OWNER_READ_UNAVAILABLE"}
+        print(json.dumps(result, sort_keys=True, separators=(",", ":")), flush=True)
+        return 0
     args=parse_args()
     if args.self_test:
         return self_test()
