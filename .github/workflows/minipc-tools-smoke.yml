@@ -720,6 +720,31 @@ jobs:
           Assert-Fixture 'archived_reactivated' $false {$s.tasks[11].action='RESTART_STARTED'}
           Assert-Fixture 'critical' $false {$s.status='CRITICAL'}
           Assert-Fixture 'real_money_guard_missing' $false {$s.guardrails.PSObject.Properties.Remove('real_money_actions')}
+          function Assert-ResearchDelay([string]$name,[bool]$expected,[ScriptBlock]$mutate){
+            $s=New-Fixture
+            $checked=[datetime]::UtcNow.AddSeconds(-60)
+            $detail='status=WARNING age_sec=60 restarted='
+            $row=$s.tasks | Where-Object {$_.task -ceq 'CryptoMiniPC-V2R4ShadowOutcomes'}
+            $row.healthy_after=$false
+            $row.action='BACKOFF'
+            $row | Add-Member -NotePropertyName before -NotePropertyValue ([pscustomobject]@{scheduler_state='Running'}) -Force
+            $row | Add-Member -NotePropertyName after -NotePropertyValue ([pscustomobject]@{scheduler_state='Running';heartbeat_status='HEALTHY';heartbeat_age_sec=225.4}) -Force
+            if($mutate){ . $mutate }
+            . $classifier
+            if($detail.EndsWith(' classification=EXPECTED_V3_FENCE_WITH_RESEARCH_DELAY_V1') -ne $expected){throw "RESEARCH_DELAY_CLASSIFICATION_FAIL:$name"}
+            if($detail.EndsWith(' classification=EXPECTED_V3_FENCE_ONLY_V1')){throw "RESEARCH_DELAY_MISCLASSIFIED:$name"}
+            Write-Output "RESEARCH_DELAY_CLASSIFICATION_PASS:$name"
+          }
+          Assert-ResearchDelay 'bounded_delay' $true {}
+          Assert-ResearchDelay 'other_task_unhealthy' $false {$s.tasks[0].healthy_after=$false}
+          Assert-ResearchDelay 'shadow_stopped' $false {$row.after.scheduler_state='Ready'}
+          Assert-ResearchDelay 'shadow_error' $false {$row.after.heartbeat_status='ERROR'}
+          Assert-ResearchDelay 'shadow_too_old' $false {$row.after.heartbeat_age_sec=301}
+          Assert-ResearchDelay 'shadow_age_not_numeric' $false {$row.after.heartbeat_age_sec='225'}
+          Assert-ResearchDelay 'predecessor_enabled' $false {$s.tasks[9].before.scheduler_state='Running'}
+          Assert-ResearchDelay 'supervisor_exception' $false {$s.error='fixture'}
+          Assert-ResearchDelay 'failed_restart' $false {$s.failed_restarts=@('fixture')}
+          Assert-ResearchDelay 'critical' $false {$s.status='CRITICAL'}
           Write-Output 'SUPERVISOR_FENCE_ONLY_NATIVE_FIXTURES_PASS'
 
       - name: Smoke watchdog report creation
