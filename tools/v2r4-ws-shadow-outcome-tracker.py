@@ -18,6 +18,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -135,11 +136,44 @@ def enroll_events(
     event_dir: Path,
     outcome_dir: Path,
     now: datetime,
+    event_cache: dict[str, tuple[int, int, str]] | None = None,
 ) -> None:
     ignored = set(str(x) for x in state.get("ignored_ids", []))
     active = state["active"]
 
-    for path in sorted(event_dir.glob("*.json")):
+    # The source writes events by atomic replacement. Windows directory entries
+    # carry size and modification time, so unchanged payloads need no file open.
+    # Cache identity only. Eligibility and the durable outcome still own decisions.
+    cache = event_cache if event_cache is not None else {}
+    known_outcomes = set()
+    if cache and outcome_dir.is_dir():
+        with os.scandir(outcome_dir) as outcomes:
+            known_outcomes = {entry.name for entry in outcomes if entry.name.endswith(".json") and entry.is_file()}
+    pending = []
+    present = set()
+    if not event_dir.is_dir():
+        cache.clear()
+        return
+    with os.scandir(event_dir) as entries:
+        for entry in entries:
+            if not os.path.normcase(entry.name).endswith(".json"):
+                continue
+            present.add(entry.name)
+            try:
+                stat = entry.stat()
+            except FileNotFoundError:
+                continue
+            signature = (stat.st_mtime_ns, stat.st_size)
+            cached = cache.get(entry.name)
+            if cached and cached[:2] == signature:
+                eid = cached[2]
+                if eid in active or eid in ignored or f"{eid}.json" in known_outcomes:
+                    continue
+            pending.append((Path(entry.path), signature))
+    for name in cache.keys() - present:
+        del cache[name]
+
+    for path, signature in sorted(pending):
         try:
             event = load_json(path)
         except Exception:
@@ -147,6 +181,7 @@ def enroll_events(
         if event.get("kind") != "V2R4_WS_SHADOW_DISCOVERY":
             continue
         eid = event_id(event)
+        cache[path.name] = (*signature, eid)
         if eid in active or eid in ignored or (outcome_dir / f"{eid}.json").exists():
             continue
 
@@ -287,7 +322,8 @@ def sample_active(
         state["active"].pop(eid, None)
 
 
-def run_once(args: argparse.Namespace, state: dict[str, Any] | None = None) -> dict[str, Any]:
+def run_once(args: argparse.Namespace, state: dict[str, Any] | None = None,
+             event_cache: dict[str, tuple[int, int, str]] | None = None) -> dict[str, Any]:
     now = utcnow()
     state = state or load_state(args.state, now)
     args.outcome_dir.mkdir(parents=True, exist_ok=True)
@@ -308,7 +344,7 @@ def run_once(args: argparse.Namespace, state: dict[str, Any] | None = None) -> d
                     3,
                 )
 
-    enroll_events(state, args.event_dir, args.outcome_dir, now)
+    enroll_events(state, args.event_dir, args.outcome_dir, now, event_cache)
 
     snapshot = load_json(args.snapshot)
     if snapshot.get("kind") != "MINIPC_KRAKEN_EUR_TICKER_LATEST_V1":
@@ -365,9 +401,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     state: dict[str, Any] | None = None
+    event_cache: dict[str, tuple[int, int, str]] = {}
     while True:
         try:
-            state = run_once(args, state)
+            state = run_once(args, state, event_cache)
         except FileNotFoundError as exc:
             now = utcnow()
             heartbeat = {
