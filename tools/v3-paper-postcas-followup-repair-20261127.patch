@@ -194,3 +194,176 @@
          horizon_minutes=horizon_hours*60,
      )
      status=data["status"]
+--- a/tools/v3-one-time-release-authorization.psm1
++++ b/tools/v3-one-time-release-authorization.psm1
+@@ -136,7 +136,60 @@
+  return $out
+ }
+ 
+-function Assert-V3ReleaseAuthorityAdmission([byte[]]$Bytes,[string]$ExpectedSha256,[string]$ReleaseCommit) {
++function Read-V3ExistingCadenceOwnerComment([string]$CommentId) {
++ if($env:COMPUTERNAME -ine 'MINI-PC' -or
++    [Security.Principal.WindowsIdentity]::GetCurrent().User.Value -cne 'S-1-5-18' -or
++    $CommentId -cnotmatch '^[1-9][0-9]{0,18}$'){throw 'V3_RELEASE_CADENCE_OWNER_SCOPE_HOLD'}
++ $guard='C:\Users\ADMIN\Trading\Repos\kraken-eur-scanner\tools\minipc-github-cadence-guard.py'
++ $python='C:\Users\ADMIN\Trading\Runtime\kraken-eur-scanner-venv\Scripts\python.exe'
++ $null=Read-V3ReleaseLocalBytes $guard 1048576
++ $null=Read-V3ReleaseLocalBytes $python 16777216
++ $guardLease=[IO.File]::Open($guard,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
++ $pythonLease=$null
++ try{
++  $pythonLease=[IO.File]::Open($python,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
++  $h=[Security.Cryptography.SHA256]::Create()
++  try{
++   $guardSha=([BitConverter]::ToString($h.ComputeHash($guardLease))).Replace('-','').ToLowerInvariant()
++   $pythonSha=([BitConverter]::ToString($h.ComputeHash($pythonLease))).Replace('-','').ToLowerInvariant()
++  }finally{$h.Dispose()}
++  if($guardSha -cnotin @('82cf42210f8014a5eefd38458974d3592dd82df4cb3dedd7e9ebe12e8ff13630','3a34ac752d26084b901de5fa0400f8b321a9fd9f1f2729f7ccfecf329e81e41e') -or
++     $pythonSha -cne '72b29481593c5da37c99248c82777fbfb56217ea7809b771bc760d0a9ecb179b'){throw 'V3_RELEASE_CADENCE_SOURCE_PIN_HOLD'}
++  $psi=[Diagnostics.ProcessStartInfo]::new()
++  $psi.FileName=$python
++  $psi.Arguments='-I -B "'+$guard+'" --read-owner-admission '+$CommentId
++  $psi.WorkingDirectory=[IO.Path]::GetDirectoryName($guard)
++  $psi.UseShellExecute=$false;$psi.CreateNoWindow=$true
++  $psi.RedirectStandardOutput=$true;$psi.RedirectStandardError=$true
++  foreach($key in @($psi.EnvironmentVariables.Keys)){
++   if([string]$key -match '(?i)SECRET|TOKEN|PASSWORD|API_KEY|PRIVATE_KEY|^PG'){$psi.EnvironmentVariables.Remove([string]$key)}
++  }
++  $p=[Diagnostics.Process]::new();$p.StartInfo=$psi
++  try{
++   if(-not $p.Start()){throw 'V3_RELEASE_CADENCE_READ_START_HOLD'}
++   $stdout=$p.StandardOutput.ReadToEndAsync();$stderr=$p.StandardError.ReadToEndAsync()
++   if(-not $p.WaitForExit(15000)){$p.Kill();[void]$p.WaitForExit(3000);throw 'V3_RELEASE_CADENCE_READ_TIMEOUT_HOLD'}
++   $p.WaitForExit();$wire=$stdout.GetAwaiter().GetResult();$err=$stderr.GetAwaiter().GetResult()
++   if($p.ExitCode -ne 0 -or $wire.Length -gt 65536 -or $err.Length -ne 0){throw 'V3_RELEASE_CADENCE_READ_OUTPUT_HOLD'}
++   $r=$wire|ConvertFrom-Json -ErrorAction Stop
++  }finally{$p.Dispose()}
++  if($r.ok -isnot [bool]){throw 'V3_RELEASE_CADENCE_READ_SCHEMA_HOLD'}
++  if(-not $r.ok){
++   if('failure' -cin @($r.PSObject.Properties.Name)){
++    $f=$r.failure
++    if(@($f.PSObject.Properties.Name).Count -ne 5 -or $f.web_status -cne 'ProtocolError'){throw 'V3_RELEASE_CADENCE_FAILURE_SCHEMA_HOLD'}
++    # The existing Python classifier independently validates all five fields.
++    [Console]::Error.WriteLine('V3_OWNER_HTTP_FAILURE_V1 '+($f|ConvertTo-Json -Compress))
++    throw 'Authenticated GitHub owner HTTP read failed.'
++   }
++   throw 'V3_RELEASE_CADENCE_OWNER_READ_HOLD'
++  }
++  if([long]$r.limit -lt 1000 -or [long]$r.remaining -lt 0 -or [long]$r.remaining -gt [long]$r.limit){throw 'V3_RELEASE_CADENCE_QUOTA_HOLD'}
++  return $r.original
++ }finally{if($null -ne $pythonLease){$pythonLease.Dispose()};$guardLease.Dispose()}
++}
++
++function Assert-V3ReleaseAuthorityAdmission([byte[]]$Bytes,[string]$ExpectedSha256,[string]$ReleaseCommit,[switch]$UseExistingCadenceRead) {
+  if($ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     (Get-V3ReleaseSha256 $Bytes) -cne $ExpectedSha256){throw 'V3_RELEASE_INDEPENDENT_ADMISSION_HASH_HOLD'}
+  $a=Read-V3ReleaseJson $Bytes
+@@ -155,6 +208,11 @@
+  # HTTPS. No redirects, arbitrary URL, token, secondary owner or new service.
+  $id=([regex]::Match([string]$a.original_approval_url,'issuecomment-([0-9]+)$')).Groups[1].Value
+  $url='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/comments/'+$id
++ if($UseExistingCadenceRead){
++  # Only the existing credential owner's fixed GET mode. No fallback to
++  # anonymous or a cached admission, and no secret in V3's process or output.
++  $original=Read-V3ExistingCadenceOwnerComment $id
++ }else{
+  try{
+  $original=Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 10 -MaximumRedirection 0 `
+   -Headers @{Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}
+@@ -186,6 +244,7 @@
+   }catch{}
+   throw
+  }
++ }
+  if([string]$original.id -cne $id -or [string]$original.user.login -cne 'hoffmannherdecke' -or
+     [string]$original.user.id -cne '331995561' -or
+     [string]$original.issue_url -cne 'https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/issues/99'){
+--- a/tools/v3-one-time-paper-release.ps1
++++ b/tools/v3-one-time-paper-release.ps1
+@@ -612,7 +612,7 @@
+  $leases=Open-V3ReleasePackageReadLease $PackageRoot $inventory
+  $mutex=$null;$held=$false;$intakePair=$null
+  try{
+-  $pin=Assert-V3ReleaseAuthorityAdmission (Read-V3ReleaseLocalBytes $AuthorityAdmissionJson) $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit
++  $pin=Assert-V3ReleaseAuthorityAdmission (Read-V3ReleaseLocalBytes $AuthorityAdmissionJson) $ExpectedAuthorityAdmissionSha256 $ExpectedReleaseCommit -UseExistingCadenceRead:($Mode -in @('PaperHostReadback','PaperRuntimeBootstrap'))
+   $repeated=$false
+   if($Mode -in @('PaperHostReadback','PaperRuntimeBootstrap')){
+    # This untrusted discriminator selects the signature scope only.
+--- a/tools/v3_experimental_paper_technical_gate.py
++++ b/tools/v3_experimental_paper_technical_gate.py
+@@ -1118,6 +1118,19 @@
+         # proof adapter. Both deltas must match; all other source hashes still
+         # have to normalize to the original approved PR693 inventory.
+         # This branch never applies to a pre-CAS packet or another series.
++        # Proposed post-CAS repair lineage: exact all-or-nothing source delta.
++        # Prior proof files retain their original scope; new CMS and active
++        # runtime identity remain mandatory. No pre-CAS or mixed-stage reuse.
++        followup_repair_delta = {
++            "paper_evaluator/v3_paper_minipc_native_launcher_v1.py": ("021097daa7b2f159c61d86b914a6acd7af85179f96ea95a0402795ac597cd306", "51b7eff1c8b2289321991f00cb380e9c5f6b0febb36f2d8323b86c7b3edf15e4"),
++            "paper_evaluator/v3_paper_minipc_followup_v1.py": ("9116a9db0f69106a69d99bb5378b74b923c5c0d9518843e2ce6ecb19a285216e", "b35fc84a7ec10fd6fe2237e3e0e137125e2a5229822e5c7d7eed6dd0de2212f0"),
++            "tools/v3-one-time-release-authorization.psm1": ("a234a5e8110b1368b1358ce384ad94602d6299d405bf1243fdcdcfa732451a55", "831f4f2db83e99e42f268cb1d310b22030b66539a240029a442abbc777080fc5"),
++            "tools/v3-one-time-paper-release.ps1": ("e40a508e03135382af141fa25be138d74f5cb0bbc7fc6b30c8dade0c6773ea54", "afb4b5e9abec2eeb8f3567a9a7f7abe6058b34900ef601996b99e2cbd8802452"),
++        }
++        if postcas_reuse and all(inventory.get(path) == new
++                for path, (_, new) in followup_repair_delta.items()):
++            for path, (old, _) in followup_repair_delta.items():
++                inventory[path] = old
+         unbounded_delta = {
+                 "paper_evaluator/v3_paper_minipc_native_launcher_v1.py": ("0e1e558ea8c18a8eda7ef52bdd91e44ee4606644c90f3b5a80713dac25b34366", "021097daa7b2f159c61d86b914a6acd7af85179f96ea95a0402795ac597cd306"),
+                 "tools/v3-one-time-paper-release.ps1": ("d53be76e6b687e47670091ecbf931383f827b6c6de7f890d3a67f84de5f24200", "e40a508e03135382af141fa25be138d74f5cb0bbc7fc6b30c8dade0c6773ea54"),
+--- a/v3-paper-inactive-source-manifest.json
++++ b/v3-paper-inactive-source-manifest.json
+@@ -199,7 +199,7 @@
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_followup_v1.py",
+-      "sha256": "9116a9db0f69106a69d99bb5378b74b923c5c0d9518843e2ce6ecb19a285216e"
++      "sha256": "b35fc84a7ec10fd6fe2237e3e0e137125e2a5229822e5c7d7eed6dd0de2212f0"
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_learning_health_v1.py",
+@@ -207,7 +207,7 @@
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+-      "sha256": "021097daa7b2f159c61d86b914a6acd7af85179f96ea95a0402795ac597cd306"
++      "sha256": "51b7eff1c8b2289321991f00cb380e9c5f6b0febb36f2d8323b86c7b3edf15e4"
+     },
+     {
+       "relative_path": "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+@@ -319,7 +319,7 @@
+     },
+     {
+       "relative_path": "tools/v3_experimental_paper_technical_gate.py",
+-      "sha256": "f7f74b11a9dc5fec28570442184b2d2f5b26bea69216aaac2b730c50c0d8642b"
++      "sha256": "dcaf40955e1de8e4defe0306a2c9515b7195000fe81c5f74fca7fd675dbd9388"
+     },
+     {
+       "relative_path": "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1",
+@@ -331,7 +331,7 @@
+     },
+     {
+       "relative_path": "tools/v3-one-time-paper-release.ps1",
+-      "sha256": "e40a508e03135382af141fa25be138d74f5cb0bbc7fc6b30c8dade0c6773ea54"
++      "sha256": "afb4b5e9abec2eeb8f3567a9a7f7abe6058b34900ef601996b99e2cbd8802452"
+     },
+     {
+       "relative_path": "tools/v3-one-time-release.ps1",
+@@ -339,7 +339,7 @@
+     },
+     {
+       "relative_path": "tools/v3-one-time-release-authorization.psm1",
+-      "sha256": "a234a5e8110b1368b1358ce384ad94602d6299d405bf1243fdcdcfa732451a55"
++      "sha256": "831f4f2db83e99e42f268cb1d310b22030b66539a240029a442abbc777080fc5"
+     },
+     {
+       "relative_path": "tools/v3-paper-positive-source-candidate.py",
+@@ -397,7 +397,7 @@
+     "tools/v3_experimental_paper_technical_gate.py",
+     "tools/v3-paper-positive-source-candidate.py"
+   ],
+-  "static_transitive_closure_sha256": "985f7c44ad2c13d5ce3b721d2369ee3a20e119f1f43ca7c531a25d6d2a5c1eb5",
++  "static_transitive_closure_sha256": "e1ad8d3bd16c000458b92b566242d7c8ee6f7fb0c7f6515861cac6d9b6ffee18",
+   "status": "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED",
+   "supervisor_restart": false,
+   "target_directory": "V3Paper-INACTIVE-46c5abbd6af1",
