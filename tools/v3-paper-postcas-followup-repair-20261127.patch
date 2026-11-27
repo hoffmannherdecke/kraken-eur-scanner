@@ -1,0 +1,125 @@
+--- a/paper_evaluator/v3_paper_minipc_followup_v1.py
++++ b/paper_evaluator/v3_paper_minipc_followup_v1.py
+@@ -47,6 +47,14 @@
+             or captured_1m.get("source")!="KRAKEN_SPOT_EUR_PUBLIC"
+             or not isinstance(captured_1m.get("closed_bars"),list)):
+         raise ValueError("no actual Kraken closed 1m provenance")
++    # The archive starts at the original signal, not necessarily at the
++    # durable Paper fill. The economics validator intentionally refuses
++    # any pre-fill candle (including the partial entry minute). Filter the
++    # already provenance-validated archive at the actual fill boundary;
++    # never create a candle, skip a missing post-fill minute or move the fill.
++    entry=clock(fill["known_at_utc"])
++    post_fill_bars=[bar for bar in captured_1m["closed_bars"]
++                    if clock(bar["start_at_utc"]) >= entry]
+     data=estimate_closed_1m_paper_path(
+         candidate_id=candidate_id,pair=fill["pair"],
+         entry_at_utc=fill["known_at_utc"],
+@@ -54,7 +62,7 @@
+         stop_eur=f["validated_stop_eur"],
+         stage2_trigger_eur=f["validated_stage2_eur"],
+         stage2_ttl_minutes=f["stage2_ttl_minutes"],
+-        closed_1m_bars=captured_1m["closed_bars"],
++        closed_1m_bars=post_fill_bars,
+         horizon_minutes=horizon_hours*60,
+     )
+     status=data["status"]
+--- a/paper_evaluator/v3_paper_minipc_native_launcher_v1.py
++++ b/paper_evaluator/v3_paper_minipc_native_launcher_v1.py
+@@ -2011,7 +2011,7 @@
+     return 0
+ 
+ 
+-def _scanner_journal_progress(journal: Path, series_id: str):
++def _scanner_journal_progress(journal: Path, series_id: str, pair_index=None):
+     seen = set()
+     pending = set()
+     completed = {}
+@@ -2024,10 +2024,29 @@
+             seen.add(cid)
+             if row["event_key"] == "FIRST" and row["result"] == "SEEN":
+                 pending.add(cid)
++                if pair_index is not None:
++                    pair = row["pair"]
++                    if not isinstance(pair, str) or not pair.endswith("/EUR"):
++                        raise ValueError("invalid durable scanner pair")
++                    if cid in pair_index and pair_index[cid] != pair:
++                        raise ValueError("conflicting durable scanner pair")
++                    pair_index[cid] = pair
+         elif (phase in ("FOLLOWUP_6H", "FOLLOWUP_24H", "FOLLOWUP_72H")
+               and row["result"] in ("MATURE_COMPLETE", "CENSORED")):
+             completed.setdefault(cid, set()).add(phase)
+     return seen, {cid for cid in pending if len(completed.get(cid, ())) < 3}
++
++
++def _choose_followup_candidate(pending, pairs, checked, pair_checked):
++    """Rotate distinct market pairs first, then candidates within the pair.
++
++    Archive snapshots are pair-scoped. Scheduling one candidate per pair
++    before revisiting another candidate of the same pair minimizes avoidable
++    missed prospective capture windows without weakening a provenance gate.
++    The selected immutable candidate still passes the original phase checks.
++    """
++    return min(pending, key=lambda cid: (pair_checked.get(pairs[cid], 0),
++                                         checked.get(cid, 0), cid))
+ 
+ 
+ def _scanner_candidate_capture(directory: Path, series_id: str, candidate_id: str) -> Path:
+@@ -2059,6 +2078,7 @@
+     series_id = spec["series_id"]
+     series_started = datetime.strptime(series_id, "PAPER-V3-%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+     checked = {}
++    pair_checked = {}
+     source_skipped = set()
+     attempted = set()
+     next_retry = None
+@@ -2186,8 +2206,14 @@
+                     # Retain the same independently authorized Cloud/journal phase
+                     # even while waiting for the next real Scanner opportunity.
+                     run_phase("CLOUD_RECEIPT_ACK")
+-                    seen, pending = _scanner_journal_progress(params["journal"], series_id)
++                    pairs = {}
++                    seen, pending = _scanner_journal_progress(params["journal"], series_id, pairs)
+                     pending -= source_skipped
++                    # No stale scheduling history for completed candidates.
++                    checked = {cid: stamp for cid, stamp in checked.items() if cid in pending}
++                    pending_pairs = {pairs[cid] for cid in pending}
++                    pair_checked = {pair: stamp for pair, stamp in pair_checked.items()
++                                    if pair in pending_pairs}
+                     cycle_status = "WAITING_FOR_FRESH_ELIGIBLE_SCANNER_INPUT"
+                     scanner_ready = False
+                     try:
+@@ -2239,6 +2265,7 @@
+                             cycle_status = "SCANNER_SOURCE_SKIP_NO_P4"
+                         elif scan.get("status") == "FIRST_SCANNER_FREE_RULE_P4_DURABLE_WAIT_FOR_FOLLOWUP":
+                             pending.add(cid)
++                            pairs[cid] = candidate["pair"]
+                             cycle_status = "SCANNER_FREE_RULE_P4_COMPLETE"
+                         else:
+                             raise ValueError("V3 Paper Scanner phase requires reconciliation")
+@@ -2247,10 +2274,11 @@
+                     # WAIT candidates. The captured original survives task restart.
+                     followup_deferred = False
+                     if pending:
+-                        cid = min(pending, key=lambda item: (checked.get(item, 0), item))
++                        cid = _choose_followup_candidate(pending, pairs, checked, pair_checked)
+                         path = _scanner_candidate_capture(capture_dir, series_id, cid)
+                         candidate = _bounded_release_json(path)
+-                        if candidate.get("candidate_id") != cid:
++                        if (candidate.get("candidate_id") != cid
++                                or candidate.get("pair") != pairs[cid]):
+                             raise ValueError("V3 Paper follow-up original identity mismatch")
+                         followup = run_phase("FOLLOWUP_6H24H72H", candidate)
+                         status = str(followup.get("status", ""))
+@@ -2261,6 +2289,11 @@
+                                 and status != "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
+                             raise ValueError("V3 Paper followup requires reconciliation")
+                         checked[cid] = time.monotonic()
++                        if status not in ("NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4",
++                                          "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE") and not model_deferred:
++                            # Rotate on a source attempt, including a typed
++                            # temporary failure; do not hammer one pair.
++                            pair_checked[pairs[cid]] = checked[cid]
+                         if status == "NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4":
+                             source_skipped.add(cid)
+                         followup_deferred = status == "FOLLOWUP_PUBLIC_OHLC_TEMPORARILY_UNAVAILABLE"
