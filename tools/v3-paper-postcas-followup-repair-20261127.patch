@@ -1,29 +1,3 @@
---- a/paper_evaluator/v3_paper_minipc_followup_v1.py
-+++ b/paper_evaluator/v3_paper_minipc_followup_v1.py
-@@ -47,6 +47,14 @@
-             or captured_1m.get("source")!="KRAKEN_SPOT_EUR_PUBLIC"
-             or not isinstance(captured_1m.get("closed_bars"),list)):
-         raise ValueError("no actual Kraken closed 1m provenance")
-+    # The archive starts at the original signal, not necessarily at the
-+    # durable Paper fill. The economics validator intentionally refuses
-+    # any pre-fill candle (including the partial entry minute). Filter the
-+    # already provenance-validated archive at the actual fill boundary;
-+    # never create a candle, skip a missing post-fill minute or move the fill.
-+    entry=clock(fill["known_at_utc"])
-+    post_fill_bars=[bar for bar in captured_1m["closed_bars"]
-+                    if clock(bar["start_at_utc"]) >= entry]
-     data=estimate_closed_1m_paper_path(
-         candidate_id=candidate_id,pair=fill["pair"],
-         entry_at_utc=fill["known_at_utc"],
-@@ -54,7 +62,7 @@
-         stop_eur=f["validated_stop_eur"],
-         stage2_trigger_eur=f["validated_stage2_eur"],
-         stage2_ttl_minutes=f["stage2_ttl_minutes"],
--        closed_1m_bars=captured_1m["closed_bars"],
-+        closed_1m_bars=post_fill_bars,
-         horizon_minutes=horizon_hours*60,
-     )
-     status=data["status"]
 --- a/paper_evaluator/v3_paper_minipc_native_launcher_v1.py
 +++ b/paper_evaluator/v3_paper_minipc_native_launcher_v1.py
 @@ -2011,7 +2011,7 @@
@@ -35,7 +9,7 @@
      seen = set()
      pending = set()
      completed = {}
-@@ -2024,10 +2024,29 @@
+@@ -2024,10 +2024,41 @@
              seen.add(cid)
              if row["event_key"] == "FIRST" and row["result"] == "SEEN":
                  pending.add(cid)
@@ -62,10 +36,22 @@
 +    """
 +    return min(pending, key=lambda cid: (pair_checked.get(pairs[cid], 0),
 +                                         checked.get(cid, 0), cid))
++
++
++def _followup_batch_candidates(pending, pairs, checked, pair_checked):
++    """At most four distinct pairs, oldest observation first; no second writer."""
++    remaining = set(pending)
++    selected = []
++    while remaining and len(selected) < 4:
++        cid = _choose_followup_candidate(remaining, pairs, checked, pair_checked)
++        selected.append(cid)
++        pair = pairs[cid]
++        remaining = {other for other in remaining if pairs[other] != pair}
++    return selected
  
  
  def _scanner_candidate_capture(directory: Path, series_id: str, candidate_id: str) -> Path:
-@@ -2059,6 +2078,7 @@
+@@ -2059,6 +2090,7 @@
      series_id = spec["series_id"]
      series_started = datetime.strptime(series_id, "PAPER-V3-%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
      checked = {}
@@ -73,7 +59,24 @@
      source_skipped = set()
      attempted = set()
      next_retry = None
-@@ -2186,8 +2206,14 @@
+@@ -2096,8 +2128,8 @@
+         approval_sha = lease["approval_sha256"]
+         return report
+ 
+-    def pause(until=None):
+-        limits = [30]
++    def pause(until=None, *, busy=False):
++        limits = [2 if busy else 30]
+         now = _originalhost_wall_clock_utc()
+         for bound in (deadline, until):
+             if bound is not None:
+@@ -2182,12 +2214,20 @@
+                     pause(owner_retry_at)
+                     continue
+                 owner_retry_at = None
++                busy = False
++                followup_deferred = False
+                 try:
                      # Retain the same independently authorized Cloud/journal phase
                      # even while waiting for the next real Scanner opportunity.
                      run_phase("CLOUD_RECEIPT_ACK")
@@ -89,7 +92,7 @@
                      cycle_status = "WAITING_FOR_FRESH_ELIGIBLE_SCANNER_INPUT"
                      scanner_ready = False
                      try:
-@@ -2239,6 +2265,7 @@
+@@ -2239,18 +2279,24 @@
                              cycle_status = "SCANNER_SOURCE_SKIP_NO_P4"
                          elif scan.get("status") == "FIRST_SCANNER_FREE_RULE_P4_DURABLE_WAIT_FOR_FOLLOWUP":
                              pending.add(cid)
@@ -97,12 +100,20 @@
                              cycle_status = "SCANNER_FREE_RULE_P4_COMPLETE"
                          else:
                              raise ValueError("V3 Paper Scanner phase requires reconciliation")
-@@ -2247,10 +2274,11 @@
-                     # WAIT candidates. The captured original survives task restart.
+ 
+-                    # Bound work to one follow-up per cycle, rotating even across
+-                    # WAIT candidates. The captured original survives task restart.
++                    # A bounded batch retains one fresh originalhost and Cloud
++                    # readback per actual phase. No cached authority or parallel
++                    # writer. The 30s selection budget is a soft admission bound:
++                    # never kill an in-flight authorized phase.
                      followup_deferred = False
-                     if pending:
+-                    if pending:
 -                        cid = min(pending, key=lambda item: (checked.get(item, 0), item))
-+                        cid = _choose_followup_candidate(pending, pairs, checked, pair_checked)
++                    batch_started = time.monotonic()
++                    for cid in _followup_batch_candidates(pending, pairs, checked, pair_checked):
++                        if time.monotonic() - batch_started >= 30:
++                            break
                          path = _scanner_candidate_capture(capture_dir, series_id, cid)
                          candidate = _bounded_release_json(path)
 -                        if candidate.get("candidate_id") != cid:
@@ -111,7 +122,7 @@
                              raise ValueError("V3 Paper follow-up original identity mismatch")
                          followup = run_phase("FOLLOWUP_6H24H72H", candidate)
                          status = str(followup.get("status", ""))
-@@ -2261,6 +2289,11 @@
+@@ -2261,14 +2307,24 @@
                                  and status != "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
                              raise ValueError("V3 Paper followup requires reconciliation")
                          checked[cid] = time.monotonic()
@@ -122,4 +133,64 @@
 +                            pair_checked[pairs[cid]] = checked[cid]
                          if status == "NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4":
                              source_skipped.add(cid)
-                         followup_deferred = status == "FOLLOWUP_PUBLIC_OHLC_TEMPORARILY_UNAVAILABLE"
+-                        followup_deferred = status == "FOLLOWUP_PUBLIC_OHLC_TEMPORARILY_UNAVAILABLE"
+-                        if followup_deferred:
++                        source_failed = status == "FOLLOWUP_PUBLIC_OHLC_TEMPORARILY_UNAVAILABLE"
++                        followup_deferred = followup_deferred or source_failed
++                        if not source_failed and not model_deferred and status not in (
++                                "NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4",
++                                "NONCANARY_FOLLOWUP_HOLD_ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
++                            busy = True
++                        if source_failed:
+                             cycle_status = status
+-                        elif model_deferred:
++                        elif model_deferred and not followup_deferred:
+                             cycle_status = "FOLLOWUP_DEFERRED_MODEL_NOT_FINAL"
+-                        elif prepared is None and scanner_ready:
++                        elif prepared is None and scanner_ready and not followup_deferred:
+                             cycle_status = ("SCANNER_SOURCE_SKIP_NO_P4" if status ==
+                                             "NONCANARY_FOLLOWUP_SOURCE_SKIP_NO_P4"
+                                             else "FOLLOWUP_CYCLE_COMPLETE")
+@@ -2278,6 +2334,7 @@
+                     publish("DEGRADED_FOLLOWUP_SOURCE" if followup_deferred else
+                             "HEALTHY" if scanner_ready else "DEGRADED_SCANNER_INPUT", cycle_status)
+                 except TransientCloudReadUnavailable:
++                    busy = False
+                     _check_runtime_deadline(deadline)
+                     publish("DEGRADED_CLOUD_READ", "WAITING_FOR_FRESH_ACTIVE_PAPER_SERIES")
+                 except _OriginalhostReadbackHold as exc:
+@@ -2288,7 +2345,7 @@
+                     persist_readback_failure(exc, owner_retry_at)
+                     publish("DEGRADED_AUTHORITY_READ", "WAITING_FOR_OWNER_RATE_LIMIT_RESET",
+                             failure_detail=exc.detail)
+-                pause()
++                pause(busy=busy and not followup_deferred and owner_retry_at is None)
+         except PaperRuntimeLeaseExpired:
+             publish("EXPIRED")
+         except Exception as exc:
+--- a/paper_evaluator/v3_paper_minipc_followup_v1.py
++++ b/paper_evaluator/v3_paper_minipc_followup_v1.py
+@@ -47,6 +47,14 @@
+             or captured_1m.get("source")!="KRAKEN_SPOT_EUR_PUBLIC"
+             or not isinstance(captured_1m.get("closed_bars"),list)):
+         raise ValueError("no actual Kraken closed 1m provenance")
++    # The archive starts at the original signal, not necessarily at the
++    # durable Paper fill. The economics validator intentionally refuses
++    # any pre-fill candle (including the partial entry minute). Filter the
++    # already provenance-validated archive at the actual fill boundary;
++    # never create a candle, skip a missing post-fill minute or move the fill.
++    entry=clock(fill["known_at_utc"])
++    post_fill_bars=[bar for bar in captured_1m["closed_bars"]
++                    if clock(bar["start_at_utc"]) >= entry]
+     data=estimate_closed_1m_paper_path(
+         candidate_id=candidate_id,pair=fill["pair"],
+         entry_at_utc=fill["known_at_utc"],
+@@ -54,7 +62,7 @@
+         stop_eur=f["validated_stop_eur"],
+         stage2_trigger_eur=f["validated_stage2_eur"],
+         stage2_ttl_minutes=f["stage2_ttl_minutes"],
+-        closed_1m_bars=captured_1m["closed_bars"],
++        closed_1m_bars=post_fill_bars,
+         horizon_minutes=horizon_hours*60,
+     )
+     status=data["status"]
