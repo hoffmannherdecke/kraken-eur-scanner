@@ -36,6 +36,6 @@ function renderDecisionQuality(v,current=true){
  for(const [code,n] of m.reasons){const line=el('div',undefined,'split');line.append(el('span',reasonMap[code]||code),el('strong',String(n)));r.append(line);}
  if(!m.reasons.length)r.append(el('p','Keine Gründe im gelieferten Ausschnitt.','muted'));
  const phase=el('details');phase.append(el('summary','Letzte Prüfphasen'));for(const [k,n] of m.phases)phase.append(el('p',(QUALITY_PHASES[k]||k)+': '+n));r.append(phase);
- const trade=panel(el('h3','Handelsqualität · Nachweisgrenzen'),el('p','Einstiegsbelege: '+m.fills+' · Abschlussbelege: '+m.exits),el('p','Trefferquote, Gebühren-/Spread-/Slippage-Ergebnis, Drawdown und verpasste Chancen sind aus der vorhandenen 24-Stunden-Schnittstelle nicht belastbar bestimmbar.','warn'),el('small','Keine Bewertung der Handelsqualität allein aus Ablehnungsquote oder fehlenden Einstiegen.'));
+ const trade=panel(el('h3','Handelsqualität · Nachweisgrenzen'),el('p',paperTradeLabel(v)),el('p','Trefferquote, Gebühren-/Spread-/Slippage-Ergebnis, Drawdown und verpasste Chancen sind aus den vorhandenen Beleg- und Entscheidungsdaten nicht belastbar bestimmbar.','warn'),el('small','Keine Bewertung der Handelsqualität allein aus Ablehnungsquote oder fehlenden Einstiegen.'));
  put('decision-quality',p,r,trade);
 }

@@ -1,21 +1,36 @@
 'use strict';
+function paperTradeHistory(v){
+ const h=v?.paper_trade_receipts,n=x=>Number.isSafeInteger(x)&&x>=0,t=Date.parse(v?.read_at);
+ if(!h||h.kind!=="PAPER_TRADE_RECEIPTS_V1"||h.window_days!==180||h.read_at!==v.read_at||v.series?.length!==1||v.series[0].status!=="active"||h.series_id!==v.series[0].series_id||!Number.isFinite(t)||Date.parse(h.window_start)!==t-180*86400000||![h.entry_total,h.exit_total,h.entry_window_count,h.exit_window_count].every(n)||h.entry_window_count>h.entry_total||h.exit_window_count>h.exit_total||!Array.isArray(h.rows)||h.rows.length!==h.entry_window_count+h.exit_window_count||h.rows.length>5000)return null;
+ const ids=new Set(),entries=[],exits=[];
+ for(const d of h.rows){
+  const k=Date.parse(d?.source_known_at),r=Date.parse(d?.received_at);
+  if(typeof d?.event_id!=="string"||!d.event_id||ids.has(d.event_id)||typeof d.candidate_id!=="string"||!d.candidate_id||typeof d.pair!=="string"||!Number.isFinite(k)||!Number.isFinite(r)||k<t-180*86400000||k>t||r>t)return null;
+  if(d.phase==="PAPER_FILL"&&d.result==="PAPER_FILLED")entries.push(d);else if(d.phase==="PAPER_EXIT"&&d.result==="CLOSED")exits.push(d);else return null;
+  ids.add(d.event_id);
+ }
+ if(entries.length!==h.entry_window_count||exits.length!==h.exit_window_count)return null;
+ return {...h,entries,exits};
+}
+function paperTradeLabel(v){const h=paperTradeHistory(v);return h?"Letzte 180 Tage: "+h.entry_window_count+" Einstiege · "+h.exit_window_count+" Abschlüsse. Seit Beginn der aktiven Serie: "+h.entry_total+" Einstiege · "+h.exit_total+" Abschlüsse.":"Historische Handelsbelege nicht verfügbar; keine Null-Aussage.";}
 function tradeViewModel(v,current=true){
- const valid=n=>Number.isSafeInteger(n)&&n>=0;
- if(!v||!valid(v.fill_count)||!valid(v.exit_count)||!Array.isArray(v.series)||v.series.length!==1||v.series[0].status!=="active"||!Number.isFinite(Date.parse(v.read_at)))return {available:false};
- const events=(Array.isArray(v.decisions)?v.decisions:[]).filter(d=>d&&((d.phase==="PAPER_FILL"&&d.result==="PAPER_FILLED")||(d.phase==="PAPER_EXIT"&&d.result==="CLOSED")));
- return {available:true,current,fillCount:v.fill_count,exitCount:v.exit_count,events,windowHours:v.window_hours,readAt:v.read_at,series:v.series[0].series_id};
+ const h=paperTradeHistory(v);
+ if(!h)return {available:false};
+ return {available:true,current,fillCount:h.entry_window_count,exitCount:h.exit_window_count,entryTotal:h.entry_total,exitTotal:h.exit_total,events:h.rows,readAt:h.read_at,series:h.series_id,windowStart:h.window_start};
+}
+function paperTradeReceiptCard(d){
+ const buy=d.phase==="PAPER_FILL";
+ return panel(el('h3',d.pair),el('p',buy?'Paper-Kauf belegt':'Paper-Verkauf belegt',buy?'good':'muted'),el('p',buy?'Kaufbetrag: nicht übermittelt':'Verkaufserlös: nicht übermittelt'),el('small',buy?'Kaufkurs: nicht übermittelt':'Verkaufskurs: nicht übermittelt'),el('small','Belegt: '+time(d.source_known_at)),detail('Originalbeleg',d.phase+' · '+d.result+' · '+d.candidate_id+' · '+d.event_id));
 }
 function renderTrade(v,current=true){
  const m=tradeViewModel(v,current);
- if(!m.available){put('trade-info',panel(el('h3','Handelsdaten nicht eindeutig','warn'),el('p','Keine aktive Serie oder kein gültiger Cloud-Beleg.')));return;}
+ if(!m.available){put('trade-info',panel(el('h3','Historische Handelsbelege nicht verfügbar','warn'),el('p','Keine vollständige Datenbasis für 180 Tage und Seriengesamtzahlen. Keine Null-Aussage.')),...economicPanels(v,current),...opportunityPanels(v,current));return;}
  const metrics=el('div',undefined,'metrics');
- metrics.append(metric(m.fillCount,'Belegte Paper-Einstiege'),metric(m.exitCount,'Belegte Paper-Abschlüsse'));
- const cards=[panel(el('h3',m.current?'Handelsbelege der aktiven Serie':'Letzter erfolgreicher Abruf',m.current?'blue':'warn'),el('p','Zeitraum: '+(m.windowHours===24?'letzte 24 Stunden':'Cloud-Abfragezeitraum')),el('small','Stand: '+time(m.readAt)),el('small','Alle Werte betreffen simulierten Handel und sind keine Echtgeldgeschäfte.')),metrics,
- panel(el('h3','Offene Positionen: nicht belegt','warn'),el('p','Die aktuelle Cloud-Schnittstelle enthält keinen vollständigen Positionsbestand. Einstiegs- und Abschlussereignisse sind keine verlässliche Anzahl aktuell offener Positionen.')),
- panel(el('h3','Nettoergebnis im 24-Stunden-Fenster: nicht separat ausgewiesen','muted'),el('p',m.exitCount===0?'Im abgefragten Zeitraum gibt es keine Abschlussbelege.':'Die Zähler oben enthalten keine separate Nettoauswertung für dieses Zeitfenster.'),el('small','Die Wirtschaftsauswertung der gesamten Serie steht getrennt weiter unten. Nachbetrachtungen sind keine realisierten Gewinne.'))];
- cards.push(el('h2','Letzte belegte Handelsereignisse'));
- if(m.events.length)cards.push(...m.events.map(candidate));else cards.push(panel(el('p',m.fillCount===0&&m.exitCount===0?'Keine Einstiegs- oder Abschlussereignisse im abgefragten Zeitraum.':'In der aktuellen Liste der letzten Kandidatenentscheidungen ist kein Handelsbeleg enthalten. Die Zähler oben beziehen sich auf alle Ereignisse im Zeitraum.','muted')));
- cards.push(panel(el('small','Die Liste zeigt nur Handelsereignisse, die zugleich der zuletzt übermittelte Entscheidungsstand eines der höchstens 30 angezeigten Kandidaten sind. Sie ist kein vollständiges Handelsbuch. Noch nicht synchronisierte Vorgänge sind nicht enthalten.')));
+ metrics.append(metric(m.fillCount,'Paper-Einstiege · 180 Tage'),metric(m.exitCount,'Paper-Abschlüsse · 180 Tage'),metric(m.entryTotal,'Einstiege seit Serienbeginn'),metric(m.exitTotal,'Abschlüsse seit Serienbeginn'));
+ const cards=[panel(el('h3',m.current?'Handelsbelege der aktiven Serie':'Letzter erfolgreicher Abruf',m.current?'blue':'warn'),el('p','Zeitraum: letzte 180 Tage · '+time(m.windowStart)+' bis '+time(m.readAt)),el('small','Serie: '+m.series),el('small','Alle Werte betreffen simulierten Handel.')),metrics,panel(el('h3','Offene Positionen: nicht belegt','warn'),el('p','Handelsereignisse sind kein vollständiger Positionsbestand.')),panel(el('h3','Nettoergebnis nicht separat ausgewiesen','muted'),el('p','Die Belegzahlen sind keine Nettoauswertung.'))];
+ cards.push(el('h2','Handelsereignisse · letzte 180 Tage'));
+ if(m.events.length)cards.push(...m.events.map(paperTradeReceiptCard));else cards.push(panel(el('p','Keine entsprechenden Cloud-Belege in den letzten 180 Tagen.','muted')));
+ cards.push(panel(el('small','Eigenständige Handelsereignisse der aktiven Serie; nicht auf 30 Kandidaten begrenzt. Noch nicht synchronisierte Vorgänge fehlen.')));
  put('trade-info',...cards,...economicPanels(v,current),...opportunityPanels(v,current));
 }
 
@@ -42,7 +57,7 @@ function economicViewModel(v,current=true){
 }
 function economicPanels(v,current=true){
  const m=economicViewModel(v,current);
- if(!m)return [panel(el('h3','Wirtschaftsauswertung der gesamten Serie','warn'),el('p','Der vorhandene Cloud-Zugang liefert noch keinen bestätigten vollständigen Serienexport. Die 24-Stunden-Handelsbelege oben bleiben verfügbar.'))];
+ if(!m)return [panel(el('h3','Wirtschaftsauswertung der gesamten Serie','warn'),el('p','Der vorhandene Cloud-Zugang liefert noch keinen bestätigten vollständigen Serienexport. Die historischen Handelsbelege werden getrennt oben ausgewiesen.'))];
  const l=m.ledger,s=l.stats,eur=x=>typeof x==='number'?new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:6}).format(x):'Nicht belegt',pct=x=>typeof x==='number'?new Intl.NumberFormat('de-DE',{maximumFractionDigits:3}).format(x)+' %':'Nicht belegt';
  const cards=[panel(el('h3',m.current?'Wirtschaftliche Belege der gesamten aktiven Serie':'Letzter erfolgreicher Wirtschaftsdatenabruf',m.current?'blue':'warn'),el('small','Stand: '+time(l.read_at)),el('p',l.receipt_count+' Cloud-Journalbelege · '+s.candidate_count+' Kandidaten'),el('p','Erstentscheidungen: '+s.initial.WAIT+' WAIT · '+s.initial.REJECT+' REJECT · '+s.initial.BUY_SCOUT+' BUY · '+s.initial.UNKNOWN+' unklar'),el('small','Nicht synchronisierte lokale Belege fehlen.')),panel(el('h3','Virtuelle Handelsbelege'),el('p','Einstiege: '+s.entry_count+' · Abschlüsse: '+s.exit_count),el('p','Einstiegsbelege ohne Abschlussbeleg: '+s.entry_without_exit_count),el('p','Aktuell offene Positionen: nicht nachgewiesen','warn'),el('p','Belegtes Netto aus Abschlüssen: '+eur(s.net_eur)),el('small','Unklare Kandidaten: '+s.unclear_candidates+'. Keine realen Börsenausführungen.'))];
  for(const h of l.horizons)cards.push(panel(el('h3',h.hours+'-Stunden-Nachbetrachtung'),el('p','Gereifte virtuelle Schätzungen: '+h.estimated_paper_mature+' · Kursbeobachtungen ohne Einstieg: '+h.no_buy_mature),el('p','Noch nicht fällig: '+h.not_due+' · fehlend/ungeklärt: '+h.missing_or_unresolved+' · Datenlücken: '+h.censored+' · widersprüchlich: '+h.conflict),el('small','Keine Addition verschiedener Zeitfenster zu einem Gewinn.')));

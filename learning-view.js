@@ -46,8 +46,8 @@ function learnLink(label,path){const a=el('a',label,'blue');a.href=LEARN_REPO+'/
 function renderLearning(v,current=true){
  const m=learningSample(v,current);
  if(!m){put('learn-current',panel(el('h3','Aktuelle Lernbasis nicht verfügbar','warn')));return;}
- const metrics=el('div',undefined,'metrics');metrics.append(metric(m.candidates,'Erfasste Kandidaten'),metric(m.fills,'Belegte Einstiege'));
- const p=panel(el('h3',m.current?'Aktuelle Paper-Lernbasis':'Letzter erfolgreicher Datenabruf',m.current?'blue':'warn'),el('small','Stand: '+time(m.readAt)),el('p','Zeitraum: '+(m.windowHours===24?'letzte 24 Stunden':'Cloud-Abfragezeitraum')),metrics,el('p','Abschlussbelege: '+m.exits),el('p','In den '+m.listed+' angezeigten letzten Kandidatenentscheidungen: '+m.counts.WAIT+' WAIT, '+m.counts.REJECT+' REJECT, '+m.counts.BUY_SCOUT+' BUY-Freigaben, '+m.counts.other+' andere Zustände.'),el('small','Entscheidungsstände sind keine vollständige Konversionsstatistik. Die vorhandene Schnittstelle enthält keine vollständigen 6-/24-/72-Stunden-Nachbetrachtungen. Keine Aussage über aktuell verpasste Gewinne oder bewiesene Verbesserung.'));
+ const metrics=el('div',undefined,'metrics');metrics.append(metric(m.candidates,'Erfasste Kandidaten'),metric(paperTradeHistory(v)?.entry_window_count??'–','Belegte Einstiege · 180 Tage'));
+ const p=panel(el('h3',m.current?'Aktuelle Paper-Lernbasis':'Letzter erfolgreicher Datenabruf',m.current?'blue':'warn'),el('small','Stand: '+time(m.readAt)),el('p','Kandidaten-/Entscheidungszeitraum: '+(m.windowHours===24?'letzte 24 Stunden':'Cloud-Abfragezeitraum')),metrics,el('p',paperTradeLabel(v)),el('p','In den '+m.listed+' angezeigten letzten Kandidatenentscheidungen: '+m.counts.WAIT+' WAIT, '+m.counts.REJECT+' REJECT, '+m.counts.BUY_SCOUT+' BUY-Freigaben, '+m.counts.other+' andere Zustände.'),el('small','Entscheidungsstände sind keine vollständige Konversionsstatistik. Die vorhandene Schnittstelle enthält keine vollständigen 6-/24-/72-Stunden-Nachbetrachtungen. Keine Aussage über aktuell verpasste Gewinne oder bewiesene Verbesserung.'));
  put('learn-current',p);
  if(learnRelease)renderLearningRelease(v);
 }
