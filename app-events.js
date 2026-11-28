@@ -7,7 +7,7 @@ function observeAppEvents(previous,snapshot,current=true){
  if(typeof series!=="string"||!series||!Number.isFinite(now)||!Array.isArray(snapshot?.decisions))return empty;
  if(!previous||previous.series!==series||!Number.isFinite(previous.readAt)||now<previous.readAt)return {series,readAt:now,items:[]};
  const items=new Map(previous.items.map(e=>[e.id,e]));
- for(const d of snapshot.decisions){
+ const h=paperTradeHistory(snapshot);for(const d of [...snapshot.decisions.filter(d=>d.phase!=='PAPER_FILL'&&d.phase!=='PAPER_EXIT'),...(h?h.rows:[])]){
  const received=Date.parse(d?.received_at),known=Date.parse(d?.source_known_at);
  if(typeof d?.candidate_id!=="string"||!d.candidate_id||typeof d.pair!=="string"||!/^[A-Z0-9]{1,20}\/EUR$/.test(d.pair)||!Number.isFinite(received)||!Number.isFinite(known)||known>received||received<=previous.readAt||received>now)continue;
  const label=d.phase==="P4_VALIDATION"&&d.result==="BUY_SCOUT"?"Einstiegsentscheidung – Füllung nicht belegt":d.phase==="PAPER_FILL"&&d.result==="PAPER_FILLED"?"Virtueller Paper-Einstieg belegt":d.phase==="PAPER_EXIT"&&d.result==="CLOSED"?"Paper-Abschluss belegt":null;
