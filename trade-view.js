@@ -18,6 +18,10 @@ function tradeViewModel(v,current=true){
  if(!h)return {available:false};
  return {available:true,current,fillCount:h.entry_window_count,exitCount:h.exit_window_count,entryTotal:h.entry_total,exitTotal:h.exit_total,events:h.rows,readAt:h.read_at,series:h.series_id,windowStart:h.window_start};
 }
+function paperTradeReceiptCard(d){
+ const buy=d.phase==="PAPER_FILL";
+ return panel(el('h3',d.pair),el('p',buy?'Paper-Kauf belegt':'Paper-Verkauf belegt',buy?'good':'muted'),el('p',buy?'Kaufbetrag: nicht übermittelt':'Verkaufserlös: nicht übermittelt'),el('small',buy?'Kaufkurs: nicht übermittelt':'Verkaufskurs: nicht übermittelt'),el('small','Belegt: '+time(d.source_known_at)),detail('Originalbeleg',d.phase+' · '+d.result+' · '+d.candidate_id+' · '+d.event_id));
+}
 function renderTrade(v,current=true){
  const m=tradeViewModel(v,current);
  if(!m.available){put('trade-info',panel(el('h3','Historische Handelsbelege nicht verfügbar','warn'),el('p','Keine vollständige Datenbasis für 180 Tage und Seriengesamtzahlen. Keine Null-Aussage.')),...economicPanels(v,current),...opportunityPanels(v,current));return;}
@@ -25,7 +29,7 @@ function renderTrade(v,current=true){
  metrics.append(metric(m.fillCount,'Paper-Einstiege · 180 Tage'),metric(m.exitCount,'Paper-Abschlüsse · 180 Tage'),metric(m.entryTotal,'Einstiege seit Serienbeginn'),metric(m.exitTotal,'Abschlüsse seit Serienbeginn'));
  const cards=[panel(el('h3',m.current?'Handelsbelege der aktiven Serie':'Letzter erfolgreicher Abruf',m.current?'blue':'warn'),el('p','Zeitraum: letzte 180 Tage · '+time(m.windowStart)+' bis '+time(m.readAt)),el('small','Serie: '+m.series),el('small','Alle Werte betreffen simulierten Handel.')),metrics,panel(el('h3','Offene Positionen: nicht belegt','warn'),el('p','Handelsereignisse sind kein vollständiger Positionsbestand.')),panel(el('h3','Nettoergebnis nicht separat ausgewiesen','muted'),el('p','Die Belegzahlen sind keine Nettoauswertung.'))];
  cards.push(el('h2','Handelsereignisse · letzte 180 Tage'));
- if(m.events.length)cards.push(...m.events.map(d=>panel(candidate(d),el('small','Original-Ereignis: '+d.event_id))));else cards.push(panel(el('p','Keine entsprechenden Cloud-Belege in den letzten 180 Tagen.','muted')));
+ if(m.events.length)cards.push(...m.events.map(paperTradeReceiptCard));else cards.push(panel(el('p','Keine entsprechenden Cloud-Belege in den letzten 180 Tagen.','muted')));
  cards.push(panel(el('small','Eigenständige Handelsereignisse der aktiven Serie; nicht auf 30 Kandidaten begrenzt. Noch nicht synchronisierte Vorgänge fehlen.')));
  put('trade-info',...cards,...economicPanels(v,current),...opportunityPanels(v,current));
 }
