@@ -1,5 +1,6 @@
 'use strict';
 function receiptListModel(v,key){
+ if(key==="entries"||key==="exits"){const h=paperTradeHistory(v);if(!h)return {available:false,rows:[],total:null,complete:false};const entries=key==="entries";return {available:true,rows:entries?h.entries:h.exits,total:entries?h.entry_window_count:h.exit_window_count,seriesTotal:entries?h.entry_total:h.exit_total,complete:true};}
  const counts={candidates:"candidate_count",journal:"events_count",entries:"fill_count",exits:"exit_count"};
  const active=v?.series?.length===1&&v.series[0].status==="active";
  const total=v?.[counts[key]];
@@ -29,14 +30,14 @@ function receiptDetailPanel(v,key,current){
  p.id='receipt-detail-panel';p.setAttribute('role','region');p.setAttribute('aria-label',label);
  close.addEventListener('click',()=>{p.hidden=true;const b=$('summary').querySelector('[data-receipt-key="'+key+'"]');if(b){b.setAttribute('aria-expanded','false');b.focus();}});
  if(!m.available){p.append(el('p','Keine eindeutige Datenbasis für diese Liste.','warn'));return p;}
- p.append(el('p',m.rows.length+' von '+m.total+' im Cloud-Zeitraum sichtbar.',m.complete?'sub':'warn'));
+ p.append(el('p',m.seriesTotal!==undefined?m.total+' Belege · letzte 180 Tage. Seit Serienbeginn: '+m.seriesTotal:m.rows.length+' von '+m.total+' im Cloud-Zeitraum sichtbar.',m.complete?'sub':'warn'));
  if(!m.complete)p.append(el('p','Die Schnittstelle liefert nur den letzten Entscheidungsbeleg von höchstens 30 Kandidaten. Weitere Einzelbelege sind noch nicht verfügbar.','sub'));
  if(key==='journal')p.append(el('small','Die sichtbaren Einträge sind jeweils der letzte übermittelte Entscheidungsbeleg, kein vollständiger Journalexport.'));
  if(!m.rows.length)p.append(el('p',m.total===0?'Keine entsprechenden Cloud-Belege im abgefragten Zeitraum.':'Einzelbelege fehlen in der aktuellen Cloud-Liste.','muted'));
  for(const d of m.rows){
   if(key==='entries'||key==='exits'){
    const buy=key==='entries';
-   p.append(panel(el('h3',d.pair),el('p',buy?'Paper-Kauf belegt':'Paper-Verkauf belegt',buy?'good':'muted'),el('p',buy?'Kaufbetrag: nicht übermittelt':'Verkaufserlös: nicht übermittelt'),el('small',buy?'Kaufkurs: nicht übermittelt':'Verkaufskurs: nicht übermittelt'),el('small','Belegt: '+time(d.source_known_at)),detail('Originalbeleg',d.phase+' · '+d.result+' · '+d.candidate_id)));
+   p.append(panel(el('h3',d.pair),el('p',buy?'Paper-Kauf belegt':'Paper-Verkauf belegt',buy?'good':'muted'),el('p',buy?'Kaufbetrag: nicht übermittelt':'Verkaufserlös: nicht übermittelt'),el('small',buy?'Kaufkurs: nicht übermittelt':'Verkaufskurs: nicht übermittelt'),el('small','Belegt: '+time(d.source_known_at)),detail('Originalbeleg',d.phase+' · '+d.result+' · '+d.candidate_id+' · '+d.event_id)));
   }else p.append(candidate(d));
  }
  return p;
@@ -53,7 +54,7 @@ render=function(current=true){
  const metrics=root.querySelector('.overview-metrics');if(!metrics)return;
  root.dataset.receiptSeries=data?.series?.length===1?data.series[0].series_id:'';
  const buttons=RECEIPT_METRICS.map(([key,label,field])=>{
-  const b=el('button',undefined,'panel receipt-metric-button');b.type='button';b.dataset.receiptKey=key;b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls','receipt-detail-panel');b.append(el('span',String(data[field]),'num'),el('small',label+' ›'));
+  const b=el('button',undefined,'panel receipt-metric-button');b.type='button';b.dataset.receiptKey=key;b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls','receipt-detail-panel');const history=key==='entries'||key==='exits'?receiptListModel(data,key):null;b.append(el('span',history?(history.available?String(history.total):'–'):String(data[field]),'num'),el('small',label+(history?' · 180 Tage':'')+' ›'));if(history)b.append(el('small',history.available?'Seit Serienbeginn: '+history.seriesTotal:'Historie nicht verfügbar'));
   b.addEventListener('click',()=>open(key,true));return b;
  });
  function open(key,manual){
