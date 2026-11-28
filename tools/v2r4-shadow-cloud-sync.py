@@ -107,7 +107,11 @@ def archive_digests(root: Path) -> dict[str, set[str]]:
     result: dict[str, set[str]] = {}
     for folder in (root / "Backup/Shadow-Archive/20261119",
                    root / "Backup/Shadow-Archive/Automatic"):
-        for path in folder.glob("*.jsonl.gz"):
+        try:
+            paths = list(folder.glob("*.jsonl.gz"))
+        except OSError:
+            continue
+        for path in paths:
             manifest_path = folder / ("manifest.json" if folder.name == "20261119" else path.name + ".json")
             try:
                 manifest = json.loads(manifest_path.read_text("utf-8-sig"))
