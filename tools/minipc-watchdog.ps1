@@ -970,7 +970,7 @@ try {
       $regular = @("CryptoMiniPC-KrakenCanary","CryptoMiniPC-KrakenUniverse","CryptoMiniPC-AltradyTrigger","CryptoMiniPC-V2R4WSShadow","CryptoMiniPC-V2R4ShadowOutcomes","CryptoMiniPC-V2R4ShadowCloudSync","CryptoMiniPC-V2R4PaperLifecycle","CryptoMiniPC-V2R4PaperCloudSync","CryptoMiniPC-StatusSync")
       $protected = @("CryptoMiniPC-V2R4PaperCandidates","CryptoMiniPC-V2R4PaperWait")
       $exactAge = ((Get-Date).ToUniversalTime() - $checked).TotalSeconds
-      $fenceOnly = (
+      $fenceEvidence = (
         $s.kind -ceq "MINIPC_RUNTIME_SUPERVISOR_V1" -and $s.schema_version -eq 1 -and
         $s.status -ceq "WARNING" -and $exactAge -ge 0 -and $exactAge -le 300 -and
         $s.PSObject.Properties.Name -contains "error" -and $null -eq $s.error -and
@@ -985,19 +985,36 @@ try {
         $s.h3_001_archived -is [bool] -and $s.h3_001_archived -eq $true -and
         $s.tasks -is [array] -and @($s.tasks).Count -eq 12
       )
-      if ($fenceOnly) {
+      $fenceOnly = $fenceEvidence
+      $fenceResearchDelay = $false
+      $otherRegularHealthy = $true
+      if ($fenceEvidence) {
         foreach ($name in $regular) {
           $matchesForTask = @($s.tasks | Where-Object { $_.task -ceq $name })
-          if ($matchesForTask.Count -ne 1 -or $matchesForTask[0].installed -isnot [bool] -or $matchesForTask[0].installed -ne $true -or $matchesForTask[0].healthy_after -isnot [bool] -or $matchesForTask[0].healthy_after -ne $true -or $matchesForTask[0].action -cne "NONE") { $fenceOnly = $false }
+          if ($matchesForTask.Count -ne 1 -or $matchesForTask[0].installed -isnot [bool] -or $matchesForTask[0].installed -ne $true -or $matchesForTask[0].healthy_after -isnot [bool] -or $matchesForTask[0].healthy_after -ne $true -or $matchesForTask[0].action -cne "NONE") {
+            $fenceOnly = $false
+            $r = if ($matchesForTask.Count -eq 1) { $matchesForTask[0] } else { $null }
+            if ($name -ceq "CryptoMiniPC-V2R4ShadowOutcomes" -and $null -ne $r -and
+                $r.installed -is [bool] -and $r.installed -eq $true -and
+                $r.healthy_after -is [bool] -and $r.healthy_after -eq $false -and
+                $r.action -cin @("NONE","BACKOFF") -and
+                $r.before.scheduler_state -ceq "Running" -and $r.after.scheduler_state -ceq "Running" -and
+                $r.after.heartbeat_status -ceq "HEALTHY" -and
+                ($r.after.heartbeat_age_sec -is [double] -or $r.after.heartbeat_age_sec -is [int] -or $r.after.heartbeat_age_sec -is [long]) -and
+                $r.after.heartbeat_age_sec -gt 90 -and $r.after.heartbeat_age_sec -le 300) {
+              $fenceResearchDelay = $true
+            } else { $otherRegularHealthy = $false }
+          }
         }
         foreach ($name in $protected) {
           $matchesForTask = @($s.tasks | Where-Object { $_.task -ceq $name })
-          if ($matchesForTask.Count -ne 1 -or $matchesForTask[0].installed -isnot [bool] -or $matchesForTask[0].installed -ne $true -or $matchesForTask[0].action -cne "V3_INTAKE_SUPERVISOR_REARM_BLOCKED" -or $matchesForTask[0].before.scheduler_state -cne "Disabled") { $fenceOnly = $false }
+          if ($matchesForTask.Count -ne 1 -or $matchesForTask[0].installed -isnot [bool] -or $matchesForTask[0].installed -ne $true -or $matchesForTask[0].action -cne "V3_INTAKE_SUPERVISOR_REARM_BLOCKED" -or $matchesForTask[0].before.scheduler_state -cne "Disabled") { $fenceOnly = $false; $fenceEvidence = $false }
         }
         $archived = @($s.tasks | Where-Object { $_.task -ceq "CryptoMiniPC-V3H3Shadow001" })
-        if ($archived.Count -ne 1 -or $archived[0].action -cne "ARCHIVED_BASELINE_NOT_RESTARTED") { $fenceOnly = $false }
+        if ($archived.Count -ne 1 -or $archived[0].action -cne "ARCHIVED_BASELINE_NOT_RESTARTED") { $fenceOnly = $false; $fenceEvidence = $false }
       }
       if ($fenceOnly) { $detail += " classification=EXPECTED_V3_FENCE_ONLY_V1" }
+      elseif ($fenceEvidence -and $otherRegularHealthy -and $fenceResearchDelay) { $detail += " classification=EXPECTED_V3_FENCE_WITH_RESEARCH_DELAY_V1" }
       $currentFenceViolation = (
         $s.kind -ceq "MINIPC_RUNTIME_SUPERVISOR_V1" -and $s.schema_version -eq 1 -and
         $s.status -ceq "CRITICAL" -and $exactAge -ge 0 -and $exactAge -le 180 -and
