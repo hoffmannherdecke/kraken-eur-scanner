@@ -1304,7 +1304,7 @@ function Invoke-LocalInfrastructureMonitor {
             if ($line.Trim() -match $allowed) {
               $archive["markers"] += $Matches[1]
             }
-            if ($line.Trim() -match '^PHYSICAL_RELATION_BYTES_RELEASED:\s*(\d+)\s*) {
+            if ($line.Trim() -match '^PHYSICAL_RELATION_BYTES_RELEASED:\s*(\d+)\s*$') {
               $archive["physical_bytes"]=[long]$Matches[1]
             }
           }
@@ -1322,7 +1322,7 @@ function Invoke-LocalInfrastructureMonitor {
     # or task arguments (which may contain confidential configuration).
     try {
       $taskFullName = [string]$tunnel.task_path + "GitHub-SafeAccess-Tunnel"
-      if ($taskFullName -match '^\\[A-Za-z0-9_\\ -]+) {
+      if ($taskFullName -match '^\\[A-Za-z0-9_\\ -]+$') {
         $xpath = "*[System[(EventID=101 or EventID=201 or EventID=202 or EventID=203) and TimeCreated[timediff(@SystemTime) <= 3600000]] and EventData[Data[@Name='TaskName']='$taskFullName']]"
         $events = @(Get-WinEvent -LogName "Microsoft-Windows-TaskScheduler/Operational" -FilterXPath $xpath -MaxEvents 12 -ErrorAction SilentlyContinue)
         foreach ($event in $events) {
@@ -1332,7 +1332,7 @@ function Invoke-LocalInfrastructureMonitor {
             $data = @($xml.Event.EventData.Data | Where-Object { $_.Name -eq "ResultCode" })
             if ($data.Count -eq 1) {
               $value = [string]$data[0]."#text"
-              if ($value -match '^(?:0x[0-9a-fA-F]+|[0-9]+)) {
+              if ($value -match '^(?:0x[0-9a-fA-F]+|[0-9]+)$') {
                 $failed = ([Convert]::ToUInt64($value.Replace("0x",""),$(if ($value.StartsWith("0x")) {16} else {10})) -ne 0)
               }
             }
