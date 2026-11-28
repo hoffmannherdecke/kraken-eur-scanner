@@ -1239,6 +1239,208 @@ $issueCodes = ($issues | ForEach-Object { "$($_.severity):$($_.check)" }) -join 
 $line = "{0} status={1} health_state={2} critical={3} warning={4} issues={5}" -f $now.ToString("o"),$status,$healthState,$critical,$warning,$issueCodes
 Add-Content -Path $logPath -Value $line -Encoding UTF8
 
+
+# Local infrastructure alert routing is independent of the cloud health
+# upload. Publish the original health report above first, and preserve its
+# existing severity and exit code. This extension has no trading authority.
+function Read-InfraTask {
+  param([string]$Name)
+  try {
+    $items = @(Get-ScheduledTask -TaskName $Name -ErrorAction Stop)
+    if ($items.Count -ne 1) { return @{ state="UNKNOWN" } }
+    $task = $items[0]
+    $info = Get-ScheduledTaskInfo -TaskName $task.TaskName -TaskPath $task.TaskPath -ErrorAction Stop
+    return @{
+      state=[string]$task.State
+      result=[long]$info.LastTaskResult
+      last_run=$(if ($info.LastRunTime -and $info.LastRunTime.Year -ge 2000) { $info.LastRunTime.ToUniversalTime().ToString("o") } else { $null })
+      restart_count=[int]$task.Settings.RestartCount
+      task_path=[string]$task.TaskPath
+    }
+  } catch {
+    if ($_.CategoryInfo.Category -eq [System.Management.Automation.ErrorCategory]::ObjectNotFound) {
+      return @{ state="MISSING" }
+    }
+    return @{ state="UNKNOWN" }
+  }
+}
+
+function Read-InfraDrive {
+  param([string]$Path)
+  try { return [bool](Test-Path -LiteralPath $Path -PathType Container -ErrorAction Stop) }
+  catch { return $null }
+}
+
+function Invoke-LocalInfrastructureMonitor {
+  $proof = [ordered]@{
+    kind="LOCAL_INFRASTRUCTURE_MONITOR_V1"
+    checked_at_utc=[datetime]::UtcNow.ToString("o")
+    status="HOLD"
+    no_trading_authority=$true
+  }
+  $proc = $null
+  $secretBytes = $null
+  $secretText = $null
+  $inputJson = $null
+  try {
+    if ([Security.Principal.WindowsIdentity]::GetCurrent().User.Value -ne "S-1-5-18") {
+      $proof["reason"]="SYSTEM_REQUIRED"
+      return $proof
+    }
+
+    $archive = Read-InfraTask "CryptoMiniPC-V2R4ShadowArchive"
+    $archive["markers"]=@()
+    $archive["log_matches_run"]=$false
+    $archive["physical_bytes"]=$null
+    $archiveLog = Join-Path $TradingRoot "Runtime\ShadowArchive\last-run.log"
+    if ($archive.last_run -and (Test-Path -LiteralPath $archiveLog -PathType Leaf)) {
+      try {
+        $item = Get-Item -LiteralPath $archiveLog -ErrorAction Stop
+        $start = ([datetimeoffset]::Parse($archive.last_run)).UtcDateTime
+        $archive["log_matches_run"]=($item.LastWriteTimeUtc -ge $start.AddSeconds(-2) -and $item.LastWriteTimeUtc -le [datetime]::UtcNow.AddSeconds(5))
+        if ($archive.log_matches_run) {
+          $allowed = "^(NO_ARCHIVE_REQUIRED_PASS|ARCHIVE_MAINTENANCE_PASS|ARCHIVE_HOLD|PHYSICAL_COMPACTION_DEFERRED|PHYSICAL_RELATION_BYTES_RELEASED|PHYSICAL_TARGET_NOT_REACHED|PHYSICAL_COMPACTION_NO_NEW_DELETE_SKIP|PHYSICAL_COMPACTION_BELOW_START_THRESHOLD_SKIP|PHYSICAL_COMPACTION_TARGET_MET)(?:\s*:|\s*$)"
+          foreach ($line in @(Get-Content -LiteralPath $archiveLog -Tail 48 -ErrorAction Stop)) {
+            if ($line.Trim() -match $allowed) {
+              $archive["markers"] += $Matches[1]
+            }
+            if ($line.Trim() -match '^PHYSICAL_RELATION_BYTES_RELEASED:\s*(\d+)\s*$') {
+              $archive["physical_bytes"]=[long]$Matches[1]
+            }
+          }
+          $archive["markers"]=@($archive.markers | Sort-Object -Unique)
+        }
+      } catch {
+        $archive["log_matches_run"]=$false
+        $archive["markers"]=@()
+      }
+    }
+
+    $tunnel = Read-InfraTask "GitHub-SafeAccess-Tunnel"
+    $tunnel["failed_runs"]=@()
+    # Read only a bounded set of relevant scheduler events, not tunnel logs
+    # or task arguments (which may contain confidential configuration).
+    try {
+      $taskFullName = [string]$tunnel.task_path + "GitHub-SafeAccess-Tunnel"
+      if ($taskFullName -match '^\\[A-Za-z0-9_\\ -]+$') {
+        $xpath = "*[System[(EventID=101 or EventID=201 or EventID=202 or EventID=203) and TimeCreated[timediff(@SystemTime) <= 3600000]] and EventData[Data[@Name='TaskName']='$taskFullName']]"
+        $events = @(Get-WinEvent -LogName "Microsoft-Windows-TaskScheduler/Operational" -FilterXPath $xpath -MaxEvents 12 -ErrorAction SilentlyContinue)
+        foreach ($event in $events) {
+          $failed = $event.Id -in @(101,202,203)
+          if ($event.Id -eq 201) {
+            $xml = [xml]$event.ToXml()
+            $data = @($xml.Event.EventData.Data | Where-Object { $_.Name -eq "ResultCode" })
+            if ($data.Count -eq 1) {
+              $value = [string]$data[0]."#text"
+              if ($value -match '^(?:0x[0-9a-fA-F]+|[0-9]+)$') {
+                $failed = ([Convert]::ToUInt64($value.Replace("0x",""),$(if ($value.StartsWith("0x")) {16} else {10})) -ne 0)
+              }
+            }
+          }
+          if ($failed -and $event.TimeCreated) {
+            $tunnel["failed_runs"] += $event.TimeCreated.ToUniversalTime().ToString("o")
+          }
+        }
+      }
+    } catch { }
+    $tunnel.Remove("task_path")
+    $archive.Remove("task_path")
+
+    $sync = @{}
+    try {
+      $syncFile = Join-Path $TradingRoot "State\minipc-status-sync-heartbeat.json"
+      $h = Get-Content -LiteralPath $syncFile -Raw -ErrorAction Stop | ConvertFrom-Json
+      $sync = @{ status=[string]$h.status; checked_at_utc=[string]$h.checked_at_utc }
+      # Derive only a bounded non-secret transport classification.
+      $sync["transport_failure"]=([string]$h.detail -match '(?i)relay HTTP 5\d\d|URLError|TimeoutError|ConnectionError|RemoteDisconnected|timed out|connection (?:refused|reset|aborted)')
+    } catch { }
+
+    $router = Join-Path $repo "tools\process-health-alert-router.py"
+    if (-not (Test-Path -LiteralPath $router -PathType Leaf) -or -not (Test-Path -LiteralPath $venvPython -PathType Leaf)) {
+      $proof["reason"]="LOCAL_ROUTER_UNAVAILABLE"
+      return $proof
+    }
+    Add-Type -AssemblyName System.Security
+    $secretFile = Join-Path $TradingRoot "Runtime\WatchdogSecrets\slack-webhook.dpapi"
+    $secretBytes = [Security.Cryptography.ProtectedData]::Unprotect(
+      [IO.File]::ReadAllBytes($secretFile), $null,
+      [Security.Cryptography.DataProtectionScope]::LocalMachine)
+    $secretText = [Text.Encoding]::UTF8.GetString($secretBytes)
+    $inputJson = [ordered]@{
+      system=$true
+      status_sync=$sync
+      archive=$archive
+      tunnel=$tunnel
+      drives=@{
+        c=(Read-InfraDrive (Join-Path $TradingRoot "Backup\Shadow-Archive\Automatic"))
+        mistral=(Read-InfraDrive "D:\V3-Shadow-Archive-Automatic")
+      }
+      webhook=$secretText
+    } | ConvertTo-Json -Depth 7 -Compress
+
+    # Credentials travel only through the child's standard input, never as
+    # arguments, environment variables, diagnostics or log lines.
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $venvPython
+    $psi.Arguments = '-B "' + $router + '" --local-watchdog "' + $TradingRoot + '"'
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.RedirectStandardInput = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $proc = [Diagnostics.Process]::Start($psi)
+    $outTask = $proc.StandardOutput.ReadToEndAsync()
+    $errTask = $proc.StandardError.ReadToEndAsync()
+    $proc.StandardInput.WriteLine($inputJson)
+    $proc.StandardInput.Close()
+    if (-not $proc.WaitForExit(30000)) {
+      $proc.Kill()
+      $proof["reason"]="LOCAL_ROUTER_TIMEOUT"
+      return $proof
+    }
+    if ($proc.ExitCode -ne 0) {
+      $proof["reason"]="LOCAL_ROUTER_HOLD"
+      return $proof
+    }
+    $raw = $outTask.GetAwaiter().GetResult()
+    if ($raw.Length -gt 16384) {
+      $proof["reason"]="LOCAL_ROUTER_OUTPUT_LIMIT"
+      return $proof
+    }
+    $receipt = $raw | ConvertFrom-Json
+    if ($receipt.kind -ne "LOCAL_INFRASTRUCTURE_MONITOR_V1" -or $receipt.no_trading_authority -ne $true) {
+      $proof["reason"]="LOCAL_ROUTER_RECEIPT_INVALID"
+      return $proof
+    }
+    return $receipt
+  } catch {
+    # Never surface exceptions from secret handling or network calls.
+    $proof["reason"]="LOCAL_MONITORING_ERROR"
+    return $proof
+  } finally {
+    if ($proc) { $proc.Dispose() }
+    if ($secretBytes) { [Array]::Clear($secretBytes,0,$secretBytes.Length) }
+    $secretText=$null
+    $inputJson=$null
+  }
+}
+
+try {
+  $infraReceipt = Invoke-LocalInfrastructureMonitor
+  $infraPath = Join-Path $stateDir "minipc-infrastructure-monitoring.json"
+  $infraTemp = $infraPath + "." + [guid]::NewGuid().ToString("N") + ".tmp"
+  try {
+    [IO.File]::WriteAllText($infraTemp, ($infraReceipt | ConvertTo-Json -Depth 9), (New-Object System.Text.UTF8Encoding($false)))
+    if (Test-Path -LiteralPath $infraPath) {
+      [IO.File]::Replace($infraTemp,$infraPath,$null)
+    } else {
+      [IO.File]::Move($infraTemp,$infraPath)
+    }
+  } finally {
+    if (Test-Path -LiteralPath $infraTemp) { Remove-Item -LiteralPath $infraTemp -Force -ErrorAction SilentlyContinue }
+  }
+} catch { }
+
 Write-Output $json
 if ($critical -gt 0) { exit 2 }
 exit 0
