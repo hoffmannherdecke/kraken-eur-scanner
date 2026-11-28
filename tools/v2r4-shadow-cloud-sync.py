@@ -242,9 +242,9 @@ def collect_records(
             record["outcome_status"] = outcome_status
             record["outcome_payload"] = outcome
 
-        digest = archive_digest(record)
-        if not need_event and not need_outcome and isinstance(cached, dict) and cached.get("event_sig") == signature and cached.get("outcome_sig") == outcome_sig:
+        if not need_event and not need_outcome:
             continue
+        digest = archive_digest(record)
         if archive_index is None:
             archive_index = archive_digests(root)
         if digest in archive_index.get(eid, ()):
