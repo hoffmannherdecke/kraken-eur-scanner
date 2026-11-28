@@ -298,7 +298,7 @@ def self_test():
 # No Supabase credentials, trading authority, or new scheduler are required.
 LOCAL_CODES = {
     "LOCAL_GITHUB_UNREACHABLE": "GitHub API dauerhaft vom Mini-PC nicht erreichbar",
-    "LOCAL_SUPABASE_UNREACHABLE": "Supabase dauerhaft vom Mini-PC nicht erreichbar",
+    "LOCAL_SUPABASE_UNREACHABLE": "Supabase-Verbindung oder Status-Relay dauerhaft gestoert",
     "LOCAL_ARCHIVE_DRIVES": "Mindestens ein Archivziel vom Watchdog nicht erreichbar",
     "LOCAL_ARCHIVE_JOB": "Automatische Archivierung: Ergebnis fehlt, ist ueberfaellig oder fehlgeschlagen",
     "LOCAL_ARCHIVE_COMPACTION": "Automatische physische Seitenfreigabe fehlgeschlagen",
@@ -345,7 +345,8 @@ def local_observations(sample, state, now, github_ok, supabase_ok):
     hb = sample.get("status_sync") or {}
     hb_age = local_age(hb.get("checked_at_utc"), now)
     relay_healthy = hb.get("status") == "HEALTHY" and hb_age is not None and hb_age <= 180
-    faults["LOCAL_SUPABASE_UNREACHABLE"] = not supabase_ok and not relay_healthy
+    relay_transport_failure = hb.get("status") == "DEGRADED" and hb_age is not None and hb_age <= 180 and hb.get("transport_failure") is True
+    faults["LOCAL_SUPABASE_UNREACHABLE"] = (not supabase_ok and not relay_healthy) or relay_transport_failure
     detail["supabase_status_relay_fresh_healthy"] = relay_healthy
     detail["supabase_status_relay_status"] = hb.get("status") if hb.get("status") in ("HEALTHY","DEGRADED","UNKNOWN") else "UNKNOWN"
 
@@ -411,7 +412,7 @@ def local_observations(sample, state, now, github_ok, supabase_ok):
     if stable:
         tunnel_fault = False
         failures.clear()
-    elif retry_configured and repeated and (not running or (ages[0] <= REPAIRABLE_GRACE_SECONDS and run_age is not None and run_age < REPAIRABLE_GRACE_SECONDS)):
+    elif retry_configured and (repeated or (state.get("tunnel_retry_failed") is True and not running)) and (not running or (ages and ages[0] <= REPAIRABLE_GRACE_SECONDS and run_age is not None and run_age < REPAIRABLE_GRACE_SECONDS)):
         tunnel_fault = True
     elif running and not repeated:
         # A scheduler running state is not a connectivity proof; it does
@@ -424,6 +425,8 @@ def local_observations(sample, state, now, github_ok, supabase_ok):
     detail["safeaccess_restart_configured"] = retry_configured
     detail["safeaccess_scheduler_running"] = running
     state["tunnel_failed_runs"] = sorted(failures)[-12:]
+    if tunnel_fault is not None:
+        state["tunnel_retry_failed"] = tunnel_fault
     return faults, detail
 
 def local_report(code, fault):
@@ -560,6 +563,9 @@ def local_self_test():
     assert faults["LOCAL_SUPABASE_UNREACHABLE"] is False
     sample["status_sync"]["status"]="DEGRADED"
     faults,_=local_observations(sample,{},t,True,False)
+    assert faults["LOCAL_SUPABASE_UNREACHABLE"] is True
+    sample["status_sync"]["transport_failure"]=True
+    faults,_=local_observations(sample,{},t,True,True)
     assert faults["LOCAL_SUPABASE_UNREACHABLE"] is True
     sample["drives"]["mistral"]=False
     faults,_=local_observations(sample,{},t,True,True)
