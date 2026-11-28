@@ -7,6 +7,22 @@ function supervisorProtection(issues){
  const m=rows[0].detail.match(/^status=WARNING age_sec=(\d{1,3}(?:[.,]\d{1,6})?) restarted= classification=EXPECTED_V3_FENCE_ONLY_V1$/);
  return !!m&&Number(m[1].replace(",","."))<=300;
 }
+// Distinct positive protection evidence with a bounded research delay, not fence-only.
+function supervisorResearchDelay(issues){
+ if(!Array.isArray(issues))return false;
+ const rows=issues.filter(i=>i?.check==="runtime_supervisor");
+ if(rows.length!==1||rows[0].severity!=="WARNING"||typeof rows[0].detail!=="string")return false;
+ const m=rows[0].detail.match(/^status=WARNING age_sec=(\d{1,3}(?:[.,]\d{1,6})?) restarted= classification=EXPECTED_V3_FENCE_WITH_RESEARCH_DELAY_V1$/);
+ return !!m&&Number(m[1].replace(",","."))<=300;
+}
+function boundedShadowDelay(issues){
+ const rows=issues.filter(i=>i?.check==="v2r4_ws_shadow_outcomes");
+ if(rows.length!==1||rows[0].severity!=="WARNING"||typeof rows[0].detail!=="string")return false;
+ const m=rows[0].detail.match(/^status=HEALTHY age_sec=(\d{1,3}(?:[.,]\d{1,6})?) active=(\d{1,9}) sampled_active=(\d{1,9}) recent_active_samples=(\d{1,9}) freshest_active_sample_age_sec=(\d{1,3}(?:[.,]\d{1,6})?) oldest_active_sample_age_sec=(\d{1,3}(?:[.,]\d{1,6})?) enrolled=(\d{1,12}) completed=(\d{1,12})$/);
+ if(!m)return false;
+ const [age,active,sampled,recent,freshest,oldest,enrolled,completed]=m.slice(1).map(x=>Number(x.replace(",",".")));
+ return age>60&&age<=300&&active>0&&sampled===active&&recent===active&&freshest>=0&&freshest<=oldest&&oldest<=300&&completed<=enrolled&&active<=enrolled;
+}
 // UI-only advisory classification. No change to the original watchdog or its limits.
 // Require a complete, narrowly bounded positive research sample summary.
 function shadowResearchAdvisory(issues){
@@ -57,11 +73,14 @@ function healthModel(v,elapsedSec,connected){
  if(negative)return {...result,tone:"bad",label:stale?"Letzter Bericht: Störung – aktueller Status unklar":"Betriebsstörung gemeldet",note:stale?"Letzter negativer Beleg bleibt sichtbar. Keine aktuelle Entwarnung.":writer===false?"V3-Writer-Prüfung fehlgeschlagen. Betriebszustand beim Originalhost klären.":scanner===false?"Scanner-Prüfung fehlgeschlagen.":"Mini-PC meldet kritischen Fehler."};
  if(stale)return {...result,tone:"unknown",label:"Systemstatus nicht aktuell",note:!connected?"Cloud-Verbindung nicht bestätigt.":elapsedSec>CLOUD_RESPONSE_STALE_SEC?"Cloud-Abfrage überfällig.":"Hostbericht älter als fünf Minuten."};
  if(age>HOST_REPORT_DUE_SEC)return {...result,tone:"warn",label:"Neuer Hostbericht fällig",note:"Hostbericht älter als drei Minuten. Letzte Befunde bleiben sichtbar; aktuelle Gesundheit nicht bestätigt."};
- const fenceProtected=active&&writer===true&&scanner===true&&h.status==="WARNING"&&supervisorProtection(issues);
- const shadowAdvisory=active&&/^PAPER-V3-\d{8}T\d{6}Z$/.test(v.series[0]?.series_id||"")&&writer===true&&scanner===true&&h.status==="WARNING"&&shadowResearchAdvisory(issues)&&issues.length===(fenceProtected?2:1)&&issues.every(i=>i?.check==="v2r4_ws_shadow_outcomes"||(fenceProtected&&i?.check==="runtime_supervisor"));
+ const researchDelayProtected=active&&/^PAPER-V3-\d{8}T\d{6}Z$/.test(v.series[0]?.series_id||"")&&writer===true&&scanner===true&&h.status==="WARNING"&&supervisorResearchDelay(issues);
+ const separatedResearchDelay=researchDelayProtected&&boundedShadowDelay(issues)&&issues.length===2&&issues.every(i=>i?.check==="runtime_supervisor"||i?.check==="v2r4_ws_shadow_outcomes");
+ const fenceProtected=active&&writer===true&&scanner===true&&h.status==="WARNING"&&(supervisorProtection(issues)||researchDelayProtected);
+ const shadowAdvisory=!researchDelayProtected&&active&&/^PAPER-V3-\d{8}T\d{6}Z$/.test(v.series[0]?.series_id||"")&&writer===true&&scanner===true&&h.status==="WARNING"&&shadowResearchAdvisory(issues)&&issues.length===(fenceProtected?2:1)&&issues.every(i=>i?.check==="v2r4_ws_shadow_outcomes"||(fenceProtected&&i?.check==="runtime_supervisor"));
  if(level===2&&scanner===true)return {...result,tone:"warn",fenceProtected,shadowAdvisory,label:"V3-Paper-Betrieb aktiv · Warnung",note:"Eine Verarbeitung wurde zurückgestellt. Weitere Hostbefunde stehen unter Details."};
+ if(separatedResearchDelay)return {...result,tone:"good",fenceProtected:true,shadowAdvisory:true,label:"V3-Paper-Betrieb aktiv",note:"Writer und Scanner beim letzten Bericht bestätigt. Separater verzögerter Forschungszyklus unter Details; Originalwarnung bleibt erhalten. Keine Echtzeitgarantie."};
  if(shadowAdvisory)return {...result,tone:"good",fenceProtected,shadowAdvisory:true,label:"V3-Paper-Betrieb aktiv",note:"Writer und Scanner beim letzten Bericht bestätigt. Separater Forschungshinweis unter Details; Originalwarnung bleibt erhalten. Keine Echtzeitgarantie."};
- if(fenceProtected&&issues.length===1)return {...result,tone:"good",fenceProtected:true,label:"V3-Paper-Betrieb aktiv",note:"Vorgänger-Writer geschützt. Writer und Scanner beim letzten Bericht bestätigt. Kein Reparaturbedarf aus diesem Schutzbefund; keine Echtzeitgarantie."};
+ if(fenceProtected&&!researchDelayProtected&&issues.length===1)return {...result,tone:"good",fenceProtected:true,label:"V3-Paper-Betrieb aktiv",note:"Vorgänger-Writer geschützt. Writer und Scanner beim letzten Bericht bestätigt. Kein Reparaturbedarf aus diesem Schutzbefund; keine Echtzeitgarantie."};
  if(fenceProtected)return {...result,tone:"warn",fenceProtected:true,label:"Sicherheitsmechanismus aktiv – weitere Systemwarnung",note:"Vorgänger-Writer geschützt. Weitere Hostwarnungen separat prüfen."};
  if(h.status==="WARNING"||issues.some(i=>i?.severity==="WARNING")){
   const core=active&&writer===true&&scanner===true;
