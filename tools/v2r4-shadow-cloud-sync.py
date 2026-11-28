@@ -101,6 +101,49 @@ def file_signature(path: Path) -> list[int] | None:
     return [stat.st_mtime_ns, stat.st_size]
 
 
+def archive_digests(root: Path) -> dict[str, set[str]]:
+    """Read verified local archives independently of mutable upload ACKs."""
+    import gzip
+    result: dict[str, set[str]] = {}
+    for folder in (root / "Backup/Shadow-Archive/20261119",
+                   root / "Backup/Shadow-Archive/Automatic"):
+        try:
+            paths = list(folder.glob("*.jsonl.gz"))
+        except OSError:
+            continue
+        for path in paths:
+            manifest_path = folder / ("manifest.json" if folder.name == "20261119" else path.name + ".json")
+            try:
+                manifest = json.loads(manifest_path.read_text("utf-8-sig"))
+                data = path.read_bytes()
+                if hashlib.sha256(data).hexdigest() != (manifest.get("sha256") or manifest.get("archive_sha256")):
+                    continue
+                rows = gzip.decompress(data).decode("utf-8").splitlines()
+                if len(rows) != manifest.get("row_count", manifest.get("rows")):
+                    continue
+                verified = {}
+                for line in rows:
+                    row = json.loads(line)
+                    if row.get("outcome_status") == "COMPLETE":
+                        verified.setdefault(row["event_id"], set()).add(archive_digest(row))
+                for eid, digests in verified.items():
+                    result.setdefault(eid, set()).update(digests)
+            except (OSError, ValueError, KeyError, TypeError):
+                continue
+    return result
+
+
+def archive_digest(record: dict[str, Any]) -> str:
+    stamp = datetime.fromisoformat(record["observed_at"].replace("Z", "+00:00"))
+    if stamp.tzinfo is None:
+        raise ValueError("Missing timezone")
+    material = [record["event_id"], record.get("pair"),
+                stamp.astimezone(timezone.utc).isoformat(),
+                record.get("event_payload"), record.get("outcome_status"),
+                record.get("outcome_payload"), record.get("source_runtime_commit")]
+    return hashlib.sha256(json.dumps(material, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+
+
 def collect_records(
     root: Path,
     state: dict[str, Any],
@@ -130,6 +173,7 @@ def collect_records(
     # Keep only stat metadata and event ID in the EXISTING atomic sync state.
     # Unacknowledged records never qualify for the fast path; an outcome file
     # appearing or changing always invalidates it. This is not an upload ACK.
+    archive_index = None
     for path in sorted(event_dir.glob("*.json")):
         signature = file_signature(path)
         if signature is None:
@@ -190,8 +234,6 @@ def collect_records(
                 "outcome_sig": outcome_sig,
                 "outcome_status": outcome_status,
             }
-        if not need_event and not need_outcome:
-            continue
 
         record = {
             "event_id": eid,
@@ -204,6 +246,13 @@ def collect_records(
             record["outcome_status"] = outcome_status
             record["outcome_payload"] = outcome
 
+        if not need_event and not need_outcome:
+            continue
+        digest = archive_digest(record)
+        if archive_index is None:
+            archive_index = archive_digests(root)
+        if digest in archive_index.get(eid, ()):
+            continue
         records.append(record)
         marks[eid] = {
             "event_sent": True,
